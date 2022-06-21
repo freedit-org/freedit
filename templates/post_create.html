@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<article class="media box">
+    <div class="media-content">
+        <form id="solo" action="/post/{{iid}}/edit/0" method="post">
+            <fieldset>
+                <div class="field">
+                    <div class="control">
+                        <input class="input is-large" type="text" name="title" required placeholder="title" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                        <input class="input is-small" type="text" name="tags" required placeholder="tags, separated by #" />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <p class="control">
+                        <textarea name="content" class="textarea" rows="15" required maxlength="65535" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
+                    </p>
+                </div>
+
+                <nav class="level is-mobile">
+                    <div class="level-right">
+                        <div class="level-item">
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    <button type="submit" form="solo" class="button is-link">Submit</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </fieldset>
+        </form>
+    </div>
+</article>
+<div class="divider"></div>
+{% endblock %}

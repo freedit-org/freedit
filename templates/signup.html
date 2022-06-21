@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; 
+  img-src 'self' data:; script-src 'none'; style-src 'self'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+{% endblock %}
+
+{% block section %}
+<section class="my-5 has-background-light">
+<div id="sign" class="container py-5">
+    <form id="signup" class="box" action="/signup" method="post">
+        <fieldset>
+            <div class="content">
+                <center><h1>Sign up</h1></center>
+            </div>
+            <div class="field">
+                <div class="control has-icons-left">
+                    <input name="username" class="input" type="text" pattern="^\D\w+" title="Username, Not start with number, 1 - 64 chars" required placeholder="Username, Not start with number, 1 - 64 chars" minlength="1" maxlength="64">
+                    <span class="icon is-left">👤</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control has-icons-left">
+                    <input name="password" class="input" type="password" title="password, at least 7 chars" required placeholder="Password, at least 6 chars" required minlength="7">
+                    <span class="icon is-left">🔑</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="control has-icons-left">
+                    <input name="password2" class="input" type="password" required placeholder="Confirm Password" minlength="7">
+                    <span class="icon is-left">🔑</span>
+                </div>
+            </div>
+
+            <div>
+                <img src="data:image/png;base64,{{captcha_image}}" alt="captcha" class="captcha" />
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <input name="captcha_value" class="input" required placeholder="captcha" >
+                </div>
+            </div>
+
+            <input type="hidden" id="captcha_id" name="captcha_id" value="{{captcha_id}}">
+
+            <div class="field">
+                <div class="control">
+                    <label class="checkbox">
+                    <input type="checkbox" required>
+                    I agree to the <a href="#">terms and conditions</a>
+                </label>
+                </div>
+            </div>
+
+            <center>
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="signup" class="button is-link">Submit</button>
+                    </div>
+                </div>
+                <p>Already have an account? <a href="/signin">Sign in</a></p>
+            </center>
+        </fieldset>
+    </form>
+</div>
+</section>
+{% endblock %}

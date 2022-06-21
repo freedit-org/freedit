@@ -1,0 +1,203 @@
+{% extends "layout.html" %} 
+
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; 
+  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+{% endblock %}
+
+{% block tabs %}
+    <li><a href="/inn/0">Inn</a></li>
+    <li class="is-active"><a href="/solo/user/0">Solo</a></li>
+    <li><a href="/inn/list">Explore</a></li>
+{% endblock %}
+
+{% block content %}
+    <div class="level is-mobile px-3">
+        <div class="level-left">
+            <div class="tabs is-small is-toggle is-toggle-rounded">
+                <ul>
+                {% match tag %} {% when Some with (val) %}
+                    <li><a href="/solo/user/0">All</a></li>
+                    {% if page_data.claim.is_some() %}
+                    <li><a href="/solo/user/0?filter=is_following">Following</a></li>
+                    {% endif %}
+                    <li class="is-active"><a href="/solo/user/0?hashtag={{val}}">🏷️ {{val}}</a></li>
+                {% else %}
+                    {% match filter.as_deref() %} {% when Some with ("Following") %}
+                        <li><a href="/solo/user/0">All</a></li>
+                        <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
+                    {% else %}
+                        {% match page_data.claim %} {% when Some with (val) %}
+                            {% if uid > 0 %}
+                                <li><a href="/solo/user/0">All</a></li>
+                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                            {% else %}
+                                <li class="is-active"><a href="/solo/user/0">All</a></li>
+                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                            {% endif %}
+                        {% else %}
+                            {% if uid > 0 %}
+                                <li><a href="/solo/user/0">All</a></li>
+                                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                            {% else %}
+                                <li class="is-active"><a href="/solo/user/0">All</a></li>
+                            {% endif %}
+                        {% endmatch %}
+                    {% endmatch %}
+                {% endmatch %}
+                </ul>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="buttons">
+                {% if is_following %}
+                    <a href="/user/{{uid}}/unfollow"><button class="button is-danger is-small is-rounded">Unfollow</button></a>
+                {% else %}
+                    {% match page_data.claim %} {% when Some with (val) %}
+                        {% if uid > 0 && uid != val.uid %}
+                            <a href="/user/{{uid}}/follow"><button class="button is-primary is-small is-rounded">Follow</button></a>
+                        {% endif %}
+                    {% else %}{% endmatch %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% match page_data.claim %} {% when Some with (claim) %}
+    <article class="media box">
+        <figure class="media-left is-hidden-mobile">
+            <p class="image is-64x64">
+                <img src="/static/avatars/{{claim.uid}}.png">
+            </p>
+        </figure>
+        <div class="media-content">
+            <form id="solo" action="/solo/user/0" method="post">
+                <fieldset>
+                    <div class="field">
+                        <p class="control">
+                            <textarea name="content" class="textarea" required minlength="1" maxlength="400" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
+                        </p>
+                    </div>
+                    <nav class="level is-mobile">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <div class="select">
+                                    <select name="visibility" title="Who can see">
+                                        <option selected>Everyone</option>
+                                        <option>Following</option>
+                                        <option>Just me</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <button type="submit" form="solo" class="button is-link">Submit</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </fieldset>
+            </form>
+        </div>
+    </article>
+{% else %} {% endmatch %}
+
+{% for solo in solos %}
+<article class="media box">
+    <figure class="media-left">
+        <p class="image is-48x48">
+            <a href="/user/{{solo.uid}}"><img src="/static/avatars/{{solo.uid}}.png"></a>
+        </p>
+    </figure>
+    <div class="media-content">
+        <div class="content">
+            <p>
+                <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
+                <br> <small>{{solo.created_at}}</small>
+                <br> {{solo.content}}
+            </p>
+        </div>
+        <nav class="level is-mobile">
+            <div class="level-left">
+                <a class="level-item">
+                    <span class="icon is-small">
+                        <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 19C11.866 19 15 15.866 15 12C15 8.13401 11.866 5 8 5C4.13401 5 1 8.13401 1 12C1 15.866 4.13401 19 8 19Z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 19C19.866 19 23 15.866 23 12C23 8.13401 19.866 5 16 5C12.134 5 9 8.13401 9 12C9 15.866 12.134 19 16 19Z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>                                                               
+                    </span>
+                </a>
+                <a class="level-item">
+                    <span class="icon is-small">
+                        <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 13.8214 2.48697 15.5291 3.33782 17L2.5 21.5L7 20.6622C8.47087 21.513 10.1786 22 12 22Z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>                                
+                    </span>
+                </a>
+                <a class="level-item">
+                    <span class="icon is-small">
+                        <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 11V20.4C19 20.7314 18.7314 21 18.4 21H5.6C5.26863 21 5 20.7314 5 20.4V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M10 17V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 17V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 7L16 7M3 7L8 7M8 7V3.6C8 3.26863 8.26863 3 8.6 3L15.4 3C15.7314 3 16 3.26863 16 3.6V7M8 7L16 7" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                </a>
+            </div>
+        </nav>
+    </div>
+    <div class="media-right">
+        {% if solo.visibility == 20 %}
+        <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <title>Only you can see</title>
+            <path d="M14.6667 12H15.4C15.7314 12 16 12.2686 16 12.6V16.4C16 16.7314 15.7314 17 15.4 17H8.6C8.26863 17 8 16.7314 8 16.4V12.6C8 12.2686 8.26863 12 8.6 12H9.33333M14.6667 12V9.5C14.6667 8.66667 14.1333 7 12 7C9.86667 7 9.33333 8.66667 9.33333 9.5V12M14.6667 12H9.33333" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#363636" stroke-width="1.5"/>
+        </svg>
+        {% elseif solo.visibility == 10 %}
+        <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <title>Those you are following can see</title>
+            <path d="M16 12H17.4C17.7314 12 18 12.2686 18 12.6V19.4C18 19.7314 17.7314 20 17.4 20H6.6C6.26863 20 6 19.7314 6 19.4V12.6C6 12.2686 6.26863 12 6.6 12H8M16 12V8C16 6.66667 15.2 4 12 4C8.8 4 8 6.66667 8 8V12M16 12H8" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {% else %}
+        {% endif %}
+    </div>
+</article>
+{% endfor %}
+
+<nav class="pagination">
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+        {% match filter.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
+        {% else %}
+            {% match tag.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&tag={{val}}">Prev</a>
+            {% else %}
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            {% endmatch %}
+        {% endmatch %}
+    {% endif %}
+
+    {% if solos.len() < n %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        {% match filter.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
+        {% else %}
+            {% match tag.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&tag={{val}}">Next</a>
+            {% else %}
+            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            {% endmatch %}
+        {% endmatch %}
+    {% endif %}
+</nav>
+{% endblock %}

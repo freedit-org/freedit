@@ -1,0 +1,97 @@
+{% extends "layout.html" %} 
+
+{% block tabs %}
+    <li><a href="/inn/0">Inn</a></li>
+    <li><a href="/solo/user/0">Solo</a></li>
+    <li class="is-active"><a href="/inn/list">Explore</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="level is-mobile px-3">
+    <div class="level-left">
+        <div class="tabs is-small is-toggle is-toggle-rounded">
+            <ul>
+                {% match topic %} {% when Some with (val) %}
+                    <li><a href="/inn/list">All</a></li>
+                    {% if page_data.claim.is_some() %}
+                    <li><a href="/inn/list?filter=mod">⚙️ Mod</a></li>
+                    <li><a href="/inn/list?filter=joined">Joined</a></li>
+                    {% endif %}
+                    <li class="is-active"><a href="/inn/list?topic={{val}}">🏷️ {{val}}</a></li>
+                {% else %}
+                    {% match filter.as_deref() %} {% when Some with ("mod") %}
+                        <li><a href="/inn/list">All</a></li>
+                        <li class="is-active"><a href="/inn/list?filter=mod">⚙️ Mod</a></li>
+                        <li><a href="/inn/list?filter=joined">Joined</a></li>
+                    {% when Some with ("joined") %}
+                        <li><a href="/inn/list">All</a></li>
+                        <li><a href="/inn/list?filter=mod">⚙️ Mod</a></li>
+                        <li class="is-active"><a href="/inn/list?filter=joined">Joined</a></li>
+                    {% else %}
+                        <li class="is-active"><a href="/inn/list">All</a></li>
+                        {% if page_data.claim.is_some() %}
+                        <li><a href="/inn/list?filter=mod">⚙️ Mod</a></li>
+                        <li><a href="/inn/list?filter=joined">Joined</a></li>
+                        {% endif %}
+                    {% endmatch %}
+                {% endmatch %}
+            </ul>
+        </div>
+    </div>
+    <div class="level-right">
+        {% match page_data.claim %} {% when Some with (val) %}
+            <a href="/mod/0"><button class="button is-primary is-small is-rounded">New</button></a>
+        {% else %}{% endmatch %}
+    </div>
+</div>
+
+<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+    {% for inn in inns %}
+    <div class="list-item">
+        <div class="list-item-image">
+            <figure class="image is-64x64">
+                <a href="/inn/{{inn.iid}}"><img class="is-rounded" src="/static/inn_icons/{{inn.iid}}.png"></a>
+            </figure>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title"><a href="/inn/{{inn.iid}}">{{inn.inn_name}}</a></div>
+            <div class="list-item-description">{{inn.about}}</div>
+        </div>
+        
+        <div class="list-item-controls">
+            {% for topic in inn.topics %}
+                <a href="/inn/list?topic={{topic}}"><span class="tag is-info">{{topic}}</span></a>
+            {% endfor %}
+            
+            {% match filter.as_deref() %} {% when Some with ("mod") %}
+                <a href="/mod/{{inn.iid}}"><span class="tag is-primary">Edit</span></a>
+            {% when Some with ("joined") %}
+                <a href="/inn/{{inn.iid}}/join"><span class="tag is-danger">Exit</span></a>
+            {% else %}{% endmatch %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% match filter.as_deref() %} {% when None %}
+    {% match topic.as_deref() %} {% when None %}
+    <nav class="pagination">
+        {% if anchor < n %}
+            <a class="pagination-previous" disabled>Prev</a>
+        {% else %}
+            <a class="pagination-previous" href="/inn/list?anchor={{anchor- n}}&is_desc={{is_desc}}">Prev</a>
+        {% endif %}
+
+        {% if inns.len() < n %}
+            <a class="pagination-next" disabled >Next</a>
+        {% else %}
+            <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+        {% endif %}
+    </nav>
+    {% else %}
+    <div class="divider"></div>
+    {% endmatch %}
+{% else %}
+    <div class="divider"></div>
+{% endmatch %}
+{% endblock %}

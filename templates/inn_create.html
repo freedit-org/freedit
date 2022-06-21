@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<form class="box" id="inn" action="/mod/0" method="POST">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="inn_name">Inn name</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="inn_name" placeholder="Inn name" required />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="about">About</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="about" placeholder="About" required />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="description">Description</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <textarea class="textarea" name="description" required minlength="1" placeholder="Long description, markdown supported" ></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="topics">topics</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="topics" required placeholder="topics, separated by #" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="mods">mods</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="mods" required placeholder="mods" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="inn_type">Inn type</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <label class="radio"><input type="radio" name="inn_type" value="Public" required />Public</label>
+                        <label class="radio"><input type="radio" name="inn_type" value="Apply" /> Apply</label>
+                        <label class="radio"><input type="radio" name="inn_type" value="Private" /> Private</label>
+                    </div>
+                    <p class="help">The Private inn can not be changed to other type.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="inn" class="button is-link">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<div class="divider"></div>
+{% endblock %}

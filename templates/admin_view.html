@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="box">
+    {{tree_names.len()}} trees<br>
+    {% match tree_name %} {% when Some with (val) %}
+        {% for i in tree_names %}
+            <a href="/admin/view?tree_name={{i}}">
+                {% if i == val %}
+                <span class="tag is-primary">{{i}}</span>
+                {% else %}
+                <span class="tag is-info">{{i}}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    {% else %}
+        {% for i in tree_names %}
+            <a href="/admin/view?tree_name={{i}}">
+                <span class="tag is-info">{{i}}</span>
+            </a>
+        {% endfor %}
+    {% endmatch %}
+</div>
+<div class="box">
+    {% for i in ones %} <p>{{i}}</p><br> {% endfor %}
+</div>
+<div class="divider"></div>
+{% endblock %}
+

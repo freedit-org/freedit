@@ -1,0 +1,5 @@
+/target
+/freedit.db
+/certs
+.rustc_info.json
+.rustdoc_fingerprint.json

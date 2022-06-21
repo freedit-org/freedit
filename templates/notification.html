@@ -1,0 +1,54 @@
+{% extends "layout.html" %} 
+
+{% block content %}
+<div class="level is-mobile">
+    <div class="level-left"></div>
+    <div class="level-right tags">
+        <a href="/notification?&op_type=mark_batch" class="tag is-success is-medium" title="Batch mark as read">✔️</a>
+        <a href="/notification?&op_type=delete_batch" class="tag is-danger is-medium" title="Batch delete notifications you have read">❌</a>
+    </div>
+</div>
+
+<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+    {% for nt in notifications %} 
+    <div class="list-item">
+        <div class="list-item-image is-hidden-touch">
+            <figure class="image is-48x48">
+                <p><a href="/user/{{nt.uid}}" title="{{nt.username}}"><img src="/static/avatars/{{nt.uid}}.png"></a></p>
+            </figure>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-description">
+                {% match nt.notification_code %}
+                {% when 0 %}
+                    {{nt.username}} mentioned you in <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
+                {% when 100 %}
+                    {{nt.username}} mentioned you in <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
+                {% when 1 %}
+                    {{nt.username}} commented your post <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
+                {% when 101 %}
+                    {{nt.username}} commented your post <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
+                {% else %}{% endmatch %}
+            </div>
+            <div class="list-item-description">
+                {% if nt.notification_code >= 100 %}
+                    {{nt.comment_content}}
+                {% else %}
+                    <strong>{{nt.comment_content}}</strong>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="list-item-controls">
+            {% if nt.notification_code < 100 %}
+            <a href="/notification?iid={{nt.iid}}&pid={{nt.pid}}&cid={{nt.cid}}&notification_code={{nt.notification_code}}&op_type=mark"><span class="tag is-info" title="Mark as read">✔️</span></a>
+            {% endif %}
+            <a href="/notification?iid={{nt.iid}}&pid={{nt.pid}}&cid={{nt.cid}}&notification_code={{nt.notification_code}}&op_type=delete"><span class="tag is-danger" title="Delete notification">❌</span></a>
+        </div>
+        
+    </div>
+    {% endfor %}
+</div>
+
+<div class="divider"></div>
+{% endblock %}

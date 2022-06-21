@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% block csp %}
+    <!-- TODO: all user input should have a special csp header -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; 
+    img-src 'self'; script-src 'none'; style-src 'self'; object-src 'none';
+    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+    {% endblock %}
+    <meta charset="utf-8">
+    <meta name="referrer" content="no-referrer">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/bulma.css">
+    <link rel="stylesheet" href="/static/main.css">
+    <title> {{ page_data.title }} </title>
+</head>
+
+<body class="has-background-grey-lighter">
+    <header>
+        <nav class="level is-mobile has-background-white">
+            <div class="level-left navbar-item">
+                <div class="level is-mobile">
+                    {% block menu_left %}
+                    <a class="level-item" href="/">{{page_data.site_name}}</a>
+                    <div class="tabs is-small is-boxed">
+                        <ul>
+                            {% block tabs %}
+                            <li><a class="px-2" href="/inn/0">Inn</a></li>
+                            <li><a class="px-2" href="/solo/user/0">Solo</a></li>
+                            <li><a class="px-2" href="/inn/list">Explore</a></li>
+                            {% endblock %}
+                        </ul>
+                    </div>
+                    {% endblock %}
+                </div>
+            </div>
+            <div class="level-right navbar-item">
+                <div class="level is-mobile">
+                    {% block menu_right %}
+                        {% match page_data.claim %} {% when Some with (val) %}
+                            <a href="/notification">
+                                <span class="icon is-large">
+                                    <span class="icon-text icon-text-info">
+                                        <span class="icon">
+                                            <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <title>Notification</title>
+                                                <path d="M18 8.4C18 6.70261 17.3679 5.07475 16.2426 3.87452C15.1174 2.67428 13.5913 2 12 2C10.4087 2 8.88258 2.67428 7.75736 3.87452C6.63214 5.07475 6 6.70261 6 8.4C6 15.8667 3 18 3 18H21C21 18 18 15.8667 18 8.4Z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </span>
+                                        {% if page_data.has_unread %}
+                                        <span id="notification-indicator" class="has-background-primary"></span>
+                                        {% endif %}
+                                    </span>
+                                </span>
+                            </a>
+                            <a href="/signout">
+                                <span class="icon is-large">
+                                    <span class="icon">
+                                        <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <title>Sign out</title>
+                                            <path d="M12 12H19M19 12L16 15M19 12L16 9" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M19 6V5C19 3.89543 18.1046 3 17 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V18" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                </span>
+                            </a>
+                            <a href="/user/setting">
+                                <span class="icon is-large">
+                                    <span class="icon">
+                                        <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <title>Setting</title>
+                                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <path d="M19.6224 10.3954L18.5247 7.7448L20 6L18 4L16.2647 5.48295L13.5578 4.36974L12.9353 2H10.981L10.3491 4.40113L7.70441 5.51596L6 4L4 6L5.45337 7.78885L4.3725 10.4463L2 11V13L4.40111 13.6555L5.51575 16.2997L4 18L6 20L7.79116 18.5403L10.397 19.6123L11 22H13L13.6045 19.6132L16.2551 18.5155C16.6969 18.8313 18 20 18 20L20 18L18.5159 16.2494L19.6139 13.598L21.9999 12.9772L22 11L19.6224 10.3954Z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                </span>
+                            </a>
+                            <a href="/user/{{val.uid}}">
+                                <span class="icon is-large">
+                                    <span class="image is-squre"><img src="/static/avatars/{{val.uid}}.png" alt="{{val.username}}"></span>
+                                </span>
+                            </a>
+                        {% else %}
+                            <div class="buttons has-addons">
+                                <a href="/signin"><button class="button is-info is-small">Sign in</button></a>
+                                <a href="/signup"><button class="button is-primary is-small">Sign up</button></a> 
+                            </div>
+                        {% endmatch %}
+                    {% endblock %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    {% block section %}
+    <section class="section">
+        <div class="columns">
+            <main class="column is-three-quarters">
+                {% block content %}{% endblock %}
+            </main>
+            <aside class="column">
+                {% block aside %}
+                    {% match page_data.claim %} {% when Some with (val) %}
+                        {% if val.role == 255 %}
+                            <div class="box">
+                                <a href="/admin">
+                                    <span class="tag is-info">Site setting</span>
+                                </a>
+                                <a href="/admin/view">
+                                    <span class="tag is-info">Db view</span>
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}{% endmatch %}
+                    <div class="box">
+                        <a href="/user/list">
+                            <span class="tag is-info">users</span>
+                        </a>
+                    </div>
+                    {% block box %}
+                    {% endblock %}
+                {% endblock %}
+            </aside>
+        </div>
+    </section>
+    {% endblock %}
+
+    <footer class="footer">
+        <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
+        {% for footer_link in page_data.footer_links %}
+        <p><a href="{{footer_link.1}}" target="_blank">{{footer_link.0|capitalize}}</a></p>    
+        {% endfor %}
+        <p><small>version: {{page_data.version}}</small></p>
+        <p><small>sha256: {{page_data.sha256|truncate(10)}}</small></p>
+    </footer>
+</body>
+
+</html>

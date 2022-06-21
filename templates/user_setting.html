@@ -1,0 +1,139 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<form id="user_avatar" class="box" action="/user/avatar?page_type=user" method="POST" enctype="multipart/form-data">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">
+                    <figure class="image is-128x128 ml-0">
+                        <img src="/static/avatars/{{uid}}.png">
+                    </figure>
+                </label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="file" name="upload" required accept=".jpg, .jpeg, .png, .gif" placeholder="Upload image" />
+                    </div>
+                    <p class="help">Please clear browser cache (ctrl + f5)</p>
+                    <div class="control">
+                        <button type="submit" form="user_avatar" class="button is-link">Upload</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<form id="user_setting" class="box" action="/user/setting" method="POST">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Username</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                    <input name="username" class="input" type="text" value="{{username}}" placeholder="Username, Not start with number, 2 - 10 chars">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Url</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input name="url" class="input" type="url" value="{{url}}" placeholder="https://">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">About</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                    <textarea name="about" class="textarea" placeholder="{{about}}">{{about}}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="user_setting" class="button is-link">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<form id="password" class="box" action="/user/password" method="post">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Old password</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input name="old_password" class="input" type="password" required minlength="7">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">New password</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input name="password" class="input" type="password" required minlength="7">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Confirm Password</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input name="password2" class="input" type="password" required minlength="7">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="password" class="button is-link">Change</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<div class="divider"></div>
+
+{% endblock %}

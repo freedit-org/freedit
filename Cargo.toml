@@ -1,0 +1,38 @@
+[package]
+name = "freedit"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+askama = { version = "0.11", default-features = false } # templates engine 
+axum = { version = "0.5", features = ["http2", "headers", "form", "query", "multipart"], default-features = false }
+axum-server = { version = "0.4.0", features = ["tls-rustls"] }
+bincode = "2.0.0-rc.1"
+captcha = { version = "0.0.9", default-features = false }
+comrak = { version = "0.13.0", features = ["syntect"], default-features = false }
+data-encoding = "2.3.2"
+hash_avatar = { git = "https://github.com/t924417424/rust_hash_avatar" }
+http-body = "0.4.5"
+image = { version = "0.24.2", default-features = false, features = ["jpeg", "png", "gif"] }
+latex2mathml = "0.2.3"
+lazy_static = "1.4.0"
+nanoid = "0.4.0"
+ring = { version = "0.16.20", default-features = false }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sled = { version = "0.34.7", features = ["compression"] }
+thiserror = "1"
+time = "0.3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+toml = "0.5"
+tower = { version = "0.4", features = ["timeout"] }
+tower-http = { version = "0.3", features = ["fs", "compression-gzip", "trace"] } # serve dir
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+validator = { version = "0.15.0", features = ["derive"] }
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"

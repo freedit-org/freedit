@@ -1,0 +1,147 @@
+{% extends "layout.html" %} 
+
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; 
+  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+{% endblock %}
+
+{% block tabs %}
+    {% if page_data.claim.is_some() %}
+    <li><a href="/inn/0">Inn</a></li>
+    {% else %}
+    <li><a href="/static/inn/0/1/index.html">Inn</a></li>
+    {% endif %}
+    <li><a href="/solo/user/0">Solo</a></li>
+    <li><a class="px-2" href="/inn/list">Explore</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="media box">
+    <div class="media-content">
+        <div class="content">
+            <p class="title">{{post.title}}</p>
+
+            {% if page_data.claim.is_some() %}
+            <a href="/inn/{{post.iid}}">
+            {% else %}
+            <a href="/static/inn/{{post.iid}}/1/index.html">
+            {% endif %}
+            ⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
+
+            {% if page_data.claim.is_some() %}
+            <a href="/user/{{post.uid}}">
+            {% else %}
+            <a href="/static/inn/user/{{post.uid}}/1/index.html">
+            {% endif %} 
+            👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
+            {% match page_data.claim %} {% when Some with (val) %}
+            {% if val.uid == post.uid %}
+            <a href="/post/{{post.iid}}/edit/{{post.pid}}">Edit</a>
+            {% endif %}
+            {% else %}{% endmatch %}
+        </div>
+    </div>
+    <div class="media-right">
+        <figure>
+            <p class="image is-48x48">
+                <a href="/user/{{post.uid}}"><img src="/static/avatars/{{post.uid}}.png" alt="{{post.username}}"></a>
+            </p>
+        </figure>
+    </div>
+</div>
+<div class="box content">
+    {{post.content_html}}
+    {% for tag in post.tags %}
+        <a href="/inn/tag/{{tag}}"><span class="tag is-light is-info">🏷️ {{tag}}</span></a>
+    {% endfor %}
+</div>
+
+<div class="level is-mobile">
+    <div class="level-item" id="upvote">
+        {% match page_data.claim %} {% when Some with (val) %}
+            {% if post.is_upvoted %}
+            <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-success is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
+            {% else %}
+            <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-info is-light is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
+            {% endif %}
+        {% else %}
+            <span class="tag is-info is-light is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span>
+        {% endmatch %}
+    </div>
+</div>
+
+<div class="box" id="comment">
+    {% for comment in comments %}
+    <div class="list-item" id="{{comment.cid}}">
+        <div class="list-item-image">
+            <figure class="image is-48x48">
+                <a href="/user/{{comment.uid}}"><img src="/static/avatars/{{comment.uid}}.png"></a>
+            </figure>
+        </div>
+        <div class="list-item-content">
+            <p>
+                <small>
+                    <a href="/user/{{comment.uid}}">{{comment.username}}</a> &nbsp;&nbsp;
+                    {{comment.created_at}}
+                    {% match page_data.claim %} {% when Some with (val) %}
+                        {% if comment.is_upvoted %}
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
+                        {% else %}
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
+                        {% endif %}
+                    {% else %}
+                        <span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span>
+                    {% endmatch %}
+                    {% if comment.uid == post.uid %}
+                        [op]
+                    {% endif %}
+                </small>
+                {{comment.content}}
+            </p>
+        </div>
+        
+        <div class="list-item-controls">
+            <a href="/post/{{post.iid}}/{{post.pid}}#{{comment.cid}}">{{comment.cid}}</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<form id="comment" class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">
+    <fieldset>
+        <div class="field">
+            <label class="label" for="comment">New comment</label>
+            <div class="control">
+                <textarea class="textarea" name="comment" {% if !has_joined %} disabled {% endif %} required minlength="1" placeholder="comment, markdown supported" /></textarea>
+            </div>
+        </div>
+        <div class="control">
+            {% match page_data.claim %}
+            {% when Some with (val) %}
+                {% if has_joined %}
+                <button type="submit" form="comment" class="button is-link is-rounded">Submit</button>
+                {% else %}
+                <a href="/inn/{{post.iid}}/join" class="button is-primary is-rounded">Join to comment</a>
+                {% endif %}
+            {% else %}
+            <a class="button is-primary is-rounded" href="/signin">Sign in to comment</a>
+            {% endmatch %}
+        </div>
+    </fieldset>
+</form>
+
+<nav class="pagination">
+    {% if anchor < n %}
+    <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+    <a class="pagination-previous" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor- n}}&is_desc={{is_desc}}">Prev</a>
+    {% endif %}
+    {% if comments.len() < n %}
+    <a class="pagination-next" disabled>Next</a>
+    {% else %}
+    <a class="pagination-next" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+    {% endif %}
+</nav>
+
+{% endblock %}

@@ -1,0 +1,10 @@
+db = "freedit.db"
+addr = "127.0.0.1:3001"
+avatars_path = "./static/avatars"
+inn_icons_path = "./static/inn_icons"
+https = true
+tls_cert = "certs/cert.pem"
+tls_key = "certs/key.pem"
+serve_dir = [
+    ["doc", "../doc", "/doc/doc/freedit/index.html"],
+]

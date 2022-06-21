@@ -1,0 +1,130 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="level is-mobile px-3">
+    <div class="level-left">
+        <div class="tabs is-small is-toggle is-toggle-rounded">
+            <ul>
+                {% match filter.as_deref() %} {% when Some with ("followers") %}
+                    <li><a href="/user/list">Users</a></li>
+                    <li class="is-active"><a href="/user/list?filter=followers&id={{info.0}}">followers</a></li>
+                {% when Some with ("following") %}
+                    <li><a href="/user/list">Users</a></li>
+                    <li class="is-active"><a href="/user/list?filter=following&id={{info.0}}">following</a></li>
+                {% when Some with ("inn") %}
+                    <li><a href="/user/list">Users</a></li>
+                    <li class="is-active"><a href="/user/list?filter=inn&id={{info.0}}">⚓ {{info.1}}</a></li>
+                {% else %}
+                    <li class="is-active"><a href="/user/list">Users</a></li>
+                {% endmatch %}
+            </ul>
+        </div>
+    </div>
+    <div class="level-right">
+        {% match filter.as_deref() %} {% when Some with ("followers") %}
+        <figure>
+            <p class="image is-48x48">
+                <a href="/user/{{info.0}}"><img src="/static/avatars/{{info.0}}.png" alt="{{info.1}}"></a>
+            </p>
+        </figure>
+        {% when Some with ("following") %}
+        <figure>
+            <p class="image is-48x48">
+                <a href="/user/{{info.0}}"><img src="/static/avatars/{{info.0}}.png" alt="{{info.1}}"></a>
+            </p>
+        </figure>
+        {% when Some with ("inn") %}
+        <figure>
+            <p class="image is-48x48">
+                <a href="/inn/{{info.0}}"><img class="is-rounded" src="/static/inn_icons/{{info.0}}.png" alt="{{info.1}}"></a>
+            </p>
+        </figure>
+        {% else %}{% endmatch %}
+    </div>
+</div>
+
+<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+{% for user in users %}
+<div class="list-item">
+    <div class="list-item-image">
+        <figure class="image is-64x64">
+            <a href="/user/{{user.uid}}"><img src="/static/avatars/{{user.uid}}.png"></a>
+        </figure>
+    </div>
+    <div class="list-item-content">
+        <div class="list-item-title"><a href="/user/{{user.uid}}">{{user.username}}</a></div>
+        <div class="list-item-description">{{user.about}}</div>
+    </div>
+    <div class="list-item-controls">
+        {% if is_admin %}
+            {% match filter.as_deref() %} {% when Some with ("inn") %}
+            <form id="role" action="/role/{{info.0}}/{{user.uid}}" method="post">
+                <fieldset>
+                    <div class="field has-addons">
+                        <p class="control">
+                            <span class="select is-small">
+                                <select name="role" required autocomplete="off">
+                                    <option {% if user.role == 1 %} selected {% endif %}>Pending</option>
+                                    <option {% if user.role == 2 %} selected {% endif %}>Deny</option>
+                                    <option {% if user.role == 3 %} selected {% endif %}>Accept</option>
+                                </select>
+                            </span>
+                        </p>
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-small">Save</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+            {% when None %}
+            <form id="role" action="/role/{{info.0}}/{{user.uid}}" method="post">
+                <fieldset>
+                    <div class="field has-addons">
+                        <p class="control">
+                            <span class="select is-small">
+                                <select name="role" required autocomplete="off">
+                                    <option {% if user.role == 255 %} selected {% endif %}>Admin</option>
+                                    <option {% if user.role == 10 %} selected {% endif %}>Normal</option>
+                                    <option {% if user.role == 0 %} selected {% endif %}>Banned</option>
+                                </select>
+                            </span>
+                        </p>
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-small">Save</button>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+            {% else %}
+            <span class="tag is-info">{{user.role}}</span>
+            {% endmatch %}
+        {% else %}
+        <span class="tag is-info">{{user.role}}</span>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+</div>
+
+<nav class="pagination">
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+        {% match filter %} {% when Some with (filter) %}
+        <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">Prev</a>
+        {% else %}
+        <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}">Prev</a>
+        {% endmatch %}
+    {% endif %}
+
+    {% if users.len() < n %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        {% match filter %} {% when Some with (filter) %}
+        <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">Prev</a>
+        {% else %}
+        <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+        {% endmatch %}
+    {% endif %}
+</nav>
+{% endblock %}

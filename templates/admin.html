@@ -1,0 +1,151 @@
+{% extends "layout.html" %} 
+
+{% block content %}
+<form  class="box" id="admin" action="/admin" method="POST">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="site_name">Sitename</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="site_name" value="{{ site_config.site_name|trim }}" placeholder="Sitename" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="description">Description</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="description" value="{{ site_config.description|trim }}" placeholder="Sitename" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="read_only">Read only</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <label class="radio"><input type="radio" name="read_only" value="true" {% if site_config.read_only %} checked {% endif %} autocomplete="off" /> True</label>
+                        <label class="radio"><input type="radio" name="read_only" value="false" {% if !site_config.read_only %} checked {% endif %} autocomplete="off" /> False</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="title_max_length">Title max length</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="65535" name="title_max_length" value="{{ site_config.title_max_length }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="article_max_length">Article max length</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="65535" name="article_max_length" value="{{ site_config.article_max_length }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="comment_max_length">Comment max length</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="65535" name="comment_max_length" value="{{ site_config.comment_max_length }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="solo_interval">Solo interval</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="65535" name="solo_interval" value="{{ site_config.post_interval }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="post_interval">Post interval</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="65535" name="post_interval" value="{{ site_config.post_interval }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="comment_interval">Comment interval</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="65535" name="comment_interval" value="{{ site_config.comment_interval }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="per_page">Per page</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="255" name="per_page" value="{{ site_config.per_page }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="admin" class="button is-link">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<div class="divider"></div>
+{% endblock %}

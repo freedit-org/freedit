@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<article class="media box">
+    <figure class="media-left">
+        <p class="image is-64x64">
+            <a href="/user/{{user.uid}}"><img class="image is-64x64" src="/static/avatars/{{user.uid}}.png"></a>
+        </p>
+        <p><small>role: {{user.role}}</small></p>
+        <p><small>uid: {{user.uid}}</small></p>
+    </figure>
+    <div class="media-content">
+        <div class="content">
+            <h3>{{user.username}}</h3>
+            <p><small>Created: {{user.created_at}}</small></p>
+            <p>Url: <a href="{{user.url}}">{{user.url}}</a></p>
+            <p>About: {{user.about}}</p>
+        </div>
+    </div>
+
+    {% match has_followed %} {% when Some with (true) %}
+    <div class="media-right">
+        <a href="/user/{{user.uid}}/follow"><button class="button is-small is-rounded">Unfollow</button></a>
+    </div>
+    {% when Some with (false) %}
+    <div class="media-right">
+        <a href="/user/{{user.uid}}/follow"><button class="button is-primary is-small is-rounded">Follow</button></a>
+    </div>
+    {% else %}
+    {% endmatch %}
+</article>
+
+<div class="box">
+    <nav class="level is-mobile">
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Solos</p>
+                <p class="title"><a href="/solo/user/{{user.uid}}">{{user_solos_count}}</a></p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Posts</p>
+                <p class="title"><a href="/inn/0?filter={{user.uid}}">{{user_posts_count}}</a></p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Comments</p>
+                <p class="title">{{user_comments_count}}</p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Following</p>
+                <p class="title"><a href="/user/list?filter=following&id={{user.uid}}">{{user_following_count}}</a></p>
+            </div>
+        </div>
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Followers</p>
+                <p class="title"><a href="/user/list?filter=followers&id={{user.uid}}">{{user_followers_count}}</a></p>
+            </div>
+        </div>
+    </nav>
+</div>
+<div class="divider"></div>
+
+{% endblock %}
