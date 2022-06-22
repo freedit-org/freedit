@@ -135,12 +135,23 @@
             <a href="/inn/{{iid}}"><img class="is-rounded" src="/static/inn_icons/{{iid}}.png"></a>
         </figure>
     </div>
-    <div class="level-item has-text-centered">
-        <div>
-            <p class="heading">Members</p>
-            <p class="title"><a href="/user/list?filter=inn&id={{iid}}">{{inn_users_count}}</a></p>
+    <br>
+    <nav class="level is-mobile">
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Members</p>
+                <p class="title"><a href="/user/list?filter=inn&id={{iid}}">{{inn_users_count}}</a></p>
+            </div>
         </div>
-    </div>
+        {% if is_mod %}
+        <div class="level-item has-text-centered">
+            <div>
+                <p class="heading">Mod</p>
+                <p class="title"><a href="/mod/{{iid}}">⚙️</a></p>
+            </div>
+        </div>
+        {% endif %}
+    </nav>
 </div>
 <div class="divider"></div>
 {% endif %}

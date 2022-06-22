@@ -536,7 +536,7 @@ pub(super) async fn notification(
         }
     }
 
-    let mut notifications = vec![];
+    let mut notifications = Vec::with_capacity(30);
     for (n, i) in tree.scan_prefix(&prefix).enumerate() {
         let (key, value) = i?;
         let mut iter = key.split(|num| *num == 35);
