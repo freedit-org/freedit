@@ -108,7 +108,7 @@
     {% endfor %}
 </div>
 
-<form id="comment" class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">
+<form id="comment_create" class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">
     <fieldset>
         <div class="field">
             <label class="label" for="comment">New comment</label>
@@ -120,7 +120,7 @@
             {% match page_data.claim %}
             {% when Some with (val) %}
                 {% if has_joined %}
-                <button type="submit" form="comment" class="button is-link is-rounded">Submit</button>
+                <button type="submit" form="comment_create" class="button is-link is-rounded">Submit</button>
                 {% else %}
                 <a href="/inn/{{post.iid}}/join" class="button is-primary is-rounded">Join to comment</a>
                 {% endif %}

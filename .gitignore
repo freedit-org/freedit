@@ -1,7 +1,9 @@
 /target
 /freedit.db
 /certs
-/avatars
-/inn_icons
+/static/avatars
+/static/inn_icons
+/static/inn
+/static/post
 .rustc_info.json
 .rustdoc_fingerprint.json

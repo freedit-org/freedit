@@ -1357,7 +1357,7 @@ pub(crate) struct FormComment {
     comment: String,
 }
 
-/// `POST /inn/:iid/:pid/` comment create
+/// `POST /post/:iid/:pid/` comment create
 pub(crate) async fn comment_post(
     Extension(db): Extension<Db>,
     cookie: Option<TypedHeader<Cookie>>,
