@@ -4,10 +4,10 @@ The safest and lightest forum, powered by rust.
 
 ## Features
 
-* Do not use javascript, to maximize safety. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
+* No javascript at all, for safety maximization. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
 * Use embedded database [sled](https://github.com/spacejam/sled), easy to deploy, high performance.
 * Powered by Rust, with code highlighting, markdown and latex support.
-* Sub communities like reddit.
+* Sub communities like reddit, multicentered; Personal space like twitter.
 
 ## Warnings
 Project is in very early stage, please do not use for production。
