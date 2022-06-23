@@ -14,11 +14,12 @@ Project is in very early stage, please do not use for production。
 
 ## Usage
 
-Prequest: install [Rust](https://www.rust-lang.org/tools/install)
+Prerequisition: install [Rust](https://www.rust-lang.org/tools/install)
 
 ```bash
 git clone https://github.com/freedit-org/freedit
 cd freedit && cargo build -r
+./target/release/freedit
 ```
 
 ## Documentation
