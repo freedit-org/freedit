@@ -1,4 +1,5 @@
 // #![warn(clippy::unwrap_used)]
+#![doc = include_str!("../README.md")]
 
 mod app_router;
 mod config;
