@@ -97,6 +97,7 @@
 //! | "comment_upvotes"     | `pid#cid#uid`        | `&[]`       |
 
 use bincode::{Decode, Encode};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use tokio::{fs, signal};
 use validator::Validate;
@@ -219,7 +220,6 @@ use comrak::{
 };
 use data_encoding::HEXLOWER;
 use http_body::Body;
-use lazy_static::lazy_static;
 use nanoid::nanoid;
 use ring::digest::{Context, Digest, SHA256};
 use serde::de::DeserializeOwned;
@@ -238,35 +238,33 @@ pub(super) mod inn;
 pub(super) mod solo;
 pub(super) mod user;
 
-lazy_static! {
-    /// Returns SHA256 of the current running executable.
-    /// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
-    pub(super) static ref CURRENT_SHA256: String = {
-        let file = env::current_exe().unwrap();
-        let input = File::open(file).unwrap();
+/// Returns SHA256 of the current running executable.
+/// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
+pub(super) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
+    let file = env::current_exe().unwrap();
+    let input = File::open(file).unwrap();
 
-        fn sha256_digest<R: Read>(mut reader: R) -> Digest {
-            let mut context = Context::new(&SHA256);
-            let mut buffer = [0; 1024];
+    fn sha256_digest<R: Read>(mut reader: R) -> Digest {
+        let mut context = Context::new(&SHA256);
+        let mut buffer = [0; 1024];
 
-            loop {
-                let count = reader.read(&mut buffer).unwrap();
-                if count == 0 {
-                    break;
-                }
-                context.update(&buffer[..count]);
+        loop {
+            let count = reader.read(&mut buffer).unwrap();
+            if count == 0 {
+                break;
             }
-            context.finish()
+            context.update(&buffer[..count]);
         }
+        context.finish()
+    }
 
-        let reader = BufReader::new(input);
-        let digest = sha256_digest(reader);
+    let reader = BufReader::new(input);
+    let digest = sha256_digest(reader);
 
-        HEXLOWER.encode(digest.as_ref())
-    };
+    HEXLOWER.encode(digest.as_ref())
+});
 
-    static ref SEP: IVec = IVec::from("#");
-}
+static SEP: Lazy<IVec> = Lazy::new(|| IVec::from("#"));
 
 fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
     match t.render() {
@@ -692,20 +690,17 @@ fn u8_slice_to_u64(bytes: &[u8]) -> u64 {
     u64::from_be_bytes(bytes.try_into().unwrap())
 }
 
-lazy_static! {
-    static ref MD_OPTION: ComrakOptions = {
-        let mut options = ComrakOptions::default();
-        options.extension.strikethrough = true;
-        options.extension.tagfilter = true;
-        options.extension.table = true;
-        options.extension.autolink = true;
-        options.extension.tasklist = true;
-        options.extension.superscript = true;
-        options.render.hardbreaks = true;
-        options
-    };
-}
-
+static MD_OPTION: Lazy<ComrakOptions> = Lazy::new(|| {
+    let mut options = ComrakOptions::default();
+    options.extension.strikethrough = true;
+    options.extension.tagfilter = true;
+    options.extension.table = true;
+    options.extension.autolink = true;
+    options.extension.tasklist = true;
+    options.extension.superscript = true;
+    options.render.hardbreaks = true;
+    options
+});
 /// convert latex and markdown to html
 fn md2html(input: &str) -> Result<String, AppError> {
     let mut plugins = ComrakPlugins::default();

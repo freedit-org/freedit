@@ -1,12 +1,10 @@
 use axum_server::tls_rustls::RustlsConfig;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::fs::read_to_string;
 use tracing::error;
 
-lazy_static! {
-    pub(crate) static ref CONFIG: Config = Config::load_config();
-}
+pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
 
 #[derive(Deserialize)]
 pub(crate) struct Config {
