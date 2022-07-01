@@ -183,7 +183,7 @@ fn get_all_solos(
     for i in iter {
         // kv_pair: sid = uid#visibility
         let (k, v) = i?;
-        let mut value = v.split(|num| *num == 35);
+        let mut value = v.splitn(2, |num| *num == 35);
         let solo_uid = u8_slice_to_u64(value.next().unwrap());
         let visibility = u8_slice_to_u64(value.next().unwrap());
         if can_visit_solo(visibility, followers, solo_uid, current_uid) {
@@ -215,7 +215,7 @@ fn get_solos_by_uids(
         // kv_pair: uid#idx = sid#visibility
         for i in db.open_tree("user_solos_idx")?.scan_prefix(prefix) {
             let (_, v) = i?;
-            let mut value = v.split(|num| *num == 35);
+            let mut value = v.splitn(2, |num| *num == 35);
             let sid = u8_slice_to_u64(value.next().unwrap());
             let visibility = u8_slice_to_u64(value.next().unwrap());
             if can_visit_solo(visibility, followers, *uid, current_uid) {

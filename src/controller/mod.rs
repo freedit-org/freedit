@@ -537,7 +537,7 @@ pub(super) async fn notification(
     let mut notifications = Vec::with_capacity(30);
     for (n, i) in tree.scan_prefix(&prefix).enumerate() {
         let (key, value) = i?;
-        let mut iter = key.split(|num| *num == 35);
+        let mut iter = key.splitn(3, |num| *num == 35);
         let pid = if let Some(num) = iter.nth(1) {
             u8_slice_to_u64(num)
         } else {
@@ -888,7 +888,7 @@ fn get_ids_by_prefix(
                 break;
             }
             let (k, _) = i?;
-            let uid = k.split(|num| *num == 35).nth(1);
+            let uid = k.splitn(2, |num| *num == 35).nth(1);
             if let Some(uid) = uid {
                 res.push(u8_slice_to_u64(uid));
             }
@@ -896,7 +896,7 @@ fn get_ids_by_prefix(
     } else {
         for i in iter {
             let (k, _) = i?;
-            let uid = k.split(|num| *num == 35).nth(1);
+            let uid = k.splitn(2, |num| *num == 35).nth(1);
             if let Some(uid) = uid {
                 res.push(u8_slice_to_u64(uid));
             }
@@ -935,7 +935,7 @@ fn get_inn_status_by_prefix(
                 break;
             }
             let (k, v) = i?;
-            let uid = k.split(|num| *num == 35).nth(1);
+            let uid = k.splitn(2, |num| *num == 35).nth(1);
             if let Some(uid) = uid {
                 res.push(u8_slice_to_u64(uid));
                 status.push(v[0]);
@@ -944,7 +944,7 @@ fn get_inn_status_by_prefix(
     } else {
         for i in iter {
             let (k, v) = i?;
-            let uid = k.split(|num| *num == 35).nth(1);
+            let uid = k.splitn(2, |num| *num == 35).nth(1);
             if let Some(uid) = uid {
                 res.push(u8_slice_to_u64(uid));
                 status.push(v[0]);

@@ -104,7 +104,7 @@ pub(crate) async fn admin_view(
                         ones.push(format!("{}: {}", key, json));
                     }
                     "post_comments" => {
-                        let mut iter = k.split(|num| *num == 35);
+                        let mut iter = k.splitn(2, |num| *num == 35);
                         let pid = u8_slice_to_u64(iter.next().unwrap());
                         let cid = u8_slice_to_u64(iter.next().unwrap());
                         let (one, _): (Comment, usize) =
@@ -114,24 +114,24 @@ pub(crate) async fn admin_view(
                         ones.push(format!("pid: {}, cid: {}, comment: {}", pid, cid, json));
                     }
                     "comment_upvotes" => {
-                        let mut iter = k.split(|num| *num == 35);
+                        let mut iter = k.splitn(3, |num| *num == 35);
                         let pid = u8_slice_to_u64(iter.next().unwrap());
                         let cid = u8_slice_to_u64(iter.next().unwrap());
                         let uid = u8_slice_to_u64(iter.next().unwrap());
                         ones.push(format!("pid: {}, cid: {}, uid: {}", pid, cid, uid));
                     }
                     "inn_posts_idx" => {
-                        let mut iter = k.split(|num| *num == 35);
+                        let mut iter = k.splitn(2, |num| *num == 35);
                         let id = u8_slice_to_u64(iter.next().unwrap());
                         let idx = u8_slice_to_u64(iter.next().unwrap());
                         let v = ivec_to_u64(&v);
                         ones.push(format!("id: {}, idx: {}, target: {}", id, idx, v));
                     }
                     "user_solos_idx" => {
-                        let mut iter = k.split(|num| *num == 35);
+                        let mut iter = k.splitn(2, |num| *num == 35);
                         let uid = u8_slice_to_u64(iter.next().unwrap());
                         let idx = u8_slice_to_u64(iter.next().unwrap());
-                        let mut iter = v.split(|num| *num == 35);
+                        let mut iter = v.splitn(2, |num| *num == 35);
                         let sid = u8_slice_to_u64(iter.next().unwrap());
                         let visibility = u8_slice_to_u64(iter.next().unwrap());
                         ones.push(format!(
@@ -149,14 +149,14 @@ pub(crate) async fn admin_view(
                         ones.push(format!("id: {}, count: {}", id, count));
                     }
                     "hashtags" | "topics" | "tags" => {
-                        let mut iter = k.split(|num| *num == 35);
+                        let mut iter = k.splitn(2, |num| *num == 35);
                         let str = String::from_utf8_lossy(iter.next().unwrap());
                         let id = u8_slice_to_u64(iter.next().unwrap());
                         ones.push(format!("{}#{}", str, id));
                     }
                     "user_following" | "user_followers" | "mod_inns" | "user_inns"
                     | "inn_users" => {
-                        let mut iter = k.split(|num| *num == 35);
+                        let mut iter = k.splitn(2, |num| *num == 35);
                         let id1 = u8_slice_to_u64(iter.next().unwrap());
                         let id2 = u8_slice_to_u64(iter.next().unwrap());
                         ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
