@@ -14,6 +14,14 @@ Project is in very early stage, please do not use for production。
 
 ## Usage
 
+### From binary
+
+1. Download freedit binary from [releases](https://github.com/freedit-org/freedit/releases)
+2. unzip freedit.zip
+3. create a config file named `config.toml`, [example](https://github.com/freedit-org/freedit/blob/main/config.toml)
+
+### From source code
+
 Prerequisition: install [Rust](https://www.rust-lang.org/tools/install)
 
 ```bash
