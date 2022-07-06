@@ -9,7 +9,7 @@ use crate::{
         },
         notification, serve_dir,
         solo::{solo, solo_post},
-        upload_pic_post,
+        static_handler, upload_pic_post,
         user::{
             role_post, signin, signin_post, signout, signup, signup_post, user, user_follow,
             user_list, user_password_post, user_setting, user_setting_post,
@@ -65,6 +65,7 @@ pub(super) async fn router(db: Db) -> Router {
         // .route("/solo/hashtag/:hashtag", get(hashtag))
         .layer(Extension(db))
         .route("/health_check", get(health_check))
+        .route("/css/*file", static_handler.into_service())
         .nest("/static", serve_dir("static").await);
 
     for (path, dir, _) in &CONFIG.serve_dir {

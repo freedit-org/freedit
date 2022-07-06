@@ -98,6 +98,7 @@
 
 use bincode::{Decode, Encode};
 use once_cell::sync::Lazy;
+use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 use tokio::{fs, signal};
 use validator::Validate;
@@ -206,10 +207,10 @@ use crate::{config::CONFIG, error::AppError, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
-    body::{self, BoxBody, Empty, Full},
+    body::{self, boxed, BoxBody, Empty, Full},
     extract::{ContentLengthLimit, Form, FromRequest, Multipart, Query, RequestParts},
     headers::Cookie,
-    http::StatusCode,
+    http::{header, StatusCode, Uri},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get_service, MethodRouter},
     BoxError, Extension, TypedHeader,
@@ -380,6 +381,43 @@ pub(super) async fn handler_404() -> impl IntoResponse {
     );
     let body = Html(html);
     (StatusCode::NOT_FOUND, body)
+}
+
+#[derive(RustEmbed)]
+#[folder = "css/"]
+struct Css;
+
+pub(crate) struct StaticFile<T>(pub T);
+
+impl<T> IntoResponse for StaticFile<T>
+where
+    T: Into<String>,
+{
+    fn into_response(self) -> Response {
+        let path = self.0.into();
+        match Css::get(path.as_str()) {
+            Some(content) => {
+                let body = boxed(Full::from(content.data));
+                Response::builder()
+                    .header(header::CONTENT_TYPE, "css")
+                    .body(body)
+                    .unwrap()
+            }
+            None => Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(boxed(Full::from("404")))
+                .unwrap(),
+        }
+    }
+}
+
+pub(super) async fn static_handler(uri: Uri) -> impl IntoResponse {
+    let mut path = uri.path().trim_start_matches('/').to_string();
+    if path.starts_with("css/") {
+        path = path.replace("css/", "");
+    }
+
+    StaticFile(path)
 }
 
 pub(super) async fn shutdown_signal() {

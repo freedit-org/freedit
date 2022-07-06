@@ -18,6 +18,7 @@ latex2mathml = "0.2.3"
 nanoid = "0.4.0"
 once_cell = "*"
 ring = { version = "0.16.20", default-features = false }
+rust-embed = "6.4.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sled = { version = "0.34.7", features = ["compression"] }
