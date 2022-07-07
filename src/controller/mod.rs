@@ -399,7 +399,7 @@ where
             Some(content) => {
                 let body = boxed(Full::from(content.data));
                 Response::builder()
-                    .header(header::CONTENT_TYPE, "css")
+                    .header(header::CONTENT_TYPE, "text/css")
                     .body(body)
                     .unwrap()
             }
