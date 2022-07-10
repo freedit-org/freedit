@@ -46,6 +46,8 @@
 //! | "solos"            | `sid`         | [`Solo`]         |
 //! | "user_solos_count" | `uid`         | N                |
 //! | "user_solos_idx"   | `uid#idx`     | `sid#visibility` |
+//! | "user_solos_like"  | `uid#sid`     | `&[]`            |
+//! | "solo_users_like"  | `sid#uid`     | `&[]`            |
 //! | "solo_timeline"    | `sid`         | `uid#visibility` |
 //! | "hashtags"         | `hashtag#sid` | `&[]`            |
 //!

@@ -1,7 +1,8 @@
 use super::{
-    extract_element, get_ids_by_prefix, get_one, get_range, get_site_config, has_unread, incr_id,
-    into_response, ivec_to_u64, md2html, set_index, timestamp_to_date, u64_to_ivec,
-    u8_slice_to_u64, Claim, IterType, PageData, ParamsPage, Solo, User, ValidatedForm, SEP,
+    extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
+    has_unread, incr_id, into_response, ivec_to_u64, md2html, set_index, timestamp_to_date,
+    u64_to_ivec, u8_slice_to_u64, Claim, IterType, PageData, ParamsPage, Solo, User, ValidatedForm,
+    SEP,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -16,6 +17,7 @@ use sled::Db;
 use time::OffsetDateTime;
 use validator::Validate;
 
+/// Form data: `/solo/user/:uid` solo create.
 #[derive(Deserialize, Validate)]
 pub(crate) struct SoloForm {
     #[validate(length(min = 1, max = 1000))]
@@ -23,6 +25,7 @@ pub(crate) struct SoloForm {
     visibility: String,
 }
 
+/// Page data: `solo.html`
 #[derive(Template)]
 #[template(path = "solo.html", escape = "none")]
 struct SoloPage<'a> {
@@ -37,12 +40,17 @@ struct SoloPage<'a> {
     filter: Option<String>,
     tag: Option<String>,
 }
+
+/// Vec data: solo
 struct SoloOut {
     uid: u64,
+    sid: u64,
     username: String,
     content: String,
     created_at: String,
     visibility: u64,
+    like: bool,
+    like_count: usize,
 }
 
 fn can_visit_solo(visibility: u64, followers: &[u64], solo_uid: u64, current_uid: u64) -> bool {
@@ -51,6 +59,7 @@ fn can_visit_solo(visibility: u64, followers: &[u64], solo_uid: u64, current_uid
         || (visibility == 20 && solo_uid == current_uid)
 }
 
+/// url params: `solo.html`
 #[derive(Deserialize)]
 pub(crate) struct SoloParams {
     anchor: Option<usize>,
@@ -59,7 +68,7 @@ pub(crate) struct SoloParams {
     tag: Option<String>,
 }
 
-/// `GET /solo/:uid` solo page
+/// `GET /solo/user/:uid` solo page
 pub(crate) async fn solo(
     Extension(db): Extension<Db>,
     cookie: Option<TypedHeader<Cookie>>,
@@ -119,12 +128,26 @@ pub(crate) async fn solo(
             let user: User = get_one(&db, "users", solo.uid)?;
             let date = timestamp_to_date(solo.created_at)?;
 
+            let mut like = false;
+            if let Some(ref claim) = claim {
+                let k = [&u64_to_ivec(sid), &SEP, &u64_to_ivec(claim.uid)].concat();
+                if db.open_tree("solo_users_like")?.contains_key(&k)? {
+                    like = true;
+                }
+            }
+
+            let like_count =
+                get_count_by_prefix(&db, "solo_users_like", &u64_to_ivec(sid)).unwrap_or_default();
+
             let solo_out = SoloOut {
                 uid: solo.uid,
+                sid: solo.sid,
                 username: user.username,
                 content: solo.content,
                 created_at: date,
                 visibility: solo.visibility,
+                like,
+                like_count,
             };
 
             solo_outs.push(solo_out);
@@ -231,7 +254,7 @@ fn get_solos_by_uids(
     Ok(sids)
 }
 
-/// `POST /solo/:uid` solo page
+/// `POST /solo/user/:uid` solo page
 pub(crate) async fn solo_post(
     Extension(db): Extension<Db>,
     ValidatedForm(input): ValidatedForm<SoloForm>,
@@ -295,5 +318,37 @@ pub(crate) async fn solo_post(
     db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
 
     let target = format!("/solo/user/{}", uid);
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /solo/:sid/like` solo like
+pub(crate) async fn solo_like(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(sid): Path<u64>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let solo: Solo = get_one(&db, "solos", sid)?;
+
+    let user_solos_like_k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(sid)].concat();
+    let solo_users_like_k = [&u64_to_ivec(sid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let user_solos_like_tree = db.open_tree("user_solos_like")?;
+    let solo_users_like_tree = db.open_tree("solo_users_like")?;
+
+    match solo_users_like_tree.get(&solo_users_like_k)? {
+        None => {
+            user_solos_like_tree.insert(&user_solos_like_k, &[])?;
+            solo_users_like_tree.insert(&solo_users_like_k, &[])?;
+        }
+        Some(_) => {
+            user_solos_like_tree.remove(&user_solos_like_k)?;
+            solo_users_like_tree.remove(&solo_users_like_k)?;
+        }
+    }
+
+    let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))
 }

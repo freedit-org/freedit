@@ -2,6 +2,8 @@
 
 The safest and lightest forum, powered by rust.
 
+GitHub: <https://github.com/freedit-org/freedit>
+
 ## Features
 
 * No javascript at all, for safety maximization. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
@@ -37,7 +39,5 @@ cd freedit && cargo build -r
 
 * generate local documentation:
 ```bash
-git clone https://github.com/freedit-org/freedit.git
-git clone https://github.com/freedit-org/doc.git
-cd freedit && cargo doc --target-dir ../doc --no-deps
+cargo doc --target-dir ../doc --no-deps --open
 ```
