@@ -1,10 +1,8 @@
 use axum_server::tls_rustls::RustlsConfig;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{read_to_string, File},
-    io::Write,
-};
+use std::fs::{read_to_string, File};
+use std::io::Write;
 use tracing::{error, log::warn};
 
 pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
@@ -39,13 +37,12 @@ impl Config {
     }
 
     pub(crate) async fn tls_config(&self) -> Option<RustlsConfig> {
-        let mut res = None;
         if let Ok(rustls_config) = RustlsConfig::from_pem_file(&CONFIG.cert, &CONFIG.key).await {
-            res = Some(rustls_config)
+            Some(rustls_config)
         } else {
-            error!("enable https failed, please check config.toml cert and key")
+            error!("enable https failed, please check config toml cert and key");
+            None
         }
-        res
     }
 }
 
