@@ -476,7 +476,7 @@ pub(crate) async fn edit_post_post(
         }
 
         for tag in tags.iter() {
-            let k = [tag.as_bytes(), &SEP, &u64_to_ivec(old_pid)].concat();
+            let k = [tag.as_bytes(), &SEP, &pid_ivec].concat();
             batch.insert(k, &[]);
         }
         db.open_tree("tags")?.apply_batch(batch)?;
