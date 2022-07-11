@@ -293,15 +293,15 @@ pub(crate) async fn inn_list(
         inns = get_batch(&db, "default", "inns_count", "inns", &page_params)?;
     }
 
-    let mut inn_outs = Vec::with_capacity(inns.len());
+    let mut outs_inns = Vec::with_capacity(inns.len());
     for i in inns {
-        let inn_out = OutInnList {
+        let out_inn = OutInnList {
             iid: i.iid,
             inn_name: i.inn_name,
             about: i.about,
             topics: i.topics,
         };
-        inn_outs.push(inn_out);
+        outs_inns.push(out_inn);
     }
 
     let filter = if claim.is_none() { None } else { params.filter };
@@ -313,7 +313,7 @@ pub(crate) async fn inn_list(
     let page_data = PageData::new("inns", &site_config.site_name, claim, has_unread);
     let page_inn_list = PageInnList {
         page_data,
-        inns: inn_outs,
+        inns: outs_inns,
         anchor,
         n,
         is_desc,
@@ -333,21 +333,21 @@ pub(crate) async fn inn_list(
 
 //     let inns: Vec<Inn> = get_batch(db, "default", "inns_count", "inns", &page_params)?;
 
-//     let mut inn_outs = Vec::with_capacity(inns.len());
+//     let mut outs_inns = Vec::with_capacity(inns.len());
 //     for i in inns {
-//         let inn_out = InnOut {
+//         let out_inn = InnOut {
 //             iid: i.iid,
 //             inn_name: i.inn_name,
 //             about: i.about,
 //             topics: i.topics,
 //         };
-//         inn_outs.push(inn_out);
+//         outs_inns.push(out_inn);
 //     }
 
 //     let page_data = PageData::new("inns", &site_config.site_name, None, false);
 //     let inns_page = InnsPage {
 //         page_data,
-//         inns: inn_outs,
+//         inns: outs_inns,
 //         anchor,
 //         n,
 //         is_desc,
@@ -582,12 +582,12 @@ pub(crate) async fn tag(
     let page_params = ParamsPage { anchor, n, is_desc };
 
     let index = get_ids_by_prefix(&db, "tags", &tag, Some(&page_params))?;
-    let post_list_outs = get_out_post_list(&db, &index)?;
+    let out_post_lists = get_out_post_list(&db, &index)?;
 
     let page_data = PageData::new("inn", &site_config.site_name, claim, false);
     let page_tag = PageTag {
         page_data,
-        posts: post_list_outs,
+        posts: out_post_lists,
         anchor,
         n,
         is_desc,
@@ -685,7 +685,7 @@ pub(crate) async fn inn(
         }
     }
 
-    let post_list_outs = get_out_post_list(&db, &index)?;
+    let out_post_lists = get_out_post_list(&db, &index)?;
     let mut inn_status = 0;
     if let Some(ref claim) = claim {
         if iid > 0 {
@@ -710,15 +710,15 @@ pub(crate) async fn inn(
         false
     };
     let page_data = PageData::new("inn", &site_config.site_name, claim, has_unread);
-    let inn_name = if iid > 0 && !post_list_outs.is_empty() {
-        &post_list_outs[0].inn_name
+    let inn_name = if iid > 0 && !out_post_lists.is_empty() {
+        &out_post_lists[0].inn_name
     } else {
         "No Post"
     };
     let page_inn = PageInn {
         page_data,
         inn_name: inn_name.to_string(),
-        posts: post_list_outs,
+        posts: out_post_lists,
         anchor,
         iid,
         n,
@@ -756,12 +756,12 @@ async fn render_post_list(
     page_data: &PageData<'_>,
     is_user: bool,
 ) -> Result<(), AppError> {
-    let post_list_outs = get_out_post_list(db, pids)?;
+    let out_post_lists = get_out_post_list(db, pids)?;
     let name = if is_user {
         let user: User = get_one(db, "users", id)?;
         user.username
-    } else if id > 0 && !post_list_outs.is_empty() {
-        post_list_outs[0].inn_name.clone()
+    } else if id > 0 && !out_post_lists.is_empty() {
+        out_post_lists[0].inn_name.clone()
     } else {
         "No Post".to_owned()
     };
@@ -770,7 +770,7 @@ async fn render_post_list(
         page_data,
         id,
         name,
-        posts: post_list_outs,
+        posts: out_post_lists,
         page,
         is_last,
         is_user,
@@ -1169,7 +1169,7 @@ pub(crate) async fn post(
         }
     }
 
-    let post_out = OutPost {
+    let out_post = OutPost {
         pid: post.pid,
         uid: post.uid,
         username: user.username,
@@ -1188,7 +1188,7 @@ pub(crate) async fn post(
     let is_desc = params.is_desc.unwrap_or(false);
     let page_params = ParamsPage { anchor, n, is_desc };
 
-    let mut comment_outs = Vec::with_capacity(n);
+    let mut out_comments = Vec::with_capacity(n);
     let count = get_count(&db, "post_comments_count", u64_to_ivec(pid))?;
     if count > 0 {
         let (start, end) = get_range(count, &page_params);
@@ -1220,7 +1220,7 @@ pub(crate) async fn post(
                 let upvotes =
                     get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
 
-                let comment_out = OutComment {
+                let out_comment = OutComment {
                     cid: comment.cid,
                     uid: comment.uid,
                     username: user.username,
@@ -1229,11 +1229,11 @@ pub(crate) async fn post(
                     upvotes,
                     is_upvoted,
                 };
-                comment_outs.push(comment_out);
+                out_comments.push(out_comment);
             }
         }
         if is_desc {
-            comment_outs.reverse();
+            out_comments.reverse();
         }
     }
 
@@ -1246,8 +1246,8 @@ pub(crate) async fn post(
     let page_data = PageData::new("post", &site_config.site_name, claim, has_unread);
     let page_post = PagePost {
         page_data,
-        post: post_out,
-        comments: comment_outs,
+        post: out_post,
+        comments: out_comments,
         pageview,
         anchor,
         n,
@@ -1268,7 +1268,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let inn: Inn = get_one(db, "inns", post.iid)?;
     let upvotes = get_count_by_prefix(db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
 
-    let post_out = OutPost {
+    let out_post = OutPost {
         pid: post.pid,
         uid: post.uid,
         username: user.username,
@@ -1286,7 +1286,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let anchor = 0;
     let is_desc = true;
 
-    let mut comment_outs = Vec::with_capacity(n);
+    let mut out_comments = Vec::with_capacity(n);
     let count = get_count(db, "post_comments_count", &pid_ivec)?;
     if count > 0 {
         let post_comments_tree = db.open_tree("post_comments")?;
@@ -1302,7 +1302,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
                 let upvotes =
                     get_count_by_prefix(db, "comment_upvotes", &prefix).unwrap_or_default();
 
-                let comment_out = OutComment {
+                let out_comment = OutComment {
                     cid: comment.cid,
                     uid: comment.uid,
                     username: user.username,
@@ -1311,7 +1311,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
                     upvotes,
                     is_upvoted: false,
                 };
-                comment_outs.push(comment_out);
+                out_comments.push(out_comment);
             }
         }
     }
@@ -1324,8 +1324,8 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let page_data = PageData::new("post", &site_config.site_name, None, false);
     let page_post = PagePost {
         page_data,
-        post: post_out,
-        comments: comment_outs,
+        post: out_post,
+        comments: out_comments,
         pageview,
         anchor,
         n,

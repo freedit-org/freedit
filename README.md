@@ -11,9 +11,6 @@ GitHub: <https://github.com/freedit-org/freedit>
 * Powered by Rust, with code highlighting, markdown and latex support.
 * Sub communities like reddit, multicentered; Personal space like twitter.
 
-## Warnings
-Project is in very early stage, please do not use for production。
-
 ## Usage
 
 ### From binary

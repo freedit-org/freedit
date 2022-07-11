@@ -17,7 +17,7 @@
         <div class="level-left">
             <div class="tabs is-small is-toggle is-toggle-rounded">
                 <ul>
-                {% match tag %} {% when Some with (val) %}
+                {% match hashtag %} {% when Some with (val) %}
                     <li><a href="/solo/user/0">All</a></li>
                     {% if page_data.claim.is_some() %}
                     <li><a href="/solo/user/0?filter=is_following">Following</a></li>
@@ -140,6 +140,7 @@
                         </svg>                                
                     </span>
                 </a>
+                {% match page_data.claim %} {% when Some with (claim) %}
                 <a class="level-item">
                     <span class="icon is-small">
                         <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -150,6 +151,7 @@
                         </svg>
                     </span>
                 </a>
+                {% else %}{% endmatch %}
             </div>
         </nav>
     </div>
@@ -178,8 +180,8 @@
         {% match filter.as_deref() %} {% when Some with (val) %}
             <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
         {% else %}
-            {% match tag.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&tag={{val}}">Prev</a>
+            {% match hashtag.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&hashtag={{val}}">Prev</a>
             {% else %}
             <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
             {% endmatch %}
@@ -192,7 +194,7 @@
         {% match filter.as_deref() %} {% when Some with (val) %}
             <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
         {% else %}
-            {% match tag.as_deref() %} {% when Some with (val) %}
+            {% match hashtag.as_deref() %} {% when Some with (val) %}
             <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&tag={{val}}">Next</a>
             {% else %}
             <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>

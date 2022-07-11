@@ -19,7 +19,7 @@ use validator::Validate;
 
 /// Form data: `/solo/user/:uid` solo create.
 #[derive(Deserialize, Validate)]
-pub(crate) struct SoloForm {
+pub(crate) struct FormSolo {
     #[validate(length(min = 1, max = 1000))]
     content: String,
     visibility: String,
@@ -28,9 +28,9 @@ pub(crate) struct SoloForm {
 /// Page data: `solo.html`
 #[derive(Template)]
 #[template(path = "solo.html", escape = "none")]
-struct SoloPage<'a> {
+struct PageSolo<'a> {
     page_data: PageData<'a>,
-    solos: Vec<SoloOut>,
+    solos: Vec<OutSolo>,
     uid: u64,
     username: String,
     anchor: usize,
@@ -38,11 +38,11 @@ struct SoloPage<'a> {
     is_desc: bool,
     is_following: bool,
     filter: Option<String>,
-    tag: Option<String>,
+    hashtag: Option<String>,
 }
 
 /// Vec data: solo
-struct SoloOut {
+struct OutSolo {
     uid: u64,
     sid: u64,
     username: String,
@@ -61,11 +61,11 @@ fn can_visit_solo(visibility: u64, followers: &[u64], solo_uid: u64, current_uid
 
 /// url params: `solo.html`
 #[derive(Deserialize)]
-pub(crate) struct SoloParams {
+pub(crate) struct ParamsSolo {
     anchor: Option<usize>,
     is_desc: Option<bool>,
     filter: Option<String>,
-    tag: Option<String>,
+    hashtag: Option<String>,
 }
 
 /// `GET /solo/user/:uid` solo page
@@ -73,7 +73,7 @@ pub(crate) async fn solo(
     Extension(db): Extension<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u64>,
-    Query(params): Query<SoloParams>,
+    Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
@@ -111,7 +111,7 @@ pub(crate) async fn solo(
             }
         }
         _ => {
-            if let Some(ref hashtag) = params.tag {
+            if let Some(ref hashtag) = params.hashtag {
                 index = get_ids_by_prefix(&db, "hashtags", hashtag, Some(&page_params))?;
             } else if uid == 0 {
                 index = get_all_solos(&db, "solo_timeline", &followers, current_uid, &page_params)?
@@ -121,7 +121,7 @@ pub(crate) async fn solo(
         }
     }
 
-    let mut solo_outs = Vec::with_capacity(index.len());
+    let mut out_solos = Vec::with_capacity(index.len());
     if !index.is_empty() {
         for sid in index {
             let solo: Solo = get_one(&db, "solos", sid)?;
@@ -139,7 +139,7 @@ pub(crate) async fn solo(
             let like_count =
                 get_count_by_prefix(&db, "solo_users_like", &u64_to_ivec(sid)).unwrap_or_default();
 
-            let solo_out = SoloOut {
+            let out_solo = OutSolo {
                 uid: solo.uid,
                 sid: solo.sid,
                 username: user.username,
@@ -150,7 +150,7 @@ pub(crate) async fn solo(
                 like_count,
             };
 
-            solo_outs.push(solo_out);
+            out_solos.push(out_solo);
         }
     }
 
@@ -170,9 +170,9 @@ pub(crate) async fn solo(
     };
     let page_data = PageData::new("Solo", &site_config.site_name, claim, has_unread);
 
-    let solo_page = SoloPage {
+    let page_solo = PageSolo {
         page_data,
-        solos: solo_outs,
+        solos: out_solos,
         uid,
         username,
         anchor,
@@ -180,9 +180,9 @@ pub(crate) async fn solo(
         is_desc,
         is_following,
         filter,
-        tag: params.tag,
+        hashtag: params.hashtag,
     };
-    Ok(into_response(&solo_page, "html"))
+    Ok(into_response(&page_solo, "html"))
 
     // TODO: solo Delete
 }
@@ -257,7 +257,7 @@ fn get_solos_by_uids(
 /// `POST /solo/user/:uid` solo page
 pub(crate) async fn solo_post(
     Extension(db): Extension<Db>,
-    ValidatedForm(input): ValidatedForm<SoloForm>,
+    ValidatedForm(input): ValidatedForm<FormSolo>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -290,7 +290,7 @@ pub(crate) async fn solo_post(
             }
         }
         for tag in &hashtags {
-            let tag_link = format!("[{}](/solo/user/0?tag={})", tag, tag);
+            let tag_link = format!("[{}](/solo/user/0?hashtag={})", tag, tag);
             content = content.replace(tag, &tag_link);
         }
     }
