@@ -1,21 +1,23 @@
 use axum_server::tls_rustls::RustlsConfig;
 use once_cell::sync::Lazy;
-use serde::Deserialize;
-use std::fs::read_to_string;
-use tracing::error;
+use serde::{Deserialize, Serialize};
+use std::{
+    fs::{read_to_string, File},
+    io::Write,
+};
+use tracing::{error, log::warn};
 
 pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub(crate) struct Config {
     pub(crate) db: String,
     pub(crate) addr: String,
     pub(crate) avatars_path: String,
     pub(crate) inn_icons_path: String,
     pub(crate) serve_dir: Vec<(String, String, String)>,
-    https: bool,
-    tls_cert: Option<String>,
-    tls_key: Option<String>,
+    cert: String,
+    key: String,
 }
 
 impl Config {
@@ -23,23 +25,44 @@ impl Config {
         let cfg_file = std::env::args()
             .nth(1)
             .unwrap_or_else(|| "config.toml".to_owned());
-        let config_toml_content = read_to_string(cfg_file).expect("Failed to read config.toml");
-        let config: Config = toml::from_str(&config_toml_content).unwrap();
-        config
+        if let Ok(config_toml_content) = read_to_string(cfg_file) {
+            let config: Config = toml::from_str(&config_toml_content).unwrap();
+            config
+        } else {
+            warn!("Config file not found, using default config.toml");
+            let config = Config::default();
+            let toml = toml::to_string_pretty(&config).unwrap();
+            let mut cfg_file = File::create("config.toml").unwrap();
+            cfg_file.write_all(toml.as_bytes()).unwrap();
+            config
+        }
     }
 
     pub(crate) async fn tls_config(&self) -> Option<RustlsConfig> {
         let mut res = None;
-        if self.https {
-            if let (Some(cert), Some(key)) = (&self.tls_cert, &self.tls_key) {
-                match RustlsConfig::from_pem_file(&cert, &key).await {
-                    Ok(rustls_config) => res = Some(rustls_config),
-                    Err(e) => error!("enable https failed: {}", e),
-                }
-            } else {
-                error!("enable https failed: no tls cert or key is provided");
-            }
+        if let Ok(rustls_config) = RustlsConfig::from_pem_file(&CONFIG.cert, &CONFIG.key).await {
+            res = Some(rustls_config)
+        } else {
+            error!("enable https failed, please check config.toml cert and key")
         }
         res
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            db: "freedit.db".into(),
+            addr: "127.0.0.1:3001".into(),
+            avatars_path: "./static/avatars".into(),
+            inn_icons_path: "./static/inn_icons".into(),
+            serve_dir: vec![(
+                "doc".into(),
+                "../doc".into(),
+                "/doc/doc/freedit/index.html".into(),
+            )],
+            cert: "".into(),
+            key: "".into(),
+        }
     }
 }

@@ -20,8 +20,7 @@ Project is in very early stage, please do not use for production。
 
 1. Download freedit binary from [releases](https://github.com/freedit-org/freedit/releases)
 2. unzip freedit.zip
-3. create a config file named `config.toml`, [example](https://github.com/freedit-org/freedit/blob/main/config.toml)
-4. run `./freedit`, open browser to `addr`, <http://127.0.0.1:3001/>
+3. run `./freedit`, open browser to `addr`, <http://127.0.0.1:3001/>
 
 ### From source code
 
