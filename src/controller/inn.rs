@@ -293,7 +293,7 @@ pub(crate) async fn inn_list(
         inns = get_batch(&db, "default", "inns_count", "inns", &page_params)?;
     }
 
-    let mut outs_inns = Vec::with_capacity(inns.len());
+    let mut out_inns = Vec::with_capacity(inns.len());
     for i in inns {
         let out_inn = OutInnList {
             iid: i.iid,
@@ -301,7 +301,7 @@ pub(crate) async fn inn_list(
             about: i.about,
             topics: i.topics,
         };
-        outs_inns.push(out_inn);
+        out_inns.push(out_inn);
     }
 
     let filter = if claim.is_none() { None } else { params.filter };
@@ -313,7 +313,7 @@ pub(crate) async fn inn_list(
     let page_data = PageData::new("inns", &site_config.site_name, claim, has_unread);
     let page_inn_list = PageInnList {
         page_data,
-        inns: outs_inns,
+        inns: out_inns,
         anchor,
         n,
         is_desc,
@@ -333,7 +333,7 @@ pub(crate) async fn inn_list(
 
 //     let inns: Vec<Inn> = get_batch(db, "default", "inns_count", "inns", &page_params)?;
 
-//     let mut outs_inns = Vec::with_capacity(inns.len());
+//     let mut out_inns = Vec::with_capacity(inns.len());
 //     for i in inns {
 //         let out_inn = InnOut {
 //             iid: i.iid,
@@ -341,13 +341,13 @@ pub(crate) async fn inn_list(
 //             about: i.about,
 //             topics: i.topics,
 //         };
-//         outs_inns.push(out_inn);
+//         out_inns.push(out_inn);
 //     }
 
 //     let page_data = PageData::new("inns", &site_config.site_name, None, false);
 //     let inns_page = InnsPage {
 //         page_data,
-//         inns: outs_inns,
+//         inns: out_inns,
 //         anchor,
 //         n,
 //         is_desc,
