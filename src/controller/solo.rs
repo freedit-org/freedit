@@ -353,7 +353,7 @@ pub(crate) async fn solo_like(
     Ok(Redirect::to(&target))
 }
 
-/// `GET /solo/:sid/delete` solo like
+/// `GET /solo/:sid/delete` solo delete
 pub(crate) async fn solo_delete(
     Extension(db): Extension<Db>,
     cookie: Option<TypedHeader<Cookie>>,
