@@ -582,12 +582,12 @@ pub(crate) async fn tag(
     let page_params = ParamsPage { anchor, n, is_desc };
 
     let index = get_ids_by_prefix(&db, "tags", &tag, Some(&page_params))?;
-    let out_post_lists = get_out_post_list(&db, &index)?;
+    let out_post_list = get_out_post_list(&db, &index)?;
 
     let page_data = PageData::new("inn", &site_config.site_name, claim, false);
     let page_tag = PageTag {
         page_data,
-        posts: out_post_lists,
+        posts: out_post_list,
         anchor,
         n,
         is_desc,
@@ -685,7 +685,7 @@ pub(crate) async fn inn(
         }
     }
 
-    let out_post_lists = get_out_post_list(&db, &index)?;
+    let out_post_list = get_out_post_list(&db, &index)?;
     let mut inn_status = 0;
     if let Some(ref claim) = claim {
         if iid > 0 {
@@ -710,15 +710,15 @@ pub(crate) async fn inn(
         false
     };
     let page_data = PageData::new("inn", &site_config.site_name, claim, has_unread);
-    let inn_name = if iid > 0 && !out_post_lists.is_empty() {
-        &out_post_lists[0].inn_name
+    let inn_name = if iid > 0 && !out_post_list.is_empty() {
+        &out_post_list[0].inn_name
     } else {
         "No Post"
     };
     let page_inn = PageInn {
         page_data,
         inn_name: inn_name.to_string(),
-        posts: out_post_lists,
+        posts: out_post_list,
         anchor,
         iid,
         n,
@@ -756,12 +756,12 @@ async fn render_post_list(
     page_data: &PageData<'_>,
     is_user: bool,
 ) -> Result<(), AppError> {
-    let out_post_lists = get_out_post_list(db, pids)?;
+    let out_post_list = get_out_post_list(db, pids)?;
     let name = if is_user {
         let user: User = get_one(db, "users", id)?;
         user.username
-    } else if id > 0 && !out_post_lists.is_empty() {
-        out_post_lists[0].inn_name.clone()
+    } else if id > 0 && !out_post_list.is_empty() {
+        out_post_list[0].inn_name.clone()
     } else {
         "No Post".to_owned()
     };
@@ -770,7 +770,7 @@ async fn render_post_list(
         page_data,
         id,
         name,
-        posts: out_post_lists,
+        posts: out_post_list,
         page,
         is_last,
         is_user,

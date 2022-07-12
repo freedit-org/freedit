@@ -352,3 +352,52 @@ pub(crate) async fn solo_like(
     let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))
 }
+
+/// `GET /solo/:sid/delete` solo like
+pub(crate) async fn solo_delete(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(sid): Path<u64>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let solo: Solo = get_one(&db, "solos", sid)?;
+    if solo.uid != claim.uid {
+        return Err(AppError::Unauthorized);
+    }
+
+    let sid_ivec = u64_to_ivec(sid);
+
+    db.open_tree("solos")?.remove(&sid_ivec)?;
+    db.open_tree("solo_timeline")?.remove(&sid_ivec)?;
+
+    let solo_users_like_tree = db.open_tree("solo_users_like")?;
+    let user_solos_like_tree = db.open_tree("user_solos_like")?;
+    for i in solo_users_like_tree.scan_prefix(&sid_ivec) {
+        let (k, _) = i?;
+        let uid = k.splitn(2, |num| *num == 35).nth(1).unwrap();
+        let user_solos_like_k = [uid, &SEP, &sid_ivec].concat();
+        user_solos_like_tree.remove(&user_solos_like_k)?;
+        solo_users_like_tree.remove(&k)?;
+    }
+
+    let hashtags_tree = db.open_tree("hashtags")?;
+    for hashtag in solo.hashtags {
+        let k = [hashtag.as_bytes(), &SEP, &sid_ivec].concat();
+        hashtags_tree.remove(&k)?;
+    }
+
+    let user_solos_idx_tree = db.open_tree("user_solos_idx")?;
+    for i in user_solos_idx_tree.scan_prefix(&u64_to_ivec(claim.uid)) {
+        let (k, v) = i?;
+        let sid = v.splitn(2, |num| *num == 35).next().unwrap();
+        if sid == sid_ivec.to_vec() {
+            user_solos_idx_tree.remove(&k)?;
+        }
+    }
+
+    let target = format!("/solo/user/{}", solo.uid);
+    Ok(Redirect::to(&target))
+}

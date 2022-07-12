@@ -141,7 +141,8 @@
                     </span>
                 </a>
                 {% match page_data.claim %} {% when Some with (claim) %}
-                <a class="level-item">
+                {% if solo.uid == claim.uid %}
+                <a class="level-item" href="#delete">
                     <span class="icon is-small">
                         <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M19 11V20.4C19 20.7314 18.7314 21 18.4 21H5.6C5.26863 21 5 20.7314 5 20.4V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
@@ -151,6 +152,15 @@
                         </svg>
                     </span>
                 </a>
+                <div id="delete" class="overlay">
+                    <div class="popup content">
+                        <h3>Delete permanently?</h3>
+                        <a class="close" href="#">&times;</a>
+                        <p>Are you sure you want to delete this solo?</p>
+                        <a href="/solo/{{solo.sid}}/delete" class="button is-danger">Delete</a>
+                    </div>
+                </div>
+                {% endif %}
                 {% else %}{% endmatch %}
             </div>
         </nav>

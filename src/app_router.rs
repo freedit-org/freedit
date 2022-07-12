@@ -8,7 +8,7 @@ use crate::{
             mod_inn, mod_inn_post, post, post_upvote, tag,
         },
         notification, serve_dir,
-        solo::{solo, solo_like, solo_post},
+        solo::{solo, solo_delete, solo_like, solo_post},
         static_handler, upload_pic_post,
         user::{
             role_post, signin, signin_post, signout, signup, signup_post, user, user_follow,
@@ -62,6 +62,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/post/:iid/:pid/:cid/upvote", get(comment_upvote))
         .route("/solo/user/:uid", get(solo).post(solo_post))
         .route("/solo/:sid/like", get(solo_like))
+        .route("/solo/:sid/delete", get(solo_delete))
         .layer(Extension(db))
         .route("/health_check", get(health_check))
         .route("/css/*file", static_handler.into_service())

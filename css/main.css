@@ -42,3 +42,44 @@ nav {
 .pagination {
     padding-bottom: 1.5rem;
 }
+  
+.overlay {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    transition: opacity 500ms;
+    visibility: hidden;
+    opacity: 0;
+}
+
+.overlay:target {
+    visibility: visible;
+    opacity: 1;
+}
+
+.popup {
+    min-width: 300px;
+    margin: 70px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 5px;
+    width: 30%;
+    position: relative;
+    transition: all 2s ease-in-out;
+}
+
+.popup .close {
+    position: absolute;
+    top: 20px;
+    right: 15px;
+    transition: all 200ms;
+    font-size: 30px;
+    color: #333;
+}
+
+.popup .close:hover {
+    color: #06D85F;
+}
