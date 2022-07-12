@@ -20,32 +20,40 @@
                 {% match hashtag %} {% when Some with (val) %}
                     <li><a href="/solo/user/0">All</a></li>
                     {% if page_data.claim.is_some() %}
-                    <li><a href="/solo/user/0?filter=is_following">Following</a></li>
+                    <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                    <li><a href="/solo/user/0?filter=Like">Like</a></li>
                     {% endif %}
                     <li class="is-active"><a href="/solo/user/0?hashtag={{val}}">🏷️ {{val}}</a></li>
                 {% else %}
-                    {% match filter.as_deref() %} {% when Some with ("Following") %}
-                        <li><a href="/solo/user/0">All</a></li>
-                        <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
-                    {% else %}
-                        {% match page_data.claim %} {% when Some with (val) %}
-                            {% if uid > 0 %}
-                                <li><a href="/solo/user/0">All</a></li>
-                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
-                            {% else %}
-                                <li class="is-active"><a href="/solo/user/0">All</a></li>
-                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                            {% endif %}
+                    {% if page_data.claim.is_some() %}
+                        {% match filter.as_deref() %} {% when Some with ("Following") %}
+                            <li><a href="/solo/user/0">All</a></li>
+                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
+                            <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
+                        {% when Some with ("Like") %}
+                            <li><a href="/solo/user/0">All</a></li>
+                            <li><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
+                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
                         {% else %}
                             {% if uid > 0 %}
                                 <li><a href="/solo/user/0">All</a></li>
+                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
                                 <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
                             {% else %}
                                 <li class="is-active"><a href="/solo/user/0">All</a></li>
+                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
                             {% endif %}
                         {% endmatch %}
-                    {% endmatch %}
+                    {% else %}
+                        {% if uid > 0 %}
+                            <li><a href="/solo/user/0">All</a></li>
+                            <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                        {% else %}
+                            <li class="is-active"><a href="/solo/user/0">All</a></li>
+                        {% endif %}
+                    {% endif %}
                 {% endmatch %}
                 </ul>
             </div>

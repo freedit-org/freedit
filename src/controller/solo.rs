@@ -110,6 +110,16 @@ pub(crate) async fn solo(
                 };
             }
         }
+        Some("Like") => {
+            if let Some(ref claim) = claim {
+                if let Ok(sids) =
+                    get_ids_by_prefix(&db, "user_solos_like", u64_to_ivec(claim.uid), None)
+                {
+                    let (start, end) = get_range(sids.len(), &page_params);
+                    index = sids[start - 1..end].to_vec();
+                };
+            }
+        }
         _ => {
             if let Some(ref hashtag) = params.hashtag {
                 index = get_ids_by_prefix(&db, "hashtags", hashtag, Some(&page_params))?;
