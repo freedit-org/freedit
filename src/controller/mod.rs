@@ -234,7 +234,7 @@ use std::{
     iter::Rev,
 };
 use time::OffsetDateTime;
-use tower_http::services::{ServeDir, ServeFile};
+use tower_http::services::ServeDir;
 
 pub(super) mod admin;
 pub(super) mod inn;
@@ -364,7 +364,7 @@ pub(super) async fn health_check() -> Response<BoxBody> {
 
 /// serve static directory
 pub(super) async fn serve_dir(path: &str) -> MethodRouter {
-    let srv = get_service(ServeDir::new(path).fallback(ServeFile::new("./static/404.html")));
+    let srv = get_service(ServeDir::new(path));
     srv.handle_error(|error: std::io::Error| async move {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
