@@ -7,17 +7,12 @@
 # More details at https://github.com/rust-lang/rust-clippy 
 # and https://rust-lang.github.io/rust-clippy/
 
-name: rust-clippy
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
-  schedule:
-    - cron: '39 7 * * 4'
-
+      
 jobs:
   rust-clippy-analyze:
     name: Run rust-clippy analyzing
@@ -36,6 +31,9 @@ jobs:
           toolchain: stable
           components: clippy
           override: true
+
+      - name: Cargo test
+      - run: cargo test
 
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
