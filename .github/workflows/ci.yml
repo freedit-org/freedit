@@ -14,8 +14,8 @@ on:
   pull_request:
       
 jobs:
-  rust-clippy-analyze:
-    name: Run rust-clippy analyzing
+  cargo test and clippy:
+    name: Run cargo test and clippy
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,7 +33,7 @@ jobs:
           override: true
 
       - name: Cargo test
-      - run: cargo test
+        run: cargo test
 
       - name: Install required cargo
         run: cargo install clippy-sarif sarif-fmt
