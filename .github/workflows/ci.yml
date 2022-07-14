@@ -14,7 +14,7 @@ on:
   pull_request:
       
 jobs:
-  cargo test and clippy:
+  cargo:
     name: Run cargo test and clippy
     runs-on: ubuntu-latest
     permissions:
