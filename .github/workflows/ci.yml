@@ -28,6 +28,9 @@ jobs:
           toolchain: nightly
           components: clippy, rustfmt
 
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v1
+
       - name: Cargo test
         run: cargo test
       
