@@ -9,9 +9,7 @@
 
 name: CI
 
-on:
-  push:
-  pull_request:
+on: [push, pull_request]
       
 jobs:
   cargo:
@@ -25,17 +23,18 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@16499b5e05bf2e26879000db0c1d13f7e13fa3af #@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
-          toolchain: stable
-          components: clippy
-          override: true
+          toolchain: nightly
+          components: clippy, rustfmt
 
       - name: Cargo test
         run: cargo test
+      
+      - name: rustfmt
+        run: cargo fmt
 
-      - name: Install required cargo
+      - name: Install clippy-sarif sarif-fmt (require cargo)
         run: cargo install clippy-sarif sarif-fmt
 
       - name: Run rust-clippy
