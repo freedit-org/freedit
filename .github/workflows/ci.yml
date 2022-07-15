@@ -35,7 +35,7 @@ jobs:
         run: cargo test
       
       - name: rustfmt
-        run: cargo fmt
+        run: cargo fmt -- --check
 
       - name: Install clippy-sarif sarif-fmt (require cargo)
         run: cargo install clippy-sarif sarif-fmt
