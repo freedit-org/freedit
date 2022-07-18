@@ -61,7 +61,7 @@
         <div class="level-right">
             <div class="buttons">
                 {% if is_following %}
-                    <a href="/user/{{uid}}/unfollow"><button class="button is-danger is-small is-rounded">Unfollow</button></a>
+                    <a href="/user/{{uid}}/follow"><button class="button is-danger is-small is-rounded">Unfollow</button></a>
                 {% else %}
                     {% match page_data.claim %} {% when Some with (val) %}
                         {% if uid > 0 && uid != val.uid %}

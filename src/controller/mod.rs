@@ -100,7 +100,6 @@
 
 use bincode::{Decode, Encode};
 use once_cell::sync::Lazy;
-use rust_embed::RustEmbed;
 use serde::{Deserialize, Serialize};
 use tokio::{fs, signal};
 use validator::Validate;
@@ -209,10 +208,10 @@ use crate::{config::CONFIG, error::AppError, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
-    body::{self, boxed, BoxBody, Empty, Full},
+    body::{self, BoxBody, Empty, Full},
     extract::{ContentLengthLimit, Form, FromRequest, Multipart, Query, RequestParts},
-    headers::Cookie,
-    http::{header, StatusCode, Uri},
+    headers::{Cookie, HeaderName},
+    http::{HeaderMap, HeaderValue, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get_service, MethodRouter},
     BoxError, Extension, TypedHeader,
@@ -385,41 +384,24 @@ pub(super) async fn handler_404() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, body)
 }
 
-#[derive(RustEmbed)]
-#[folder = "css/"]
-struct Css;
+pub(crate) async fn main_css() -> (HeaderMap, String) {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("text/css"),
+    );
 
-pub(crate) struct StaticFile<T>(pub T);
-
-impl<T> IntoResponse for StaticFile<T>
-where
-    T: Into<String>,
-{
-    fn into_response(self) -> Response {
-        let path = self.0.into();
-        match Css::get(path.as_str()) {
-            Some(content) => {
-                let body = boxed(Full::from(content.data));
-                Response::builder()
-                    .header(header::CONTENT_TYPE, "text/css")
-                    .body(body)
-                    .unwrap()
-            }
-            None => Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .body(boxed(Full::from("404")))
-                .unwrap(),
-        }
-    }
+    (headers, include_str!("../../css/main.css").to_string())
 }
 
-pub(super) async fn static_handler(uri: Uri) -> impl IntoResponse {
-    let mut path = uri.path().trim_start_matches('/').to_string();
-    if path.starts_with("css/") {
-        path = path.replace("css/", "");
-    }
+pub(crate) async fn bulma_css() -> (HeaderMap, String) {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("text/css"),
+    );
 
-    StaticFile(path)
+    (headers, include_str!("../../css/bulma.min.css").to_string())
 }
 
 pub(super) async fn shutdown_signal() {
