@@ -7,3 +7,4 @@
 /static/post
 .rustc_info.json
 .rustdoc_fingerprint.json
+config.toml
