@@ -64,8 +64,8 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/solo/:sid/like", get(solo_like))
         .route("/solo/:sid/delete", get(solo_delete))
         .layer(Extension(db))
-        .route("/bulma.min.css", get(bulma_css))
-        .route("/main.css", get(main_css))
+        .route("/css/bulma.min.css", get(bulma_css))
+        .route("/css/main.css", get(main_css))
         .route("/health_check", get(health_check))
         .nest("/static", serve_dir("static").await);
 

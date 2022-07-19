@@ -4,15 +4,15 @@
 <head>
     {% block csp %}
     <!-- TODO: all user input should have a special csp header -->
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests; default-src 'self'; 
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
     img-src 'self'; script-src 'none'; style-src 'self'; object-src 'none';
     font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
     {% endblock %}
     <meta charset="utf-8">
     <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/bulma.min.css">
-    <link rel="stylesheet" href="/main.css">
+    <link rel="stylesheet" type="text/css" href="/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
     <title> {{ page_data.title }} </title>
 </head>
 

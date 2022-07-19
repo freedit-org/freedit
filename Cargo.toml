@@ -13,7 +13,7 @@ comrak = { version = "0.14.0", features = ["syntect"], default-features = false 
 data-encoding = "2.3.2"
 hash_avatar = { git = "https://github.com/t924417424/rust_hash_avatar" }
 http-body = "0.4.5"
-image = { version = "0.24.2", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 latex2mathml = "0.2.3"
 nanoid = "0.4.0"
 once_cell = "*"

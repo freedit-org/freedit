@@ -504,11 +504,12 @@ pub(crate) async fn edit_post_post(
         set_index(&db, "inn_posts_count", iid, "inn_posts_idx", &pid_ivec)?;
         let target = [&iid_ivec, &SEP, &pid_ivec, &SEP, &visibility_ivec].concat();
         set_index(&db, "user_posts_count", claim.uid, "user_posts_idx", target)?;
-        if visibility == 0 {
-            db.open_tree("static_user_post")?
-                .insert(u64_to_ivec(claim.uid), &[])?;
-            db.open_tree("static_inn_post")?.insert(&iid_ivec, &[])?;
-        }
+    }
+
+    if visibility < 10 {
+        db.open_tree("static_user_post")?
+            .insert(u64_to_ivec(claim.uid), &[])?;
+        db.open_tree("static_inn_post")?.insert(&iid_ivec, &[])?;
     }
 
     let created_at_ivec = u64_to_ivec(created_at as u64);
@@ -1491,7 +1492,7 @@ pub(crate) async fn comment_post(
     }
 
     static_post(&db, pid).await?;
-    if visibility == 0 {
+    if visibility < 10 {
         db.open_tree("static_inn_post")?.insert(&iid_ivec, &[])?;
     }
     let target = format!("/post/{}/{}", iid, pid);
