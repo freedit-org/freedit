@@ -4,7 +4,7 @@ on: [push, pull_request]
       
 jobs:
   cargo:
-    name: Run cargo test and clippy
+    name: cargo test, clippy and doc
     runs-on: ubuntu-latest
     permissions:
       contents: write
