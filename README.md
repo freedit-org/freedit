@@ -36,7 +36,7 @@ cd freedit && cargo build -r
 
 ## Documentation
 
-* online doc: <https://freedit-org.github.io/doc/doc/freedit/index.html>
+* online doc: <https://freedit-org.github.io/freedit/freedit/index.html>
 
 * generate local documentation:
 ```bash

@@ -53,11 +53,7 @@ impl Default for Config {
             addr: "127.0.0.1:3001".into(),
             avatars_path: "./static/avatars".into(),
             inn_icons_path: "./static/inn_icons".into(),
-            serve_dir: vec![(
-                "doc".into(),
-                "../doc".into(),
-                "/doc/doc/freedit/index.html".into(),
-            )],
+            serve_dir: vec![],
             cert: "".into(),
             key: "".into(),
         }
