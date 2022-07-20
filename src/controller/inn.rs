@@ -374,7 +374,7 @@ struct PagePostEdit<'a> {
     post: Post,
 }
 
-/// `GET /inn/:iid/post/:pid` post create/edit page
+/// `GET /post/:iid/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post(
@@ -387,7 +387,7 @@ pub(crate) async fn edit_post(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
-    if !db.open_tree("user_inns")?.contains_key(&inn_users_k)? {
+    if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
         return Err(AppError::Unauthorized);
     }
 
@@ -423,7 +423,7 @@ pub(crate) struct FormPost {
     content: String,
 }
 
-/// `POST /inn/:iid/post/:pid` post create/edit page
+/// `POST /post/:iid/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post_post(
