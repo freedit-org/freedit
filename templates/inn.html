@@ -140,14 +140,27 @@
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Members</p>
-                <p class="title"><a href="/user/list?filter=inn&id={{iid}}">{{inn_users_count}}</a></p>
+                <span class="icon-text icon-text-info">
+                    <span class="icon">
+                        <p class="title">
+                            <a href="/user/list?filter=inn&id={{iid}}">{{inn_users_count}}</a>
+                        </p>
+                    </span>
+                    {% if has_apply %}
+                    <span id="notification-indicator" class="has-background-primary"></span>
+                    {% endif %}
+                </span>
             </div>
         </div>
         {% if is_mod %}
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Mod</p>
-                <p class="title"><a href="/mod/{{iid}}">⚙️</a></p>
+                <span class="icon-text icon-text-info">
+                    <span class="icon">
+                        <p class="title"><a href="/mod/{{iid}}"><span class="icon">⚙️</span></a></p>
+                    </span>
+                </span>
             </div>
         </div>
         {% endif %}
