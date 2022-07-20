@@ -193,8 +193,6 @@ pub(crate) async fn solo(
         hashtag: params.hashtag,
     };
     Ok(into_response(&page_solo, "html"))
-
-    // TODO: solo Delete
 }
 
 fn get_all_solos(

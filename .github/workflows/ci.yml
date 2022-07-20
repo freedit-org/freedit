@@ -7,7 +7,7 @@ jobs:
     name: Run cargo test and clippy
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       security-events: write
     steps:
       - name: Checkout code
@@ -42,3 +42,12 @@ jobs:
         with:
           sarif_file: rust-clippy-results.sarif
           wait-for-processing: true
+
+      - name: doc build
+        run: cargo doc --no-deps
+      
+      - name: doc deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: target/doc
