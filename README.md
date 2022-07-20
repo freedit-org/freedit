@@ -3,7 +3,7 @@
 [![CI](https://github.com/freedit-org/freedit/actions/workflows/ci.yml/badge.svg)](https://github.com/freedit-org/freedit/actions/workflows/ci.yml)
 [![release](https://github.com/freedit-org/freedit/actions/workflows/release.yml/badge.svg)](https://github.com/freedit-org/freedit/releases)
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Doc](https://img.shields.io/badge/Doc-Latest-success)](https://freedit-org.github.io/doc/doc/freedit/index.html)
+[![Doc](https://img.shields.io/badge/Doc-Latest-success)](https://freedit-org.github.io/freedit/freedit/index.html)
 
 The safest and lightest forum, powered by rust.
 
