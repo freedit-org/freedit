@@ -214,9 +214,8 @@ fn get_all_solos(
     for i in iter {
         // kv_pair: sid = uid#visibility
         let (k, v) = i?;
-        let mut value = v.splitn(2, |num| *num == 35);
-        let solo_uid = u8_slice_to_u64(value.next().unwrap());
-        let visibility = u8_slice_to_u64(value.next().unwrap());
+        let solo_uid = u8_slice_to_u64(&v[0..8]);
+        let visibility = u8_slice_to_u64(&v[9..17]);
         if can_visit_solo(visibility, followers, solo_uid, current_uid) {
             if count < page_params.anchor {
                 count += 1;
@@ -246,9 +245,8 @@ fn get_solos_by_uids(
         // kv_pair: uid#idx = sid#visibility
         for i in db.open_tree("user_solos_idx")?.scan_prefix(prefix) {
             let (_, v) = i?;
-            let mut value = v.splitn(2, |num| *num == 35);
-            let sid = u8_slice_to_u64(value.next().unwrap());
-            let visibility = u8_slice_to_u64(value.next().unwrap());
+            let sid = u8_slice_to_u64(&v[0..8]);
+            let visibility = u8_slice_to_u64(&v[9..17]);
             if can_visit_solo(visibility, followers, *uid, current_uid) {
                 sids.push(sid);
             }
@@ -385,7 +383,7 @@ pub(crate) async fn solo_delete(
     let user_solos_like_tree = db.open_tree("user_solos_like")?;
     for i in solo_users_like_tree.scan_prefix(&sid_ivec) {
         let (k, _) = i?;
-        let uid = k.splitn(2, |num| *num == 35).nth(1).unwrap();
+        let uid = &k[9..17];
         let user_solos_like_k = [uid, &SEP, &sid_ivec].concat();
         user_solos_like_tree.remove(&user_solos_like_k)?;
         solo_users_like_tree.remove(&k)?;
@@ -400,7 +398,7 @@ pub(crate) async fn solo_delete(
     let user_solos_idx_tree = db.open_tree("user_solos_idx")?;
     for i in user_solos_idx_tree.scan_prefix(&u64_to_ivec(claim.uid)) {
         let (k, v) = i?;
-        let sid = v.splitn(2, |num| *num == 35).next().unwrap();
+        let sid = &v[0..8];
         if sid == sid_ivec.to_vec() {
             user_solos_idx_tree.remove(&k)?;
         }

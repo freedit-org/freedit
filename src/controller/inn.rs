@@ -814,9 +814,7 @@ async fn render_post_list(
 pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppError> {
     let sleep = time::sleep(time::Duration::from_secs(interval));
     if let Some((k, _)) = db.open_tree("post_timeline")?.last()? {
-        let mut iter = k.splitn(3, |num| *num == 35);
-        let timestamp = iter.next().unwrap();
-        let timestamp = u8_slice_to_u64(timestamp);
+        let timestamp = u8_slice_to_u64(&k[0..8]);
         let last_check = OffsetDateTime::now_utc().unix_timestamp() as u64 - interval;
         if last_check - 3 > timestamp {
             sleep.await;
@@ -969,12 +967,8 @@ fn get_pids_all(
     // kvpaire: timestamp#iid#pid = visibility
     for i in iter {
         let (k, v) = i?;
-        let mut iter = k.splitn(3, |num| *num == 35);
-        let id = iter.nth(1).unwrap();
-        let id = u8_slice_to_u64(id);
-
-        let out_id = iter.next().unwrap();
-        let out_id = u8_slice_to_u64(out_id);
+        let id = u8_slice_to_u64(&k[9..17]);
+        let out_id = u8_slice_to_u64(&k[18..26]);
 
         let visibility = ivec_to_u64(&v);
         if visibility == 0 || (visibility == 10 && joined_inns.contains(&id)) {
@@ -1003,8 +997,7 @@ fn get_pids_by_iids(db: &Db, iids: &[u64], page_params: &ParamsPage) -> Result<V
         // kv_pair: iid#pid = timestamp#visibility
         for i in db.open_tree("post_timeline_idx")?.scan_prefix(prefix) {
             let (k, v) = i?;
-            let mut key = k.splitn(2, |num| *num == 35);
-            let pid = u8_slice_to_u64(key.nth(1).unwrap());
+            let pid = u8_slice_to_u64(&k[9..17]);
             let timestamp = ivec_to_u64(&v);
             pairs.push((pid, timestamp));
         }
@@ -1032,10 +1025,9 @@ fn get_pids_by_uids(
         // kv_pair: uid#idx = iid#pid#visibility
         for i in db.open_tree("user_posts_idx")?.scan_prefix(prefix) {
             let (_, v) = i?;
-            let mut value = v.splitn(3, |num| *num == 35);
-            let iid = u8_slice_to_u64(value.next().unwrap());
-            let pid = u8_slice_to_u64(value.next().unwrap());
-            let visibility = u8_slice_to_u64(value.next().unwrap());
+            let iid = u8_slice_to_u64(&v[0..8]);
+            let pid = u8_slice_to_u64(&v[9..17]);
+            let visibility = u8_slice_to_u64(&v[18..26]);
             if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) {
                 pids.push(pid);
             }
