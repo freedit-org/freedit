@@ -39,5 +39,5 @@ cd freedit && cargo build -r
 
 * generate local documentation:
 ```bash
-cargo doc --target-dir ../doc --no-deps --open
+cargo doc --no-deps --open
 ```
