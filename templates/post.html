@@ -13,7 +13,11 @@
     <li><a href="/static/inn/0/1/index.html">Inn</a></li>
     {% endif %}
     <li><a href="/solo/user/0">Solo</a></li>
-    <li><a class="px-2" href="/inn/list">Explore</a></li>
+    {% if page_data.claim.is_some() %}
+    <li><a href="/inn/list">Explore</a></li>
+    {% else %}
+    <li><a href="/static/inn/list/1/index.html">Explore</a></li>
+    {% endif %}
 {% endblock %}
 
 {% block content %}

@@ -217,6 +217,9 @@ pub(crate) async fn mod_inn_post(
 
     db.open_tree("inns")?.insert(&iid_ivec, inn_encoded)?;
     inn_names_tree.insert(inn.inn_name, iid_ivec)?;
+
+    static_inn_list_update(&db).await?;
+
     let target = format!("/inn/{}", iid);
     Ok(Redirect::to(&target))
 }
@@ -324,39 +327,61 @@ pub(crate) async fn inn_list(
     Ok(into_response(&page_inn_list, "html"))
 }
 
-// fn export_static_inns(db: &Db) -> Result<(), AppError> {
-//     let site_config = get_site_config(db)?;
-//     let n = site_config.per_page;
-//     let anchor = 0;
-//     let is_desc = true;
-//     let page_params = ParamsPage { anchor, n, is_desc };
+async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
+    let site_config = get_site_config(db)?;
+    let n = 30;
+    let mut anchor = 0;
+    let is_desc = true;
 
-//     let inns: Vec<Inn> = get_batch(db, "default", "inns_count", "inns", &page_params)?;
+    let mut inns_count = get_count(db, "default", "inns_count")?;
+    let mut page = 0;
+    while inns_count > 0 {
+        page += 1;
+        let page_params = ParamsPage { anchor, n, is_desc };
+        let inns: Vec<Inn> = get_batch(db, "default", "inns_count", "inns", &page_params)?;
+        let mut out_inns = Vec::with_capacity(inns.len());
+        for i in inns {
+            let out_inn = OutInnList {
+                iid: i.iid,
+                inn_name: i.inn_name,
+                about: i.about,
+                topics: i.topics,
+            };
+            out_inns.push(out_inn);
+        }
+        let page_data = PageData::new("inns", &site_config.site_name, None, false);
+        let page_inn_list = PageInnList {
+            page_data,
+            inns: out_inns,
+            anchor,
+            n,
+            is_desc,
+            topic: None,
+            filter: None,
+        };
 
-//     let mut out_inns = Vec::with_capacity(inns.len());
-//     for i in inns {
-//         let out_inn = InnOut {
-//             iid: i.iid,
-//             inn_name: i.inn_name,
-//             about: i.about,
-//             topics: i.topics,
-//         };
-//         out_inns.push(out_inn);
-//     }
+        let res = page_inn_list.render().unwrap();
+        let target_dir = format!("./static/inn/list/{}", page);
+        let target_dir = std::path::Path::new(&target_dir);
+        if !target_dir.exists() {
+            create_dir_all(target_dir).await?;
+        }
 
-//     let page_data = PageData::new("inns", &site_config.site_name, None, false);
-//     let inns_page = InnsPage {
-//         page_data,
-//         inns: out_inns,
-//         anchor,
-//         n,
-//         is_desc,
-//         topic: None,
-//         filter: None,
-//     };
+        let target = target_dir.join("index.html");
+        let mut file = File::create(&target).await?;
+        file.write_all(res.as_bytes()).await?;
+        debug!("target {}", target.display());
 
-//     Ok(())
-// }
+        let is_last = inns_count <= n;
+        if is_last {
+            break;
+        }
+        anchor += n;
+        inns_count -= n;
+    }
+
+    Ok(())
+}
 
 /// Page data: `post_create.html`
 #[derive(Template)]
@@ -823,7 +848,7 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
     };
 
     let site_config = get_site_config(db)?;
-    let n = 3;
+    let n = 30;
     let is_desc = true;
     let mut anchor = 0;
     let page_data = &PageData::new("inn", &site_config.site_name, None, false);
@@ -862,7 +887,7 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
 pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppError> {
     let site_config = get_site_config(db)?;
 
-    let n = 3;
+    let n = 30;
     let is_desc = true;
     let mut anchor = 0;
     let page_data = &PageData::new("inn", &site_config.site_name, None, false);

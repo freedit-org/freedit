@@ -28,7 +28,11 @@
                             {% block tabs %}
                             <li><a class="px-2" href="/inn/0">Inn</a></li>
                             <li><a class="px-2" href="/solo/user/0">Solo</a></li>
-                            <li><a class="px-2" href="/inn/list">Explore</a></li>
+                            {% if page_data.claim.is_some() %}
+                            <li><a href="/inn/list">Explore</a></li>
+                            {% else %}
+                            <li><a href="/static/inn/list/1/index.html">Explore</a></li>
+                            {% endif %}
                             {% endblock %}
                         </ul>
                     </div>
