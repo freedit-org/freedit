@@ -277,6 +277,8 @@ pub(crate) async fn inn_list(
         }
     } else if let Some(claim) = &claim {
         let uid_ivec = u64_to_ivec(claim.uid);
+        // TODO: bug, mod and joined has no pagnation
+        // just limit number of inns to create and join
         if params.filter.as_deref() == Some("mod") {
             for i in get_ids_by_prefix(&db, "mod_inns", uid_ivec, Some(&page_params))? {
                 if let Ok(inn) = get_one(&db, "inns", i) {
@@ -327,6 +329,7 @@ pub(crate) async fn inn_list(
     Ok(into_response(&page_inn_list, "html"))
 }
 
+/// `/static/inn/list/:page/index.html`
 async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
     let site_config = get_site_config(db)?;
     let n = 30;
@@ -1317,6 +1320,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let mut out_comments = Vec::with_capacity(n);
     let count = get_count(db, "post_comments_count", &pid_ivec)?;
     if count > 0 {
+        // TODO: comments pagination
         let post_comments_tree = db.open_tree("post_comments")?;
         for i in 1..=count {
             let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(i as u64)].concat();
@@ -1398,7 +1402,7 @@ pub(crate) async fn comment_post(
         .ok_or(AppError::NonLogin)?;
 
     let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
-    if !db.open_tree("user_inns")?.contains_key(&inn_users_k)? {
+    if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
         return Err(AppError::Unauthorized);
     }
 
