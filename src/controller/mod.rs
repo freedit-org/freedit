@@ -98,14 +98,6 @@
 //! | "user_comments_idx"   | `uid#idx`            | `pid#cid`   |
 //! | "comment_upvotes"     | `pid#cid#uid`        | `&[]`       |
 
-use base64ct::{Base64, Encoding};
-use bincode::{Decode, Encode};
-use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
-use sha2::Sha256;
-use tokio::{fs, signal};
-use validator::Validate;
-
 /// user
 ///
 /// ## role
@@ -218,17 +210,23 @@ use axum::{
     BoxError, Extension, TypedHeader,
 };
 use bincode::config::standard;
+use bincode::{Decode, Encode};
 use comrak::{
     markdown_to_html_with_plugins, plugins::syntect::SyntectAdapter, ComrakOptions, ComrakPlugins,
 };
+use data_encoding::HEXLOWER;
 use http_body::Body;
 use nanoid::nanoid;
+use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
-use sha2::Digest;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use sled::{Db, IVec, Iter, Tree};
 use std::{env, fs::File, io, iter::Rev};
 use time::OffsetDateTime;
+use tokio::{fs, signal};
 use tower_http::services::ServeDir;
+use validator::Validate;
 
 pub(super) mod admin;
 pub(super) mod inn;
@@ -244,7 +242,7 @@ pub(super) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
     io::copy(&mut file, &mut hasher).unwrap();
     let hash = hasher.finalize();
 
-    Base64::encode_string(hash.as_ref())
+    HEXLOWER.encode(hash.as_ref())
 });
 
 static SEP: Lazy<IVec> = Lazy::new(|| IVec::from("#"));
