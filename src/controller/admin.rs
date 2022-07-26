@@ -52,8 +52,9 @@ pub(crate) async fn admin_view(
     let mut ones = Vec::new();
     if let Some(ref tree_name) = query_tree.tree_name {
         if tree_names.contains(tree_name) {
+            // TODO: pagination
             for (n, i) in db.open_tree(tree_name)?.iter().enumerate() {
-                if n >= 30 {
+                if n >= 300 {
                     break;
                 }
                 let (k, v) = i?;
