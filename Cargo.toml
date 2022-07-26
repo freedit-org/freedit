@@ -5,23 +5,22 @@ edition = "2021"
 
 [dependencies]
 askama = { version = "0.11", default-features = false } # templates engine 
-axum = { version = "0.5", features = ["http2", "headers", "form", "query", "multipart"], default-features = false }
-axum-server = { version = "0.4.0", features = ["tls-rustls"] }
+axum = { version = "0.5", features = ["http1", "headers", "form", "query", "multipart"], default-features = false }
+base64ct = { version = "1.5", features = ["std"] }
 bincode = "2.0.0-rc.1"
 captcha = { version = "0.0.9", default-features = false }
 comrak = { version = "0.14.0", features = ["syntect"], default-features = false }
-base64ct = { version = "1.5", features = ["std"] }
 hash_avatar = { git = "https://github.com/t924417424/rust_hash_avatar" }
 http-body = "0.4.5"
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 latex2mathml = "0.2.3"
 nanoid = "0.4.0"
-sha2 = "0.10.2"
 once_cell = "*"
 pbkdf2 = "0.11.0"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sha2 = "0.10.2"
 sled = { version = "0.34.7", features = ["compression"] }
 thiserror = "1"
 time = "0.3"
@@ -34,7 +33,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
-reqwest = { version = "0.11", features = ["blocking"] }
+reqwest = { version = "0.11", features = ["blocking"], default-features = false }
 
 [profile.release]
 lto = true

@@ -14,7 +14,6 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
     headers.insert("Cookie", header::HeaderValue::from_str(&cookie).unwrap());
 
     reqwest::blocking::Client::builder()
-        .danger_accept_invalid_certs(true)
         .default_headers(headers)
         .build()
         .unwrap()
