@@ -7,9 +7,15 @@
 {% endblock %}
 
 {% block tabs %}
+    {% if page_data.claim.is_some() %}
     <li><a href="/inn/0">Inn</a></li>
     <li class="is-active"><a href="/solo/user/0">Solo</a></li>
     <li><a href="/inn/list">Explore</a></li>
+    {% else %}
+    <li><a href="/static/inn/0/1/index.html">Inn</a></li>
+    <li class="is-active"><a href="/solo/user/0">Solo</a></li>
+    <li><a href="/static/inn/list/1/index.html">Explore</a></li>
+    {% endif %}
 {% endblock %}
 
 {% block content %}

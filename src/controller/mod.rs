@@ -301,8 +301,17 @@ where
     }
 }
 
-pub(crate) async fn home() -> Result<impl IntoResponse, AppError> {
-    Ok(Redirect::to("/inn/0"))
+pub(crate) async fn home(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    if claim.is_some() {
+        Ok(Redirect::to("/inn/0"))
+    } else {
+        Ok(Redirect::to("/static/inn/0/1/index.html"))
+    }
 }
 
 #[derive(Deserialize)]
