@@ -104,9 +104,8 @@ pub(crate) async fn admin_view(
                         ones.push(format!("{}: {}", key, json));
                     }
                     "post_comments" => {
-                        let mut iter = k.splitn(2, |num| *num == 35);
-                        let pid = u8_slice_to_u64(iter.next().unwrap());
-                        let cid = u8_slice_to_u64(iter.next().unwrap());
+                        let pid = u8_slice_to_u64(&k[0..8]);
+                        let cid = u8_slice_to_u64(&k[9..17]);
                         let (one, _): (Comment, usize) =
                             bincode::decode_from_slice(&v, standard())?;
                         let json = serde_json::to_string_pretty(&one).unwrap();
@@ -114,26 +113,22 @@ pub(crate) async fn admin_view(
                         ones.push(format!("pid: {}, cid: {}, comment: {}", pid, cid, json));
                     }
                     "comment_upvotes" => {
-                        let mut iter = k.splitn(3, |num| *num == 35);
-                        let pid = u8_slice_to_u64(iter.next().unwrap());
-                        let cid = u8_slice_to_u64(iter.next().unwrap());
-                        let uid = u8_slice_to_u64(iter.next().unwrap());
+                        let pid = u8_slice_to_u64(&k[0..8]);
+                        let cid = u8_slice_to_u64(&k[9..17]);
+                        let uid = u8_slice_to_u64(&k[18..26]);
                         ones.push(format!("pid: {}, cid: {}, uid: {}", pid, cid, uid));
                     }
                     "inn_posts_idx" => {
-                        let mut iter = k.splitn(2, |num| *num == 35);
-                        let id = u8_slice_to_u64(iter.next().unwrap());
-                        let idx = u8_slice_to_u64(iter.next().unwrap());
+                        let id = u8_slice_to_u64(&k[0..8]);
+                        let idx = u8_slice_to_u64(&k[9..17]);
                         let v = ivec_to_u64(&v);
                         ones.push(format!("id: {}, idx: {}, target: {}", id, idx, v));
                     }
                     "user_solos_idx" => {
-                        let mut iter = k.splitn(2, |num| *num == 35);
-                        let uid = u8_slice_to_u64(iter.next().unwrap());
-                        let idx = u8_slice_to_u64(iter.next().unwrap());
-                        let mut iter = v.splitn(2, |num| *num == 35);
-                        let sid = u8_slice_to_u64(iter.next().unwrap());
-                        let visibility = u8_slice_to_u64(iter.next().unwrap());
+                        let uid = u8_slice_to_u64(&k[0..8]);
+                        let idx = u8_slice_to_u64(&k[9..17]);
+                        let sid = u8_slice_to_u64(&k[0..8]);
+                        let visibility = u8_slice_to_u64(&k[9..17]);
                         ones.push(format!(
                             "uid: {}, idx: {}, sid: {}, visibility: {}",
                             uid, idx, sid, visibility
@@ -149,16 +144,14 @@ pub(crate) async fn admin_view(
                         ones.push(format!("id: {}, count: {}", id, count));
                     }
                     "hashtags" | "topics" | "tags" => {
-                        let mut iter = k.splitn(2, |num| *num == 35);
-                        let str = String::from_utf8_lossy(iter.next().unwrap());
-                        let id = u8_slice_to_u64(iter.next().unwrap());
+                        let str = String::from_utf8_lossy(&k[0..8]);
+                        let id = u8_slice_to_u64(&k[9..17]);
                         ones.push(format!("{}#{}", str, id));
                     }
                     "user_following" | "user_followers" | "mod_inns" | "user_inns"
                     | "inn_users" => {
-                        let mut iter = k.splitn(2, |num| *num == 35);
-                        let id1 = u8_slice_to_u64(iter.next().unwrap());
-                        let id2 = u8_slice_to_u64(iter.next().unwrap());
+                        let id1 = u8_slice_to_u64(&k[0..8]);
+                        let id2 = u8_slice_to_u64(&k[9..17]);
                         ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
                     }
                     _ => ones.push(format!("{} has not been supported yet", tree_name)),
