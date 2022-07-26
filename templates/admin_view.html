@@ -3,27 +3,32 @@
 {% block content %}
 <div class="box">
     {{tree_names.len()}} trees<br>
-    {% match tree_name %} {% when Some with (val) %}
         {% for i in tree_names %}
             <a href="/admin/view?tree_name={{i}}">
-                {% if i == val %}
+                {% if i == tree_name.as_str() %}
                 <span class="tag is-primary">{{i}}</span>
                 {% else %}
                 <span class="tag is-info">{{i}}</span>
                 {% endif %}
             </a>
         {% endfor %}
-    {% else %}
-        {% for i in tree_names %}
-            <a href="/admin/view?tree_name={{i}}">
-                <span class="tag is-info">{{i}}</span>
-            </a>
-        {% endfor %}
-    {% endmatch %}
 </div>
 <div class="box">
     {% for i in ones %} <p>{{i}}</p><br> {% endfor %}
 </div>
 <div class="divider"></div>
-{% endblock %}
 
+<nav class="pagination">
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+        <a class="pagination-previous" href="/admin/view/?tree_name={{tree_name}}&anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+    {% endif %}
+
+    {% if ones.len() < n %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        <a class="pagination-next" href="/admin/view?tree_name={{tree_name}}&anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+    {% endif %}
+</nav>
+{% endblock %}
