@@ -76,7 +76,6 @@ pub(crate) async fn admin_view(
                         let (mut one, _): (User, usize) =
                             bincode::decode_from_slice(&v, standard())?;
                         one.password_hash = String::from("******");
-                        one.salt = String::from("unique salt");
                         let json = serde_json::to_string_pretty(&one).unwrap();
                         let json = json.replace("\\\"", "'");
                         ones.push(format!("{}: {}", key, json));
