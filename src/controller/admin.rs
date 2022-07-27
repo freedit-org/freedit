@@ -165,8 +165,9 @@ pub(crate) async fn admin_view(
                     ones.push(format!("id: {}, count: {}", id, count));
                 }
                 "hashtags" | "topics" | "tags" => {
-                    let str = String::from_utf8_lossy(&k[0..8]);
-                    let id = u8_slice_to_u64(&k[9..17]);
+                    let len = k.len();
+                    let str = String::from_utf8_lossy(&k[0..len - 9]);
+                    let id = u8_slice_to_u64(&k[len - 8..]);
                     ones.push(format!("{}#{}", str, id));
                 }
                 "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users" => {
