@@ -44,7 +44,8 @@ jobs:
           wait-for-processing: true
 
       - name: doc build
-        run: cargo doc --no-deps
+        run: cargo doc --no-deps &&
+          echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
       
       - name: doc deploy
         uses: JamesIves/github-pages-deploy-action@v4
