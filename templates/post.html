@@ -88,9 +88,9 @@
                     {{comment.created_at}}
                     {% match page_data.claim %} {% when Some with (val) %}
                         {% if comment.is_upvoted %}
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
                         {% else %}
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
                         {% endif %}
                     {% else %}
                         <span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span>
@@ -104,7 +104,7 @@
         </div>
         
         <div class="list-item-controls">
-            <a href="/post/{{post.iid}}/{{post.pid}}#{{comment.cid}}">{{comment.cid}}</a>
+            <a href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}">{{comment.cid}}</a>
         </div>
     </div>
     {% endfor %}
