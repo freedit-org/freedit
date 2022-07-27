@@ -65,14 +65,14 @@ impl IntoResponse for AppError {
             | AppError::UsernameInvalid
             | AppError::NotFound
             | AppError::WrongPassword
-            | AppError::Unauthorized
-            | AppError::Banned
             | AppError::ImageError(_)
             | AppError::ReadOnly
             | AppError::ValidationError(_)
             | AppError::AxumFormRejection(_)
             | AppError::LatexError(_) => StatusCode::BAD_REQUEST,
             AppError::NonLogin => return Redirect::to("/signin").into_response(),
+            AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::Banned => StatusCode::FORBIDDEN,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 

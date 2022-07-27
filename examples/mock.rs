@@ -1,10 +1,10 @@
 use once_cell::sync::Lazy;
-use reqwest::{header, Client, Response};
+use reqwest::{header, Client, StatusCode};
 
 const URL: &str = "http://localhost:3001";
 
 static COOKIE: Lazy<String> = Lazy::new(|| {
-    let cookie = std::env::var("cookie").expect("env var cookie not set");
+    let cookie = std::env::var("COOKIE").expect("env var cookie not set");
     format!("__Host-id={}", cookie)
 });
 
@@ -23,16 +23,20 @@ async fn main() {
     let mut handlers = Vec::with_capacity(100);
     for i in 1..=100 {
         let h = tokio::spawn(async move {
-            let inn_name = format!("inn{}", i);
+            let inn_name = format!("inn_{}_{}", i, rand::random::<u16>());
             match create_inn(&inn_name).await {
-                Ok(_) => {
-                    join_inn(i).await;
-                    for _ in 0..100 {
-                        create_post(i).await;
-                    }
-                }
+                Ok(StatusCode::OK) => {}
+                Ok(s) => println!("{}", s),
                 Err(e) => println!("error creating {}: {}", inn_name, e),
             };
+            for _ in 0..100 {
+                match create_post(i).await {
+                    Err(e) => println!("{}", e),
+                    Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
+                    Ok(StatusCode::OK) => (),
+                    Ok(s) => (println!("{}", s)),
+                };
+            }
         });
         handlers.push(h);
     }
@@ -40,21 +44,37 @@ async fn main() {
     for h in handlers {
         h.await.unwrap();
     }
+
+    let mut handlers = Vec::with_capacity(10000);
+    for i in 1..=10000 {
+        let h = tokio::spawn(async move {
+            match create_comment(i).await {
+                Err(e) => println!("{}", e),
+                Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
+                Ok(StatusCode::OK) => (),
+                Ok(s) => (println!("{}", s)),
+            };
+        });
+        handlers.push(h);
+    }
+    for h in handlers {
+        h.await.unwrap();
+    }
 }
 
-async fn create_inn(inn_name: &str) -> Result<Response, reqwest::Error> {
+async fn create_inn(inn_name: &str) -> Result<StatusCode, reqwest::Error> {
     let url = format!("{}/mod/0", URL);
     let about = format!("about_{}", inn_name);
     let description = format!("description_{}", inn_name);
     let params = [
-        ("inn_name", inn_name),
-        ("about", &about),
-        ("description", &description),
-        ("topics", "bench"),
-        ("inn_type", "Public"),
-        ("mods", "1"),
+        ("inn_name", inn_name.to_owned()),
+        ("about", about),
+        ("description", description),
+        ("topics", "bench".to_owned()),
+        ("inn_type", "Public".to_owned()),
+        ("mods", "1".to_owned()),
     ];
-    CLIENT.post(&url).form(&params).send().await
+    send_post(&url, &params).await
 }
 
 async fn join_inn(iid: u64) {
@@ -65,7 +85,7 @@ async fn join_inn(iid: u64) {
     };
 }
 
-async fn create_post(iid: u64) {
+async fn create_post(iid: u64) -> Result<StatusCode, reqwest::Error> {
     let url = format!("{}/post/{}/edit/0", URL, iid);
     let title = format!("inn_{}, auto generate post", iid);
     let description = format!("description_{}", title);
@@ -74,8 +94,21 @@ async fn create_post(iid: u64) {
         ("tags", "auto".to_owned()),
         ("content", description),
     ];
-    match CLIENT.post(&url).form(&params).send().await {
-        Ok(_) => {}
-        Err(e) => eprintln!("{}", e),
-    };
+    send_post(&url, &params).await
+}
+
+async fn create_comment(pid: u64) -> Result<StatusCode, reqwest::Error> {
+    let url = format!("{}/post/1/{}", URL, pid);
+    let comment = format!("pid_{}, auto generate post", pid);
+    let params = [("comment", comment)];
+    send_post(&url, &params).await
+}
+
+async fn send_post(url: &str, params: &[(&str, String)]) -> Result<StatusCode, reqwest::Error> {
+    CLIENT
+        .post(url)
+        .form(&params)
+        .send()
+        .await
+        .map(|r| r.status())
 }

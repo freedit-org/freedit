@@ -41,3 +41,15 @@ cd freedit && cargo build -r
 ```bash
 cargo doc --no-deps --open
 ```
+
+## Development
+
+```bash
+git clone https://github.com/freedit-org/freedit
+cargo run
+```
+
+integration testing
+```bash
+COOKIE=<cookie> cargo run --example mock
+```
