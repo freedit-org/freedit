@@ -46,7 +46,7 @@ cargo doc --no-deps --open
 
 ```bash
 git clone https://github.com/freedit-org/freedit
-cargo run
+cd freedit && cargo run
 ```
 
 integration testing
