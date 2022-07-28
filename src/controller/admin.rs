@@ -250,6 +250,7 @@ impl Default for SiteConfig {
             post_interval: 60,
             comment_interval: 20,
             per_page: 30,
+            static_page: 10,
         }
     }
 }

@@ -189,6 +189,7 @@ pub(super) struct SiteConfig {
     post_interval: usize,
     comment_interval: usize,
     per_page: usize,
+    static_page: usize,
 }
 
 #[derive(Encode, Decode)]

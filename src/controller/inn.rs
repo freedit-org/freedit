@@ -384,6 +384,10 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
         }
         anchor += n;
         inns_count -= n;
+
+        if page >= site_config.static_page {
+            break;
+        }
     }
 
     Ok(())
@@ -783,7 +787,7 @@ struct PageInnStatic<'a> {
     posts: Vec<OutPostList>,
     id: u64,
     name: String,
-    page: u64,
+    page: usize,
     is_last: bool,
     is_user: bool,
 }
@@ -792,7 +796,7 @@ struct PageInnStatic<'a> {
 async fn render_post_list(
     db: &Db,
     id: u64,
-    page: u64,
+    page: usize,
     is_last: bool,
     pids: &Vec<u64>,
     page_data: &PageData<'_>,
@@ -866,7 +870,7 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
         posts_count -= count;
     }
 
-    let mut page = 0;
+    let mut page: usize = 0;
     while posts_count > 0 {
         let iid = 0;
         page += 1;
@@ -879,6 +883,10 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
         }
         anchor += n;
         posts_count -= n;
+
+        if page >= site_config.static_page {
+            break;
+        }
     }
 
     sleep.await;
@@ -923,6 +931,10 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
             }
             anchor += n;
             posts_count -= n;
+
+            if page >= site_config.static_page {
+                break;
+            }
         }
         tree.remove(&k)?;
     }
@@ -945,6 +957,10 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
             }
             anchor += n;
             posts_count -= n;
+
+            if page >= 10 {
+                break;
+            }
         }
         tree.remove(&k)?;
     }
