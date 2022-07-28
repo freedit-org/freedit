@@ -2,14 +2,14 @@ use crate::{
     config::CONFIG,
     controller::{
         admin::{admin, admin_post, admin_view},
-        bulma_css, handler_404, health_check, home,
+        handler_404, health_check, home,
         inn::{
             comment_downvote, comment_post, comment_upvote, edit_post, edit_post_post, inn,
             inn_join, inn_list, mod_inn, mod_inn_post, post, post_downvote, post_upvote, tag,
         },
-        main_css, notification, serve_dir,
+        notification, serve_dir,
         solo::{solo, solo_delete, solo_like, solo_post},
-        upload_pic_post,
+        style, upload_pic_post,
         user::{
             role_post, signin, signin_post, signout, signup, signup_post, user, user_follow,
             user_list, user_password_post, user_setting, user_setting_post,
@@ -66,8 +66,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/solo/:sid/like", get(solo_like))
         .route("/solo/:sid/delete", get(solo_delete))
         .layer(Extension(db))
-        .route("/css/bulma.min.css", get(bulma_css))
-        .route("/css/main.css", get(main_css))
+        .route("/css/style.css", get(style))
         .route("/health_check", get(health_check))
         .nest("/static", serve_dir("static").await);
 

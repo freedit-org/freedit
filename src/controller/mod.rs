@@ -378,24 +378,22 @@ pub(super) async fn handler_404() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, body)
 }
 
-pub(crate) async fn main_css() -> (HeaderMap, String) {
+pub(crate) async fn style() -> (HeaderMap, String) {
     let mut headers = HeaderMap::new();
+    let mut style = include_str!("../../css/bulma.min.css").to_string();
+    style.push('\n');
+    style.push_str(include_str!("../../css/main.css"));
+
     headers.insert(
         HeaderName::from_static("content-type"),
         HeaderValue::from_static("text/css"),
     );
-
-    (headers, include_str!("../../css/main.css").to_string())
-}
-
-pub(crate) async fn bulma_css() -> (HeaderMap, String) {
-    let mut headers = HeaderMap::new();
     headers.insert(
-        HeaderName::from_static("content-type"),
-        HeaderValue::from_static("text/css"),
+        HeaderName::from_static("cache-control"),
+        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
     );
 
-    (headers, include_str!("../../css/bulma.min.css").to_string())
+    (headers, style)
 }
 
 pub(super) async fn shutdown_signal() {
