@@ -4,8 +4,8 @@ use crate::{
         admin::{admin, admin_post, admin_view},
         bulma_css, handler_404, health_check, home,
         inn::{
-            comment_post, comment_upvote, edit_post, edit_post_post, inn, inn_join, inn_list,
-            mod_inn, mod_inn_post, post, post_upvote, tag,
+            comment_downvote, comment_post, comment_upvote, edit_post, edit_post_post, inn,
+            inn_join, inn_list, mod_inn, mod_inn_post, post, post_downvote, post_upvote, tag,
         },
         main_css, notification, serve_dir,
         solo::{solo, solo_delete, solo_like, solo_post},
@@ -59,7 +59,9 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/post/:iid/:pid", get(post).post(comment_post))
         .route("/post/:iid/edit/:pid", get(edit_post).post(edit_post_post))
         .route("/post/:iid/:pid/upvote", get(post_upvote))
+        .route("/post/:iid/:pid/downvote", get(post_downvote))
         .route("/post/:iid/:pid/:cid/upvote", get(comment_upvote))
+        .route("/post/:iid/:pid/:cid/downvote", get(comment_downvote))
         .route("/solo/user/:uid", get(solo).post(solo_post))
         .route("/solo/:sid/like", get(solo_like))
         .route("/solo/:sid/delete", get(solo_delete))

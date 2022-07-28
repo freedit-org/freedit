@@ -61,15 +61,23 @@
 
 <div class="level is-mobile">
     <div class="level-item" id="upvote">
-        {% match page_data.claim %} {% when Some with (val) %}
+        {% if page_data.claim.is_some() %}
             {% if post.is_upvoted %}
             <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-success is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
             {% else %}
             <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-info is-light is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
             {% endif %}
+
+            {% if post.is_downvoted %}
+            <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote"><span class="tag is-success is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
+            {% else %}
+            <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote"><span class="tag is-info is-light is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
+            {% endif %}
+
         {% else %}
             <span class="tag is-info is-light is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span>
-        {% endmatch %}
+            <span class="tag is-info is-light is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span>
+        {% endif %}
     </div>
 </div>
 
@@ -86,15 +94,22 @@
                 <small>
                     <a href="/user/{{comment.uid}}">{{comment.username}}</a> &nbsp;&nbsp;
                     {{comment.created_at}}
-                    {% match page_data.claim %} {% when Some with (val) %}
+                    {% if page_data.claim.is_some() %}
                         {% if comment.is_upvoted %}
                             <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
                         {% else %}
                             <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
                         {% endif %}
+
+                        {% if comment.is_downvoted %}
+                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
+                        {% else %}
+                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
+                        {% endif %}
                     {% else %}
                         <span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span>
-                    {% endmatch %}
+                        <span class="tag is-info is-light is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span>
+                    {% endif %}
                     {% if comment.uid == post.uid %}
                         [op]
                     {% endif %}

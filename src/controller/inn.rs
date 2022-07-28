@@ -107,11 +107,14 @@ pub(crate) async fn mod_inn_post(
         return Err(AppError::Unauthorized);
     }
 
+    // TODO: limit the number of inns per user
+
     // get inn moderators
     let mut uids: Vec<u64> = vec![];
     if let Some(mods) = input.mods {
         for uid in mods.split('#') {
             if let Ok(uid) = uid.parse::<u64>() {
+                // TODO: limit the number of inns per user
                 uids.push(uid);
             }
         }
@@ -1121,7 +1124,9 @@ struct OutPost {
     content_html: String,
     created_at: String,
     upvotes: usize,
+    downvotes: usize,
     is_upvoted: bool,
+    is_downvoted: bool,
 }
 
 /// Page data: `post.html`
@@ -1146,7 +1151,9 @@ struct OutComment {
     content: String,
     created_at: String,
     upvotes: usize,
+    downvotes: usize,
     is_upvoted: bool,
+    is_downvoted: bool,
 }
 
 /// url params: `post.html`
@@ -1174,11 +1181,17 @@ pub(crate) async fn post(
 
     let mut has_joined = false;
     let mut is_upvoted = false;
+    let mut is_downvoted = false;
     let upvotes = get_count_by_prefix(&db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
+    let downvotes =
+        get_count_by_prefix(&db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
     if let Some(ref claim) = claim {
         let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(claim.uid)].concat();
         if db.open_tree("post_upvotes")?.contains_key(&k)? {
             is_upvoted = true;
+        }
+        if db.open_tree("post_downvotes")?.contains_key(&k)? {
+            is_downvoted = true;
         }
 
         let k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(iid)].concat();
@@ -1211,7 +1224,9 @@ pub(crate) async fn post(
         content_html: post.content_html,
         created_at: date,
         upvotes,
+        downvotes,
         is_upvoted,
+        is_downvoted,
     };
 
     let n = site_config.per_page;
@@ -1225,6 +1240,7 @@ pub(crate) async fn post(
         let (start, end) = get_range(count, &page_params);
         let post_comments_tree = db.open_tree("post_comments")?;
         let comment_upvotes_tree = db.open_tree("comment_upvotes")?;
+        let comment_downvotes_tree = db.open_tree("comment_downvotes")?;
         for i in start..=end {
             let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(i as u64)].concat();
             let v = &post_comments_tree.get(k)?;
@@ -1233,7 +1249,10 @@ pub(crate) async fn post(
                 let user: User = get_one(&db, "users", comment.uid)?;
                 let date = timestamp_to_date(comment.created_at)?;
 
-                let is_upvoted = if let Some(ref claim) = claim {
+                let mut is_upvoted = false;
+                let mut is_downvoted = false;
+
+                if let Some(ref claim) = claim {
                     let k = [
                         &u64_to_ivec(pid),
                         &SEP,
@@ -1242,14 +1261,15 @@ pub(crate) async fn post(
                         &u64_to_ivec(claim.uid),
                     ]
                     .concat();
-                    comment_upvotes_tree.contains_key(&k)?
-                } else {
-                    false
-                };
+                    is_upvoted = comment_upvotes_tree.contains_key(&k)?;
+                    is_downvoted = comment_downvotes_tree.contains_key(&k)?;
+                }
 
                 let prefix = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(comment.cid)].concat();
                 let upvotes =
                     get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
+                let downvotes =
+                    get_count_by_prefix(&db, "comment_downvotes", &prefix).unwrap_or_default();
 
                 let out_comment = OutComment {
                     cid: comment.cid,
@@ -1258,7 +1278,9 @@ pub(crate) async fn post(
                     content: comment.content,
                     created_at: date,
                     upvotes,
+                    downvotes,
                     is_upvoted,
+                    is_downvoted,
                 };
                 out_comments.push(out_comment);
             }
@@ -1298,6 +1320,8 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let date = timestamp_to_date(post.created_at)?;
     let inn: Inn = get_one(db, "inns", post.iid)?;
     let upvotes = get_count_by_prefix(db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
+    let downvotes =
+        get_count_by_prefix(db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
 
     let out_post = OutPost {
         pid: post.pid,
@@ -1310,7 +1334,9 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         content_html: post.content_html,
         created_at: date,
         upvotes,
+        downvotes,
         is_upvoted: false,
+        is_downvoted: false,
     };
 
     let n = 50;
@@ -1333,6 +1359,8 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
                 let prefix = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(comment.cid)].concat();
                 let upvotes =
                     get_count_by_prefix(db, "comment_upvotes", &prefix).unwrap_or_default();
+                let downvotes =
+                    get_count_by_prefix(db, "comment_downvotes", &prefix).unwrap_or_default();
 
                 let out_comment = OutComment {
                     cid: comment.cid,
@@ -1341,7 +1369,9 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
                     content: comment.content,
                     created_at: date,
                     upvotes,
+                    downvotes,
                     is_upvoted: false,
+                    is_downvoted: false,
                 };
                 out_comments.push(out_comment);
             }
@@ -1577,6 +1607,59 @@ pub(crate) async fn comment_upvote(
         comment_upvotes_tree.remove(&k)?;
     } else {
         comment_upvotes_tree.insert(&k, &[])?;
+    }
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /inn/:iid/:pid/downvote` post downvote
+pub(crate) async fn post_downvote(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid)): Path<(u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    let post_downvotes_tree = db.open_tree("post_downvotes")?;
+    let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    if post_downvotes_tree.contains_key(&k)? {
+        post_downvotes_tree.remove(&k)?;
+    } else {
+        post_downvotes_tree.insert(&k, &[])?;
+    }
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /inn/:iid/:pid/:cid/downvote` comment downvote
+pub(crate) async fn comment_downvote(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+    let k = [
+        &u64_to_ivec(pid),
+        &SEP,
+        &u64_to_ivec(cid),
+        &SEP,
+        &u64_to_ivec(claim.uid),
+    ]
+    .concat();
+
+    let comment_downvotes_tree = db.open_tree("comment_downvotes")?;
+    if comment_downvotes_tree.contains_key(&k)? {
+        comment_downvotes_tree.remove(&k)?;
+    } else {
+        comment_downvotes_tree.insert(&k, &[])?;
     }
 
     let target = format!("/post/{}/{}", iid, pid);

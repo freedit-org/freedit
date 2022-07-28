@@ -86,6 +86,7 @@
 //! | "user_posts_idx"    | `uid#idx`           | `iid#pid#visibility` |
 //! | "tags"              | `tag#pid`           | `&[]`                |
 //! | "post_upvotes"      | `pid#uid`           | `&[]`                |
+//! | "post_downvotes"    | `pid#uid`           | `&[]`                |
 //! | "post_timeline_idx" | `iid#pid`           | `timestamp`          |
 //! | "post_timeline"     | `timestamp#iid#pid` | `visibility`         |
 //!
@@ -97,6 +98,7 @@
 //! | "user_comments_count" | `uid`                | N           |
 //! | "user_comments_idx"   | `uid#idx`            | `pid#cid`   |
 //! | "comment_upvotes"     | `pid#cid#uid`        | `&[]`       |
+//! | "comment_downvotes"   | `pid#cid#uid`        | `&[]`       |
 
 /// user
 ///
