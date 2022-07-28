@@ -518,6 +518,7 @@ dependencies = [
  "captcha",
  "comrak",
  "data-encoding",
+ "flate2",
  "hash_avatar",
  "http-body",
  "image",

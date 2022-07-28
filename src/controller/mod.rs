@@ -357,7 +357,7 @@ pub(super) async fn serve_dir(path: &str) -> MethodRouter {
     let fallback = tower::service_fn(|_| async {
         Ok::<_, std::io::Error>(Redirect::to("/signin").into_response())
     });
-    let srv = get_service(ServeDir::new(path).fallback(fallback));
+    let srv = get_service(ServeDir::new(path).precompressed_gzip().fallback(fallback));
     srv.handle_error(|error: std::io::Error| async move {
         (
             StatusCode::INTERNAL_SERVER_ERROR,

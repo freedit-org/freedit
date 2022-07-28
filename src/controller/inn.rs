@@ -18,8 +18,10 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use bincode::config::standard;
+use flate2::{write::GzEncoder, Compression};
 use serde::Deserialize;
 use sled::{Batch, Db};
+use std::io::Write;
 use tokio::{
     fs::{create_dir_all, File},
     io::AsyncWriteExt,
@@ -367,15 +369,19 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
         };
 
         let res = page_inn_list.render().unwrap();
+        let mut e = GzEncoder::new(Vec::with_capacity(8192), Compression::default());
+        e.write_all(res.as_bytes()).unwrap();
+        let compressed_bytes = e.finish().unwrap();
+
         let target_dir = format!("./static/inn/list/{}", page);
         let target_dir = std::path::Path::new(&target_dir);
         if !target_dir.exists() {
             create_dir_all(target_dir).await?;
         }
 
-        let target = target_dir.join("index.html");
+        let target = target_dir.join("index.html.gz");
         let mut file = File::create(&target).await?;
-        file.write_all(res.as_bytes()).await?;
+        file.write_all(&compressed_bytes).await?;
         debug!("target {}", target.display());
 
         let is_last = inns_count <= n;
@@ -823,6 +829,9 @@ async fn render_post_list(
     };
 
     let res = &page_inn_static.render().unwrap();
+    let mut e = GzEncoder::new(Vec::with_capacity(8192), Compression::default());
+    e.write_all(res.as_bytes()).unwrap();
+    let compressed_bytes = e.finish().unwrap();
 
     let target_dir = if is_user {
         format!("./static/inn/user/{}/{}", id, page)
@@ -834,10 +843,10 @@ async fn render_post_list(
         create_dir_all(target_dir).await?;
     }
 
-    let target = target_dir.join("index.html");
+    let target = target_dir.join("index.html.gz");
     let target = std::path::Path::new(&target);
     let mut file = File::create(target).await?;
-    file.write_all(res.as_bytes()).await?;
+    file.write_all(&compressed_bytes).await?;
     debug!("target {} : pids: {:?}", target.display(), pids);
 
     Ok(())
@@ -1419,10 +1428,14 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         create_dir_all(target_dir).await?;
     }
 
-    let target = target_dir.join("index.html");
+    let mut e = GzEncoder::new(Vec::with_capacity(8192), Compression::default());
+    e.write_all(res.as_bytes()).unwrap();
+    let compressed_bytes = e.finish().unwrap();
+
+    let target = target_dir.join("index.html.gz");
     let target = std::path::Path::new(&target);
     let mut file = File::create(target).await?;
-    file.write_all(res.as_bytes()).await?;
+    file.write_all(&compressed_bytes).await?;
     debug!("target {} : pid: {:?}", target.display(), pid);
 
     Ok(())
