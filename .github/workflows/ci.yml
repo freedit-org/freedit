@@ -52,14 +52,12 @@ jobs:
       - name: doc build
         run: cargo doc --no-deps &&
           echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v1
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: 'target/doc'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@main
