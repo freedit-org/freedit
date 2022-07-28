@@ -9,6 +9,12 @@ jobs:
     permissions:
       contents: write
       security-events: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -47,8 +53,13 @@ jobs:
         run: cargo doc --no-deps &&
           echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
       
-      - name: doc deploy
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v1
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
         with:
-          branch: gh-pages
-          folder: target/doc
+          path: 'target/doc'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@main
