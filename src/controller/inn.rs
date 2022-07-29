@@ -335,7 +335,7 @@ pub(crate) async fn inn_list(
     Ok(into_response(&page_inn_list, "html"))
 }
 
-/// `/static/inn/list/:page/index.html`
+/// `/static/inn/list/:page.html`
 async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
     let site_config = get_site_config(db)?;
     let n = 30;
@@ -374,13 +374,13 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
         e.write_all(res.as_bytes()).unwrap();
         let compressed_bytes = e.finish().unwrap();
 
-        let target_dir = format!("{}/inn/list/{}", &CONFIG.html_path, page);
+        let target_dir = format!("{}/inn/list/", &CONFIG.html_path);
         let target_dir = std::path::Path::new(&target_dir);
         if !target_dir.exists() {
             create_dir_all(target_dir).await?;
         }
 
-        let target = target_dir.join("index.html.gz");
+        let target = target_dir.join(format!("{}.html.gz", page));
         let mut file = File::create(&target).await?;
         file.write_all(&compressed_bytes).await?;
         debug!("target {}", target.display());
@@ -835,16 +835,16 @@ async fn render_post_list(
     let compressed_bytes = e.finish().unwrap();
 
     let target_dir = if is_user {
-        format!("{}/inn/user/{}/{}", &CONFIG.html_path, id, page)
+        format!("{}/inn/user/{}", &CONFIG.html_path, id)
     } else {
-        format!("{}/static/inn/{}/{}", &CONFIG.html_path, id, page)
+        format!("{}/inn/{}", &CONFIG.html_path, id)
     };
     let target_dir = std::path::Path::new(&target_dir);
     if !target_dir.exists() {
         create_dir_all(target_dir).await?;
     }
 
-    let target = target_dir.join("index.html.gz");
+    let target = target_dir.join(format!("{}.html.gz", page));
     let target = std::path::Path::new(&target);
     let mut file = File::create(target).await?;
     file.write_all(&compressed_bytes).await?;
@@ -855,7 +855,7 @@ async fn render_post_list(
 
 /// Cron job: generate static page `/static/inn` tab `All`
 ///
-/// `/static/inn/0/:page/index.html`
+/// `/static/inn/0/:page.html`
 pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppError> {
     let sleep = time::sleep(time::Duration::from_secs(interval));
     if let Some((k, _)) = db.open_tree("post_timeline")?.last()? {
@@ -905,9 +905,9 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
 
 /// Cron job: generate static page`/static/inn` tab `:Inn` and `:User`
 ///
-/// `/static/inn/:iid/:page/index.html`
+/// `/static/inn/:iid/:page.html`
 ///
-/// `/static/inn/user/:uid/:page/index.html`
+/// `/static/inn/user/:uid/:page.html`
 pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppError> {
     let site_config = get_site_config(db)?;
 
@@ -1423,7 +1423,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
 
     let res = &page_post.render().unwrap();
 
-    let target_dir = format!("{}/post/{}", &CONFIG.html_path, pid);
+    let target_dir = format!("{}/post", &CONFIG.html_path);
     let target_dir = std::path::Path::new(&target_dir);
     if !target_dir.exists() {
         create_dir_all(target_dir).await?;
@@ -1433,7 +1433,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     e.write_all(res.as_bytes()).unwrap();
     let compressed_bytes = e.finish().unwrap();
 
-    let target = target_dir.join("index.html.gz");
+    let target = target_dir.join(format!("{}.html.gz", pid));
     let target = std::path::Path::new(&target);
     let mut file = File::create(target).await?;
     file.write_all(&compressed_bytes).await?;

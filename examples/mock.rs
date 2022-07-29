@@ -21,7 +21,7 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 #[tokio::main]
 async fn main() {
     let mut handlers = Vec::with_capacity(100);
-    for i in 1..=100 {
+    for i in 1..=10 {
         let h = tokio::spawn(async move {
             let inn_name = format!("inn_{}_{}", i, rand::random::<u16>());
             match create_inn(&inn_name).await {
@@ -29,7 +29,7 @@ async fn main() {
                 Ok(s) => println!("{}", s),
                 Err(e) => println!("error creating {}: {}", inn_name, e),
             };
-            for _ in 0..100 {
+            for _ in 0..10 {
                 match create_post(i).await {
                     Err(e) => println!("{}", e),
                     Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
@@ -46,7 +46,7 @@ async fn main() {
     }
 
     let mut handlers = Vec::with_capacity(10000);
-    for i in 1..=10000 {
+    for i in 1..=100 {
         let h = tokio::spawn(async move {
             match create_comment(i).await {
                 Err(e) => println!("{}", e),

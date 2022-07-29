@@ -1,9 +1,9 @@
 {% extends "layout.html" %} 
 
 {% block tabs %}
-    <li class="is-active"><a href="/static/inn/0/1/index.html">Inn</a></li>
+    <li class="is-active"><a href="/static/inn/0/1.html">Inn</a></li>
     <li><a href="/solo/user/0">Solo</a></li>
-    <li><a href="/static/inn/list/1/index.html">Explore</a></li>
+    <li><a href="/static/inn/list/1.html">Explore</a></li>
 {% endblock %}
 
 {% block content %}
@@ -12,13 +12,13 @@
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
                 {% if id == 0 %}
-                    <li class="is-active"><a href="/static/inn/0/1/index.html">All</a></li>
+                    <li class="is-active"><a href="/static/inn/0/1.html">All</a></li>
                 {% else %}
-                    <li><a href="/static/inn/0/1/index.html">All</a></li>
+                    <li><a href="/static/inn/0/1.html">All</a></li>
                     {% if is_user %}
-                    <li class="is-active"><a href="/static/inn/user/{{id}}/1/index.html">👤 {{name}}</a></li>
+                    <li class="is-active"><a href="/static/inn/user/{{id}}/1.html">👤 {{name}}</a></li>
                     {% else %}
-                    <li class="is-active"><a href="/static/inn/{{id}}/1/index.html">⚓ {{name}}</a></li>
+                    <li class="is-active"><a href="/static/inn/{{id}}/1.html">⚓ {{name}}</a></li>
                     {% endif %}
                 {% endif %}
             </ul>
@@ -35,9 +35,9 @@
             </figure>
         </div>
         <div class="list-item-content">
-            <div class="list-item-title"><strong><a href="/static/post/{{post.pid}}/index.html">{{post.title}}</a></strong></div>
+            <div class="list-item-title"><strong><a href="/static/post/{{post.pid}}.html">{{post.title}}</a></strong></div>
             <div class="list-item-description">
-                <span class="tag is-light is-link"><a href="/static/inn/{{post.iid}}/1/index.html">{{post.inn_name}}</a></span>
+                <span class="tag is-light is-link"><a href="/static/inn/{{post.iid}}/1.html">{{post.inn_name}}</a></span>
                 <span class="tag">{{post.created_at}}</span>
             </div>
         </div>
@@ -54,13 +54,13 @@
     {% if page == 1 %}
         <a class="pagination-previous" disabled>Prev</a>
     {% else %}
-        <a class="pagination-previous" href="/static/inn/{{id}}/{{page-1}}/index.html">Prev</a>
+        <a class="pagination-previous" href="/static/inn/{{id}}/{{page-1}}.html">Prev</a>
     {% endif %}
 
     {% if is_last %}
         <a class="pagination-next" disabled>Next</a>
     {% else %}
-        <a class="pagination-next" href="/static/inn/{{id}}/{{page+1}}/index.html">Next</a>
+        <a class="pagination-next" href="/static/inn/{{id}}/{{page+1}}.html">Next</a>
     {% endif %}
 </nav>
 {% endblock %}

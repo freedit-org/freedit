@@ -292,7 +292,7 @@ pub(crate) async fn home(
     if claim.is_some() {
         Ok(Redirect::to("/inn/0"))
     } else {
-        Ok(Redirect::to("/static/inn/0/1/index.html"))
+        Ok(Redirect::to("/static/inn/0/1.html"))
     }
 }
 

@@ -6,9 +6,9 @@
     <li><a href="/solo/user/0">Solo</a></li>
     <li><a href="/inn/list">Explore</a></li>
     {% else %}
-    <li class="is-active"><a href="/static/inn/0/1/index.html">Inn</a></li>
+    <li class="is-active"><a href="/static/inn/0/1.html">Inn</a></li>
     <li><a href="/solo/user/0">Solo</a></li>
-    <li><a href="/static/inn/list/1/index.html">Explore</a></li>
+    <li><a href="/static/inn/list/1.html">Explore</a></li>
     {% endif %}
 {% endblock %}
 
@@ -92,7 +92,7 @@
                 {% if page_data.claim.is_some() %}
                 <a href="/post/{{post.iid}}/{{post.pid}}">
                 {% else %}
-                <a href="/static/post/{{post.pid}}/index.html">
+                <a href="/static/post/{{post.pid}}.html">
                 {% endif %}
                 {{post.title}}</a></strong>
             </div>
