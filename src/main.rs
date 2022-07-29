@@ -53,6 +53,12 @@ async fn main() -> Result<(), AppError> {
     }
     info!("inn icons path: {}", &CONFIG.inn_icons_path);
 
+    let html_path = Path::new(&CONFIG.html_path);
+    if !html_path.exists() {
+        fs::create_dir_all(html_path).unwrap();
+    }
+    info!("html path: {}", &CONFIG.html_path);
+
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {

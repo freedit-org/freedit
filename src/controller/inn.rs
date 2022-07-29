@@ -7,6 +7,7 @@ use super::{
     ParamsPage, Post, User, ValidatedForm, SEP,
 };
 use crate::{
+    config::CONFIG,
     controller::{get_count, set_index, IterType},
     error::AppError,
 };
@@ -373,7 +374,7 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
         e.write_all(res.as_bytes()).unwrap();
         let compressed_bytes = e.finish().unwrap();
 
-        let target_dir = format!("./static/inn/list/{}", page);
+        let target_dir = format!("{}/inn/list/{}", &CONFIG.html_path, page);
         let target_dir = std::path::Path::new(&target_dir);
         if !target_dir.exists() {
             create_dir_all(target_dir).await?;
@@ -834,9 +835,9 @@ async fn render_post_list(
     let compressed_bytes = e.finish().unwrap();
 
     let target_dir = if is_user {
-        format!("./static/inn/user/{}/{}", id, page)
+        format!("{}/inn/user/{}/{}", &CONFIG.html_path, id, page)
     } else {
-        format!("./static/inn/{}/{}", id, page)
+        format!("{}/static/inn/{}/{}", &CONFIG.html_path, id, page)
     };
     let target_dir = std::path::Path::new(&target_dir);
     if !target_dir.exists() {
@@ -1422,7 +1423,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
 
     let res = &page_post.render().unwrap();
 
-    let target_dir = format!("./static/post/{}", pid);
+    let target_dir = format!("{}/post/{}", &CONFIG.html_path, pid);
     let target_dir = std::path::Path::new(&target_dir);
     if !target_dir.exists() {
         create_dir_all(target_dir).await?;

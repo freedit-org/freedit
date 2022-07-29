@@ -6,7 +6,7 @@ use super::{
     timestamp_to_date, u64_to_ivec, Claim, Inn, PageData, ParamsPage, SiteConfig, User,
     ValidatedForm, SEP,
 };
-use crate::{controller::get_count, error::AppError};
+use crate::{config::CONFIG, controller::get_count, error::AppError};
 use ::pbkdf2::{
     password_hash::{Ident, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Params, Pbkdf2,
@@ -593,7 +593,7 @@ pub(crate) async fn signup_post(
     let password_hash = generate_password_hash(&input.password);
     let uid = incr_id(&db, "users_count")?;
 
-    let avatar = format!("./static/avatars/{}.png", uid);
+    let avatar = format!("{}/{}.png", &CONFIG.avatars_path, uid);
     match Generator::new().create().save_to_png(&avatar) {
         Ok(_) => (),
         Err(e) => {

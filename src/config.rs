@@ -12,6 +12,7 @@ pub(crate) struct Config {
     pub(crate) addr: String,
     pub(crate) avatars_path: String,
     pub(crate) inn_icons_path: String,
+    pub(crate) html_path: String,
     pub(crate) serve_dir: Vec<(String, String, String)>,
 }
 
@@ -39,8 +40,9 @@ impl Default for Config {
         Config {
             db: "freedit.db".into(),
             addr: "127.0.0.1:3001".into(),
-            avatars_path: "./static/avatars".into(),
-            inn_icons_path: "./static/inn_icons".into(),
+            avatars_path: "./static/imgs/avatars".into(),
+            inn_icons_path: "./static/imgs/inn_icons".into(),
+            html_path: "./static/html".into(),
             serve_dir: vec![],
         }
     }

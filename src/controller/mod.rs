@@ -322,14 +322,14 @@ pub(crate) async fn upload_pic_post(
                     return Err(AppError::Unauthorized);
                 }
                 target = format!("/mod/{}", iid);
-                format!("./static/inn_icons/{}.png", iid)
+                format!("{}/{}.png", &CONFIG.inn_icons_path, iid)
             } else {
                 return Err(AppError::NotFound);
             }
         }
         "user" => {
             target = "/user/setting".to_string();
-            format!("./static/avatars/{}.png", claim.uid)
+            format!("{}/{}.png", &CONFIG.avatars_path, claim.uid)
         }
         _ => unreachable!(),
     };
@@ -380,9 +380,9 @@ pub(super) async fn handler_404() -> impl IntoResponse {
 
 pub(crate) async fn style() -> (HeaderMap, String) {
     let mut headers = HeaderMap::new();
-    let mut style = include_str!("../../css/bulma.min.css").to_string();
+    let mut style = include_str!("../../static/css/bulma.min.css").to_string();
     style.push('\n');
-    style.push_str(include_str!("../../css/main.css"));
+    style.push_str(include_str!("../../static/css/main.css"));
 
     headers.insert(
         HeaderName::from_static("content-type"),
