@@ -66,11 +66,18 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/solo/:sid/like", get(solo_like))
         .route("/solo/:sid/delete", get(solo_delete))
         .layer(Extension(db))
-        .route("/css/style.css", get(style))
         .route("/health_check", get(health_check))
-        .nest("/avatars", serve_dir(&CONFIG.avatars_path).await)
-        .nest("/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
-        .nest("/static/", serve_dir(&CONFIG.html_path).await);
+        .route("/static/style.css", get(style))
+        .nest("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
+        .nest("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
+        .nest(
+            "/static/inn",
+            serve_dir(&format!("{}/inn", &CONFIG.html_path)).await,
+        )
+        .nest(
+            "/static/post",
+            serve_dir(&format!("{}/post", &CONFIG.html_path)).await,
+        );
 
     for (path, dir, _) in &CONFIG.serve_dir {
         let path = format!("/{}", path);
