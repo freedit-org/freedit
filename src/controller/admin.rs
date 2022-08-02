@@ -266,3 +266,48 @@ impl Default for SiteConfig {
         }
     }
 }
+
+#[derive(Template)]
+#[template(path = "admin_pageview.html")]
+struct AdminPageviewPage<'a> {
+    page_data: PageData<'a>,
+    pageviews: Vec<(String, String, u64)>,
+}
+
+pub(crate) async fn admin_pageview(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    if claim.role != u8::MAX {
+        return Err(AppError::Unauthorized);
+    }
+
+    let mut pageviews = Vec::with_capacity(100);
+    for i in &db.open_tree("user_pageviews")? {
+        let (k, v) = i?;
+        let mut k_str = std::str::from_utf8(&k)?.split('#');
+        let timestamp = k_str
+            .next()
+            .and_then(|s| i64::from_str_radix(s, 16).ok())
+            .unwrap();
+        let date = timestamp_to_date(timestamp)?;
+        let uid = k_str.next().unwrap().to_owned();
+        let count = ivec_to_u64(&v);
+        pageviews.push((uid, date, count));
+    }
+
+    pageviews.sort_unstable_by(|a, b| b.2.cmp(&a.2));
+    if pageviews.len() > 100 {
+        pageviews.truncate(100);
+    }
+
+    let page_data = PageData::new("Admin-pageview", &site_config.site_name, Some(claim), false);
+    let admin_pageview_page = AdminPageviewPage {
+        page_data,
+        pageviews,
+    };
+    Ok(into_response(&admin_pageview_page, "html"))
+}

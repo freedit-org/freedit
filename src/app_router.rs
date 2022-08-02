@@ -1,7 +1,7 @@
 use crate::{
     config::CONFIG,
     controller::{
-        admin::{admin, admin_post, admin_view},
+        admin::{admin, admin_pageview, admin_post, admin_view},
         handler_404, health_check, home,
         inn::{
             comment_downvote, comment_post, comment_upvote, edit_post, edit_post_post, inn,
@@ -50,6 +50,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/notification", get(notification))
         .route("/admin", get(admin).post(admin_post))
         .route("/admin/view", get(admin_view))
+        .route("/admin/pageview", get(admin_pageview))
         .route("/mod/:iid", get(mod_inn).post(mod_inn_post))
         .route("/mod/inn_icon", get(mod_inn).post(upload_pic_post))
         .route("/inn/list", get(inn_list))
