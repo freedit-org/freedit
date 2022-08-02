@@ -28,7 +28,7 @@
 //!
 //! | tree        | key                | value         |
 //! |-------------|--------------------|---------------|
-//! | "captcha"   | `timestamp#nanoid` | captcha_chars |
+//! | "captcha"   | `timestamp_nanoid` | captcha_chars |
 //!
 //! ### pageviews
 //! In order to anti-spam, keep three days pageviews of each user. For privacy,
@@ -36,7 +36,7 @@
 //!
 //! | tree             | key             | value |
 //! |------------------|-----------------|-------|
-//! | "user_pageviews" | `timestamp#uid` | N     |
+//! | "user_pageviews" | `timestamp_uid` | N     |
 //! | "post_pageviews" | `pid`           | N     |
 //!
 //! ### solo
@@ -56,7 +56,7 @@
 //!
 //! | tree       | key                | value                                     |
 //! |------------|--------------------|-------------------------------------------|
-//! | "sessions" | `timestamp#nanoid` | [`Claim`] |
+//! | "sessions" | `timestamp_nanoid` | [`Claim`] |
 //!
 //! ### site config
 //! | tree      | key           | value          | set       | get               |
@@ -625,13 +625,13 @@ impl<'a> PageData<'a> {
 /// # Examples
 ///
 /// ```no_run
-/// // format like: "624e97ca#sSUl_K03nbUmPQLFe2CWk"
+/// // format like: "624e97ca_sSUl_K03nbUmPQLFe2CWk"
 /// let nanoid = generate_nanoid_expire();
 /// ```
 fn generate_nanoid_expire(seconds: i64) -> String {
     let nanoid = nanoid!();
     let exp = OffsetDateTime::now_utc().unix_timestamp() + seconds;
-    format!("{:x}#{}", exp, nanoid)
+    format!("{:x}_{}", exp, nanoid)
 }
 
 /// Update the counter and return the new id. It is contiguous if every id is used.

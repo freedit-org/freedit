@@ -139,13 +139,13 @@ pub(crate) async fn admin_view(
                     let uid = u8_slice_to_u64(&k[18..26]);
                     ones.push(format!("pid: {}, cid: {}, uid: {}", pid, cid, uid));
                 }
-                "inn_posts_idx" => {
+                "inn_posts_idx" | "post_timeline_idx" => {
                     let id = u8_slice_to_u64(&k[0..8]);
                     let idx = u8_slice_to_u64(&k[9..17]);
                     let v = ivec_to_u64(&v);
                     ones.push(format!("id: {}, idx: {}, target: {}", id, idx, v));
                 }
-                "user_solos_idx" => {
+                "user_solos_idx" | "user_comments_idx" => {
                     let uid = u8_slice_to_u64(&k[0..8]);
                     let idx = u8_slice_to_u64(&k[9..17]);
                     let sid = u8_slice_to_u64(&k[0..8]);
@@ -153,6 +153,17 @@ pub(crate) async fn admin_view(
                     ones.push(format!(
                         "uid: {}, idx: {}, sid: {}, visibility: {}",
                         uid, idx, sid, visibility
+                    ));
+                }
+                "user_posts_idx" => {
+                    let uid = u8_slice_to_u64(&k[0..8]);
+                    let idx = u8_slice_to_u64(&k[9..17]);
+                    let iid = u8_slice_to_u64(&v[0..8]);
+                    let pid = u8_slice_to_u64(&v[9..17]);
+                    let visibility = u8_slice_to_u64(&v[18..26]);
+                    ones.push(format!(
+                        "uid: {}, idx: {}, iid: {}, pid: {}, visibility: {}",
+                        uid, idx, iid, pid, visibility
                     ));
                 }
                 "user_solos_count"
@@ -186,6 +197,24 @@ pub(crate) async fn admin_view(
                     let uid = k_str.next().unwrap();
                     let count = ivec_to_u64(&v);
                     ones.push(format!("user: {}, date: {}, count: {}", uid, date, count));
+                }
+                "inn_names" | "usernames" => {
+                    let name = std::str::from_utf8(&k)?;
+                    let id = u8_slice_to_u64(&v);
+                    ones.push(format!("name: {}, id: {}", name, id));
+                }
+                "static_user_post" | "static_inn_post" => {
+                    let id = u8_slice_to_u64(&k);
+                    ones.push(format!("id: {}", id));
+                }
+                "solo_timeline" => {
+                    let sid = u8_slice_to_u64(&k[0..8]);
+                    let uid = u8_slice_to_u64(&v[0..8]);
+                    let visibility = u8_slice_to_u64(&v[9..17]);
+                    ones.push(format!(
+                        "sid: {}, uid: {}, visibility: {}",
+                        sid, uid, visibility
+                    ));
                 }
                 _ => ones.push(format!("{} has not been supported yet", tree_name)),
             }
@@ -288,13 +317,10 @@ pub(crate) async fn admin_pageview(
     let mut pageviews = Vec::with_capacity(100);
     for i in &db.open_tree("user_pageviews")? {
         let (k, v) = i?;
-        let mut k_str = std::str::from_utf8(&k)?.split('#');
-        let timestamp = k_str
-            .next()
-            .and_then(|s| i64::from_str_radix(s, 16).ok())
-            .unwrap();
+        let k_str = std::str::from_utf8(&k)?.split_once('_').unwrap();
+        let timestamp = i64::from_str_radix(k_str.0, 16).unwrap();
         let date = timestamp_to_date(timestamp)?;
-        let uid = k_str.next().unwrap().to_owned();
+        let uid = k_str.1.to_owned();
         let count = ivec_to_u64(&v);
         pageviews.push((uid, date, count));
     }

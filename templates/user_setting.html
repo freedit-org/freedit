@@ -110,7 +110,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label">Confirm Password</label>
+                <label class="label">Confirm</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -133,6 +133,25 @@
         </div>
     </fieldset>
 </form>
+
+<div class="box">
+    <div class="content">
+        <h3>Sessions</h3>
+        <ul>
+            {% match page_data.claim %}
+            {% when Some(val) %}
+                {% for i in sessions %}
+                    {% if val.session_id.as_str() == i %}
+                    <li>{{i}}: current</li>
+                    {% else %}
+                    <li>{{i}}: <a href="/user/remove/{{i}}">remove</a></li>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+            {% endmatch %}
+        </ul>
+    </div>
+</div>
 
 <div class="divider"></div>
 

@@ -15,9 +15,8 @@ pub(super) async fn clear_invalid(db: &Db, tree_name: &str, interval: u64) -> Re
         let (k, _) = i?;
         let k_str = std::str::from_utf8(&k)?;
         let time_stamp = k_str
-            .split('#')
-            .next()
-            .and_then(|s| i64::from_str_radix(s, 16).ok());
+            .split_once('_')
+            .and_then(|s| i64::from_str_radix(s.0, 16).ok());
         if let Some(time_stamp) = time_stamp {
             if time_stamp < OffsetDateTime::now_utc().unix_timestamp() {
                 debug!("remove expired {}: {}", tree_name, k_str);

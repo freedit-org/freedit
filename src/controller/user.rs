@@ -357,6 +357,7 @@ struct PageUserSetting<'a> {
     username: String,
     url: String,
     about: String,
+    sessions: Vec<String>,
 }
 
 /// `GET /user/setting`
@@ -369,15 +370,39 @@ pub(crate) async fn user_setting(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let user: User = get_one(&db, "users", claim.uid)?;
 
+    let mut sessions = Vec::new();
+    for i in db.open_tree("sessions")?.iter() {
+        let (_, v) = i?;
+        let (claim2, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
+        if claim2.uid == claim.uid {
+            sessions.push(claim2.session_id);
+        }
+    }
+
     let page_user_setting = PageUserSetting {
         uid: claim.uid,
         page_data: PageData::new("setting", &site_config.site_name, Some(claim), false),
         username: user.username,
         about: user.about,
         url: user.url,
+        sessions,
     };
 
     Ok(into_response(&page_user_setting, "html"))
+}
+
+/// `GET /user/remove/:session_id`
+pub(crate) async fn remove_session(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(session_id): Path<String>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    db.open_tree("sessions")?.remove(&session_id)?;
+    Ok(Redirect::to("/user/setting"))
 }
 
 /// `POST /user/setting`
@@ -687,9 +712,9 @@ impl Claim {
         site_config: &SiteConfig,
     ) -> Option<Self> {
         let session = cookie.get(COOKIE_NAME)?;
-        let timestamp = session.split('#').next();
+        let timestamp = session.split_once('_')?.0;
         let tree = &db.open_tree("sessions").ok()?;
-        let timestamp = i64::from_str_radix(timestamp?, 16).ok()?;
+        let timestamp = i64::from_str_radix(timestamp, 16).ok()?;
         let now = OffsetDateTime::now_utc();
 
         if timestamp < now.unix_timestamp() {
@@ -712,7 +737,7 @@ impl Claim {
             .replace_time(Time::MIDNIGHT)
             .saturating_add(time::Duration::days(3))
             .unix_timestamp();
-        let key = format!("{:x}#{}", expire, claim.uid);
+        let key = format!("{:x}_{}", expire, claim.uid);
         incr_id(&db.open_tree("user_pageviews").ok()?, key).ok()?;
         Some(claim)
     }
