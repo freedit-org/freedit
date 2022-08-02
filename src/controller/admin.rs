@@ -1,6 +1,6 @@
 use super::{
-    get_site_config, into_response, u8_slice_to_u64, Claim, IterType, PageData, SiteConfig,
-    ValidatedForm,
+    get_site_config, into_response, timestamp_to_date, u8_slice_to_u64, Claim, IterType, PageData,
+    SiteConfig, ValidatedForm,
 };
 use crate::{
     controller::{ivec_to_u64, Comment, Inn, Post, Solo, User},
@@ -133,7 +133,7 @@ pub(crate) async fn admin_view(
                     let json = json.replace("\\\"", "'");
                     ones.push(format!("pid: {}, cid: {}, comment: {}", pid, cid, json));
                 }
-                "comment_upvotes" => {
+                "comment_upvotes" | "comment_downvotes" => {
                     let pid = u8_slice_to_u64(&k[0..8]);
                     let cid = u8_slice_to_u64(&k[9..17]);
                     let uid = u8_slice_to_u64(&k[18..26]);
@@ -170,10 +170,22 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u64(&k[len - 8..]);
                     ones.push(format!("{}#{}", str, id));
                 }
-                "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users" => {
+                "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
+                | "post_upvotes" | "post_downvotes" | "user_solos_like" | "solo_users_like" => {
                     let id1 = u8_slice_to_u64(&k[0..8]);
                     let id2 = u8_slice_to_u64(&k[9..17]);
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
+                }
+                "user_pageviews" => {
+                    let mut k_str = std::str::from_utf8(&k)?.split('#');
+                    let timestamp = k_str
+                        .next()
+                        .and_then(|s| i64::from_str_radix(s, 16).ok())
+                        .unwrap();
+                    let date = timestamp_to_date(timestamp)?;
+                    let uid = k_str.next().unwrap();
+                    let count = ivec_to_u64(&v);
+                    ones.push(format!("user: {}, date: {}, count: {}", uid, date, count));
                 }
                 _ => ones.push(format!("{} has not been supported yet", tree_name)),
             }
