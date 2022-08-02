@@ -271,6 +271,11 @@ pub(crate) async fn solo_post(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
+    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    if created_at - claim.last_write <= site_config.solo_interval {
+        return Err(AppError::WriteInterval);
+    }
+
     let visibility = match input.visibility.as_str() {
         "Everyone" => 0,
         "Following" => 10,
@@ -303,7 +308,6 @@ pub(crate) async fn solo_post(
 
     let content = md2html(&content)?;
 
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
     let solo = Solo {
         sid,
         uid,
@@ -322,6 +326,7 @@ pub(crate) async fn solo_post(
     // kv_pair: sid = uid#visibility
     let v = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(visibility)].concat();
     db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
+    claim.update_last_write(&db)?;
 
     let target = format!("/solo/user/{}", uid);
     Ok(Redirect::to(&target))

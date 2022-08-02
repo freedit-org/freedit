@@ -258,9 +258,9 @@ impl Default for SiteConfig {
             title_max_length: 100,
             article_max_length: 65535,
             comment_max_length: 10_000,
-            solo_interval: 20,
-            post_interval: 60,
-            comment_interval: 20,
+            solo_interval: 10,
+            post_interval: 30,
+            comment_interval: 10,
             per_page: 30,
             static_page: 10,
         }

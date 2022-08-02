@@ -38,6 +38,8 @@ pub(super) enum AppError {
     NotFound,
     #[error("wrong password")]
     WrongPassword,
+    #[error("Too many attempts please try again later")]
+    WriteInterval,
     #[error("unauthorized")]
     Unauthorized,
     #[error("Please login first")]
@@ -70,6 +72,7 @@ impl IntoResponse for AppError {
             | AppError::ValidationError(_)
             | AppError::AxumFormRejection(_)
             | AppError::LatexError(_) => StatusCode::BAD_REQUEST,
+            AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,
             AppError::NonLogin => return Redirect::to("/signin").into_response(),
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
             AppError::Banned => StatusCode::FORBIDDEN,

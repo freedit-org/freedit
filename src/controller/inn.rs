@@ -483,6 +483,11 @@ pub(crate) async fn edit_post_post(
         return Err(AppError::Unauthorized);
     }
 
+    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    if created_at - claim.last_write <= site_config.post_interval {
+        return Err(AppError::WriteInterval);
+    }
+
     let inn: Inn = get_one(&db, "inns", iid)?;
 
     let pid = if old_pid == 0 {
@@ -524,7 +529,6 @@ pub(crate) async fn edit_post_post(
         db.open_tree("tags")?.apply_batch(batch)?;
     }
 
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
     let post = Post {
         pid,
         uid: claim.uid,
@@ -571,7 +575,7 @@ pub(crate) async fn edit_post_post(
     let k = [&created_at_ivec, &SEP, &iid_ivec, &SEP, &pid_ivec].concat();
     // kv_pair: timestamp#iid#pid = visibility
     db.open_tree("post_timeline")?.insert(k, visibility_ivec)?;
-
+    claim.update_last_write(&db)?;
     static_post(&db, pid).await?;
 
     let target = format!("/post/{}/{}", iid, pid);
@@ -1474,9 +1478,13 @@ pub(crate) async fn comment_post(
         return Err(AppError::NotFound);
     }
 
+    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    if created_at - claim.last_write <= site_config.comment_interval {
+        return Err(AppError::WriteInterval);
+    }
+
     let pid_ivec = u64_to_ivec(pid);
     let cid = incr_id(&db.open_tree("post_comments_count")?, &pid_ivec)?;
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
 
     let mut content = input.comment;
 
@@ -1581,6 +1589,8 @@ pub(crate) async fn comment_post(
         .concat();
         notification_tree.insert(notify_key, vec![1])?;
     }
+
+    claim.update_last_write(&db)?;
 
     static_post(&db, pid).await?;
     if visibility < 10 {

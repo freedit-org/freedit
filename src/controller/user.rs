@@ -717,13 +717,22 @@ impl Claim {
         Some(claim)
     }
 
+    pub(super) fn update_last_write(mut self, db: &Db) -> Result<(), AppError> {
+        self.last_write = OffsetDateTime::now_utc().unix_timestamp();
+        let claim_encode = bincode::encode_to_vec(&self, standard())?;
+        db.open_tree("sessions")?
+            .insert(&self.session_id, claim_encode)?;
+        Ok(())
+    }
+
     /// generate a Claim from user and store it in session tree, then return a cookie with a session id.
     fn generate_cookie(db: &Db, user: User, expiry: &str) -> Result<String, AppError> {
         if user.role == 0 {
             return Err(AppError::Banned);
         }
         let seconds = expire_seconds(expiry);
-        let exp = OffsetDateTime::now_utc().unix_timestamp() + seconds;
+        let now = OffsetDateTime::now_utc().unix_timestamp();
+        let exp = now + seconds;
         let session_id = generate_nanoid_expire(seconds);
 
         let claim = Claim {
@@ -731,6 +740,8 @@ impl Claim {
             username: user.username,
             role: user.role,
             exp,
+            last_write: now,
+            session_id: session_id.clone(),
         };
 
         let claim_encode = bincode::encode_to_vec(&claim, standard())?;

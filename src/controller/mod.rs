@@ -185,9 +185,9 @@ pub(super) struct SiteConfig {
     title_max_length: usize,
     article_max_length: usize,
     comment_max_length: usize,
-    solo_interval: usize,
-    post_interval: usize,
-    comment_interval: usize,
+    solo_interval: i64,
+    post_interval: i64,
+    comment_interval: i64,
     per_page: usize,
     static_page: usize,
 }
@@ -198,6 +198,8 @@ struct Claim {
     username: String,
     role: u8,
     exp: i64,
+    last_write: i64,
+    session_id: String,
 }
 
 use crate::{config::CONFIG, error::AppError, VERSION};
