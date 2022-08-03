@@ -197,7 +197,6 @@ struct Claim {
     uid: u64,
     username: String,
     role: u8,
-    exp: i64,
     last_write: i64,
     session_id: String,
 }

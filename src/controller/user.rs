@@ -757,14 +757,12 @@ impl Claim {
         }
         let seconds = expire_seconds(expiry);
         let now = OffsetDateTime::now_utc().unix_timestamp();
-        let exp = now + seconds;
         let session_id = generate_nanoid_expire(seconds);
 
         let claim = Claim {
             uid: user.uid,
             username: user.username,
             role: user.role,
-            exp,
             last_write: now,
             session_id: session_id.clone(),
         };

@@ -142,7 +142,7 @@
             {% when Some(val) %}
                 {% for i in sessions %}
                     {% if val.session_id.as_str() == i %}
-                    <li>{{i}}: current</li>
+                    <li>{{i}}: current(<a href="/signout">Sign out</a>)</li>
                     {% else %}
                     <li>{{i}}: <a href="/user/remove/{{i}}">remove</a></li>
                     {% endif %}

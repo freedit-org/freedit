@@ -188,13 +188,10 @@ pub(crate) async fn admin_view(
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
                 }
                 "user_pageviews" => {
-                    let mut k_str = std::str::from_utf8(&k)?.split('#');
-                    let timestamp = k_str
-                        .next()
-                        .and_then(|s| i64::from_str_radix(s, 16).ok())
-                        .unwrap();
+                    let k_str = std::str::from_utf8(&k)?.split_once('_').unwrap();
+                    let timestamp = i64::from_str_radix(k_str.0, 16).unwrap();
                     let date = timestamp_to_date(timestamp)?;
-                    let uid = k_str.next().unwrap();
+                    let uid = k_str.1;
                     let count = ivec_to_u64(&v);
                     ones.push(format!("user: {}, date: {}, count: {}", uid, date, count));
                 }
