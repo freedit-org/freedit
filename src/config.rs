@@ -1,8 +1,9 @@
+use axum_server::tls_rustls::RustlsConfig;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs::{read_to_string, File};
 use std::io::Write;
-use tracing::log::warn;
+use tracing::{error, warn};
 
 pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
 
@@ -14,6 +15,8 @@ pub(crate) struct Config {
     pub(crate) inn_icons_path: String,
     pub(crate) html_path: String,
     pub(crate) serve_dir: Vec<(String, String, String)>,
+    cert: String,
+    key: String,
 }
 
 impl Config {
@@ -33,6 +36,15 @@ impl Config {
             config
         }
     }
+
+    pub(crate) async fn tls_config(&self) -> Option<RustlsConfig> {
+        if let Ok(rustls_config) = RustlsConfig::from_pem_file(&CONFIG.cert, &CONFIG.key).await {
+            Some(rustls_config)
+        } else {
+            error!("enable https failed, please check config toml cert and key");
+            None
+        }
+    }
 }
 
 impl Default for Config {
@@ -44,6 +56,8 @@ impl Default for Config {
             inn_icons_path: "./static/imgs/inn_icons".into(),
             html_path: "./static/html".into(),
             serve_dir: vec![],
+            cert: "".into(),
+            key: "".into(),
         }
     }
 }

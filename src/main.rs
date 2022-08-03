@@ -110,12 +110,23 @@ async fn main() -> Result<(), AppError> {
 
     let addr = CONFIG.addr.parse().unwrap();
 
-    info!("listening on http://{}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
+    match CONFIG.tls_config().await {
+        Some(tls_config) => {
+            info!("listening on https://{}", addr);
+            axum_server::bind_rustls(addr, tls_config)
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
+        }
+        None => {
+            info!("listening on http://{}", addr);
+            axum::Server::bind(&addr)
+                .serve(app.into_make_service())
+                .with_graceful_shutdown(shutdown_signal())
+                .await
+                .unwrap();
+        }
+    }
 
     Ok(())
 }
