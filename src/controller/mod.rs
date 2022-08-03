@@ -249,8 +249,6 @@ pub(super) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
     HEXLOWER.encode(hash.as_ref())
 });
 
-static SEP: Lazy<IVec> = Lazy::new(|| IVec::from("#"));
-
 fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
     match t.render() {
         Ok(body) => Response::builder()
@@ -514,9 +512,7 @@ pub(super) async fn notification(
                 if let (Some(pid), Some(cid)) = (params.pid, params.cid) {
                     let k = [
                         &u64_to_ivec(claim.uid),
-                        &SEP,
                         &u64_to_ivec(pid),
-                        &SEP,
                         &u64_to_ivec(cid),
                     ]
                     .concat();
@@ -527,9 +523,7 @@ pub(super) async fn notification(
                 if let (Some(pid), Some(cid)) = (params.pid, params.cid) {
                     let k = [
                         &u64_to_ivec(claim.uid),
-                        &SEP,
                         &u64_to_ivec(pid),
-                        &SEP,
                         &u64_to_ivec(cid),
                     ]
                     .concat();
@@ -543,10 +537,10 @@ pub(super) async fn notification(
     let mut notifications = Vec::with_capacity(30);
     for (n, i) in tree.scan_prefix(&prefix).enumerate() {
         let (key, value) = i?;
-        let pid = u8_slice_to_u64(&key[9..17]);
-        let cid = u8_slice_to_u64(&key[18..26]);
+        let pid = u8_slice_to_u64(&key[8..16]);
+        let cid = u8_slice_to_u64(&key[16..24]);
 
-        let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(cid)].concat();
+        let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
         let v = &db.open_tree("post_comments")?.get(k)?;
 
         if let Some(v) = v {
@@ -858,7 +852,7 @@ where
 /// ```no_run
 /// // get the third comment's upvotes of the post 1.
 /// // key: pid#cid#uid
-/// let prefix = [&u64_to_ivec(1), &SEP, &u64_to_ivec(3)].concat();
+/// let prefix = [&u64_to_ivec(1), &u64_to_ivec(3)].concat();
 /// let upvotes = get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
 /// ```
 fn get_count_by_prefix(db: &Db, tree: &str, prefix: &[u8]) -> Result<usize, AppError> {
@@ -895,13 +889,13 @@ fn get_ids_by_prefix(
                 break;
             }
             let (k, _) = i?;
-            let id = &k[prefix.as_ref().len() + 1..];
+            let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u64(id));
         }
     } else {
         for i in iter {
             let (k, _) = i?;
-            let id = &k[prefix.as_ref().len() + 1..];
+            let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u64(id));
         }
     }
@@ -938,14 +932,14 @@ fn get_inn_status_by_prefix(
                 break;
             }
             let (k, v) = i?;
-            let uid = &k[prefix.as_ref().len() + 1..];
+            let uid = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u64(uid));
             status.push(v[0]);
         }
     } else {
         for i in iter {
             let (k, v) = i?;
-            let uid = &k[prefix.as_ref().len() + 1..];
+            let uid = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u64(uid));
             status.push(v[0]);
         }
@@ -1005,7 +999,7 @@ where
 {
     let id_ivec = u64_to_ivec(id);
     let idx = incr_id(&db.open_tree(count_tree)?, &id_ivec)?;
-    let k = [&id_ivec, &SEP, &u64_to_ivec(idx)].concat();
+    let k = [&id_ivec, &u64_to_ivec(idx)].concat();
 
     db.open_tree(index_tree)?.insert(k, target)?;
     Ok(())

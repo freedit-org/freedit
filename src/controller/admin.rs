@@ -127,7 +127,7 @@ pub(crate) async fn admin_view(
                 }
                 "post_comments" => {
                     let pid = u8_slice_to_u64(&k[0..8]);
-                    let cid = u8_slice_to_u64(&k[9..17]);
+                    let cid = u8_slice_to_u64(&k[8..16]);
                     let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
                     let json = serde_json::to_string_pretty(&one).unwrap();
                     let json = json.replace("\\\"", "'");
@@ -135,21 +135,21 @@ pub(crate) async fn admin_view(
                 }
                 "comment_upvotes" | "comment_downvotes" => {
                     let pid = u8_slice_to_u64(&k[0..8]);
-                    let cid = u8_slice_to_u64(&k[9..17]);
-                    let uid = u8_slice_to_u64(&k[18..26]);
+                    let cid = u8_slice_to_u64(&k[8..16]);
+                    let uid = u8_slice_to_u64(&k[16..24]);
                     ones.push(format!("pid: {}, cid: {}, uid: {}", pid, cid, uid));
                 }
                 "inn_posts_idx" | "post_timeline_idx" => {
                     let id = u8_slice_to_u64(&k[0..8]);
-                    let idx = u8_slice_to_u64(&k[9..17]);
+                    let idx = u8_slice_to_u64(&k[8..16]);
                     let v = ivec_to_u64(&v);
                     ones.push(format!("id: {}, idx: {}, target: {}", id, idx, v));
                 }
                 "user_solos_idx" | "user_comments_idx" => {
                     let uid = u8_slice_to_u64(&k[0..8]);
-                    let idx = u8_slice_to_u64(&k[9..17]);
+                    let idx = u8_slice_to_u64(&k[8..16]);
                     let sid = u8_slice_to_u64(&k[0..8]);
-                    let visibility = u8_slice_to_u64(&k[9..17]);
+                    let visibility = u8_slice_to_u64(&k[8..16]);
                     ones.push(format!(
                         "uid: {}, idx: {}, sid: {}, visibility: {}",
                         uid, idx, sid, visibility
@@ -157,10 +157,10 @@ pub(crate) async fn admin_view(
                 }
                 "user_posts_idx" => {
                     let uid = u8_slice_to_u64(&k[0..8]);
-                    let idx = u8_slice_to_u64(&k[9..17]);
+                    let idx = u8_slice_to_u64(&k[8..16]);
                     let iid = u8_slice_to_u64(&v[0..8]);
-                    let pid = u8_slice_to_u64(&v[9..17]);
-                    let visibility = u8_slice_to_u64(&v[18..26]);
+                    let pid = u8_slice_to_u64(&v[8..16]);
+                    let visibility = u8_slice_to_u64(&v[16..24]);
                     ones.push(format!(
                         "uid: {}, idx: {}, iid: {}, pid: {}, visibility: {}",
                         uid, idx, iid, pid, visibility
@@ -184,7 +184,7 @@ pub(crate) async fn admin_view(
                 "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
                 | "post_upvotes" | "post_downvotes" | "user_solos_like" | "solo_users_like" => {
                     let id1 = u8_slice_to_u64(&k[0..8]);
-                    let id2 = u8_slice_to_u64(&k[9..17]);
+                    let id2 = u8_slice_to_u64(&k[8..16]);
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
                 }
                 "user_stats" => {
@@ -208,7 +208,7 @@ pub(crate) async fn admin_view(
                 "solo_timeline" => {
                     let sid = u8_slice_to_u64(&k[0..8]);
                     let uid = u8_slice_to_u64(&v[0..8]);
-                    let visibility = u8_slice_to_u64(&v[9..17]);
+                    let visibility = u8_slice_to_u64(&v[8..16]);
                     ones.push(format!(
                         "sid: {}, uid: {}, visibility: {}",
                         sid, uid, visibility

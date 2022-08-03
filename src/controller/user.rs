@@ -4,7 +4,7 @@ use super::{
     generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_status_by_prefix,
     get_one, get_range, get_site_config, get_uid_by_name, incr_id, into_response,
     timestamp_to_date, u64_to_ivec, user_stats, Claim, Inn, PageData, ParamsPage, SiteConfig, User,
-    ValidatedForm, SEP,
+    ValidatedForm,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
 use ::pbkdf2::{
@@ -26,7 +26,7 @@ use hash_avatar::Generator;
 use serde::Deserialize;
 use sled::Db;
 use std::{cmp::Ordering, time::Duration};
-use time::{OffsetDateTime, Time};
+use time::OffsetDateTime;
 use tokio::time::sleep;
 use validator::Validate;
 
@@ -80,7 +80,7 @@ pub(crate) async fn user(
 
     let has_followed = if let Some(ref claim) = claim {
         if claim.uid != uid {
-            let following_k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(uid)].concat();
+            let following_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(uid)].concat();
             Some(db.open_tree("user_following")?.contains_key(following_k)?)
         } else {
             None
@@ -115,8 +115,8 @@ pub(crate) async fn user_follow(
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let following_k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(uid)].concat();
-    let followers_k = [&u64_to_ivec(uid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let following_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(uid)].concat();
+    let followers_k = [&u64_to_ivec(uid), &u64_to_ivec(claim.uid)].concat();
 
     let user_following_tree = db.open_tree("user_following")?;
     let user_followers_tree = db.open_tree("user_followers")?;
@@ -302,11 +302,11 @@ pub(crate) async fn role_post(
                 "Accept" => 3,
                 _ => unreachable!(),
             };
-            let inn_users_k = [&u64_to_ivec(id), &SEP, &u64_to_ivec(uid)].concat();
+            let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
             db.open_tree("inn_users")?
                 .insert(&inn_users_k, &[inn_user_v])?;
 
-            let user_inns_k = [&u64_to_ivec(uid), &SEP, &u64_to_ivec(id)].concat();
+            let user_inns_k = [&u64_to_ivec(uid), &u64_to_ivec(id)].concat();
             if inn_user_v == 3 {
                 db.open_tree("user_inns")?.insert(&user_inns_k, &[])?;
             } else {

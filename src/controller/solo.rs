@@ -2,7 +2,7 @@ use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
     has_unread, incr_id, into_response, ivec_to_u64, md2html, set_index, timestamp_to_date,
     u64_to_ivec, u8_slice_to_u64, user_stats, Claim, IterType, PageData, ParamsPage, Solo, User,
-    ValidatedForm, SEP,
+    ValidatedForm,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -88,7 +88,7 @@ pub(crate) async fn solo(
     let mut followers = Vec::new();
     let mut current_uid = 0;
     if let Some(ref claim) = claim {
-        let following_k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(uid)].concat();
+        let following_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(uid)].concat();
         if db.open_tree("user_following")?.contains_key(&following_k)? {
             is_following = true;
         }
@@ -140,7 +140,7 @@ pub(crate) async fn solo(
 
             let mut like = false;
             if let Some(ref claim) = claim {
-                let k = [&u64_to_ivec(sid), &SEP, &u64_to_ivec(claim.uid)].concat();
+                let k = [&u64_to_ivec(sid), &u64_to_ivec(claim.uid)].concat();
                 if db.open_tree("solo_users_like")?.contains_key(&k)? {
                     like = true;
                 }
@@ -215,7 +215,7 @@ fn get_all_solos(
         // kv_pair: sid = uid#visibility
         let (k, v) = i?;
         let solo_uid = u8_slice_to_u64(&v[0..8]);
-        let visibility = u8_slice_to_u64(&v[9..17]);
+        let visibility = u8_slice_to_u64(&v[8..16]);
         if can_visit_solo(visibility, followers, solo_uid, current_uid) {
             if count < page_params.anchor {
                 count += 1;
@@ -246,7 +246,7 @@ fn get_solos_by_uids(
         for i in db.open_tree("user_solos_idx")?.scan_prefix(prefix) {
             let (_, v) = i?;
             let sid = u8_slice_to_u64(&v[0..8]);
-            let visibility = u8_slice_to_u64(&v[9..17]);
+            let visibility = u8_slice_to_u64(&v[8..16]);
             if can_visit_solo(visibility, followers, *uid, current_uid) {
                 sids.push(sid);
             }
@@ -296,7 +296,7 @@ pub(crate) async fn solo_post(
         if !hashtags.is_empty() {
             let hashtags_tree = db.open_tree("hashtags")?;
             for hashtag in &hashtags {
-                let k = [hashtag.as_bytes(), &SEP, &sid_ivec].concat();
+                let k = [hashtag.as_bytes(), &sid_ivec].concat();
                 hashtags_tree.insert(k, &[])?;
             }
         }
@@ -320,11 +320,11 @@ pub(crate) async fn solo_post(
     let solo_encode = bincode::encode_to_vec(&solo, standard())?;
 
     db.open_tree("solos")?.insert(&sid_ivec, solo_encode)?;
-    let target = [&sid_ivec, &SEP, &u64_to_ivec(visibility)].concat();
+    let target = [&sid_ivec, &u64_to_ivec(visibility)].concat();
     set_index(&db, "user_solos_count", uid, "user_solos_idx", target)?;
 
     // kv_pair: sid = uid#visibility
-    let v = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(visibility)].concat();
+    let v = [&u64_to_ivec(claim.uid), &u64_to_ivec(visibility)].concat();
     db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
 
     user_stats(&db, claim.uid, "solo")?;
@@ -346,8 +346,8 @@ pub(crate) async fn solo_like(
 
     let solo: Solo = get_one(&db, "solos", sid)?;
 
-    let user_solos_like_k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(sid)].concat();
-    let solo_users_like_k = [&u64_to_ivec(sid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let user_solos_like_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(sid)].concat();
+    let solo_users_like_k = [&u64_to_ivec(sid), &u64_to_ivec(claim.uid)].concat();
     let user_solos_like_tree = db.open_tree("user_solos_like")?;
     let solo_users_like_tree = db.open_tree("solo_users_like")?;
 
@@ -390,15 +390,15 @@ pub(crate) async fn solo_delete(
     let user_solos_like_tree = db.open_tree("user_solos_like")?;
     for i in solo_users_like_tree.scan_prefix(&sid_ivec) {
         let (k, _) = i?;
-        let uid = &k[9..17];
-        let user_solos_like_k = [uid, &SEP, &sid_ivec].concat();
+        let uid = &k[8..16];
+        let user_solos_like_k = [uid, &sid_ivec].concat();
         user_solos_like_tree.remove(&user_solos_like_k)?;
         solo_users_like_tree.remove(&k)?;
     }
 
     let hashtags_tree = db.open_tree("hashtags")?;
     for hashtag in solo.hashtags {
-        let k = [hashtag.as_bytes(), &SEP, &sid_ivec].concat();
+        let k = [hashtag.as_bytes(), &sid_ivec].concat();
         hashtags_tree.remove(&k)?;
     }
 

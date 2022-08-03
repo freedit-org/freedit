@@ -4,7 +4,7 @@ use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_one, get_range,
     get_site_config, get_uid_by_name, has_unread, incr_id, into_response, ivec_to_u64, mark_read,
     md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats, Claim, Comment, Inn,
-    PageData, ParamsPage, Post, User, ValidatedForm, SEP,
+    PageData, ParamsPage, Post, User, ValidatedForm,
 };
 use crate::{
     config::CONFIG,
@@ -175,13 +175,13 @@ pub(crate) async fn mod_inn_post(
 
         // remove the old inn topics
         for topic in inn.topics {
-            let k = [topic.as_bytes(), &SEP, &u64_to_ivec(iid)].concat();
+            let k = [topic.as_bytes(), &u64_to_ivec(iid)].concat();
             batch_topics.remove(&*k);
         }
 
         // remove the old inn moderators
         for uid in inn.mods {
-            let k = [&u64_to_ivec(uid), &SEP, &u64_to_ivec(iid)].concat();
+            let k = [&u64_to_ivec(uid), &u64_to_ivec(iid)].concat();
             batch_mods.remove(k);
         }
     }
@@ -190,14 +190,14 @@ pub(crate) async fn mod_inn_post(
 
     // set topic index for inns
     for topic in &topics {
-        let k = [topic.as_bytes(), &SEP, &u64_to_ivec(iid)].concat();
+        let k = [topic.as_bytes(), &u64_to_ivec(iid)].concat();
         batch_topics.insert(&*k, &[]);
     }
     db.open_tree("topics")?.apply_batch(batch_topics)?;
 
     // set index for inn moderators
     for uid in &uids {
-        let k = [&u64_to_ivec(*uid), &SEP, &iid_ivec].concat();
+        let k = [&u64_to_ivec(*uid), &iid_ivec].concat();
         batch_mods.insert(k, &[]);
     }
     db.open_tree("mod_inns")?.apply_batch(batch_mods)?;
@@ -428,7 +428,7 @@ pub(crate) async fn edit_post(
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
     if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
         return Err(AppError::Unauthorized);
     }
@@ -478,7 +478,7 @@ pub(crate) async fn edit_post_post(
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
     if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
         return Err(AppError::Unauthorized);
     }
@@ -517,13 +517,13 @@ pub(crate) async fn edit_post_post(
                 return Err(AppError::Unauthorized);
             }
             for old_tag in post.tags.iter() {
-                let k = [old_tag.as_bytes(), &SEP, &u64_to_ivec(old_pid)].concat();
+                let k = [old_tag.as_bytes(), &u64_to_ivec(old_pid)].concat();
                 batch.remove(k);
             }
         }
 
         for tag in tags.iter() {
-            let k = [tag.as_bytes(), &SEP, &pid_ivec].concat();
+            let k = [tag.as_bytes(), &pid_ivec].concat();
             batch.insert(k, &[]);
         }
         db.open_tree("tags")?.apply_batch(batch)?;
@@ -548,7 +548,7 @@ pub(crate) async fn edit_post_post(
     let visibility_ivec = u64_to_ivec(visibility);
     if old_pid == 0 {
         set_index(&db, "inn_posts_count", iid, "inn_posts_idx", &pid_ivec)?;
-        let target = [&iid_ivec, &SEP, &pid_ivec, &SEP, &visibility_ivec].concat();
+        let target = [&iid_ivec, &pid_ivec, &visibility_ivec].concat();
         set_index(&db, "user_posts_count", claim.uid, "user_posts_idx", target)?;
     }
 
@@ -559,12 +559,12 @@ pub(crate) async fn edit_post_post(
     }
 
     let created_at_ivec = u64_to_ivec(created_at as u64);
-    let k = [&iid_ivec, &SEP, &pid_ivec].concat();
+    let k = [&iid_ivec, &pid_ivec].concat();
 
     if old_pid > 0 {
         let old_timestamp = db.open_tree("post_timeline_idx")?.get(&k)?;
         if let Some(v) = old_timestamp {
-            let k = [&v, &SEP, &iid_ivec, &SEP, &pid_ivec].concat();
+            let k = [&v, &iid_ivec, &pid_ivec].concat();
             db.open_tree("post_timeline")?.remove(&k)?;
         }
     }
@@ -572,7 +572,7 @@ pub(crate) async fn edit_post_post(
     db.open_tree("post_timeline_idx")?
         .insert(k, &created_at_ivec)?;
 
-    let k = [&created_at_ivec, &SEP, &iid_ivec, &SEP, &pid_ivec].concat();
+    let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
     // kv_pair: timestamp#iid#pid = visibility
     db.open_tree("post_timeline")?.insert(k, visibility_ivec)?;
     static_post(&db, pid).await?;
@@ -695,7 +695,7 @@ pub(crate) async fn inn(
     let mut is_mod = false;
     let mut has_apply = false;
     if let Some(ref claim) = claim {
-        let k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(iid)].concat();
+        let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
         if db.open_tree("mod_inns")?.contains_key(&k)? {
             is_mod = true;
             for i in &db.open_tree("inn_users")? {
@@ -747,7 +747,7 @@ pub(crate) async fn inn(
     let mut inn_status = 0;
     if let Some(ref claim) = claim {
         if iid > 0 {
-            let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
+            let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
             match db.open_tree("inn_users")?.get(&inn_users_k)? {
                 None => inn_status = 0,
                 Some(v) => inn_status = v[0],
@@ -1030,8 +1030,8 @@ fn get_pids_all(
     // kvpaire: timestamp#iid#pid = visibility
     for i in iter {
         let (k, v) = i?;
-        let id = u8_slice_to_u64(&k[9..17]);
-        let out_id = u8_slice_to_u64(&k[18..26]);
+        let id = u8_slice_to_u64(&k[8..16]);
+        let out_id = u8_slice_to_u64(&k[16..24]);
 
         let visibility = ivec_to_u64(&v);
         if visibility == 0 || (visibility == 10 && joined_inns.contains(&id)) {
@@ -1060,7 +1060,7 @@ fn get_pids_by_iids(db: &Db, iids: &[u64], page_params: &ParamsPage) -> Result<V
         // kv_pair: iid#pid = timestamp#visibility
         for i in db.open_tree("post_timeline_idx")?.scan_prefix(prefix) {
             let (k, v) = i?;
-            let pid = u8_slice_to_u64(&k[9..17]);
+            let pid = u8_slice_to_u64(&k[8..16]);
             let timestamp = ivec_to_u64(&v);
             pairs.push((pid, timestamp));
         }
@@ -1089,8 +1089,8 @@ fn get_pids_by_uids(
         for i in db.open_tree("user_posts_idx")?.scan_prefix(prefix) {
             let (_, v) = i?;
             let iid = u8_slice_to_u64(&v[0..8]);
-            let pid = u8_slice_to_u64(&v[9..17]);
-            let visibility = u8_slice_to_u64(&v[18..26]);
+            let pid = u8_slice_to_u64(&v[8..16]);
+            let visibility = u8_slice_to_u64(&v[16..24]);
             if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) {
                 pids.push(pid);
             }
@@ -1116,8 +1116,8 @@ pub(crate) async fn inn_join(
 
     let inn: Inn = get_one(&db, "inns", iid)?;
 
-    let user_inns_k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(iid)].concat();
-    let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let user_inns_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
+    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
     let user_inns_tree = db.open_tree("user_inns")?;
     let inn_users_tree = db.open_tree("inn_users")?;
 
@@ -1218,7 +1218,7 @@ pub(crate) async fn post(
     let downvotes =
         get_count_by_prefix(&db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
     if let Some(ref claim) = claim {
-        let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(claim.uid)].concat();
+        let k = [&u64_to_ivec(pid), &u64_to_ivec(claim.uid)].concat();
         if db.open_tree("post_upvotes")?.contains_key(&k)? {
             is_upvoted = true;
         }
@@ -1226,7 +1226,7 @@ pub(crate) async fn post(
             is_downvoted = true;
         }
 
-        let k = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(iid)].concat();
+        let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
         if db.open_tree("user_inns")?.contains_key(&k)? {
             has_joined = true;
         }
@@ -1234,9 +1234,7 @@ pub(crate) async fn post(
         if let Some(notification_cid) = params.notification_cid {
             let k = [
                 &u64_to_ivec(claim.uid),
-                &SEP,
                 &u64_to_ivec(pid),
-                &SEP,
                 &u64_to_ivec(notification_cid),
             ]
             .concat();
@@ -1274,7 +1272,7 @@ pub(crate) async fn post(
         let comment_upvotes_tree = db.open_tree("comment_upvotes")?;
         let comment_downvotes_tree = db.open_tree("comment_downvotes")?;
         for i in start..=end {
-            let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(i as u64)].concat();
+            let k = [&u64_to_ivec(pid), &u64_to_ivec(i as u64)].concat();
             let v = &post_comments_tree.get(k)?;
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
@@ -1287,9 +1285,7 @@ pub(crate) async fn post(
                 if let Some(ref claim) = claim {
                     let k = [
                         &u64_to_ivec(pid),
-                        &SEP,
                         &u64_to_ivec(comment.cid),
-                        &SEP,
                         &u64_to_ivec(claim.uid),
                     ]
                     .concat();
@@ -1297,7 +1293,7 @@ pub(crate) async fn post(
                     is_downvoted = comment_downvotes_tree.contains_key(&k)?;
                 }
 
-                let prefix = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(comment.cid)].concat();
+                let prefix = [&u64_to_ivec(pid), &u64_to_ivec(comment.cid)].concat();
                 let upvotes =
                     get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
                 let downvotes =
@@ -1381,14 +1377,14 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         // TODO: comments pagination
         let post_comments_tree = db.open_tree("post_comments")?;
         for i in 1..=count {
-            let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(i as u64)].concat();
+            let k = [&u64_to_ivec(pid), &u64_to_ivec(i as u64)].concat();
             let v = &post_comments_tree.get(k)?;
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                 let user: User = get_one(db, "users", comment.uid)?;
                 let date = timestamp_to_date(comment.created_at)?;
 
-                let prefix = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(comment.cid)].concat();
+                let prefix = [&u64_to_ivec(pid), &u64_to_ivec(comment.cid)].concat();
                 let upvotes =
                     get_count_by_prefix(db, "comment_upvotes", &prefix).unwrap_or_default();
                 let downvotes =
@@ -1467,7 +1463,7 @@ pub(crate) async fn comment_post(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    let inn_users_k = [&u64_to_ivec(iid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
     if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
         return Err(AppError::Unauthorized);
     }
@@ -1516,7 +1512,7 @@ pub(crate) async fn comment_post(
         content = content.replace(&from, &to);
 
         // notify user to be mentioned in comment
-        let notify_key = [&u64_to_ivec(uid), &SEP, &pid_ivec, &SEP, &u64_to_ivec(cid)].concat();
+        let notify_key = [&u64_to_ivec(uid), &pid_ivec, &u64_to_ivec(cid)].concat();
         notification_tree.insert(notify_key, vec![0])?;
     }
 
@@ -1546,7 +1542,7 @@ pub(crate) async fn comment_post(
         is_collapsed: false,
     };
     let comment_encoded = bincode::encode_to_vec(&comment, standard())?;
-    let k = [&pid_ivec, &SEP, &u64_to_ivec(cid)].concat();
+    let k = [&pid_ivec, &u64_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.insert(&k, comment_encoded)?;
 
     set_index(
@@ -1559,12 +1555,12 @@ pub(crate) async fn comment_post(
 
     let created_at_ivec = u64_to_ivec(created_at as u64);
     let iid_ivec = u64_to_ivec(iid);
-    let k = [&iid_ivec, &SEP, &pid_ivec].concat();
+    let k = [&iid_ivec, &pid_ivec].concat();
 
     let old_timestamp = db.open_tree("post_timeline_idx")?.get(&k)?;
     let mut visibility = 0;
     if let Some(v) = old_timestamp {
-        let k = [&v, &SEP, &iid_ivec, &SEP, &pid_ivec].concat();
+        let k = [&v, &iid_ivec, &pid_ivec].concat();
         if let Some(v) = db.open_tree("post_timeline")?.remove(&k)? {
             visibility = ivec_to_u64(&v);
         };
@@ -1573,7 +1569,7 @@ pub(crate) async fn comment_post(
     db.open_tree("post_timeline_idx")?
         .insert(k, &created_at_ivec)?;
 
-    let k = [&created_at_ivec, &SEP, &iid_ivec, &SEP, &pid_ivec].concat();
+    let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
     // kv_pair: timestamp#iid#pid = visibility
     db.open_tree("post_timeline")?
         .insert(k, u64_to_ivec(visibility))?;
@@ -1581,14 +1577,7 @@ pub(crate) async fn comment_post(
     // notify post author
     let post: Post = get_one(&db, "posts", pid)?;
     if post.uid != claim.uid {
-        let notify_key = [
-            &u64_to_ivec(post.uid),
-            &SEP,
-            &pid_ivec,
-            &SEP,
-            &u64_to_ivec(cid),
-        ]
-        .concat();
+        let notify_key = [&u64_to_ivec(post.uid), &pid_ivec, &u64_to_ivec(cid)].concat();
         notification_tree.insert(notify_key, vec![1])?;
     }
 
@@ -1615,7 +1604,7 @@ pub(crate) async fn post_upvote(
         .ok_or(AppError::NonLogin)?;
 
     let post_upvotes_tree = db.open_tree("post_upvotes")?;
-    let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let k = [&u64_to_ivec(pid), &u64_to_ivec(claim.uid)].concat();
     if post_upvotes_tree.contains_key(&k)? {
         post_upvotes_tree.remove(&k)?;
     } else {
@@ -1638,9 +1627,7 @@ pub(crate) async fn comment_upvote(
         .ok_or(AppError::NonLogin)?;
     let k = [
         &u64_to_ivec(pid),
-        &SEP,
         &u64_to_ivec(cid),
-        &SEP,
         &u64_to_ivec(claim.uid),
     ]
     .concat();
@@ -1668,7 +1655,7 @@ pub(crate) async fn post_downvote(
         .ok_or(AppError::NonLogin)?;
 
     let post_downvotes_tree = db.open_tree("post_downvotes")?;
-    let k = [&u64_to_ivec(pid), &SEP, &u64_to_ivec(claim.uid)].concat();
+    let k = [&u64_to_ivec(pid), &u64_to_ivec(claim.uid)].concat();
     if post_downvotes_tree.contains_key(&k)? {
         post_downvotes_tree.remove(&k)?;
     } else {
@@ -1691,9 +1678,7 @@ pub(crate) async fn comment_downvote(
         .ok_or(AppError::NonLogin)?;
     let k = [
         &u64_to_ivec(pid),
-        &SEP,
         &u64_to_ivec(cid),
-        &SEP,
         &u64_to_ivec(claim.uid),
     ]
     .concat();
