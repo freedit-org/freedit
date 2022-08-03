@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="box">
+    {% for data in stats %}
+        <p><a href="/user/{{data.0}}">{{data.0}}</a> - {{data.1}} - {{data.2}} - {{data.3}} </p>
+    {% endfor %}
+</div>
+{% endblock %}

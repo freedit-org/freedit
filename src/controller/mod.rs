@@ -34,10 +34,10 @@
 //! In order to anti-spam, keep three days pageviews of each user. For privacy,
 //! the hour and minute has been striped, just date kept. See [Claim::get].
 //!
-//! | tree             | key             | value |
-//! |------------------|-----------------|-------|
-//! | "user_pageviews" | `timestamp_uid` | N     |
-//! | "post_pageviews" | `pid`           | N     |
+//! | tree             | key                  | value |
+//! |------------------|----------------------|-------|
+//! | "user_stats"     | `timestamp_uid_type` | N     |
+//! | "post_pageviews" | `pid`                | N     |
 //!
 //! ### solo
 //! | tree               | key           | value            |
@@ -227,7 +227,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sled::{Db, IVec, Iter, Tree};
 use std::{env, fs::File, io, iter::Rev};
-use time::OffsetDateTime;
+use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
 use validator::Validate;
@@ -646,6 +646,16 @@ where
 {
     let ivec = tree.update_and_fetch(key, increment)?.unwrap();
     Ok(ivec_to_u64(&ivec))
+}
+
+fn user_stats(db: &Db, uid: u64, stat_type: &str) -> Result<(), AppError> {
+    let expire = OffsetDateTime::now_utc()
+        .replace_time(Time::MIDNIGHT)
+        .saturating_add(time::Duration::days(3))
+        .unix_timestamp();
+    let key = format!("{:x}_{}_{}", expire, uid, stat_type);
+    incr_id(&db.open_tree("user_stats")?, key)?;
+    Ok(())
 }
 
 /// work for [update_and_fetch](https://docs.rs/sled/latest/sled/struct.Db.html#method.update_and_fetch):

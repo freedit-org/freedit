@@ -3,7 +3,7 @@
 use super::{
     generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_status_by_prefix,
     get_one, get_range, get_site_config, get_uid_by_name, incr_id, into_response,
-    timestamp_to_date, u64_to_ivec, Claim, Inn, PageData, ParamsPage, SiteConfig, User,
+    timestamp_to_date, u64_to_ivec, user_stats, Claim, Inn, PageData, ParamsPage, SiteConfig, User,
     ValidatedForm, SEP,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
@@ -732,13 +732,7 @@ impl Claim {
         if claim.role == 0 {
             return None;
         }
-
-        let expire = now
-            .replace_time(Time::MIDNIGHT)
-            .saturating_add(time::Duration::days(3))
-            .unix_timestamp();
-        let key = format!("{:x}_{}", expire, claim.uid);
-        incr_id(&db.open_tree("user_pageviews").ok()?, key).ok()?;
+        user_stats(db, claim.uid, "view").ok()?;
         Some(claim)
     }
 

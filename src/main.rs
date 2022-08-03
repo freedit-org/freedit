@@ -100,7 +100,7 @@ async fn main() -> Result<(), AppError> {
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {
-            if let Err(e) = clear_invalid(&db2, "user_pageviews", 3600 * 6).await {
+            if let Err(e) = clear_invalid(&db2, "user_stats", 3600 * 6).await {
                 error!(%e);
             }
         }

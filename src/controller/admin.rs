@@ -187,13 +187,14 @@ pub(crate) async fn admin_view(
                     let id2 = u8_slice_to_u64(&k[9..17]);
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
                 }
-                "user_pageviews" => {
-                    let k_str = std::str::from_utf8(&k)?.split_once('_').unwrap();
-                    let timestamp = i64::from_str_radix(k_str.0, 16).unwrap();
+                "user_stats" => {
+                    let mut k_str = std::str::from_utf8(&k)?.split('_');
+                    let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
                     let date = timestamp_to_date(timestamp)?;
-                    let uid = k_str.1;
+                    let uid = k_str.next().unwrap();
+                    let stat_type = k_str.next().unwrap().to_owned();
                     let count = ivec_to_u64(&v);
-                    ones.push(format!("user: {}, date: {}, count: {}", uid, date, count));
+                    ones.push(format!("{} - {} - {} - {}", uid, date, stat_type, count));
                 }
                 "inn_names" | "usernames" => {
                     let name = std::str::from_utf8(&k)?;
@@ -294,13 +295,13 @@ impl Default for SiteConfig {
 }
 
 #[derive(Template)]
-#[template(path = "admin_pageview.html")]
-struct AdminPageviewPage<'a> {
+#[template(path = "admin_stats.html")]
+struct AdminStatsPage<'a> {
     page_data: PageData<'a>,
-    pageviews: Vec<(String, String, u64)>,
+    stats: Vec<(String, String, String, u64)>,
 }
 
-pub(crate) async fn admin_pageview(
+pub(crate) async fn admin_stats(
     Extension(db): Extension<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -311,26 +312,24 @@ pub(crate) async fn admin_pageview(
         return Err(AppError::Unauthorized);
     }
 
-    let mut pageviews = Vec::with_capacity(100);
-    for i in &db.open_tree("user_pageviews")? {
+    let mut stats = Vec::with_capacity(100);
+    for i in &db.open_tree("user_stats")? {
         let (k, v) = i?;
-        let k_str = std::str::from_utf8(&k)?.split_once('_').unwrap();
-        let timestamp = i64::from_str_radix(k_str.0, 16).unwrap();
+        let mut k_str = std::str::from_utf8(&k)?.split('_');
+        let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
         let date = timestamp_to_date(timestamp)?;
-        let uid = k_str.1.to_owned();
+        let uid = k_str.next().unwrap().to_owned();
+        let stat_type = k_str.next().unwrap().to_owned();
         let count = ivec_to_u64(&v);
-        pageviews.push((uid, date, count));
+        stats.push((uid, date, stat_type, count));
     }
 
-    pageviews.sort_unstable_by(|a, b| b.2.cmp(&a.2));
-    if pageviews.len() > 100 {
-        pageviews.truncate(100);
+    stats.sort_unstable_by(|a, b| b.3.cmp(&a.3));
+    if stats.len() > 100 {
+        stats.truncate(100);
     }
 
     let page_data = PageData::new("Admin-pageview", &site_config.site_name, Some(claim), false);
-    let admin_pageview_page = AdminPageviewPage {
-        page_data,
-        pageviews,
-    };
+    let admin_pageview_page = AdminStatsPage { page_data, stats };
     Ok(into_response(&admin_pageview_page, "html"))
 }

@@ -3,8 +3,8 @@
 use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_one, get_range,
     get_site_config, get_uid_by_name, has_unread, incr_id, into_response, ivec_to_u64, mark_read,
-    md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, Claim, Comment, Inn, PageData,
-    ParamsPage, Post, User, ValidatedForm, SEP,
+    md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats, Claim, Comment, Inn,
+    PageData, ParamsPage, Post, User, ValidatedForm, SEP,
 };
 use crate::{
     config::CONFIG,
@@ -575,8 +575,10 @@ pub(crate) async fn edit_post_post(
     let k = [&created_at_ivec, &SEP, &iid_ivec, &SEP, &pid_ivec].concat();
     // kv_pair: timestamp#iid#pid = visibility
     db.open_tree("post_timeline")?.insert(k, visibility_ivec)?;
-    claim.update_last_write(&db)?;
     static_post(&db, pid).await?;
+
+    user_stats(&db, claim.uid, "post")?;
+    claim.update_last_write(&db)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
@@ -1590,6 +1592,7 @@ pub(crate) async fn comment_post(
         notification_tree.insert(notify_key, vec![1])?;
     }
 
+    user_stats(&db, claim.uid, "comment")?;
     claim.update_last_write(&db)?;
 
     static_post(&db, pid).await?;

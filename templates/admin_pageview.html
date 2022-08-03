@@ -1,9 +1,0 @@
-{% extends "layout.html" %}
-
-{% block content %}
-<div class="box">
-    {% for view in pageviews %}
-        <p><a href="/user/{{view.0}}">{{view.0}}</a> - {{view.1}} - {{view.2}} </p>
-    {% endfor %}
-</div>
-{% endblock %}

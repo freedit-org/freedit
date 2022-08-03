@@ -1,8 +1,8 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
     has_unread, incr_id, into_response, ivec_to_u64, md2html, set_index, timestamp_to_date,
-    u64_to_ivec, u8_slice_to_u64, Claim, IterType, PageData, ParamsPage, Solo, User, ValidatedForm,
-    SEP,
+    u64_to_ivec, u8_slice_to_u64, user_stats, Claim, IterType, PageData, ParamsPage, Solo, User,
+    ValidatedForm, SEP,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -326,6 +326,8 @@ pub(crate) async fn solo_post(
     // kv_pair: sid = uid#visibility
     let v = [&u64_to_ivec(claim.uid), &SEP, &u64_to_ivec(visibility)].concat();
     db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
+
+    user_stats(&db, claim.uid, "solo")?;
     claim.update_last_write(&db)?;
 
     let target = format!("/solo/user/{}", uid);
