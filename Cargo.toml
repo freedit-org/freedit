@@ -17,14 +17,12 @@ image = { version = "0.24", default-features = false, features = ["jpeg", "png",
 latex2mathml = "0.2.3"
 nanoid = "0.4.0"
 once_cell = "*"
-pbkdf2 = "0.11.0"
-rand = "0.8"
+ring = { version = "0.17.0-alpha.11", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sha2 = "0.10.2"
 sled = { version = "0.34.7", features = ["compression"] }
 thiserror = "1"
-time = { version = "0.3", default-features = false }
+time = { version = "0.3.5", default-features = false }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 toml = "0.5"
 tower = { version = "0.4", features = ["timeout"] }
@@ -34,6 +32,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.16.0", features = ["derive"] }
 
 [dev-dependencies]
+rand = "0.8"
 reqwest = { version = "0.11", default-features = false }
 
 [profile.release]

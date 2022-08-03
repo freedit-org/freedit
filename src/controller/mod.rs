@@ -109,6 +109,7 @@
 struct User {
     uid: u64,
     username: String,
+    salt: String,
     password_hash: String,
     created_at: i64,
     karma: u64,
@@ -222,11 +223,16 @@ use data_encoding::HEXLOWER;
 use http_body::Body;
 use nanoid::nanoid;
 use once_cell::sync::Lazy;
+use ring::digest::{Context, Digest, SHA256};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use sled::{Db, IVec, Iter, Tree};
-use std::{env, fs::File, io, iter::Rev};
+use std::{
+    env,
+    fs::File,
+    io::{BufReader, Read},
+    iter::Rev,
+};
 use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
@@ -240,13 +246,27 @@ pub(super) mod user;
 /// Returns SHA256 of the current running executable.
 /// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
 pub(super) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
-    let path = env::current_exe().unwrap();
-    let mut file = File::open(path).unwrap();
-    let mut hasher = Sha256::new();
-    io::copy(&mut file, &mut hasher).unwrap();
-    let hash = hasher.finalize();
+    let file = env::current_exe().unwrap();
+    let input = File::open(file).unwrap();
 
-    HEXLOWER.encode(hash.as_ref())
+    fn sha256_digest<R: Read>(mut reader: R) -> Digest {
+        let mut context = Context::new(&SHA256);
+        let mut buffer = [0; 1024];
+
+        loop {
+            let count = reader.read(&mut buffer).unwrap();
+            if count == 0 {
+                break;
+            }
+            context.update(&buffer[..count]);
+        }
+        context.finish()
+    }
+
+    let reader = BufReader::new(input);
+    let digest = sha256_digest(reader);
+
+    HEXLOWER.encode(digest.as_ref())
 });
 
 fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
