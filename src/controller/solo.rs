@@ -272,7 +272,7 @@ pub(crate) async fn solo_post(
         .ok_or(AppError::NonLogin)?;
 
     let created_at = OffsetDateTime::now_utc().unix_timestamp();
-    if created_at - claim.last_write <= site_config.solo_interval {
+    if created_at - claim.last_write < site_config.solo_interval {
         return Err(AppError::WriteInterval);
     }
 

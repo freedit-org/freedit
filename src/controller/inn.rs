@@ -484,7 +484,7 @@ pub(crate) async fn edit_post_post(
     }
 
     let created_at = OffsetDateTime::now_utc().unix_timestamp();
-    if created_at - claim.last_write <= site_config.post_interval {
+    if created_at - claim.last_write < site_config.post_interval {
         return Err(AppError::WriteInterval);
     }
 
@@ -1477,7 +1477,7 @@ pub(crate) async fn comment_post(
     }
 
     let created_at = OffsetDateTime::now_utc().unix_timestamp();
-    if created_at - claim.last_write <= site_config.comment_interval {
+    if created_at - claim.last_write < site_config.comment_interval {
         return Err(AppError::WriteInterval);
     }
 
