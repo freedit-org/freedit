@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 askama = { version = "0.11", default-features = false } # templates engine 
 axum = { version = "0.5", features = ["http1", "headers", "form", "query", "multipart"], default-features = false }
-axum-server = { version = "0.4.0", features = ["tls-rustls"] }
+axum-server = { version = "0.4.2", features = ["tls-rustls"] }
 bincode = "2.0.0-rc.1"
 captcha = { version = "0.0.9", default-features = false }
 comrak = { version = "0.14.0", features = ["syntect"], default-features = false }
