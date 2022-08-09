@@ -39,7 +39,7 @@ async fn main() {
                     Err(e) => println!("{}", e),
                     Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
                     Ok(StatusCode::OK) => (),
-                    Ok(s) => (println!("{}", s)),
+                    Ok(s) => println!("{}", s),
                 };
             }
         });
@@ -57,7 +57,7 @@ async fn main() {
                 Err(e) => println!("{}", e),
                 Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
                 Ok(StatusCode::OK) => (),
-                Ok(s) => (println!("{}", s)),
+                Ok(s) => println!("{}", s),
             };
         });
         handlers.push(h);
