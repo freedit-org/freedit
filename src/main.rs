@@ -130,3 +130,6 @@ async fn main() -> Result<(), AppError> {
 
     Ok(())
 }
+
+// TODO: endorsements
+// TODO: lock posts
