@@ -15,8 +15,6 @@ jobs:
     permissions:
       contents: write
       security-events: write
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout code
@@ -60,9 +58,25 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: 'target/doc'
+          name: 'doc'
+
+  Deploy:
+    needs: cargo
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: 'doc'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        env: 
-          github-pages: ${{ steps.deployment.outputs.page_url }}
         uses: actions/deploy-pages@main
