@@ -58,7 +58,6 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: 'target/doc'
-          name: 'doc'
 
   Deploy:
     needs: cargo
@@ -75,7 +74,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
-          name: 'doc'
+          name: 'github-pages'
 
       - name: Deploy to GitHub Pages
         id: deployment
