@@ -63,4 +63,5 @@ jobs:
 
       - name: Deploy to GitHub Pages
         id: deployment
+        env: github-pages
         uses: actions/deploy-pages@main
