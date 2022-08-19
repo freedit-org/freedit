@@ -721,7 +721,7 @@ impl Claim {
     /// If session id is not found or expired, return None.
     ///
     /// ### user pageviews data
-    /// Keep three day pageviews data. For pravacy, the hour and minute has been striped, just date kept.
+    /// Keep three day pageviews data. For privacy, the hour and minute has been striped, just date kept.
     pub(super) fn get(
         db: &Db,
         TypedHeader(cookie): &TypedHeader<Cookie>,
