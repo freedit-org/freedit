@@ -62,6 +62,7 @@ jobs:
   Deploy:
     needs: cargo
     name: Deploy to GitHub Pages
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
