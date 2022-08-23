@@ -91,33 +91,42 @@
     {% endfor %}
 </div>
 
-{% match filter.as_deref() %} {% when None %}
-    {% match topic.as_deref() %} {% when None %}
-    <nav class="pagination">
-        {% if anchor < n %}
-            <a class="pagination-previous" disabled>Prev</a>
-        {% else %}
-            {% if page_data.claim.is_some() %}
-            <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
-            {% else %}
-            <a class="pagination-previous" href="/static/inn/list/{{anchor / 30}}.html">Prev</a>
-            {% endif %}
-        {% endif %}
-
-        {% if inns.len() < n %}
-            <a class="pagination-next" disabled >Next</a>
-        {% else %}
-            {% if page_data.claim.is_some() %}
-            <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
-            {% else %}
-            <a class="pagination-next" href="/static/inn/list/{{anchor / 30 + 2 }}.html">Next</a>
-            {% endif %} 
-        {% endif %}
-    </nav>
+<nav class="pagination">
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
     {% else %}
-    <div class="divider"></div>
-    {% endmatch %}
-{% else %}
-    <div class="divider"></div>
-{% endmatch %}
+        {% if page_data.claim.is_some() %}
+            {% match filter.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
+            {% else %}
+                {% match topic.as_deref() %} {% when Some with (val) %}
+                <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}&topic={{val}}">Prev</a>
+                {% else %}
+                <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+                {% endmatch %}
+            {% endmatch %}
+        {% else %}
+        <a class="pagination-previous" href="/static/inn/list/{{anchor / 30}}.html">Prev</a>
+        {% endif %}
+    {% endif %}
+
+    {% if inns.len() < n %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        {% if page_data.claim.is_some() %}
+            {% match filter.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
+            {% else %}
+                {% match topic.as_deref() %} {% when Some with (val) %}
+                <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}&topic={{val}}">Next</a>
+                {% else %}
+                <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+                {% endmatch %}
+            {% endmatch %}
+        {% else %}
+        <a class="pagination-next" href="/static/inn/list/{{anchor / 30 + 2 }}.html">Next</a>
+        {% endif %} 
+    {% endif %}
+</nav>
+
 {% endblock %}

@@ -110,14 +110,11 @@ pub(crate) async fn mod_inn_post(
         return Err(AppError::Unauthorized);
     }
 
-    // TODO: limit the number of inns per user
-
     // get inn moderators
     let mut uids: Vec<u64> = vec![];
     if let Some(mods) = input.mods {
         for uid in mods.split('#') {
             if let Ok(uid) = uid.parse::<u64>() {
-                // TODO: limit the number of inns per user
                 uids.push(uid);
             }
         }
@@ -283,8 +280,6 @@ pub(crate) async fn inn_list(
         }
     } else if let Some(claim) = &claim {
         let uid_ivec = u64_to_ivec(claim.uid);
-        // TODO: bug, mod and joined has no pagnation
-        // just limit number of inns to create and join
         if params.filter.as_deref() == Some("mod") {
             for i in get_ids_by_prefix(&db, "mod_inns", uid_ivec, Some(&page_params))? {
                 if let Ok(inn) = get_one(&db, "inns", i) {
