@@ -439,6 +439,11 @@ pub(crate) async fn edit_post(
         Ok(into_response(&page_post_create, "html"))
     } else {
         let post: Post = get_one(&db, "posts", pid)?;
+
+        if post.is_locked {
+            return Err(AppError::Locked);
+        }
+
         if post.uid != claim.uid {
             return Err(AppError::Unauthorized);
         }
@@ -511,6 +516,11 @@ pub(crate) async fn edit_post_post(
             if post.uid != claim.uid {
                 return Err(AppError::Unauthorized);
             }
+
+            if post.is_locked {
+                return Err(AppError::Locked);
+            }
+
             for old_tag in post.tags.iter() {
                 let k = [old_tag.as_bytes(), &u64_to_ivec(old_pid)].concat();
                 batch.remove(k);
@@ -1152,6 +1162,7 @@ struct OutPost {
     created_at: String,
     upvotes: usize,
     downvotes: usize,
+    is_locked: bool,
     is_upvoted: bool,
     is_downvoted: bool,
 }
@@ -1168,6 +1179,7 @@ struct PagePost<'a> {
     n: usize,
     is_desc: bool,
     has_joined: bool,
+    is_mod: bool,
 }
 
 /// Vec data: Comment
@@ -1209,6 +1221,7 @@ pub(crate) async fn post(
     let mut has_joined = false;
     let mut is_upvoted = false;
     let mut is_downvoted = false;
+    let mut is_mod = false;
     let upvotes = get_count_by_prefix(&db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
     let downvotes =
         get_count_by_prefix(&db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
@@ -1224,6 +1237,10 @@ pub(crate) async fn post(
         let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
         if db.open_tree("user_inns")?.contains_key(&k)? {
             has_joined = true;
+        }
+
+        if db.open_tree("mod_inns")?.contains_key(&k)? {
+            is_mod = true;
         }
 
         if let Some(notification_cid) = params.notification_cid {
@@ -1246,6 +1263,7 @@ pub(crate) async fn post(
         inn_name: inn.inn_name,
         title: post.title,
         tags: post.tags,
+        is_locked: post.is_locked,
         content_html: post.content_html,
         created_at: date,
         upvotes,
@@ -1329,6 +1347,7 @@ pub(crate) async fn post(
         n,
         is_desc,
         has_joined,
+        is_mod,
     };
 
     Ok(into_response(&page_post, "html"))
@@ -1356,6 +1375,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         tags: post.tags,
         content_html: post.content_html,
         created_at: date,
+        is_locked: post.is_locked,
         upvotes,
         downvotes,
         is_upvoted: false,
@@ -1416,6 +1436,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         n,
         is_desc,
         has_joined: false,
+        is_mod: false,
     };
 
     let res = &page_post.render().unwrap();
@@ -1576,6 +1597,10 @@ pub(crate) async fn comment_post(
         notification_tree.insert(notify_key, vec![1])?;
     }
 
+    if post.is_locked {
+        return Err(AppError::Locked);
+    }
+
     user_stats(&db, claim.uid, "comment")?;
     claim.update_last_write(&db)?;
 
@@ -1633,6 +1658,34 @@ pub(crate) async fn comment_upvote(
     } else {
         comment_upvotes_tree.insert(&k, &[])?;
     }
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /inn/:iid/:pid/post_lock` post lock
+pub(crate) async fn post_lock(
+    Extension(db): Extension<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid)): Path<(u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    // only mod can lock post
+    let mod_inns_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
+    if !db.open_tree("mod_inns")?.contains_key(mod_inns_k)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let mut post: Post = get_one(&db, "posts", pid)?;
+    post.is_locked = !post.is_locked;
+
+    let post_encoded = bincode::encode_to_vec(&post, standard())?;
+    db.open_tree("posts")?
+        .insert(u64_to_ivec(pid), post_encoded)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))

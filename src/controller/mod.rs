@@ -105,6 +105,7 @@
 /// ## role
 /// * 10: who can create inn
 /// * 255: super admin
+/// * 0: banned
 #[derive(Default, Encode, Decode, Serialize)]
 struct User {
     uid: u64,

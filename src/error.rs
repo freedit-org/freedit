@@ -46,6 +46,8 @@ pub(super) enum AppError {
     NonLogin,
     #[error("You have been banned")]
     Banned,
+    #[error("The post has been locked by mod")]
+    Locked,
     #[error(transparent)]
     ImageError(#[from] image::ImageError),
     #[error("The site is under maintenance. It is read only at the moment")]
@@ -68,6 +70,7 @@ impl IntoResponse for AppError {
             | AppError::NotFound
             | AppError::WrongPassword
             | AppError::ImageError(_)
+            | AppError::Locked
             | AppError::ReadOnly
             | AppError::ValidationError(_)
             | AppError::AxumFormRejection(_)
