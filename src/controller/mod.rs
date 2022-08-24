@@ -208,20 +208,22 @@ use askama::Template;
 use axum::{
     async_trait,
     body::{self, BoxBody, Empty, Full},
-    extract::{ContentLengthLimit, Form, FromRequest, Multipart, Query, RequestParts},
+    extract::{
+        rejection::FormRejection, ContentLengthLimit, Form, FromRequest, Multipart, Query, State,
+    },
     headers::{Cookie, HeaderName},
-    http::{HeaderMap, HeaderValue, StatusCode},
+    http::{HeaderMap, HeaderValue, Request, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get_service, MethodRouter},
-    BoxError, Extension, TypedHeader,
+    TypedHeader,
 };
+
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use comrak::{
     markdown_to_html_with_plugins, plugins::syntect::SyntectAdapter, ComrakOptions, ComrakPlugins,
 };
 use data_encoding::HEXLOWER;
-use http_body::Body;
 use nanoid::nanoid;
 use once_cell::sync::Lazy;
 use ring::digest::{Context, Digest, SHA256};
@@ -287,17 +289,17 @@ fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
 pub(super) struct ValidatedForm<T>(pub(super) T);
 
 #[async_trait]
-impl<T, B> FromRequest<B> for ValidatedForm<T>
+impl<T, S, B> FromRequest<S, B> for ValidatedForm<T>
 where
     T: DeserializeOwned + Validate,
-    B: Body + Send,
-    B::Data: Send,
-    B::Error: Into<BoxError>,
+    S: Send + Sync,
+    Form<T>: FromRequest<S, B, Rejection = FormRejection>,
+    B: Send + 'static,
 {
     type Rejection = AppError;
 
-    async fn from_request(req: &mut RequestParts<B>) -> Result<Self, Self::Rejection> {
-        let Form(value) = Form::<T>::from_request(req).await?;
+    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+        let Form(value) = Form::<T>::from_request(req, state).await?;
         value.validate()?;
         Ok(ValidatedForm(value))
     }
@@ -315,7 +317,7 @@ pub(crate) struct UploadPicParams {
 
 /// `POST /mod/inn_icon` && `/user/avatar`
 pub(crate) async fn upload_pic_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<UploadPicParams>,
     ContentLengthLimit(mut multipart): ContentLengthLimit<Multipart, { 3 * 1024 * 1024 }>,
@@ -493,7 +495,7 @@ fn mark_read(old: Option<&[u8]>) -> Option<Vec<u8>> {
 ///
 /// 30 notifications in a batch and batch delete only if they has been marked read
 pub(super) async fn notification(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<NotifyParams>,
 ) -> Result<impl IntoResponse, AppError> {

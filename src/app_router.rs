@@ -17,10 +17,7 @@ use crate::{
         },
     },
 };
-use axum::{
-    error_handling::HandleErrorLayer, handler::Handler, http::StatusCode, routing::get, BoxError,
-    Extension, Router,
-};
+use axum::{error_handling::HandleErrorLayer, http::StatusCode, routing::get, BoxError, Router};
 use sled::Db;
 use std::time::Duration;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
@@ -36,7 +33,7 @@ pub(super) async fn router(db: Db) -> Router {
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http().on_request(()).on_response(()));
 
-    let mut app = Router::new()
+    let router_db = Router::with_state(db)
         .route("/", get(home))
         .route("/signup", get(signup).post(signup_post))
         .route("/signin", get(signin).post(signin_post))
@@ -68,8 +65,9 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/post/:iid/:pid/:cid/downvote", get(comment_downvote))
         .route("/solo/user/:uid", get(solo).post(solo_post))
         .route("/solo/:sid/like", get(solo_like))
-        .route("/solo/:sid/delete", get(solo_delete))
-        .layer(Extension(db))
+        .route("/solo/:sid/delete", get(solo_delete));
+
+    let mut router_static = Router::new()
         .route("/health_check", get(health_check))
         .route("/static/style.css", get(style))
         .nest("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
@@ -86,9 +84,9 @@ pub(super) async fn router(db: Db) -> Router {
     for (path, dir, _) in &CONFIG.serve_dir {
         let path = format!("/{}", path);
         info!("serve dir: {} -> {}", path, dir);
-        app = app.nest(&path, serve_dir(dir).await);
+        router_static = router_static.nest(&path, serve_dir(dir).await);
     }
 
-    app.layer(middleware_stack)
-        .fallback(handler_404.into_service())
+    let app = Router::new().merge(router_db).merge(router_static);
+    app.layer(middleware_stack).fallback(handler_404)
 }

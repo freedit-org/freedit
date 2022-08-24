@@ -8,7 +8,7 @@ use crate::{
 };
 use askama::Template;
 use axum::{
-    extract::{Extension, Query, TypedHeader},
+    extract::{Query, State, TypedHeader},
     headers::Cookie,
     response::{IntoResponse, Redirect},
 };
@@ -38,7 +38,7 @@ pub(crate) struct ParamsAdminView {
 
 /// `GET /admin/view` admin view kv database
 pub(crate) async fn admin_view(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsAdminView>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -241,7 +241,7 @@ struct AdminPage<'a> {
 
 /// `GET /admin/site_setting`
 pub(crate) async fn admin(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
@@ -261,7 +261,7 @@ pub(crate) async fn admin(
 
 /// `POST /admin`
 pub(crate) async fn admin_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     ValidatedForm(input): ValidatedForm<SiteConfig>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -302,7 +302,7 @@ struct AdminStatsPage<'a> {
 }
 
 pub(crate) async fn admin_stats(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;

@@ -132,7 +132,5 @@ async fn main() -> Result<(), AppError> {
 }
 
 // TODO: endorsements
-// TODO: lock posts
 // TODO: TEST with https://github.com/hatoo/oha
-// TODO: https://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_reddit.html
 // TODO: book/music/movie/list=entity

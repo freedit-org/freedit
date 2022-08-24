@@ -14,7 +14,7 @@ use crate::{
 use ::time::OffsetDateTime;
 use askama::Template;
 use axum::{
-    extract::{Extension, Path, Query, TypedHeader},
+    extract::{Path, Query, State, TypedHeader},
     headers::Cookie,
     response::{IntoResponse, Redirect},
 };
@@ -50,7 +50,7 @@ struct PageInnEdit<'a> {
 ///
 /// if iid is 0, then create a new inn
 pub(crate) async fn mod_inn(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(iid): Path<u64>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -98,10 +98,10 @@ pub(crate) struct FormInn {
 ///
 /// if iid is 0, then create a new inn
 pub(crate) async fn mod_inn_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormInn>,
     Path(mut iid): Path<u64>,
+    ValidatedForm(input): ValidatedForm<FormInn>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -259,7 +259,7 @@ struct PageInnList<'a> {
 
 /// `GET /inn/list` inns list page
 pub(crate) async fn inn_list(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsInnList>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -415,7 +415,7 @@ struct PagePostEdit<'a> {
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u64, u64)>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -469,10 +469,10 @@ pub(crate) struct FormPost {
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormPost>,
     Path((iid, old_pid)): Path<(u64, u64)>,
+    ValidatedForm(input): ValidatedForm<FormPost>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -622,7 +622,7 @@ pub(crate) struct ParamsTag {
 
 /// `GET /inn/tag/:tag` tag page
 pub(crate) async fn tag(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(tag): Path<String>,
     Query(params): Query<ParamsTag>,
@@ -680,7 +680,7 @@ pub(crate) struct ParamsInn {
 
 /// `GET /inn/:iid` inn page
 pub(crate) async fn inn(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(iid): Path<u64>,
     Query(params): Query<ParamsInn>,
@@ -1111,7 +1111,7 @@ fn get_pids_by_uids(
 
 /// `GET /inn/:iid/join` join inn
 pub(crate) async fn inn_join(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(iid): Path<u64>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -1205,7 +1205,7 @@ pub(crate) struct ParamsPost {
 
 /// `GET /inn/:iid/:pid` post page
 pub(crate) async fn post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u64, u64)>,
     Query(params): Query<ParamsPost>,
@@ -1469,10 +1469,10 @@ pub(crate) struct FormComment {
 
 /// `POST /post/:iid/:pid/` comment create
 pub(crate) async fn comment_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormComment>,
     Path((iid, pid)): Path<(u64, u64)>,
+    ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -1614,7 +1614,7 @@ pub(crate) async fn comment_post(
 
 /// `GET /inn/:iid/:pid/upvote` post upvote
 pub(crate) async fn post_upvote(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u64, u64)>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -1637,7 +1637,7 @@ pub(crate) async fn post_upvote(
 
 /// `GET /inn/:iid/:pid/:cid/upvote` comment upvote
 pub(crate) async fn comment_upvote(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid, cid)): Path<(u64, u64, u64)>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -1665,7 +1665,7 @@ pub(crate) async fn comment_upvote(
 
 /// `GET /inn/:iid/:pid/post_lock` post lock
 pub(crate) async fn post_lock(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u64, u64)>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -1693,7 +1693,7 @@ pub(crate) async fn post_lock(
 
 /// `GET /inn/:iid/:pid/downvote` post downvote
 pub(crate) async fn post_downvote(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u64, u64)>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -1716,7 +1716,7 @@ pub(crate) async fn post_downvote(
 
 /// `GET /inn/:iid/:pid/:cid/downvote` comment downvote
 pub(crate) async fn comment_downvote(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid, cid)): Path<(u64, u64, u64)>,
 ) -> Result<impl IntoResponse, AppError> {

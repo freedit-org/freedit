@@ -7,7 +7,7 @@ use super::{
 use crate::error::AppError;
 use askama::Template;
 use axum::{
-    extract::{Extension, Path, Query, TypedHeader},
+    extract::{Path, Query, State, TypedHeader},
     headers::Cookie,
     response::{IntoResponse, Redirect},
 };
@@ -70,7 +70,7 @@ pub(crate) struct ParamsSolo {
 
 /// `GET /solo/user/:uid` solo page
 pub(crate) async fn solo(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u64>,
     Query(params): Query<ParamsSolo>,
@@ -262,9 +262,9 @@ fn get_solos_by_uids(
 
 /// `POST /solo/user/:uid` solo page
 pub(crate) async fn solo_post(
-    Extension(db): Extension<Db>,
-    ValidatedForm(input): ValidatedForm<FormSolo>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
+    ValidatedForm(input): ValidatedForm<FormSolo>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -336,7 +336,7 @@ pub(crate) async fn solo_post(
 
 /// `GET /solo/:sid/like` solo like
 pub(crate) async fn solo_like(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u64>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -368,7 +368,7 @@ pub(crate) async fn solo_like(
 
 /// `GET /solo/:sid/delete` solo delete
 pub(crate) async fn solo_delete(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u64>,
 ) -> Result<impl IntoResponse, AppError> {

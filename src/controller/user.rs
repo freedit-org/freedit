@@ -9,11 +9,11 @@ use super::{
 use crate::{config::CONFIG, controller::get_count, error::AppError};
 use askama::Template;
 use axum::{
-    extract::{Form, Path, Query},
+    extract::{Form, Path, Query, State},
     headers::Cookie,
     http::{header::SET_COOKIE, HeaderMap},
     response::{IntoResponse, Redirect},
-    Extension, TypedHeader,
+    TypedHeader,
 };
 use bincode::config::standard;
 use captcha::{CaptchaName, Difficulty};
@@ -56,7 +56,7 @@ struct OutUser {
 
 /// `GET /user/:uid`
 pub(crate) async fn user(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u64>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -107,7 +107,7 @@ pub(crate) async fn user(
 
 /// `GET /user/:uid/follow` follow user
 pub(crate) async fn user_follow(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u64>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -166,7 +166,7 @@ pub(crate) struct ParamsUserList {
 
 /// `GET /user/list`
 pub(crate) async fn user_list(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsUserList>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -279,7 +279,7 @@ pub struct FormRole {
 
 /// `POST /role/:id/:uid`
 pub(crate) async fn role_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((id, uid)): Path<(u64, u64)>,
     Form(form): Form<FormRole>,
@@ -362,7 +362,7 @@ struct PageUserSetting<'a> {
 
 /// `GET /user/setting`
 pub(crate) async fn user_setting(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
@@ -393,7 +393,7 @@ pub(crate) async fn user_setting(
 
 /// `GET /user/remove/:session_id`
 pub(crate) async fn remove_session(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(session_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -407,7 +407,7 @@ pub(crate) async fn remove_session(
 
 /// `POST /user/setting`
 pub(crate) async fn user_setting_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     ValidatedForm(input): ValidatedForm<FormUser>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -455,7 +455,7 @@ pub(crate) struct FormPassword {
 
 /// `POST /user/password`
 pub(crate) async fn user_password_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     ValidatedForm(input): ValidatedForm<FormPassword>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -497,7 +497,7 @@ struct PageSignin<'a> {
 
 /// `GET /signin`
 pub(crate) async fn signin(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -514,7 +514,7 @@ pub(crate) async fn signin(
 
 /// `POST /signin`
 pub(crate) async fn signin_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     Form(input): Form<FormSignin>,
 ) -> impl IntoResponse {
     let uid = match input.username.parse::<u64>() {
@@ -566,7 +566,7 @@ struct PageSignup<'a> {
 }
 
 /// `GET /signup`
-pub(crate) async fn signup(Extension(db): Extension<Db>) -> Result<impl IntoResponse, AppError> {
+pub(crate) async fn signup(State(db): State<Db>) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     if site_config.read_only {
         return Err(AppError::ReadOnly);
@@ -588,7 +588,7 @@ pub(crate) async fn signup(Extension(db): Extension<Db>) -> Result<impl IntoResp
 
 /// `POST /signup`
 pub(crate) async fn signup_post(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     ValidatedForm(input): ValidatedForm<FormSignup>,
 ) -> Result<impl IntoResponse, AppError> {
     if input.username.chars().next().unwrap().is_numeric() {
@@ -653,7 +653,7 @@ pub(crate) async fn signup_post(
 
 /// `GET /signout`
 pub(crate) async fn signout(
-    Extension(db): Extension<Db>,
+    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     if let Some(cookie) = cookie {
