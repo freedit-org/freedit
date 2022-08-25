@@ -64,9 +64,13 @@
                         <p class="control">
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
+                                    {% if info.2 %}
                                     <option {% if user.role == 1 %} selected {% endif %}>Pending</option>
                                     <option {% if user.role == 2 %} selected {% endif %}>Deny</option>
-                                    <option {% if user.role == 3 %} selected {% endif %}>Accept</option>
+                                    {% endif %}
+                                    <option {% if user.role == 3 %} selected {% endif %}>Limited</option>
+                                    <option {% if user.role == 4 %} selected {% endif %}>Intern</option>
+                                    <option {% if user.role == 5 %} selected {% endif %}>Fellow</option>
                                 </select>
                             </span>
                         </p>

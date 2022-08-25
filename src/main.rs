@@ -86,7 +86,6 @@ async fn main() -> Result<(), AppError> {
         }
     });
 
-    // scan every 60s, to clear expired sessions
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {
@@ -96,7 +95,6 @@ async fn main() -> Result<(), AppError> {
         }
     });
 
-    // scan every 6 hours, to clear user pageviews data
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {

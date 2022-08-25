@@ -143,7 +143,7 @@ struct PageUserList<'a> {
     n: usize,
     is_desc: bool,
     filter: Option<String>,
-    info: (u64, String),
+    info: (u64, String, bool),
     is_admin: bool,
 }
 
@@ -193,19 +193,20 @@ pub(crate) async fn user_list(
         match params.filter.as_deref() {
             Some("followers") => {
                 let user: User = get_one(&db, "users", id)?;
-                info = (user.uid, user.username);
+                info = (user.uid, user.username, false);
                 index = get_ids_by_prefix(&db, "user_followers", id_ivec, Some(&page_params))?;
                 filter = Some("followers".to_owned());
             }
             Some("following") => {
                 let user: User = get_one(&db, "users", id)?;
-                info = (user.uid, user.username);
+                info = (user.uid, user.username, false);
                 index = get_ids_by_prefix(&db, "user_following", id_ivec, Some(&page_params))?;
                 filter = Some("following".to_owned());
             }
             Some("inn") => {
                 let inn: Inn = get_one(&db, "inns", id)?;
-                info = (inn.iid, inn.inn_name);
+                let need_apply = inn.inn_type != "Public";
+                info = (inn.iid, inn.inn_name, need_apply);
                 (index, status) =
                     get_inn_status_by_prefix(&db, "inn_users", id_ivec, Some(&page_params))?;
                 filter = Some("inn".to_owned());
@@ -213,12 +214,9 @@ pub(crate) async fn user_list(
                 if let Some(ref claim) = claim {
                     is_admin = inn.mods.contains(&claim.uid);
                 }
-                if inn.inn_type == "Public" {
-                    is_admin = false;
-                }
             }
             _ => {
-                info = (0, "all".to_owned());
+                info = (0, "all".to_owned(), false);
                 count = get_count(&db, "default", "users_count")?;
                 let (start, end) = get_range(count, &page_params);
                 index = (start..=end).map(|x| x as u64).collect();
@@ -229,7 +227,7 @@ pub(crate) async fn user_list(
             }
         }
     } else {
-        info = (0, "all".to_owned());
+        info = (0, "all".to_owned(), false);
         count = get_count(&db, "default", "users_count")?;
         let (start, end) = get_range(count, &page_params);
         index = (start..=end).map(|x| x as u64).collect();
@@ -291,15 +289,17 @@ pub(crate) async fn role_post(
     let target;
     match id.cmp(&0) {
         Ordering::Greater => {
-            let iin: Inn = get_one(&db, "inns", id)?;
-            if !iin.mods.contains(&claim.uid) {
+            let mod_inns_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(id)].concat();
+            if !db.open_tree("mod_inns")?.contains_key(mod_inns_k)? {
                 return Err(AppError::Unauthorized);
             }
 
             let inn_user_v: u8 = match form.role.as_str() {
                 "Pending" => 1,
                 "Deny" => 2,
-                "Accept" => 3,
+                "Limited" => 3,
+                "Intern" => 4,
+                "Fellow" => 5,
                 _ => unreachable!(),
             };
             let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
@@ -329,6 +329,8 @@ pub(crate) async fn role_post(
             let user_encode = bincode::encode_to_vec(&user, standard())?;
             db.open_tree("users")?
                 .insert(&u64_to_ivec(uid), user_encode)?;
+
+            Claim::update_role(&db, uid)?;
             target = "/user/list".to_string();
         }
         _ => unreachable!(),
@@ -757,6 +759,23 @@ impl Claim {
         let claim_encode = bincode::encode_to_vec(&self, standard())?;
         db.open_tree("sessions")?
             .insert(&self.session_id, claim_encode)?;
+        Ok(())
+    }
+
+    fn update_role(db: &Db, uid: u64) -> Result<(), AppError> {
+        let user: User = get_one(db, "users", uid)?;
+
+        let session_tree = db.open_tree("sessions")?;
+        for i in session_tree.iter() {
+            let (k, v) = i?;
+            let (mut claim, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
+            if claim.uid == uid {
+                claim.role = user.role;
+                let claim_encode = bincode::encode_to_vec(&claim, standard())?;
+                session_tree.insert(&k, claim_encode)?;
+            }
+        }
+
         Ok(())
     }
 
