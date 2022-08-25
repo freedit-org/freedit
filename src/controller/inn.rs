@@ -423,8 +423,8 @@ pub(crate) async fn edit_post(
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
-    if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
+    let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+    if inn_role <= 3 {
         return Err(AppError::Unauthorized);
     }
 
@@ -478,8 +478,8 @@ pub(crate) async fn edit_post_post(
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
-    if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
+    let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+    if inn_role <= 3 {
         return Err(AppError::Unauthorized);
     }
 
@@ -662,7 +662,7 @@ struct PageInn<'a> {
     anchor: usize,
     n: usize,
     is_desc: bool,
-    inn_status: u8,
+    inn_role: u8,
     filter: Option<String>,
     username: Option<String>,
     inn_users_count: usize,
@@ -749,13 +749,11 @@ pub(crate) async fn inn(
     }
 
     let out_post_list = get_out_post_list(&db, &index)?;
-    let mut inn_status = 0;
+    let mut inn_role = 0;
     if let Some(ref claim) = claim {
         if iid > 0 {
-            let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
-            match db.open_tree("inn_users")?.get(&inn_users_k)? {
-                None => inn_status = 0,
-                Some(v) => inn_status = v[0],
+            if let Ok(Some(role)) = get_inn_role(&db, iid, claim.uid) {
+                inn_role = role
             }
         }
     }
@@ -786,7 +784,7 @@ pub(crate) async fn inn(
         iid,
         n,
         is_desc,
-        inn_status,
+        inn_role,
         filter,
         username,
         inn_users_count,
@@ -1133,15 +1131,13 @@ pub(crate) async fn inn_join(
                 inn_users_tree.insert(&inn_users_k, &[1])?;
             } else {
                 user_inns_tree.insert(&user_inns_k, &[])?;
-                // 3: join inn
-                inn_users_tree.insert(&inn_users_k, &[3])?;
+                // 4: Public, default Intern
+                inn_users_tree.insert(&inn_users_k, &[4])?;
             }
         }
-        Some(v) => {
-            if v == [3] || v == [1] {
-                user_inns_tree.remove(&user_inns_k)?;
-                inn_users_tree.remove(&inn_users_k)?;
-            }
+        Some(_) => {
+            user_inns_tree.remove(&user_inns_k)?;
+            inn_users_tree.remove(&inn_users_k)?;
         }
     }
 
@@ -1479,8 +1475,8 @@ pub(crate) async fn comment_post(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
-    if !db.open_tree("inn_users")?.contains_key(&inn_users_k)? {
+    let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+    if inn_role < 3 {
         return Err(AppError::Unauthorized);
     }
 
@@ -1488,13 +1484,14 @@ pub(crate) async fn comment_post(
         return Err(AppError::NotFound);
     }
 
-    if !db.open_tree("posts")?.contains_key(u64_to_ivec(pid))? {
-        return Err(AppError::NotFound);
-    }
-
     let created_at = OffsetDateTime::now_utc().unix_timestamp();
     if created_at - claim.last_write < site_config.comment_interval {
         return Err(AppError::WriteInterval);
+    }
+
+    let post: Post = get_one(&db, "posts", pid)?;
+    if post.is_locked {
+        return Err(AppError::Locked);
     }
 
     let pid_ivec = u64_to_ivec(pid);
@@ -1581,24 +1578,23 @@ pub(crate) async fn comment_post(
             visibility = ivec_to_u64(&v);
         };
     }
-    // kv_pair: iid#pid = timestamp
-    db.open_tree("post_timeline_idx")?
-        .insert(k, &created_at_ivec)?;
 
-    let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
-    // kv_pair: timestamp#iid#pid = visibility
-    db.open_tree("post_timeline")?
-        .insert(k, u64_to_ivec(visibility))?;
+    // only the fellow could update the timeline by adding comment
+    if inn_role >= 5 {
+        // kv_pair: iid#pid = timestamp
+        db.open_tree("post_timeline_idx")?
+            .insert(k, &created_at_ivec)?;
+
+        let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
+        // kv_pair: timestamp#iid#pid = visibility
+        db.open_tree("post_timeline")?
+            .insert(k, u64_to_ivec(visibility))?;
+    }
 
     // notify post author
-    let post: Post = get_one(&db, "posts", pid)?;
     if post.uid != claim.uid {
         let notify_key = [&u64_to_ivec(post.uid), &pid_ivec, &u64_to_ivec(cid)].concat();
         notification_tree.insert(notify_key, vec![1])?;
-    }
-
-    if post.is_locked {
-        return Err(AppError::Locked);
     }
 
     user_stats(&db, claim.uid, "comment")?;
@@ -1740,4 +1736,12 @@ pub(crate) async fn comment_downvote(
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
+}
+
+fn get_inn_role(db: &Db, iid: u64, uid: u64) -> Result<Option<u8>, AppError> {
+    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(uid)].concat();
+    Ok(db
+        .open_tree("inn_users")?
+        .get(&inn_users_k)?
+        .map(|role| role.to_vec()[0]))
 }

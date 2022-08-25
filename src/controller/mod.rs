@@ -64,16 +64,16 @@
 //! | default   | "site_config" | [`SiteConfig`] |           | [get_site_config] |
 //!
 //! ### inn
-//! | tree            | key           | value      |
-//! |-----------------|---------------|------------|
-//! | default         | "inns_count"  | N          |
-//! | "inns"          | `iid`         | [`Inn`]    |
-//! | "inn_names"     | `inn_name`    | `iid`      |
-//! | "topics"        | `topic#iid`   | `&[]`      |
-//! | "mod_inns"      | `uid#iid`     | `&[]`      |
-//! | "user_inns"     | `uid#iid`     | `&[]`      |
-//! | "inn_users"     | `iid#uid`     | `&[1/2/3]` |
-//! | "inns_private"  | `iid`         | `&[]`      |
+//! | tree            | key           | value          |
+//! |-----------------|---------------|----------------|
+//! | default         | "inns_count"  | N              |
+//! | "inns"          | `iid`         | [`Inn`]        |
+//! | "inn_names"     | `inn_name`    | `iid`          |
+//! | "topics"        | `topic#iid`   | `&[]`          |
+//! | "mod_inns"      | `uid#iid`     | `&[]`          |
+//! | "user_inns"     | `uid#iid`     | `&[]`          |
+//! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5]` |
+//! | "inns_private"  | `iid`         | `&[]`          |
 //!
 //! ### post
 //! | tree                | key                 | value                |
@@ -931,8 +931,8 @@ fn get_ids_by_prefix(
 /// # Examples
 ///
 /// ```no_run
-/// let (uids, status) = get_inn_status_by_prefix(&db, "inn_users", id_ivec, Some(&page_params))?;
-fn get_inn_status_by_prefix(
+/// let (uids, inn_roles) = get_inn_roles_by_prefix(&db, "inn_users", id_ivec, Some(&page_params))?;
+fn get_inn_roles_by_prefix(
     db: &Db,
     tree: &str,
     prefix: impl AsRef<[u8]>,

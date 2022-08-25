@@ -38,7 +38,7 @@
                             <li><a href="/inn/0">All</a></li>
                             <li><a href="/inn/0?filter=joined">Joined</a></li>
                             <li><a href="/inn/0?filter=following">Following</a></li>
-                            <li class="is-active"><a href="/inn/0">⚓ {{inn_name}}</a></li>
+                            <li class="is-active"><a href="/inn/{{iid}}">⚓ {{inn_name}}</a></li>
                         {% else %}
                             <li class="is-active"><a href="/inn/0">All</a></li>
                             <li><a href="/inn/0?filter=joined">Joined</a></li>
@@ -64,15 +64,18 @@
     <div class="level-right">
         <div class="buttons">
             {% if iid > 0 %}
-                {% if inn_status == 3 %}
+                {% if inn_role >= 4 %}
                     <a href="/post/{{iid}}/edit/0"><button class="button is-primary is-small is-rounded">New Post</button></a>
                     <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded">Exit</button></a>
-                {% else if inn_status == 0 %}
-                    <a href="/inn/{{iid}}/join"><button class="button is-primary is-small is-rounded">Join to Post</button></a>
-                {% else if inn_status == 1 %}
-                    <a href="/inn/{{iid}}/join"><button class="button is-primary is-small is-rounded">Pending</button></a>
-                {% else if inn_status == 2 %}
-                    <button class="button is-primary is-small is-rounded">Denied</button>
+                {% else if inn_role == 3 %}
+                    <button class="button is-primary is-small is-rounded" title="You are limited to comment in this Inn">Limited</button>
+                    <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded">Exit</button></a>
+                {% else if inn_role == 2 %}
+                    <button class="button is-primary is-small is-rounded" title="Your request to join this Inn has been denied">Denied</button>
+                {% else if inn_role == 1 %}
+                    <button class="button is-primary is-small is-rounded">Pending</button>
+                {% else %}
+                    <a href="/inn/{{iid}}/join"><button class="button is-primary is-small is-rounded">Join</button></a>
                 {% endif %}
             {% endif %}
         </div>

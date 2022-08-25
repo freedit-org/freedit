@@ -1,7 +1,7 @@
 //! ## [User] sign up/in/out, user profile/list controller
 
 use super::{
-    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_status_by_prefix,
+    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_roles_by_prefix,
     get_one, get_range, get_site_config, get_uid_by_name, incr_id, into_response,
     timestamp_to_date, u64_to_ivec, user_stats, Claim, Inn, PageData, ParamsPage, SiteConfig, User,
     ValidatedForm,
@@ -182,7 +182,7 @@ pub(crate) async fn user_list(
     let count;
     let filter;
     let info;
-    let mut status = vec![];
+    let mut inn_roles = vec![];
     let mut is_admin = false;
     if let Some(ref claim) = claim {
         is_admin = claim.role == u8::MAX;
@@ -207,8 +207,8 @@ pub(crate) async fn user_list(
                 let inn: Inn = get_one(&db, "inns", id)?;
                 let need_apply = inn.inn_type != "Public";
                 info = (inn.iid, inn.inn_name, need_apply);
-                (index, status) =
-                    get_inn_status_by_prefix(&db, "inn_users", id_ivec, Some(&page_params))?;
+                (index, inn_roles) =
+                    get_inn_roles_by_prefix(&db, "inn_users", id_ivec, Some(&page_params))?;
                 filter = Some("inn".to_owned());
                 is_admin = false;
                 if let Some(ref claim) = claim {
@@ -241,7 +241,7 @@ pub(crate) async fn user_list(
     for (idx, i) in index.into_iter().enumerate() {
         let user: User = get_one(&db, "users", i)?;
         let role = if params.filter.as_deref() == Some("inn") {
-            status[idx]
+            inn_roles[idx]
         } else {
             user.role
         };
@@ -294,7 +294,7 @@ pub(crate) async fn role_post(
                 return Err(AppError::Unauthorized);
             }
 
-            let inn_user_v: u8 = match form.role.as_str() {
+            let inn_role: u8 = match form.role.as_str() {
                 "Pending" => 1,
                 "Deny" => 2,
                 "Limited" => 3,
@@ -304,10 +304,10 @@ pub(crate) async fn role_post(
             };
             let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
             db.open_tree("inn_users")?
-                .insert(&inn_users_k, &[inn_user_v])?;
+                .insert(&inn_users_k, &[inn_role])?;
 
             let user_inns_k = [&u64_to_ivec(uid), &u64_to_ivec(id)].concat();
-            if inn_user_v == 3 {
+            if inn_role >= 3 {
                 db.open_tree("user_inns")?.insert(&user_inns_k, &[])?;
             } else {
                 db.open_tree("user_inns")?.remove(&user_inns_k)?;
