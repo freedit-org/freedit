@@ -77,7 +77,6 @@ async fn create_inn(inn_name: &str) -> Result<StatusCode, reqwest::Error> {
         ("description", description),
         ("topics", "bench".to_owned()),
         ("inn_type", "Public".to_owned()),
-        ("mods", "1".to_owned()),
     ];
     send_post(&url, &params).await
 }

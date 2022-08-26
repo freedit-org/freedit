@@ -1,10 +1,21 @@
-//! ## [Inn] / [Post] / [Comment] read / create / update controller
+//! ## Inn
+//!
+//! ### Permissions
+//! | role    | code | comment | post | update timeline | lock post | inn admin | protected | Note             |
+//! |---------|------|:-------:|:----:|:---------------:|:---------:|:---------:|:---------:|------------------|
+//! | Deny    | 2    |         |      |                 |           |           |           | Apply or Private |
+//! | Pending | 1    |         |      |                 |           |           |           | Apply or Private |
+//! | Limited | 3    | ✅      |      |                 |           |           |           |                  |
+//! | Intern  | 4    | ✅      | ✅   |                 |           |           |           |                  |
+//! | Fellow  | 5    | ✅      | ✅   | ✅              |           |           |           |                  |
+//! | Mod     | 8    | ✅      | ✅   | ✅              | ✅        | ✅        |           |                  |
+//! | Super   | 10   | ✅      | ✅   | ✅              | ✅        | ✅        | ✅        |                  |
 
 use super::{
-    extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_one, get_range,
-    get_site_config, get_uid_by_name, has_unread, incr_id, into_response, ivec_to_u64, mark_read,
-    md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats, Claim, Comment, Inn,
-    PageData, ParamsPage, Post, User, ValidatedForm,
+    extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
+    get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
+    ivec_to_u64, mark_read, md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats,
+    Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
 };
 use crate::{
     config::CONFIG,
@@ -46,7 +57,7 @@ struct PageInnEdit<'a> {
     inn: Inn,
 }
 
-/// `GET /mod/:iid` inn create/edit page, only moderators or admin can do this
+/// `GET /mod/:iid` inn create/edit page
 ///
 /// if iid is 0, then create a new inn
 pub(crate) async fn mod_inn(
@@ -68,12 +79,12 @@ pub(crate) async fn mod_inn(
         let page_inn_create = PageInnCreate { page_data };
         Ok(into_response(&page_inn_create, "html"))
     } else {
-        let inn: Inn = get_one(&db, "inns", iid)?;
-
-        if !inn.mods.contains(&claim.uid) && (claim.role < u8::MAX) {
+        if !is_mod(&db, claim.uid, iid)? {
             return Err(AppError::Unauthorized);
         }
+
         let page_data = PageData::new("edit inn", &site_config.site_name, Some(claim), false);
+        let inn: Inn = get_one(&db, "inns", iid)?;
         let page_inn_edit = PageInnEdit { page_data, inn };
         Ok(into_response(&page_inn_edit, "html"))
     }
@@ -90,11 +101,10 @@ pub(crate) struct FormInn {
     description: String,
     #[validate(length(min = 1, max = 128))]
     topics: String,
-    mods: Option<String>,
     inn_type: String,
 }
 
-/// `POST /mod/:iid` inn create/edit page, only moderators or admin can do this
+/// `POST /mod/:iid` inn create/edit page
 ///
 /// if iid is 0, then create a new inn
 pub(crate) async fn mod_inn_post(
@@ -110,27 +120,6 @@ pub(crate) async fn mod_inn_post(
         return Err(AppError::Unauthorized);
     }
 
-    // get inn moderators
-    let mut uids: Vec<u64> = vec![];
-    if let Some(mods) = input.mods {
-        for uid in mods.split('#') {
-            if let Ok(uid) = uid.parse::<u64>() {
-                uids.push(uid);
-            }
-        }
-    };
-    let users_tree = db.open_tree("users")?;
-    uids.retain(|uid| {
-        users_tree
-            .contains_key(u64_to_ivec(*uid))
-            .ok()
-            .unwrap_or(false)
-    });
-    uids.truncate(10);
-    if !uids.contains(&claim.uid) {
-        uids.push(claim.uid);
-    }
-
     // get inn topics
     let mut topics: Vec<String> = input
         .topics
@@ -142,7 +131,6 @@ pub(crate) async fn mod_inn_post(
 
     let inn_names_tree = db.open_tree("inn_names")?;
 
-    let mut batch_mods = Batch::default();
     let mut batch_topics = Batch::default();
     // create new inn
     if iid == 0 {
@@ -160,11 +148,11 @@ pub(crate) async fn mod_inn_post(
             return Err(AppError::NameExists);
         }
 
-        let inn: Inn = get_one(&db, "inns", iid)?;
-        if !inn.mods.contains(&claim.uid) || (claim.role < u8::MAX) {
+        if !is_mod(&db, claim.uid, iid)? {
             return Err(AppError::Unauthorized);
         }
 
+        let inn: Inn = get_one(&db, "inns", iid)?;
         // remove the old inn name
         if input.inn_name != inn.inn_name {
             inn_names_tree.remove(&inn.inn_name)?;
@@ -174,12 +162,6 @@ pub(crate) async fn mod_inn_post(
         for topic in inn.topics {
             let k = [topic.as_bytes(), &u64_to_ivec(iid)].concat();
             batch_topics.remove(&*k);
-        }
-
-        // remove the old inn moderators
-        for uid in inn.mods {
-            let k = [&u64_to_ivec(uid), &u64_to_ivec(iid)].concat();
-            batch_mods.remove(k);
         }
     }
 
@@ -192,12 +174,14 @@ pub(crate) async fn mod_inn_post(
     }
     db.open_tree("topics")?.apply_batch(batch_topics)?;
 
-    // set index for inn moderators
-    for uid in &uids {
-        let k = [&u64_to_ivec(*uid), &iid_ivec].concat();
-        batch_mods.insert(k, &[]);
-    }
-    db.open_tree("mod_inns")?.apply_batch(batch_mods)?;
+    // set index for user mods and user inns
+    let k = [&u64_to_ivec(claim.uid), &iid_ivec].concat();
+    db.open_tree("mod_inns")?.insert(&k, &[])?;
+    db.open_tree("user_inns")?.insert(&k, &[])?;
+
+    // set index for inn users
+    let k = [&iid_ivec, &u64_to_ivec(claim.uid)].concat();
+    db.open_tree("inn_users")?.insert(k, &[10])?;
 
     let description_html = md2html(&input.description)?;
     let inn = Inn {
@@ -207,7 +191,6 @@ pub(crate) async fn mod_inn_post(
         description: input.description,
         description_html,
         topics,
-        mods: uids,
         inn_type: input.inn_type,
         created_at: OffsetDateTime::now_utc().unix_timestamp(),
     };
@@ -698,10 +681,7 @@ pub(crate) async fn inn(
     let mut username: Option<String> = None;
     let mut is_mod = false;
     if let Some(ref claim) = claim {
-        let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
-        if db.open_tree("mod_inns")?.contains_key(&k)? {
-            is_mod = true;
-        }
+        is_mod = super::is_mod(&db, claim.uid, iid)?;
 
         user_iins = get_ids_by_prefix(&db, "user_inns", u64_to_ivec(claim.uid), None);
         if let Ok(ref user_iins) = user_iins {
@@ -1224,7 +1204,6 @@ pub(crate) async fn post(
         if db.open_tree("user_inns")?.contains_key(&k)? {
             has_joined = true;
         }
-
         if db.open_tree("mod_inns")?.contains_key(&k)? {
             is_mod = true;
         }
@@ -1661,8 +1640,7 @@ pub(crate) async fn post_lock(
         .ok_or(AppError::NonLogin)?;
 
     // only mod can lock post
-    let mod_inns_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
-    if !db.open_tree("mod_inns")?.contains_key(mod_inns_k)? {
+    if !is_mod(&db, claim.uid, iid)? {
         return Err(AppError::Unauthorized);
     }
 
@@ -1726,12 +1704,4 @@ pub(crate) async fn comment_downvote(
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
-}
-
-fn get_inn_role(db: &Db, iid: u64, uid: u64) -> Result<Option<u8>, AppError> {
-    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(uid)].concat();
-    Ok(db
-        .open_tree("inn_users")?
-        .get(&inn_users_k)?
-        .map(|role| role.to_vec()[0]))
 }

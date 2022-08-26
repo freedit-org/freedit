@@ -144,7 +144,6 @@ struct Inn {
     description: String,
     description_html: String,
     topics: Vec<String>,
-    mods: Vec<u64>,
     inn_type: String,
     created_at: i64,
     // different user_type has different interval && should be in different tree
@@ -203,7 +202,7 @@ struct Claim {
     session_id: String,
 }
 
-use crate::{config::CONFIG, error::AppError, VERSION};
+use crate::{config::CONFIG, error::AppError, utils::CURRENT_SHA256, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
@@ -217,25 +216,17 @@ use axum::{
     routing::{get_service, MethodRouter},
     TypedHeader,
 };
-
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use comrak::{
     markdown_to_html_with_plugins, plugins::syntect::SyntectAdapter, ComrakOptions, ComrakPlugins,
 };
-use data_encoding::HEXLOWER;
 use nanoid::nanoid;
 use once_cell::sync::Lazy;
-use ring::digest::{Context, Digest, SHA256};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::{Db, IVec, Iter, Tree};
-use std::{
-    env,
-    fs::File,
-    io::{BufReader, Read},
-    iter::Rev,
-};
+use std::iter::Rev;
 use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
@@ -245,32 +236,6 @@ pub(super) mod admin;
 pub(super) mod inn;
 pub(super) mod solo;
 pub(super) mod user;
-
-/// Returns SHA256 of the current running executable.
-/// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
-pub(super) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
-    let file = env::current_exe().unwrap();
-    let input = File::open(file).unwrap();
-
-    fn sha256_digest<R: Read>(mut reader: R) -> Digest {
-        let mut context = Context::new(&SHA256);
-        let mut buffer = [0; 1024];
-
-        loop {
-            let count = reader.read(&mut buffer).unwrap();
-            if count == 0 {
-                break;
-            }
-            context.update(&buffer[..count]);
-        }
-        context.finish()
-    }
-
-    let reader = BufReader::new(input);
-    let digest = sha256_digest(reader);
-
-    HEXLOWER.encode(digest.as_ref())
-});
 
 fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
     match t.render() {
@@ -330,8 +295,8 @@ pub(crate) async fn upload_pic_post(
     let fname = match params.page_type.as_str() {
         "inn" => {
             if let Some(iid) = params.iid {
-                let inn: Inn = get_one(&db, "inns", iid)?;
-                if !inn.mods.contains(&claim.uid) {
+                let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+                if inn_role <= 8 {
                     return Err(AppError::Unauthorized);
                 }
                 target = format!("/mod/{}", iid);
@@ -595,6 +560,7 @@ pub(super) async fn notification(
     }
     notifications.reverse();
 
+    // TODO: this may be slow
     let mut inn_notifications = Vec::new();
     let mod_inns = get_ids_by_prefix(&db, "mod_inns", prefix, None)?;
     for i in mod_inns {
@@ -813,6 +779,19 @@ fn get_site_config(db: &Db) -> Result<SiteConfig, AppError> {
     Ok(site_config)
 }
 
+fn get_inn_role(db: &Db, iid: u64, uid: u64) -> Result<Option<u8>, AppError> {
+    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(uid)].concat();
+    Ok(db
+        .open_tree("inn_users")?
+        .get(&inn_users_k)?
+        .map(|role| role.to_vec()[0]))
+}
+
+fn is_mod(db: &Db, uid: u64, iid: u64) -> Result<bool, AppError> {
+    let k = [&u64_to_ivec(uid), &u64_to_ivec(iid)].concat();
+    Ok(db.open_tree("mod_inns")?.contains_key(k)?)
+}
+
 /// check if the user has unread notifications
 fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
     let prefix = u64_to_ivec(uid);
@@ -824,6 +803,7 @@ fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
         }
     }
 
+    // TODO: this may be slow
     let mod_inns = get_ids_by_prefix(db, "mod_inns", &prefix, None)?;
     for i in mod_inns {
         for i in db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(i)) {

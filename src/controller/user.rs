@@ -1,10 +1,10 @@
 //! ## [User] sign up/in/out, user profile/list controller
 
 use super::{
-    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_roles_by_prefix,
-    get_one, get_range, get_site_config, get_uid_by_name, incr_id, into_response,
-    timestamp_to_date, u64_to_ivec, user_stats, Claim, Inn, PageData, ParamsPage, SiteConfig, User,
-    ValidatedForm,
+    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role,
+    get_inn_roles_by_prefix, get_one, get_range, get_site_config, get_uid_by_name, incr_id,
+    into_response, is_mod, timestamp_to_date, u64_to_ivec, user_stats, Claim, Inn, PageData,
+    ParamsPage, SiteConfig, User, ValidatedForm,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
 use askama::Template;
@@ -212,7 +212,7 @@ pub(crate) async fn user_list(
                 filter = Some("inn".to_owned());
                 is_admin = false;
                 if let Some(ref claim) = claim {
-                    is_admin = inn.mods.contains(&claim.uid);
+                    is_admin = is_mod(&db, claim.uid, inn.iid)?;
                 }
             }
             _ => {
@@ -289,9 +289,16 @@ pub(crate) async fn role_post(
     let target;
     match id.cmp(&0) {
         Ordering::Greater => {
-            let mod_inns_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(id)].concat();
-            if !db.open_tree("mod_inns")?.contains_key(mod_inns_k)? {
+            let inn_role = get_inn_role(&db, id, claim.uid)?.ok_or(AppError::Unauthorized)?;
+            if inn_role < 8 {
                 return Err(AppError::Unauthorized);
+            }
+
+            // protect super
+            if let Some(user_inn_role) = get_inn_role(&db, id, uid)? {
+                if user_inn_role > inn_role {
+                    return Err(AppError::Unauthorized);
+                }
             }
 
             let inn_role: u8 = match form.role.as_str() {
@@ -300,6 +307,15 @@ pub(crate) async fn role_post(
                 "Limited" => 3,
                 "Intern" => 4,
                 "Fellow" => 5,
+                "Mod" => 8,
+                "Super" => {
+                    // only super can lift others to super
+                    if inn_role != 10 {
+                        return Err(AppError::Unauthorized);
+                    } else {
+                        10
+                    }
+                }
                 _ => unreachable!(),
             };
             let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
