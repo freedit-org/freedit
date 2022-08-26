@@ -64,16 +64,17 @@
 //! | default   | "site_config" | [`SiteConfig`] |           | [get_site_config] |
 //!
 //! ### inn
-//! | tree            | key           | value          |
-//! |-----------------|---------------|----------------|
-//! | default         | "inns_count"  | N              |
-//! | "inns"          | `iid`         | [`Inn`]        |
-//! | "inn_names"     | `inn_name`    | `iid`          |
-//! | "topics"        | `topic#iid`   | `&[]`          |
-//! | "mod_inns"      | `uid#iid`     | `&[]`          |
-//! | "user_inns"     | `uid#iid`     | `&[]`          |
-//! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5]` |
-//! | "inns_private"  | `iid`         | `&[]`          |
+//! | tree            | key           | value               |
+//! |-----------------|---------------|---------------------|
+//! | default         | "inns_count"  | N                   |
+//! | "inns"          | `iid`         | [`Inn`]             |
+//! | "inn_names"     | `inn_name`    | `iid`               |
+//! | "topics"        | `topic#iid`   | `&[]`               |
+//! | "mod_inns"      | `uid#iid`     | `&[]`               |
+//! | "user_inns"     | `uid#iid`     | `&[]`               |
+//! | "inn_apply"     | `iid#uid`     | `&[]`               |
+//! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5/8/10]` |
+//! | "inns_private"  | `iid`         | `&[]`               |
 //!
 //! ### post
 //! | tree                | key                 | value                |
@@ -560,19 +561,16 @@ pub(super) async fn notification(
     }
     notifications.reverse();
 
-    // TODO: this may be slow
     let mut inn_notifications = Vec::new();
     let mod_inns = get_ids_by_prefix(&db, "mod_inns", prefix, None)?;
     for i in mod_inns {
-        for i in db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(i)) {
-            let (k, v) = i?;
-            if v == [1] {
-                let inn_notification = InnNotification {
-                    iid: u8_slice_to_u64(&k[0..8]),
-                    uid: u8_slice_to_u64(&k[8..]),
-                };
-                inn_notifications.push(inn_notification);
-            }
+        for i in db.open_tree("inn_apply")?.scan_prefix(u64_to_ivec(i)) {
+            let (k, _) = i?;
+            let inn_notification = InnNotification {
+                iid: u8_slice_to_u64(&k[0..8]),
+                uid: u8_slice_to_u64(&k[8..]),
+            };
+            inn_notifications.push(inn_notification);
         }
 
         if inn_notifications.len() >= 30 {
@@ -803,14 +801,15 @@ fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
         }
     }
 
-    // TODO: this may be slow
     let mod_inns = get_ids_by_prefix(db, "mod_inns", &prefix, None)?;
     for i in mod_inns {
-        for i in db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(i)) {
-            let (_, v) = i?;
-            if v == [1] {
-                return Ok(true);
-            }
+        if db
+            .open_tree("inn_apply")?
+            .scan_prefix(u64_to_ivec(i))
+            .next()
+            .is_some()
+        {
+            return Ok(true);
         }
     }
 

@@ -294,10 +294,16 @@ pub(crate) async fn role_post(
                 return Err(AppError::Unauthorized);
             }
 
+            let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
+
             // protect super
             if let Some(user_inn_role) = get_inn_role(&db, id, uid)? {
                 if user_inn_role > inn_role {
                     return Err(AppError::Unauthorized);
+                }
+
+                if user_inn_role == 1 && form.role != "Pending" {
+                    db.open_tree("inn_apply")?.remove(&inn_users_k)?;
                 }
             }
 
@@ -318,7 +324,7 @@ pub(crate) async fn role_post(
                 }
                 _ => unreachable!(),
             };
-            let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
+
             db.open_tree("inn_users")?
                 .insert(&inn_users_k, &[inn_role])?;
 
@@ -328,6 +334,13 @@ pub(crate) async fn role_post(
             } else {
                 db.open_tree("user_inns")?.remove(&user_inns_k)?;
             }
+
+            if inn_role >= 8 {
+                db.open_tree("mod_inns")?.insert(&user_inns_k, &[])?;
+            } else {
+                db.open_tree("mod_inns")?.remove(&user_inns_k)?;
+            }
+
             target = format!("/user/list?filter=inn&id={}", id);
         }
         Ordering::Equal => {

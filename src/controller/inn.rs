@@ -1093,12 +1093,14 @@ pub(crate) async fn inn_join(
     let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
     let user_inns_tree = db.open_tree("user_inns")?;
     let inn_users_tree = db.open_tree("inn_users")?;
+    let inn_apply_tree = db.open_tree("inn_apply")?;
 
     match inn_users_tree.get(&inn_users_k)? {
         None => {
             if inn.inn_type.as_str() != "Public" {
                 // 1: applied, but pending
                 inn_users_tree.insert(&inn_users_k, &[1])?;
+                inn_apply_tree.insert(&inn_users_k, &[])?;
             } else {
                 user_inns_tree.insert(&user_inns_k, &[])?;
                 // 4: Public, default Intern
@@ -1108,6 +1110,7 @@ pub(crate) async fn inn_join(
         Some(_) => {
             user_inns_tree.remove(&user_inns_k)?;
             inn_users_tree.remove(&inn_users_k)?;
+            inn_apply_tree.remove(&inn_users_k)?;
         }
     }
 
