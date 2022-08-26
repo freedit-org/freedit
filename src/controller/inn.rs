@@ -667,7 +667,6 @@ struct PageInn<'a> {
     username: Option<String>,
     inn_users_count: usize,
     is_mod: bool,
-    has_apply: bool,
 }
 
 /// url params: `inn.html`
@@ -698,18 +697,10 @@ pub(crate) async fn inn(
     let mut user_iins: Result<Vec<u64>, AppError> = Err(AppError::NotFound);
     let mut username: Option<String> = None;
     let mut is_mod = false;
-    let mut has_apply = false;
     if let Some(ref claim) = claim {
         let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
         if db.open_tree("mod_inns")?.contains_key(&k)? {
             is_mod = true;
-            for i in &db.open_tree("inn_users")? {
-                let (_, v) = i?;
-                if v == [1] {
-                    has_apply = true;
-                    break;
-                }
-            }
         }
 
         user_iins = get_ids_by_prefix(&db, "user_inns", u64_to_ivec(claim.uid), None);
@@ -789,7 +780,6 @@ pub(crate) async fn inn(
         username,
         inn_users_count,
         is_mod,
-        has_apply,
     };
 
     Ok(into_response(&page_inn, "html"))

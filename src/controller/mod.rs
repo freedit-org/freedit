@@ -459,12 +459,18 @@ struct Notification {
     notification_code: u8,
 }
 
+struct InnNotification {
+    iid: u64,
+    uid: u64,
+}
+
 /// notification.html
 #[derive(Template)]
 #[template(path = "notification.html", escape = "none")]
 struct NotificationPage<'a> {
     page_data: PageData<'a>,
     notifications: Vec<Notification>,
+    inn_notifications: Vec<InnNotification>,
 }
 
 #[derive(Deserialize)]
@@ -589,6 +595,25 @@ pub(super) async fn notification(
     }
     notifications.reverse();
 
+    let mut inn_notifications = Vec::new();
+    let mod_inns = get_ids_by_prefix(&db, "mod_inns", prefix, None)?;
+    for i in mod_inns {
+        for i in db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(i)) {
+            let (k, v) = i?;
+            if v == [1] {
+                let inn_notification = InnNotification {
+                    iid: u8_slice_to_u64(&k[0..8]),
+                    uid: u8_slice_to_u64(&k[8..]),
+                };
+                inn_notifications.push(inn_notification);
+            }
+        }
+
+        if inn_notifications.len() >= 30 {
+            break;
+        }
+    }
+
     let has_unread = has_unread(&db, claim.uid)?;
     let page_data = PageData::new(
         "notification",
@@ -599,6 +624,7 @@ pub(super) async fn notification(
     let notification_page = NotificationPage {
         page_data,
         notifications,
+        inn_notifications,
     };
 
     Ok(into_response(&notification_page, "html"))
@@ -789,13 +815,25 @@ fn get_site_config(db: &Db) -> Result<SiteConfig, AppError> {
 
 /// check if the user has unread notifications
 fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
-    let iter = db.open_tree("notifications")?.scan_prefix(u64_to_ivec(uid));
+    let prefix = u64_to_ivec(uid);
+    let iter = db.open_tree("notifications")?.scan_prefix(&prefix);
     for i in iter {
         let (_, v) = i?;
         if v[0] < 100 {
             return Ok(true);
         }
     }
+
+    let mod_inns = get_ids_by_prefix(db, "mod_inns", &prefix, None)?;
+    for i in mod_inns {
+        for i in db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(i)) {
+            let (_, v) = i?;
+            if v == [1] {
+                return Ok(true);
+            }
+        }
+    }
+
     Ok(false)
 }
 
