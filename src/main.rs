@@ -4,16 +4,16 @@
 mod app_router;
 mod config;
 mod controller;
-mod cronjob;
 mod error;
+mod utils;
 
 use crate::{
     app_router::router,
     controller::{
         inn::{static_inn_all, static_inn_update},
-        shutdown_signal, CURRENT_SHA256,
+        shutdown_signal,
     },
-    cronjob::clear_invalid,
+    utils::{clear_invalid, CURRENT_SHA256},
 };
 use config::CONFIG;
 use error::AppError;
