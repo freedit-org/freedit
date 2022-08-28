@@ -177,7 +177,7 @@ pub(crate) async fn admin_view(
                 }
                 "hashtags" | "topics" | "tags" => {
                     let len = k.len();
-                    let str = String::from_utf8_lossy(&k[0..len - 9]);
+                    let str = String::from_utf8_lossy(&k[0..len - 8]);
                     let id = u8_slice_to_u64(&k[len - 8..]);
                     ones.push(format!("{}#{}", str, id));
                 }
