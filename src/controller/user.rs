@@ -202,15 +202,13 @@ impl OutUserList {
                 if v[0] == role {
                     let uid = u8_slice_to_u64(&k[8..]);
                     let user: User = get_one(db, "users", uid)?;
-                    let out_user_list =
-                        OutUserList::new(user.uid, user.username, user.about, user.role);
+                    let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                     users.push(out_user_list);
                 }
             } else {
                 let uid = u8_slice_to_u64(&k[8..]);
                 let user: User = get_one(db, "users", uid)?;
-                let out_user_list =
-                    OutUserList::new(user.uid, user.username, user.about, user.role);
+                let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                 users.push(out_user_list);
             }
         }
@@ -373,11 +371,11 @@ pub(crate) async fn role_post(
             }
 
             let inn_role: u8 = match form.role.as_str() {
-                "Pending" => 1,
-                "Deny" => {
+                "Pending" => {
                     db.open_tree("inn_apply")?.insert(&inn_users_k, &[])?;
-                    2
+                    1
                 }
+                "Deny" => 2,
                 "Limited" => 3,
                 "Intern" => 4,
                 "Fellow" => 5,
