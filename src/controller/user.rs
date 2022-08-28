@@ -371,7 +371,10 @@ pub(crate) async fn role_post(
 
             let inn_role: u8 = match form.role.as_str() {
                 "Pending" => 1,
-                "Deny" => 2,
+                "Deny" => {
+                    db.open_tree("inn_apply")?.insert(&inn_users_k, &[])?;
+                    2
+                }
                 "Limited" => 3,
                 "Intern" => 4,
                 "Fellow" => 5,
