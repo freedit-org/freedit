@@ -162,6 +162,7 @@ pub(crate) struct ParamsUserList {
     is_desc: Option<bool>,
     filter: Option<String>,
     id: Option<u64>,
+    role: Option<u8>,
 }
 
 /// `GET /user/list`
@@ -208,7 +209,7 @@ pub(crate) async fn user_list(
                 let need_apply = inn.inn_type != "Public";
                 info = (inn.iid, inn.inn_name, need_apply);
                 (index, inn_roles) =
-                    get_inn_roles_by_prefix(&db, "inn_users", id_ivec, Some(&page_params))?;
+                    get_inn_roles_by_prefix(&db, "inn_users", id_ivec, params.role, &page_params)?;
                 filter = Some("inn".to_owned());
                 is_admin = false;
                 if let Some(ref claim) = claim {

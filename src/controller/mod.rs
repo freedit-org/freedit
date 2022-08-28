@@ -953,39 +953,39 @@ fn get_inn_roles_by_prefix(
     db: &Db,
     tree: &str,
     prefix: impl AsRef<[u8]>,
-    page_params: Option<&ParamsPage>,
+    role: Option<u8>,
+    page_params: &ParamsPage,
 ) -> Result<(Vec<u64>, Vec<u8>), AppError> {
     let mut res = vec![];
-    let mut status = vec![];
+    let mut roles = vec![];
     let iter = db.open_tree(tree)?.scan_prefix(&prefix);
-    if let Some(page_params) = page_params {
-        let iter = if page_params.is_desc {
-            IterType::Rev(iter.rev())
-        } else {
-            IterType::Iter(iter)
-        };
-        for (idx, i) in iter.enumerate() {
-            if idx < page_params.anchor {
-                continue;
-            }
-            if idx >= page_params.anchor + page_params.n {
-                break;
-            }
-            let (k, v) = i?;
-            let uid = &k[prefix.as_ref().len()..];
-            res.push(u8_slice_to_u64(uid));
-            status.push(v[0]);
-        }
+    let iter = if page_params.is_desc {
+        IterType::Rev(iter.rev())
     } else {
-        for i in iter {
-            let (k, v) = i?;
+        IterType::Iter(iter)
+    };
+    for (idx, i) in iter.enumerate() {
+        if idx < page_params.anchor {
+            continue;
+        }
+        if idx >= page_params.anchor + page_params.n {
+            break;
+        }
+        let (k, v) = i?;
+        if let Some(role) = role {
+            if v[0] == role {
+                let uid = &k[prefix.as_ref().len()..];
+                res.push(u8_slice_to_u64(uid));
+                roles.push(v[0]);
+            }
+        } else {
             let uid = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u64(uid));
-            status.push(v[0]);
+            roles.push(v[0]);
         }
     }
 
-    Ok((res, status))
+    Ok((res, roles))
 }
 
 /// get objects in batch that has been encoded by bincode
