@@ -277,7 +277,10 @@ pub(crate) async fn user_list(
                     is_admin = is_mod(&db, claim.uid, inn.iid)?;
                 }
 
-                users = OutUserList::get_inn_users(&db, id, params.role, &page_params)?;
+                if inn.inn_type == "Private" && !is_admin {
+                } else {
+                    users = OutUserList::get_inn_users(&db, id, params.role, &page_params)?;
+                }
             }
             _ => return Ok(Redirect::to("/user/list").into_response()),
         }
