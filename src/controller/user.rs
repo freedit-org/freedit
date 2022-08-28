@@ -1,10 +1,10 @@
 //! ## [User] sign up/in/out, user profile/list controller
 
 use super::{
-    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role,
-    get_inn_roles_by_prefix, get_one, get_range, get_site_config, get_uid_by_name, incr_id,
-    into_response, is_mod, timestamp_to_date, u64_to_ivec, user_stats, Claim, Inn, PageData,
-    ParamsPage, SiteConfig, User, ValidatedForm,
+    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
+    get_range, get_site_config, get_uid_by_name, incr_id, into_response, is_mod, timestamp_to_date,
+    u64_to_ivec, u8_slice_to_u64, user_stats, Claim, Inn, IterType, PageData, ParamsPage,
+    SiteConfig, User, ValidatedForm,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
 use askama::Template;
@@ -143,6 +143,7 @@ struct PageUserList<'a> {
     n: usize,
     is_desc: bool,
     filter: Option<String>,
+    role: Option<u8>,
     info: (u64, String, bool),
     is_admin: bool,
 }
@@ -153,6 +154,68 @@ struct OutUserList {
     username: String,
     about: String,
     role: u8,
+}
+
+impl OutUserList {
+    fn new(uid: u64, username: String, about: String, role: u8) -> Self {
+        OutUserList {
+            uid,
+            username,
+            about,
+            role,
+        }
+    }
+
+    fn get_from_uids(db: &Db, index: Vec<u64>, n: usize) -> Result<Vec<Self>, AppError> {
+        let mut users = Vec::with_capacity(n);
+        for i in index {
+            let user: User = get_one(db, "users", i)?;
+            let out_user_list = OutUserList::new(user.uid, user.username, user.about, user.role);
+            users.push(out_user_list);
+        }
+        Ok(users)
+    }
+
+    fn get_inn_users(
+        db: &Db,
+        iid: u64,
+        role: Option<u8>,
+        page_params: &ParamsPage,
+    ) -> Result<Vec<Self>, AppError> {
+        let mut users = Vec::with_capacity(page_params.n);
+        let iter = db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(iid));
+        let iter = if page_params.is_desc {
+            IterType::Rev(iter.rev())
+        } else {
+            IterType::Iter(iter)
+        };
+
+        for (idx, i) in iter.enumerate() {
+            if idx < page_params.anchor {
+                continue;
+            }
+            if idx >= page_params.anchor + page_params.n {
+                break;
+            }
+            let (k, v) = i?;
+            if let Some(role) = role {
+                if v[0] == role {
+                    let uid = u8_slice_to_u64(&k[8..]);
+                    let user: User = get_one(db, "users", uid)?;
+                    let out_user_list =
+                        OutUserList::new(user.uid, user.username, user.about, user.role);
+                    users.push(out_user_list);
+                }
+            } else {
+                let uid = u8_slice_to_u64(&k[8..]);
+                let user: User = get_one(db, "users", uid)?;
+                let out_user_list =
+                    OutUserList::new(user.uid, user.username, user.about, user.role);
+                users.push(out_user_list);
+            }
+        }
+        Ok(users)
+    }
 }
 
 /// url params: `user_list.html`
@@ -181,13 +244,14 @@ pub(crate) async fn user_list(
 
     let mut index;
     let count;
-    let filter;
     let info;
-    let mut inn_roles = vec![];
+
     let mut is_admin = false;
     if let Some(ref claim) = claim {
         is_admin = claim.role == u8::MAX;
     }
+
+    let mut users = Vec::with_capacity(n);
 
     if let Some(id) = params.id {
         let id_ivec = u64_to_ivec(id);
@@ -196,63 +260,59 @@ pub(crate) async fn user_list(
                 let user: User = get_one(&db, "users", id)?;
                 info = (user.uid, user.username, false);
                 index = get_ids_by_prefix(&db, "user_followers", id_ivec, Some(&page_params))?;
-                filter = Some("followers".to_owned());
+                users = OutUserList::get_from_uids(&db, index, n)?;
             }
             Some("following") => {
                 let user: User = get_one(&db, "users", id)?;
                 info = (user.uid, user.username, false);
                 index = get_ids_by_prefix(&db, "user_following", id_ivec, Some(&page_params))?;
-                filter = Some("following".to_owned());
+                users = OutUserList::get_from_uids(&db, index, n)?;
             }
             Some("inn") => {
                 let inn: Inn = get_one(&db, "inns", id)?;
                 let need_apply = inn.inn_type != "Public";
                 info = (inn.iid, inn.inn_name, need_apply);
-                (index, inn_roles) =
-                    get_inn_roles_by_prefix(&db, "inn_users", id_ivec, params.role, &page_params)?;
-                filter = Some("inn".to_owned());
                 is_admin = false;
                 if let Some(ref claim) = claim {
                     is_admin = is_mod(&db, claim.uid, inn.iid)?;
                 }
+
+                users = OutUserList::get_inn_users(&db, id, params.role, &page_params)?;
             }
-            _ => {
-                info = (0, "all".to_owned(), false);
-                count = get_count(&db, "default", "users_count")?;
-                let (start, end) = get_range(count, &page_params);
-                index = (start..=end).map(|x| x as u64).collect();
-                if is_desc {
-                    index.reverse();
-                }
-                filter = None;
-            }
+            _ => return Ok(Redirect::to("/user/list").into_response()),
         }
     } else {
         info = (0, "all".to_owned(), false);
-        count = get_count(&db, "default", "users_count")?;
-        let (start, end) = get_range(count, &page_params);
-        index = (start..=end).map(|x| x as u64).collect();
-        if is_desc {
-            index.reverse();
-        }
-        filter = None;
-    }
-
-    let mut users = Vec::with_capacity(n);
-    for (idx, i) in index.into_iter().enumerate() {
-        let user: User = get_one(&db, "users", i)?;
-        let role = if params.filter.as_deref() == Some("inn") {
-            inn_roles[idx]
+        if let Some(role) = params.role {
+            let iter = db.open_tree("users")?.iter();
+            let iter = if page_params.is_desc {
+                IterType::Rev(iter.rev())
+            } else {
+                IterType::Iter(iter)
+            };
+            for (idx, i) in iter.enumerate() {
+                if idx < page_params.anchor {
+                    continue;
+                }
+                if idx >= page_params.anchor + page_params.n {
+                    break;
+                }
+                let (_, v) = i?;
+                let (user, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
+                if user.role == role {
+                    let out_user_list = OutUserList::new(user.uid, user.username, user.about, role);
+                    users.push(out_user_list);
+                }
+            }
         } else {
-            user.role
-        };
-        let out_user_list = OutUserList {
-            uid: user.uid,
-            username: user.username,
-            about: user.about,
-            role,
-        };
-        users.push(out_user_list);
+            count = get_count(&db, "default", "users_count")?;
+            let (start, end) = get_range(count, &page_params);
+            index = (start..=end).map(|x| x as u64).collect();
+            if is_desc {
+                index.reverse();
+            }
+            users = OutUserList::get_from_uids(&db, index, n)?;
+        }
     }
 
     let page_data = PageData::new("User list", &site_config.site_name, claim, false);
@@ -262,7 +322,8 @@ pub(crate) async fn user_list(
         anchor,
         n,
         is_desc,
-        filter,
+        filter: params.filter,
+        role: params.role,
         info,
         is_admin,
     };
