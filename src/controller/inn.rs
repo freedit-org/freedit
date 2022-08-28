@@ -713,6 +713,13 @@ pub(crate) async fn inn(
         _ => {
             if iid == 0 {
                 index = get_pids_all(&db, joined_inns, &page_params)?
+            } else if db
+                .open_tree("inns_private")?
+                .contains_key(u64_to_ivec(iid))?
+            {
+                if joined_inns.contains(&iid) {
+                    index = get_pids_by_iids(&db, &[iid], &page_params)?;
+                }
             } else {
                 index = get_pids_by_iids(&db, &[iid], &page_params)?;
             }
