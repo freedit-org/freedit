@@ -99,6 +99,7 @@ pub(crate) async fn admin_view(
                 "users" => {
                     let key = ivec_to_u64(&k);
                     let (mut one, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
+                    one.salt = String::from("******");
                     one.password_hash = String::from("******");
                     let json = serde_json::to_string_pretty(&one).unwrap();
                     let json = json.replace("\\\"", "'");
@@ -170,6 +171,7 @@ pub(crate) async fn admin_view(
                 | "inn_posts_count"
                 | "user_posts_count"
                 | "post_comments_count"
+                | "post_pageviews"
                 | "user_comments_count" => {
                     let id = u8_slice_to_u64(&k);
                     let count = ivec_to_u64(&v);
@@ -182,7 +184,8 @@ pub(crate) async fn admin_view(
                     ones.push(format!("{}#{}", str, id));
                 }
                 "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
-                | "post_upvotes" | "post_downvotes" | "user_solos_like" | "solo_users_like" => {
+                | "inn_apply" | "post_upvotes" | "post_downvotes" | "user_solos_like"
+                | "solo_users_like" => {
                     let id1 = u8_slice_to_u64(&k[0..8]);
                     let id2 = u8_slice_to_u64(&k[8..16]);
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
@@ -201,7 +204,7 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u64(&v);
                     ones.push(format!("name: {}, id: {}", name, id));
                 }
-                "static_user_post" | "static_inn_post" => {
+                "static_user_post" | "static_inn_post" | "inns_private" => {
                     let id = u8_slice_to_u64(&k);
                     ones.push(format!("id: {}", id));
                 }
@@ -213,6 +216,31 @@ pub(crate) async fn admin_view(
                         "sid: {}, uid: {}, visibility: {}",
                         sid, uid, visibility
                     ));
+                }
+                "notifications" => {
+                    let pid = u8_slice_to_u64(&k[0..8]);
+                    let cid = u8_slice_to_u64(&k[8..16]);
+                    let uid = u8_slice_to_u64(&k[16..24]);
+                    ones.push(format!(
+                        "uid: {}, pid: {}, cid: {}, notification_code:{}",
+                        pid, cid, uid, v[0]
+                    ));
+                }
+                "captcha" | "sessions" => {
+                    let k_str = std::str::from_utf8(&k)?;
+                    let time_stamp = k_str
+                        .split_once('_')
+                        .and_then(|s| i64::from_str_radix(s.0, 16).ok())
+                        .unwrap();
+                    ones.push(format!("timestamp: {}", time_stamp));
+                }
+                "post_timeline" => {
+                    let timestamp = u8_slice_to_u64(&k[0..8]) as i64;
+                    let date = timestamp_to_date(timestamp)?;
+                    let iid = u8_slice_to_u64(&k[8..16]);
+                    let pid = u8_slice_to_u64(&k[16..24]);
+                    let visibility = u8_slice_to_u64(&v);
+                    ones.push(format!("{} - {} - {} - {}", date, iid, pid, visibility));
                 }
                 _ => ones.push(format!("{} has not been supported yet", tree_name)),
             }

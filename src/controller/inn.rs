@@ -3,8 +3,8 @@
 //! ### Permissions
 //! | role    | code | comment | post | update timeline | lock post | inn admin | protected | Note             |
 //! |---------|------|:-------:|:----:|:---------------:|:---------:|:---------:|:---------:|------------------|
-//! | Deny    | 2    |         |      |                 |           |           |           | Apply or Private |
 //! | Pending | 1    |         |      |                 |           |           |           | Apply or Private |
+//! | Deny    | 2    |         |      |                 |           |           |           | Apply or Private |
 //! | Limited | 3    | ✅      |      |                 |           |           |           |                  |
 //! | Intern  | 4    | ✅      | ✅   |                 |           |           |           |                  |
 //! | Fellow  | 5    | ✅      | ✅   | ✅              |           |           |           |                  |
@@ -153,6 +153,13 @@ pub(crate) async fn mod_inn_post(
         }
 
         let inn: Inn = get_one(&db, "inns", iid)?;
+        if inn.inn_type.as_str() == "Private" && input.inn_type != "Private" {
+            return Err(AppError::Unauthorized);
+        }
+        if inn.inn_type.as_str() != "Private" && input.inn_type == "Private" {
+            return Err(AppError::Unauthorized);
+        }
+
         // remove the old inn name
         if input.inn_name != inn.inn_name {
             inn_names_tree.remove(&inn.inn_name)?;
