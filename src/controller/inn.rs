@@ -437,6 +437,11 @@ pub(crate) async fn edit_post(
         if post.uid != claim.uid {
             return Err(AppError::Unauthorized);
         }
+
+        if post.iid != iid {
+            return Err(AppError::NotFound);
+        }
+
         let page_data = PageData::new("edit post", &site_config.site_name, Some(claim), false);
         let page_post_edit = PagePostEdit { page_data, post };
 
@@ -509,6 +514,10 @@ pub(crate) async fn edit_post_post(
 
             if post.is_locked {
                 return Err(AppError::Locked);
+            }
+
+            if post.iid != iid {
+                return Err(AppError::NotFound);
             }
 
             for old_tag in post.tags.iter() {
@@ -777,6 +786,64 @@ pub(crate) async fn inn(
     };
 
     Ok(into_response(&page_inn, "html"))
+}
+
+/// Page data: `inn_feed.html`
+#[derive(Template)]
+#[template(path = "inn_feed.html")]
+struct PageInnFeed {
+    title: String,
+    description: String,
+    link: String,
+    updated: String,
+    posts: Vec<OutPostList>,
+}
+
+/// `GET /inn/:iid/feed` inn page
+pub(crate) async fn inn_feed(
+    State(db): State<Db>,
+    Path(iid): Path<u64>,
+) -> Result<impl IntoResponse, AppError> {
+    let page_params = ParamsPage {
+        anchor: 0,
+        n: 30,
+        is_desc: true,
+    };
+
+    let site_config = get_site_config(&db)?;
+
+    let mut index = Vec::with_capacity(page_params.n);
+    let title;
+    let description;
+    let link;
+
+    // TODO: link needs test
+    if iid == 0 {
+        index = get_pids_all(&db, &[], &page_params)?;
+        title = site_config.site_name;
+        description = site_config.description;
+        link = format!("https://{}/inn/0", CONFIG.addr);
+    } else {
+        let inn: Inn = get_one(&db, "inns", iid)?;
+        title = inn.inn_name;
+        description = inn.description;
+        link = format!("https://{}/inn/{}", CONFIG.addr, iid);
+
+        if inn.inn_type != "Private" {
+            index = get_pids_by_iids(&db, &[iid], &page_params)?;
+        }
+    }
+
+    let out_post_list = get_out_post_list(&db, &index)?;
+
+    let page_inn_feed = PageInnFeed {
+        title,
+        description,
+        link,
+        updated: out_post_list[0].created_at.clone(),
+        posts: out_post_list,
+    };
+    Ok(into_response(&page_inn_feed, "html"))
 }
 
 /// Page data: `inn_static.html`
@@ -1201,6 +1268,10 @@ pub(crate) async fn post(
     let date = timestamp_to_date(post.created_at)?;
     let inn: Inn = get_one(&db, "inns", post.iid)?;
 
+    if post.iid != iid {
+        return Err(AppError::NotFound);
+    }
+
     let mut has_joined = false;
     let mut is_upvoted = false;
     let mut is_downvoted = false;
@@ -1476,6 +1547,9 @@ pub(crate) async fn comment_post(
     }
 
     let post: Post = get_one(&db, "posts", pid)?;
+    if post.iid != iid {
+        return Err(AppError::NotFound);
+    }
     if post.is_locked {
         return Err(AppError::Locked);
     }
