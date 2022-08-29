@@ -22,7 +22,7 @@
     {% if anchor < n %}
         <a class="pagination-previous" disabled>Prev</a>
     {% else %}
-        <a class="pagination-previous" href="/admin/view/?tree_name={{tree_name}}&anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+        <a class="pagination-previous" href="/admin/view?tree_name={{tree_name}}&anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
     {% endif %}
 
     {% if ones.len() < n %}
