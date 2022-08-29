@@ -114,7 +114,6 @@ struct User {
     salt: String,
     password_hash: String,
     created_at: i64,
-    karma: u64,
     role: u8,
     url: String,
     about: String,
@@ -147,9 +146,6 @@ struct Inn {
     topics: Vec<String>,
     inn_type: String,
     created_at: i64,
-    // different user_type has different interval && should be in different tree
-    //  post_interval: u16,
-    //  comment_interval: u16,
 }
 
 #[derive(Encode, Decode, Serialize)]
