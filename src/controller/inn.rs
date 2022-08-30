@@ -816,17 +816,23 @@ pub(crate) async fn inn_feed(
     let description;
     let link;
 
-    // TODO: link needs test
+    // TODO: link needs test, domain needs to be configed.
+    let prefix = if CONFIG.tls_config().await.is_some() {
+        "https://"
+    } else {
+        "http://"
+    };
+
     if iid == 0 {
         index = get_pids_all(&db, &[], &page_params)?;
         title = site_config.site_name;
         description = site_config.description;
-        link = format!("https://{}/inn/0", CONFIG.addr);
+        link = format!("{}{}/inn/0", prefix, CONFIG.addr);
     } else {
         let inn: Inn = get_one(&db, "inns", iid)?;
         title = inn.inn_name;
         description = inn.description;
-        link = format!("https://{}/inn/{}", CONFIG.addr, iid);
+        link = format!("{}{}/inn/{}", prefix, CONFIG.addr, iid);
 
         if inn.inn_type != "Private" {
             index = get_pids_by_iids(&db, &[iid], &page_params)?;
