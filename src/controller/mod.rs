@@ -107,7 +107,7 @@
 /// * 10: who can create inn
 /// * 255: super admin
 /// * 0: banned
-#[derive(Default, Encode, Decode, Serialize)]
+#[derive(Default, Encode, Decode, Serialize, Debug)]
 struct User {
     uid: u64,
     username: String,
@@ -126,7 +126,7 @@ struct User {
 /// * 10: Following
 /// * 0: Everyone
 ///
-#[derive(Encode, Decode, Serialize)]
+#[derive(Encode, Decode, Serialize, Debug)]
 struct Solo {
     sid: u64,
     uid: u64,
@@ -136,7 +136,7 @@ struct Solo {
     created_at: i64,
 }
 
-#[derive(Encode, Decode, Serialize)]
+#[derive(Encode, Decode, Serialize, Debug)]
 struct Inn {
     iid: u64,
     inn_name: String,
@@ -148,7 +148,7 @@ struct Inn {
     created_at: i64,
 }
 
-#[derive(Encode, Decode, Serialize)]
+#[derive(Encode, Decode, Serialize, Debug)]
 struct Post {
     pid: u64,
     uid: u64,
@@ -161,7 +161,7 @@ struct Post {
     is_locked: bool,
 }
 
-#[derive(Encode, Decode, Serialize)]
+#[derive(Encode, Decode, Serialize, Debug)]
 struct Comment {
     cid: u64,
     pid: u64,
@@ -175,7 +175,7 @@ struct Comment {
 /// Go to source code to see default value: [SiteConfig::default()]
 // TODO: recaptcha && configuration
 // TODO: validate
-#[derive(Serialize, Deserialize, Encode, Decode, Validate)]
+#[derive(Serialize, Deserialize, Encode, Decode, Validate, Debug)]
 pub(super) struct SiteConfig {
     site_name: String,
     description: String,

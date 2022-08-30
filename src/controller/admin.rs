@@ -89,8 +89,7 @@ pub(crate) async fn admin_view(
                     if key == "site_config" {
                         let (site_config, _): (SiteConfig, usize) =
                             bincode::decode_from_slice(&v, standard()).unwrap_or_default();
-                        let json = serde_json::to_string_pretty(&site_config).unwrap();
-                        ones.push(format!("{}: {}", key, json));
+                        ones.push(format!("{}: {:?}", key, site_config));
                     } else {
                         let v = ivec_to_u64(&v);
                         ones.push(format!("{}: {}", key, v));
@@ -101,38 +100,30 @@ pub(crate) async fn admin_view(
                     let (mut one, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                     one.salt = String::from("******");
                     one.password_hash = String::from("******");
-                    let json = serde_json::to_string_pretty(&one).unwrap();
-                    let json = json.replace("\\\"", "'");
-                    ones.push(format!("{}: {}", key, json));
+                    ones.push(format!("{}: {:?}", key, one));
                 }
                 "solos" => {
                     let key = ivec_to_u64(&k);
                     let (one, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let json = serde_json::to_string_pretty(&one).unwrap();
-                    let json = json.replace("\\\"", "'");
-                    ones.push(format!("{}: {}", key, json));
+                    ones.push(format!("{}: {:?}", key, one));
                 }
                 "inns" => {
                     let key = ivec_to_u64(&k);
                     let (mut one, _): (Inn, usize) = bincode::decode_from_slice(&v, standard())?;
                     one.description_html = "".to_string();
-                    let json = serde_json::to_string_pretty(&one).unwrap();
-                    ones.push(format!("{}: {}", key, json));
+                    ones.push(format!("{}: {:?}", key, one));
                 }
                 "posts" => {
                     let key = ivec_to_u64(&k);
                     let (mut one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
                     one.content_html = "".to_string();
-                    let json = serde_json::to_string_pretty(&one).unwrap();
-                    ones.push(format!("{}: {}", key, json));
+                    ones.push(format!("{}: {:?}", key, one));
                 }
                 "post_comments" => {
                     let pid = u8_slice_to_u64(&k[0..8]);
                     let cid = u8_slice_to_u64(&k[8..16]);
                     let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let json = serde_json::to_string_pretty(&one).unwrap();
-                    let json = json.replace("\\\"", "'");
-                    ones.push(format!("pid: {}, cid: {}, comment: {}", pid, cid, json));
+                    ones.push(format!("pid: {}, cid: {}, comment: {:?}", pid, cid, one));
                 }
                 "comment_upvotes" | "comment_downvotes" => {
                     let pid = u8_slice_to_u64(&k[0..8]);

@@ -20,7 +20,6 @@ once_cell = "*"
 pulldown-cmark = { version = "0.9", default-features = false }
 ring = { version = "0.16.20", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
 sled = { version = "0.34.7", features = ["compression"] }
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
 thiserror = "1"

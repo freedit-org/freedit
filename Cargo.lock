@@ -462,7 +462,6 @@ dependencies = [
  "reqwest",
  "ring",
  "serde",
- "serde_json",
  "sled",
  "syntect",
  "thiserror",
