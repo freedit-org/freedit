@@ -143,6 +143,14 @@ static OPTIONS: Options = Options::all();
 
 // TODO: markdown may need to be escaped
 /// convert latex and markdown to html
+/// Inspired by [cmark-syntax](https://github.com/grego/cmark-syntax/blob/master/src/lib.rs)
+
+// This file is part of cmark-syntax. This program comes with ABSOLUTELY NO WARRANTY;
+// This is free software, and you are welcome to redistribute it under the
+// conditions of the GNU General Public License version 3.0.
+//
+// You should have received a copy of the GNU General Public License
+// along with cmark-syntax. If not, see <http://www.gnu.org/licenses/>
 pub(super) fn md2html(md: &str) -> String {
     let parser = pulldown_cmark::Parser::new_ext(md, OPTIONS);
     let processed = SyntaxPreprocessor::new(parser);
