@@ -199,7 +199,7 @@ struct Claim {
     session_id: String,
 }
 
-use crate::{config::CONFIG, error::AppError, utils::CURRENT_SHA256, VERSION};
+use crate::{config::CONFIG, error::AppError, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
@@ -223,13 +223,14 @@ use std::iter::Rev;
 use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
+use utils::CURRENT_SHA256;
 use validator::Validate;
 
 pub(super) mod admin;
 pub(super) mod inn;
-mod markdown;
 pub(super) mod solo;
 pub(super) mod user;
+pub(super) mod utils;
 
 fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
     match t.render() {

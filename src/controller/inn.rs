@@ -14,8 +14,8 @@
 use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
     get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
-    ivec_to_u64, mark_read, markdown::md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64,
-    user_stats, Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
+    ivec_to_u64, mark_read, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats,
+    utils::md2html, Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
 };
 use crate::{
     config::CONFIG,
