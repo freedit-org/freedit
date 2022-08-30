@@ -51,7 +51,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
             other => return Some(other),
         };
 
-        let mut code = String::new();
+        let mut code = String::with_capacity(16);
         loop {
             match self.parent.next() {
                 Some(Event::End(Tag::CodeBlock(_))) => break,

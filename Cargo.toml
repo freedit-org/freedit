@@ -22,9 +22,9 @@ ring = { version = "0.16.20", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sled = { version = "0.34.7", features = ["compression"] }
-syntect = { version = "5", features = ["default-fancy"], default-features = false }
+syntect = { version = "5", features = ["regex-fancy", "parsing", "default-syntaxes", "default-themes", "html"], default-features = false }
 thiserror = "1"
-time = { version = "0.3", default-features = false }
+time = { version = "0.3", features = ["std"], default-features = false }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 toml = "0.5"
 tower = { version = "0.4", features = ["timeout"] }
