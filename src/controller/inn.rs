@@ -14,8 +14,8 @@
 use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
     get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
-    ivec_to_u64, mark_read, md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats,
-    Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
+    ivec_to_u64, mark_read, markdown::md2html, timestamp_to_date, u64_to_ivec, u8_slice_to_u64,
+    user_stats, Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
 };
 use crate::{
     config::CONFIG,
@@ -190,13 +190,12 @@ pub(crate) async fn mod_inn_post(
     let k = [&iid_ivec, &u64_to_ivec(claim.uid)].concat();
     db.open_tree("inn_users")?.insert(k, &[10])?;
 
-    let description_html = md2html(&input.description)?;
     let inn = Inn {
         iid,
+        description_html: md2html(&input.description),
         inn_name: input.inn_name,
         about: input.about,
         description: input.description,
-        description_html,
         topics,
         inn_type: input.inn_type,
         created_at: OffsetDateTime::now_utc().unix_timestamp(),
@@ -539,7 +538,7 @@ pub(crate) async fn edit_post_post(
         iid,
         title: input.title,
         tags,
-        content_html: md2html(&input.content)?,
+        content_html: md2html(&input.content),
         content: input.content,
         created_at,
         is_locked: false,
@@ -1603,13 +1602,12 @@ pub(crate) async fn comment_post(
         }
     }
 
-    let content = md2html(&content)?;
     let comment = Comment {
         cid,
         pid,
         uid: claim.uid,
         reply_to: reply_to_cid,
-        content,
+        content: md2html(&content),
         created_at,
         // TODO: comment is collapsed
         is_collapsed: false,

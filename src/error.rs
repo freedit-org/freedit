@@ -52,8 +52,6 @@ pub(super) enum AppError {
     ImageError(#[from] image::ImageError),
     #[error("The site is under maintenance. It is read only at the moment")]
     ReadOnly,
-    #[error("Latex to mathml error: {}", .0)]
-    LatexError(#[from] latex2mathml::LatexError),
     #[error(transparent)]
     ValidationError(#[from] validator::ValidationErrors),
     #[error(transparent)]
@@ -73,8 +71,7 @@ impl IntoResponse for AppError {
             | AppError::Locked
             | AppError::ReadOnly
             | AppError::ValidationError(_)
-            | AppError::AxumFormRejection(_)
-            | AppError::LatexError(_) => StatusCode::BAD_REQUEST,
+            | AppError::AxumFormRejection(_) => StatusCode::BAD_REQUEST,
             AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,
             AppError::NonLogin => return Redirect::to("/signin").into_response(),
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,

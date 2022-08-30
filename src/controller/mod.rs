@@ -215,11 +215,7 @@ use axum::{
 };
 use bincode::config::standard;
 use bincode::{Decode, Encode};
-use comrak::{
-    markdown_to_html_with_plugins, plugins::syntect::SyntectAdapter, ComrakOptions, ComrakPlugins,
-};
 use nanoid::nanoid;
-use once_cell::sync::Lazy;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::{Db, IVec, Iter, Tree};
@@ -231,6 +227,7 @@ use validator::Validate;
 
 pub(super) mod admin;
 pub(super) mod inn;
+mod markdown;
 pub(super) mod solo;
 pub(super) mod user;
 
@@ -698,65 +695,6 @@ fn ivec_to_u64(iv: &IVec) -> u64 {
 /// convert `&[u8]` to `u64`
 fn u8_slice_to_u64(bytes: &[u8]) -> u64 {
     u64::from_be_bytes(bytes.try_into().unwrap())
-}
-
-static MD_OPTION: Lazy<ComrakOptions> = Lazy::new(|| {
-    let mut options = ComrakOptions::default();
-    options.extension.strikethrough = true;
-    options.extension.tagfilter = true;
-    options.extension.table = true;
-    options.extension.autolink = true;
-    options.extension.tasklist = true;
-    options.extension.superscript = true;
-    options.render.hardbreaks = true;
-    options
-});
-/// convert latex and markdown to html
-fn md2html(input: &str) -> Result<String, AppError> {
-    let mut plugins = ComrakPlugins::default();
-    let adapter = SyntectAdapter::new("InspiredGitHub");
-    plugins.render.codefence_syntax_highlighter = Some(&adapter);
-
-    let input = if input.contains('$') {
-        latex2mathml::replace(input)?
-    } else {
-        return Ok(markdown_to_html_with_plugins(input, &MD_OPTION, &plugins));
-    };
-
-    if input.contains("<math") && input.contains("</math>") {
-        let mut output = vec![];
-        let mut contents = input.split("<math");
-        let start = contents.next().unwrap_or_default();
-        let start = markdown_to_html_with_plugins(start, &MD_OPTION, &plugins);
-        output.push(
-            start
-                .trim()
-                .to_string()
-                .trim_end_matches("</p>")
-                .to_string(),
-        );
-
-        for content in contents {
-            let pairs = content.split_once("</math>");
-            if let Some((math, res)) = pairs {
-                output.push(" <math".to_string());
-                output.push(math.to_owned());
-                output.push("</math> ".to_string());
-                let res = markdown_to_html_with_plugins(res, &MD_OPTION, &plugins);
-                output.push(
-                    res.trim()
-                        .to_string()
-                        .trim_start_matches("<p>")
-                        .to_string()
-                        .trim_end_matches("</p>")
-                        .to_string(),
-                );
-            }
-        }
-        Ok(output.join(""))
-    } else {
-        Ok(markdown_to_html_with_plugins(&input, &MD_OPTION, &plugins))
-    }
 }
 
 /// get uid by username

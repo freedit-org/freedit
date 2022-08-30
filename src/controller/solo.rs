@@ -1,8 +1,8 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
-    has_unread, incr_id, into_response, ivec_to_u64, md2html, set_index, timestamp_to_date,
-    u64_to_ivec, u8_slice_to_u64, user_stats, Claim, IterType, PageData, ParamsPage, Solo, User,
-    ValidatedForm,
+    has_unread, incr_id, into_response, ivec_to_u64, markdown::md2html, set_index,
+    timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats, Claim, IterType, PageData,
+    ParamsPage, Solo, User, ValidatedForm,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -306,13 +306,11 @@ pub(crate) async fn solo_post(
         }
     }
 
-    let content = md2html(&content)?;
-
     let solo = Solo {
         sid,
         uid,
         visibility,
-        content,
+        content: md2html(&content),
         hashtags,
         created_at,
     };
