@@ -39,17 +39,16 @@
             👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% match page_data.claim %} {% when Some with (val) %}
                 {% if val.uid == post.uid %}
-                <a href="/post/{{post.iid}}/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
+                    <a href="/post/{{post.iid}}/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
                 {% endif %}
 
                 {% if is_mod %}
-                <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
-                    {% if post.is_locked %}
-                        unlock
-                    {% else %}
-                        lock
-                    {% endif %}
-                </a>
+                    <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
+                        {% if post.is_locked %} Unlock {% else %} Lock {% endif %}
+                    </a> &nbsp;&nbsp;
+                    <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
+                        {% if post.is_hidden %} Open {% else %} Hide {% endif %}
+                    </a>
                 {% endif %}
 
             {% else %}{% endmatch %}

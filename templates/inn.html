@@ -106,7 +106,10 @@
         </div>
         <div class="list-item-controls">
             {% if post.comment_count >0 %} 
-            <a href="/post/{{post.iid}}/{{post.pid}}#{{post.comment_count}}"><span class="tag is-info">{{post.comment_count}}</span></a>
+                <a href="/post/{{post.iid}}/{{post.pid}}#{{post.comment_count}}"><span class="tag is-info">{{post.comment_count}}</span></a>
+            {% endif %}
+            {% if post.is_hidden %}
+                <span class="tag is-info">hidden</span>
             {% endif %}
         </div>
     </div>

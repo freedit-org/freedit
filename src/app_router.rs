@@ -5,8 +5,8 @@ use crate::{
         handler_404, health_check, home,
         inn::{
             comment_downvote, comment_post, comment_upvote, edit_post, edit_post_post, inn,
-            inn_feed, inn_join, inn_list, mod_inn, mod_inn_post, post, post_downvote, post_lock,
-            post_upvote, tag,
+            inn_feed, inn_join, inn_list, mod_inn, mod_inn_post, post, post_downvote, post_hide,
+            post_lock, post_upvote, tag,
         },
         notification, serve_dir,
         solo::{solo, solo_delete, solo_like, solo_post},
@@ -53,6 +53,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/mod/:iid", get(mod_inn).post(mod_inn_post))
         .route("/mod/inn_icon", get(mod_inn).post(upload_pic_post))
         .route("/mod/:iid/:pid/lock", get(post_lock))
+        .route("/mod/:iid/:pid/hide", get(post_hide))
         .route("/inn/list", get(inn_list))
         .route("/inn/tag/:tag", get(tag))
         .route("/inn/:iid", get(inn))

@@ -159,6 +159,7 @@ struct Post {
     content_html: String,
     created_at: i64,
     is_locked: bool,
+    is_hidden: bool,
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]

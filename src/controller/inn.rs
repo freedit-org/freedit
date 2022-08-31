@@ -433,6 +433,10 @@ pub(crate) async fn edit_post(
             return Err(AppError::Locked);
         }
 
+        if post.is_hidden {
+            return Err(AppError::Hidden);
+        }
+
         if post.uid != claim.uid {
             return Err(AppError::Unauthorized);
         }
@@ -515,6 +519,10 @@ pub(crate) async fn edit_post_post(
                 return Err(AppError::Locked);
             }
 
+            if post.is_hidden {
+                return Err(AppError::Hidden);
+            }
+
             if post.iid != iid {
                 return Err(AppError::NotFound);
             }
@@ -542,6 +550,7 @@ pub(crate) async fn edit_post_post(
         content: input.content,
         created_at,
         is_locked: false,
+        is_hidden: false,
     };
 
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
@@ -597,6 +606,7 @@ struct OutPostList {
     title: String,
     created_at: String,
     comment_count: u64,
+    is_hidden: bool,
 }
 
 /// Page data: `tag.html`
@@ -1064,6 +1074,7 @@ fn get_out_post_list(db: &Db, index: &[u64]) -> Result<Vec<OutPostList>, AppErro
                 title: post.title,
                 created_at: date,
                 comment_count,
+                is_hidden: post.is_hidden,
             };
             post_lists.push(post_list);
         }
@@ -1218,6 +1229,7 @@ struct OutPost {
     upvotes: usize,
     downvotes: usize,
     is_locked: bool,
+    is_hidden: bool,
     is_upvoted: bool,
     is_downvoted: bool,
 }
@@ -1313,6 +1325,10 @@ pub(crate) async fn post(
         }
     }
 
+    if post.is_hidden && !is_mod {
+        return Err(AppError::Hidden);
+    }
+
     let out_post = OutPost {
         pid: post.pid,
         uid: post.uid,
@@ -1322,6 +1338,7 @@ pub(crate) async fn post(
         title: post.title,
         tags: post.tags,
         is_locked: post.is_locked,
+        is_hidden: post.is_hidden,
         content_html: post.content_html,
         created_at: date,
         upvotes,
@@ -1416,6 +1433,9 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let pid_ivec = u64_to_ivec(pid);
     let site_config = get_site_config(db)?;
     let post: Post = get_one(db, "posts", pid)?;
+    if post.is_hidden {
+        return Ok(());
+    }
     let user: User = get_one(db, "users", post.uid)?;
     let date = timestamp_to_date(post.created_at)?;
     let inn: Inn = get_one(db, "inns", post.iid)?;
@@ -1434,6 +1454,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         content_html: post.content_html,
         created_at: date,
         is_locked: post.is_locked,
+        is_hidden: false,
         upvotes,
         downvotes,
         is_upvoted: false,
@@ -1557,6 +1578,9 @@ pub(crate) async fn comment_post(
     }
     if post.is_locked {
         return Err(AppError::Locked);
+    }
+    if post.is_hidden {
+        return Err(AppError::Hidden);
     }
 
     let pid_ivec = u64_to_ivec(pid);
@@ -1723,35 +1747,6 @@ pub(crate) async fn comment_upvote(
     Ok(Redirect::to(&target))
 }
 
-// TODO: hide post
-// TODO: time limit to post modification
-/// `GET /inn/:iid/:pid/post_lock` post lock
-pub(crate) async fn post_lock(
-    State(db): State<Db>,
-    cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
-) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
-    let claim = cookie
-        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
-        .ok_or(AppError::NonLogin)?;
-
-    // only mod can lock post
-    if !is_mod(&db, claim.uid, iid)? {
-        return Err(AppError::Unauthorized);
-    }
-
-    let mut post: Post = get_one(&db, "posts", pid)?;
-    post.is_locked = !post.is_locked;
-
-    let post_encoded = bincode::encode_to_vec(&post, standard())?;
-    db.open_tree("posts")?
-        .insert(u64_to_ivec(pid), post_encoded)?;
-
-    let target = format!("/post/{}/{}", iid, pid);
-    Ok(Redirect::to(&target))
-}
-
 /// `GET /inn/:iid/:pid/downvote` post downvote
 pub(crate) async fn post_downvote(
     State(db): State<Db>,
@@ -1798,6 +1793,61 @@ pub(crate) async fn comment_downvote(
     } else {
         comment_downvotes_tree.insert(&k, &[])?;
     }
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
+// TODO: time limit to post modification
+/// `GET /inn/:iid/:pid/post_lock` post lock
+pub(crate) async fn post_lock(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid)): Path<(u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    // only mod can lock post
+    if !is_mod(&db, claim.uid, iid)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let mut post: Post = get_one(&db, "posts", pid)?;
+    post.is_locked = !post.is_locked;
+
+    let post_encoded = bincode::encode_to_vec(&post, standard())?;
+    db.open_tree("posts")?
+        .insert(u64_to_ivec(pid), post_encoded)?;
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /inn/:iid/:pid/post_hide` post hide
+pub(crate) async fn post_hide(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid)): Path<(u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    // only mod can hide post
+    if !is_mod(&db, claim.uid, iid)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let mut post: Post = get_one(&db, "posts", pid)?;
+    post.is_hidden = !post.is_hidden;
+
+    let post_encoded = bincode::encode_to_vec(&post, standard())?;
+    db.open_tree("posts")?
+        .insert(u64_to_ivec(pid), post_encoded)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
