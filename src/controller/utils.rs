@@ -88,6 +88,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
+        let mut code = String::with_capacity(64);
         let lang = match self.parent.next()? {
             Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) => lang,
             Event::Code(c) if is_inline_latex(&c) => {
@@ -100,15 +101,18 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
                     .into(),
                 ));
             }
+            Event::Html(h) => {
+                code.push_str(&h);
+                "html".into()
+            }
             other => return Some(other),
         };
 
-        let mut code = String::with_capacity(16);
         loop {
             match self.parent.next() {
                 Some(Event::End(Tag::CodeBlock(_))) => break,
                 Some(Event::Text(text)) => code.push_str(&text),
-                None => return Some(Event::Text("CodeBlock end tag not found".into())),
+                None => break,
                 event => return Some(Event::Text(format!("Unexpected event {:?}", event).into())),
             };
         }
