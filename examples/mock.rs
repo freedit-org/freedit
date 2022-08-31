@@ -8,7 +8,7 @@ use reqwest::{header, Client, StatusCode};
 const URL: &str = "https://localhost:3001";
 
 static COOKIE: Lazy<String> = Lazy::new(|| {
-    let cookie = std::env::var("COOKIE").expect("env var cookie not set");
+    let cookie = std::env::var("COOKIE").expect("env var COOKIE not set");
     format!("__Host-id={}", cookie)
 });
 
@@ -42,26 +42,18 @@ async fn main() {
                     Ok(s) => println!("{}", s),
                 };
             }
+            for j in 0..1000 {
+                match create_comment(i, j).await {
+                    Err(e) => println!("{}", e),
+                    Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
+                    Ok(StatusCode::OK) => (),
+                    Ok(s) => println!("{}", s),
+                };
+            }
         });
         handlers.push(h);
     }
 
-    for h in handlers {
-        h.await.unwrap();
-    }
-
-    let mut handlers = Vec::with_capacity(10000);
-    for i in 1..=100 {
-        let h = tokio::spawn(async move {
-            match create_comment(i).await {
-                Err(e) => println!("{}", e),
-                Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
-                Ok(StatusCode::OK) => (),
-                Ok(s) => println!("{}", s),
-            };
-        });
-        handlers.push(h);
-    }
     for h in handlers {
         h.await.unwrap();
     }
@@ -101,8 +93,8 @@ async fn create_post(iid: u64) -> Result<StatusCode, reqwest::Error> {
     send_post(&url, &params).await
 }
 
-async fn create_comment(pid: u64) -> Result<StatusCode, reqwest::Error> {
-    let url = format!("{}/post/1/{}", URL, pid);
+async fn create_comment(iid: u64, pid: u64) -> Result<StatusCode, reqwest::Error> {
+    let url = format!("{}/post/{}/{}", URL, iid, pid);
     let comment = format!("pid_{}, auto generate post", pid);
     let params = [("comment", comment)];
     send_post(&url, &params).await
