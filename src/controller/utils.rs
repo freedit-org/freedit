@@ -108,13 +108,8 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
             other => return Some(other),
         };
 
-        loop {
-            match self.parent.next() {
-                Some(Event::End(Tag::CodeBlock(_))) => break,
-                Some(Event::Text(text)) => code.push_str(&text),
-                None => break,
-                event => return Some(Event::Text(format!("Unexpected event {:?}", event).into())),
-            };
+        while let Some(Event::Text(text)) | Some(Event::Html(text)) = self.parent.next() {
+            code.push_str(&text)
         }
 
         if lang.as_ref() == "math" {
@@ -145,7 +140,6 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
 
 static OPTIONS: Options = Options::all();
 
-// TODO: markdown may need to be escaped
 /// convert latex and markdown to html
 /// Inspired by [cmark-syntax](https://github.com/grego/cmark-syntax/blob/master/src/lib.rs)
 

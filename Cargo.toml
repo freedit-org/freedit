@@ -17,7 +17,7 @@ image = { version = "0.24", default-features = false, features = ["jpeg", "png",
 latex2mathml = "0.2.3"
 nanoid = "0.4.0"
 once_cell = "*"
-pulldown-cmark = { version = "0.9", default-features = false }
+pulldown-cmark = { version = "0.9", features = ["simd"], default-features = false }
 ring = { version = "0.16.20", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 sled = { version = "0.34.7", features = ["compression"] }
