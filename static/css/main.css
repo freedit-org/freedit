@@ -91,6 +91,6 @@ pre {
     padding: 1rem;
 }
 
-.list-item-content {
+.list-item-content, .media-content {
     max-width: 85%;
 }

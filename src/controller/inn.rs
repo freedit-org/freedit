@@ -1599,7 +1599,7 @@ pub(crate) async fn comment_post(
     if !reply_to.is_empty() {
         if let Ok(reply_cid) = reply_to[0].parse::<u64>() {
             if reply_cid < cid {
-                let reply_link = format!("[{}](/inn/{}/{}#{})", reply_to[0], iid, pid, reply_cid);
+                let reply_link = format!("[{}](/post/{}/{}#{})", reply_to[0], iid, pid, reply_cid);
                 let from = format!("#{}", reply_cid);
                 let to = format!("#{}", reply_link);
                 content = content.replace(&from, &to);
@@ -1723,6 +1723,8 @@ pub(crate) async fn comment_upvote(
     Ok(Redirect::to(&target))
 }
 
+// TODO: hide post
+// TODO: time limit to post modification
 /// `GET /inn/:iid/:pid/post_lock` post lock
 pub(crate) async fn post_lock(
     State(db): State<Db>,
