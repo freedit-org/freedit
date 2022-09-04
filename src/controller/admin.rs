@@ -189,6 +189,15 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u64(&k);
                     ones.push(format!("id: {}", id));
                 }
+                "user_solos" => {
+                    let uid = u8_slice_to_u64(&k[0..8]);
+                    let sid = u8_slice_to_u64(&k[8..16]);
+                    let visibility = u8_slice_to_u64(&v);
+                    ones.push(format!(
+                        "uid: {}, sid: {}, visibility: {}",
+                        uid, sid, visibility
+                    ));
+                }
                 "solo_timeline" => {
                     let sid = u8_slice_to_u64(&k[0..8]);
                     let uid = u8_slice_to_u64(&v[0..8]);
