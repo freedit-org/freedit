@@ -19,7 +19,7 @@ use super::{
 };
 use crate::{
     config::CONFIG,
-    controller::{get_count, set_index, IterType},
+    controller::{get_count, IterType},
     error::AppError,
 };
 use ::time::OffsetDateTime;
@@ -559,9 +559,12 @@ pub(crate) async fn edit_post_post(
     let iid_ivec = u64_to_ivec(iid);
     let visibility_ivec = u64_to_ivec(visibility);
     if old_pid == 0 {
-        set_index(&db, "inn_posts_count", iid, "inn_posts_idx", &pid_ivec)?;
-        let target = [&iid_ivec, &pid_ivec, &visibility_ivec].concat();
-        set_index(&db, "user_posts_count", claim.uid, "user_posts_idx", target)?;
+        let k = [&iid_ivec, &pid_ivec].concat();
+        db.open_tree("inn_posts")?.insert(&k, &[])?;
+
+        let k = [&u64_to_ivec(claim.uid), &pid_ivec].concat();
+        let v = [&iid_ivec, &visibility_ivec].concat();
+        db.open_tree("user_posts")?.insert(&k, v)?;
     }
 
     if visibility < 10 {
@@ -951,7 +954,7 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
     let mut posts_count = get_count(db, "default", "posts_count")?;
     for i in db.open_tree("inns_private")?.iter() {
         let (k, _) = i?;
-        let count = get_count(db, "inn_posts_count", &k)?;
+        let count = get_count_by_prefix(db, "inn_posts", &k)?;
         posts_count -= count;
     }
 
@@ -1003,7 +1006,7 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
         }
 
         let mut page = 0;
-        let mut posts_count = get_count(db, "inn_posts_count", &k)?;
+        let mut posts_count = get_count_by_prefix(db, "inn_posts", &k)?;
         while posts_count > 0 {
             page += 1;
             let page_params = ParamsPage { anchor, n, is_desc };
@@ -1031,7 +1034,7 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
         let uid = ivec_to_u64(&k);
         let mut page = 0;
         let page_params = ParamsPage { anchor, n, is_desc };
-        let mut posts_count = get_count(db, "user_posts_count", &k)?;
+        let mut posts_count = get_count_by_prefix(db, "user_posts", &k)?;
         while posts_count > 0 {
             page += 1;
             let index = get_pids_by_uids(db, &[uid], &[], &page_params)?;
@@ -1155,12 +1158,12 @@ fn get_pids_by_uids(
     let mut pids = Vec::with_capacity(page_params.n);
     for uid in uids {
         let prefix = u64_to_ivec(*uid);
-        // kv_pair: uid#idx = iid#pid#visibility
-        for i in db.open_tree("user_posts_idx")?.scan_prefix(prefix) {
-            let (_, v) = i?;
+        // kv_pair: uid#pid = iid#visibility
+        for i in db.open_tree("user_posts")?.scan_prefix(prefix) {
+            let (k, v) = i?;
+            let pid = u8_slice_to_u64(&k[8..16]);
             let iid = u8_slice_to_u64(&v[0..8]);
-            let pid = u8_slice_to_u64(&v[8..16]);
-            let visibility = u8_slice_to_u64(&v[16..24]);
+            let visibility = u8_slice_to_u64(&v[8..16]);
             if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) {
                 pids.push(pid);
             }
@@ -1646,13 +1649,8 @@ pub(crate) async fn comment_post(
     let k = [&pid_ivec, &u64_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.insert(&k, comment_encoded)?;
 
-    set_index(
-        &db,
-        "user_comments_count",
-        claim.uid,
-        "user_comments_idx",
-        k,
-    )?;
+    let k = [&u64_to_ivec(claim.uid), &pid_ivec, &u64_to_ivec(cid)].concat();
+    db.open_tree("user_comments")?.insert(k, &[])?;
 
     let created_at_ivec = u64_to_ivec(created_at as u64);
     let iid_ivec = u64_to_ivec(iid);

@@ -125,45 +125,35 @@ pub(crate) async fn admin_view(
                     let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
                     ones.push(format!("pid: {}, cid: {}, comment: {:?}", pid, cid, one));
                 }
+                "user_comments" => {
+                    let uid = u8_slice_to_u64(&k[0..8]);
+                    let pid = u8_slice_to_u64(&k[8..16]);
+                    let cid = u8_slice_to_u64(&k[16..24]);
+                    ones.push(format!("uid: {}, pid: {}, cid: {}", uid, pid, cid));
+                }
                 "comment_upvotes" | "comment_downvotes" => {
                     let pid = u8_slice_to_u64(&k[0..8]);
                     let cid = u8_slice_to_u64(&k[8..16]);
                     let uid = u8_slice_to_u64(&k[16..24]);
                     ones.push(format!("pid: {}, cid: {}, uid: {}", pid, cid, uid));
                 }
-                "inn_posts_idx" | "post_timeline_idx" => {
+                "post_timeline_idx" => {
                     let id = u8_slice_to_u64(&k[0..8]);
                     let idx = u8_slice_to_u64(&k[8..16]);
                     let v = ivec_to_u64(&v);
                     ones.push(format!("id: {}, idx: {}, target: {}", id, idx, v));
                 }
-                "user_solos_idx" | "user_comments_idx" => {
+                "user_posts" => {
                     let uid = u8_slice_to_u64(&k[0..8]);
-                    let idx = u8_slice_to_u64(&k[8..16]);
-                    let sid = u8_slice_to_u64(&k[0..8]);
-                    let visibility = u8_slice_to_u64(&k[8..16]);
-                    ones.push(format!(
-                        "uid: {}, idx: {}, sid: {}, visibility: {}",
-                        uid, idx, sid, visibility
-                    ));
-                }
-                "user_posts_idx" => {
-                    let uid = u8_slice_to_u64(&k[0..8]);
-                    let idx = u8_slice_to_u64(&k[8..16]);
+                    let pid = u8_slice_to_u64(&k[8..16]);
                     let iid = u8_slice_to_u64(&v[0..8]);
-                    let pid = u8_slice_to_u64(&v[8..16]);
-                    let visibility = u8_slice_to_u64(&v[16..24]);
+                    let visibility = u8_slice_to_u64(&v[8..16]);
                     ones.push(format!(
-                        "uid: {}, idx: {}, iid: {}, pid: {}, visibility: {}",
-                        uid, idx, iid, pid, visibility
+                        "uid: {},  iid: {}, pid: {}, visibility: {}",
+                        uid, iid, pid, visibility
                     ));
                 }
-                "user_solos_count"
-                | "inn_posts_count"
-                | "user_posts_count"
-                | "post_comments_count"
-                | "post_pageviews"
-                | "user_comments_count" => {
+                "post_comments_count" | "post_pageviews" => {
                     let id = u8_slice_to_u64(&k);
                     let count = ivec_to_u64(&v);
                     ones.push(format!("id: {}, count: {}", id, count));
@@ -176,7 +166,7 @@ pub(crate) async fn admin_view(
                 }
                 "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
                 | "inn_apply" | "post_upvotes" | "post_downvotes" | "user_solos_like"
-                | "solo_users_like" => {
+                | "inn_posts" | "solo_users_like" => {
                     let id1 = u8_slice_to_u64(&k[0..8]);
                     let id2 = u8_slice_to_u64(&k[8..16]);
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));

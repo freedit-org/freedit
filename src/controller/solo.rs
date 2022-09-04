@@ -1,6 +1,6 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
-    has_unread, incr_id, into_response, ivec_to_u64, set_index, timestamp_to_date, u64_to_ivec,
+    has_unread, incr_id, into_response, ivec_to_u64, timestamp_to_date, u64_to_ivec,
     u8_slice_to_u64, user_stats, utils::md2html, Claim, IterType, PageData, ParamsPage, Solo, User,
     ValidatedForm,
 };
@@ -242,11 +242,11 @@ fn get_solos_by_uids(
     let mut sids = Vec::with_capacity(page_params.n);
     for uid in uids {
         let prefix = u64_to_ivec(*uid);
-        // kv_pair: uid#idx = sid#visibility
-        for i in db.open_tree("user_solos_idx")?.scan_prefix(prefix) {
-            let (_, v) = i?;
-            let sid = u8_slice_to_u64(&v[0..8]);
-            let visibility = u8_slice_to_u64(&v[8..16]);
+        // kv_pair: uid#sid = visibility
+        for i in db.open_tree("user_solos")?.scan_prefix(prefix) {
+            let (k, v) = i?;
+            let sid = u8_slice_to_u64(&k[8..16]);
+            let visibility = u8_slice_to_u64(&v);
             if can_visit_solo(visibility, followers, *uid, current_uid) {
                 sids.push(sid);
             }
@@ -318,8 +318,9 @@ pub(crate) async fn solo_post(
     let solo_encode = bincode::encode_to_vec(&solo, standard())?;
 
     db.open_tree("solos")?.insert(&sid_ivec, solo_encode)?;
-    let target = [&sid_ivec, &u64_to_ivec(visibility)].concat();
-    set_index(&db, "user_solos_count", uid, "user_solos_idx", target)?;
+    let k = [&u64_to_ivec(claim.uid), &sid_ivec].concat();
+    db.open_tree("user_solos")?
+        .insert(k, &u64_to_ivec(visibility))?;
 
     // kv_pair: sid = uid#visibility
     let v = [&u64_to_ivec(claim.uid), &u64_to_ivec(visibility)].concat();
@@ -400,14 +401,8 @@ pub(crate) async fn solo_delete(
         hashtags_tree.remove(&k)?;
     }
 
-    let user_solos_idx_tree = db.open_tree("user_solos_idx")?;
-    for i in user_solos_idx_tree.scan_prefix(&u64_to_ivec(claim.uid)) {
-        let (k, v) = i?;
-        let sid = &v[0..8];
-        if sid == sid_ivec.to_vec() {
-            user_solos_idx_tree.remove(&k)?;
-        }
-    }
+    let k = [&u64_to_ivec(claim.uid), &sid_ivec].concat();
+    db.open_tree("user_solos")?.remove(k)?;
 
     let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))

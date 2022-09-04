@@ -44,8 +44,7 @@
 //! |--------------------|---------------|------------------|
 //! | default            | "solos_count" | N                |
 //! | "solos"            | `sid`         | [`Solo`]         |
-//! | "user_solos_count" | `uid`         | N                |
-//! | "user_solos_idx"   | `uid#idx`     | `sid#visibility` |
+//! | "user_solos"       | `uid#sid`     | `visibility` |
 //! | "user_solos_like"  | `uid#sid`     | `&[]`            |
 //! | "solo_users_like"  | `sid#uid`     | `&[]`            |
 //! | "solo_timeline"    | `sid`         | `uid#visibility` |
@@ -81,10 +80,8 @@
 //! |-------------------- |---------------------|----------------------|
 //! | default             | "posts_count"       | N                    |
 //! | "posts"             | `pid`               | [`Post`]             |
-//! | "inn_posts_count"   | `iid`               | N                    |
-//! | "inn_posts_idx"     | `iid#idx`           | `pid`                |
-//! | "user_posts_count"  | `uid`               | N                    |
-//! | "user_posts_idx"    | `uid#idx`           | `iid#pid#visibility` |
+//! | "inn_posts"         | `iid#pid`           | `&[]`                |
+//! | "user_posts"        | `uid#pid`           | `iid#visibility`     |
 //! | "tags"              | `tag#pid`           | `&[]`                |
 //! | "post_upvotes"      | `pid#uid`           | `&[]`                |
 //! | "post_downvotes"    | `pid#uid`           | `&[]`                |
@@ -96,8 +93,7 @@
 //! |-----------------------|----------------------|-------------|
 //! | "post_comments_count" | `pid`                | N           |
 //! | "post_comments"       | `pid#cid`            | [`Comment`] |
-//! | "user_comments_count" | `uid`                | N           |
-//! | "user_comments_idx"   | `uid#idx`            | `pid#cid`   |
+//! | "user_comments"       | `uid#pid#cid`        | `&[]`       |
 //! | "comment_upvotes"     | `pid#cid#uid`        | `&[]`       |
 //! | "comment_downvotes"   | `pid#cid#uid`        | `&[]`       |
 
@@ -916,24 +912,6 @@ where
         output.reverse();
     }
     Ok(output)
-}
-
-fn set_index<V>(
-    db: &Db,
-    count_tree: &str,
-    id: u64,
-    index_tree: &str,
-    target: V,
-) -> Result<(), AppError>
-where
-    V: Into<IVec>,
-{
-    let id_ivec = u64_to_ivec(id);
-    let idx = incr_id(&db.open_tree(count_tree)?, &id_ivec)?;
-    let k = [&id_ivec, &u64_to_ivec(idx)].concat();
-
-    db.open_tree(index_tree)?.insert(k, target)?;
-    Ok(())
 }
 
 /// extract element from string

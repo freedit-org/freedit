@@ -72,9 +72,9 @@ pub(crate) async fn user(
         created_at: timestamp_to_date(user.created_at)?,
     };
     let uid_ivec = u64_to_ivec(uid);
-    let user_solos_count = get_count(&db, "user_solos_count", &uid_ivec)?;
-    let user_posts_count = get_count(&db, "user_posts_count", &uid_ivec)?;
-    let user_comments_count = get_count(&db, "user_comments_count", &uid_ivec)?;
+    let user_solos_count = get_count_by_prefix(&db, "user_solos", &uid_ivec)?;
+    let user_posts_count = get_count_by_prefix(&db, "user_posts", &uid_ivec)?;
+    let user_comments_count = get_count_by_prefix(&db, "user_comments", &uid_ivec)?;
     let user_following_count = get_count_by_prefix(&db, "user_following", &u64_to_ivec(uid))?;
     let user_followers_count = get_count_by_prefix(&db, "user_followers", &u64_to_ivec(uid))?;
 
