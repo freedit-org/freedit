@@ -1694,6 +1694,31 @@ pub(crate) async fn comment_post(
     Ok(Redirect::to(&target))
 }
 
+/// Page data: `preview.html`
+#[derive(Template)]
+#[template(path = "preview.html", escape = "none")]
+struct PagePreview<'a> {
+    page_data: PageData<'a>,
+    comment: String,
+}
+
+/// `POST /preview`
+pub(crate) async fn preview(
+    State(db): State<Db>,
+    ValidatedForm(input): ValidatedForm<FormComment>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let page_data = PageData::new("inn", &site_config.site_name, None, false);
+
+    let html = md2html(&input.comment);
+    let page_preview = PagePreview {
+        page_data,
+        comment: html,
+    };
+
+    Ok(into_response(&page_preview, "html"))
+}
+
 /// `GET /inn/:iid/:pid/upvote` post upvote
 pub(crate) async fn post_upvote(
     State(db): State<Db>,

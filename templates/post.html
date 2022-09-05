@@ -124,8 +124,8 @@
                         [op]
                     {% endif %}
                 </small>
-                {{comment.content}}
             </p>
+            {{comment.content}}
         </div>
         
         <div class="list-item-controls">
@@ -143,7 +143,7 @@
     </svg>
 </div>
 {% else %}
-<form id="comment_create" class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">
+<form class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">
     <fieldset>
         <div class="field">
             <label class="label" for="comment">New comment</label>
@@ -155,7 +155,8 @@
             {% match page_data.claim %}
             {% when Some with (val) %}
                 {% if has_joined %}
-                <button type="submit" form="comment_create" class="button is-link is-rounded">Submit</button>
+                <button type="submit" class="button is-link is-rounded">Submit</button>
+                <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">Preview</button>
                 {% else %}
                 <a href="/inn/{{post.iid}}/join" class="button is-primary is-rounded">Join to comment</a>
                 {% endif %}
