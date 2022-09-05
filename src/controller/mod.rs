@@ -4,13 +4,14 @@
 //! to record the total number (we use **N** to refer this kind of value, and their type is [u64]).
 //!
 //! ### user
-//! | tree             | key           | value      | set       | get                   |
-//! |------------------|---------------|------------|-----------|-----------------------|
-//! | default          | "users_count" | N          | [incr_id] | [get_count]           |
-//! | "users"          | `uid`         | [`User`]   |           | [get_one]/[get_batch] |
-//! | "usernames"      | `username`    | `uid`      |           | [get_uid_by_name]     |
-//! | "user_following" | `uid#uid`     | `&[]`      |           | [get_ids_by_prefix]     |
-//! | "user_followers" | `uid#uid`     | `&[]`      |           | [get_ids_by_prefix]     |
+//! | tree             | key                  | value      | set       | get                   |
+//! |------------------|----------------------|------------|-----------|-----------------------|
+//! | default          | "users_count"        | N          | [incr_id] | [get_count]           |
+//! | "users"          | `uid`                | [`User`]   |           | [get_one]/[get_batch] |
+//! | "usernames"      | `username`           | `uid`      |           | [get_uid_by_name]     |
+//! | "user_following" | `uid#uid`            | `&[]`      |           | [get_ids_by_prefix]   |
+//! | "user_followers" | `uid#uid`            | `&[]`      |           | [get_ids_by_prefix]   |
+//! | "user_stats"     | `timestamp_uid_type` | N          |           |                       |
 //!
 //! ### notification
 //! | tree            | key           | value                             |
@@ -24,20 +25,11 @@
 //! | "static_inn_post"  | `iid` | `&[]` |
 //!
 //! ### captcha
-//! About key `timestamp#nanoid`, see [generate_nanoid_expire].
+//! About key `timestamp_nanoid`, see [generate_nanoid_expire].
 //!
 //! | tree        | key                | value         |
 //! |-------------|--------------------|---------------|
 //! | "captcha"   | `timestamp_nanoid` | captcha_chars |
-//!
-//! ### pageviews
-//! In order to anti-spam, keep three days pageviews of each user. For privacy,
-//! the hour and minute has been striped, just date kept. See [Claim::get].
-//!
-//! | tree             | key                  | value |
-//! |------------------|----------------------|-------|
-//! | "user_stats"     | `timestamp_uid_type` | N     |
-//! | "post_pageviews" | `pid`                | N     |
 //!
 //! ### solo
 //! | tree               | key           | value            |
@@ -87,6 +79,7 @@
 //! | "post_downvotes"    | `pid#uid`           | `&[]`                |
 //! | "post_timeline_idx" | `iid#pid`           | `timestamp`          |
 //! | "post_timeline"     | `timestamp#iid#pid` | `visibility`         |
+//! | "post_pageviews"    | `pid`               | N                    |
 //!
 //! ### comment
 //! | tree                  | key                  | value       |
@@ -617,7 +610,7 @@ impl<'a> PageData<'a> {
 
 /// generate a new nanoid with expiration time that is hex encoded.
 ///
-/// format: "hex_timestamp#nanoid"
+/// format: "hex_timestamp_nanoid"
 ///
 /// # Examples
 ///

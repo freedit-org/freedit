@@ -140,7 +140,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
 
 const OPTIONS: Options = Options::all();
 
-/// convert latex and markdown to html
+/// convert latex and markdown to html.
 /// Inspired by [cmark-syntax](https://github.com/grego/cmark-syntax/blob/master/src/lib.rs)
 
 // This file is part of cmark-syntax. This program comes with ABSOLUTELY NO WARRANTY;
