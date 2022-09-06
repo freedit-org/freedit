@@ -1730,6 +1730,34 @@ pub(crate) async fn preview(
     Ok(into_response(&page_preview, "html"))
 }
 
+/// `GET /post/:iid/:pid/delete` comment delete
+pub(crate) async fn comment_delete(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    let k = [
+        &u64_to_ivec(claim.uid),
+        &u64_to_ivec(pid),
+        &u64_to_ivec(cid),
+    ]
+    .concat();
+    if !db.open_tree("user_comments")?.contains_key(&k)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
+    db.open_tree("post_comments")?.remove(&k)?;
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
 /// `GET /inn/:iid/:pid/upvote` post upvote
 pub(crate) async fn post_upvote(
     State(db): State<Db>,

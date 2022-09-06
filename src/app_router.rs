@@ -4,9 +4,9 @@ use crate::{
         admin::{admin, admin_post, admin_stats, admin_view},
         handler_404, health_check, home,
         inn::{
-            comment_downvote, comment_post, comment_upvote, edit_post, edit_post_post, inn,
-            inn_feed, inn_join, inn_list, mod_inn, mod_inn_post, post, post_downvote, post_hide,
-            post_lock, post_upvote, preview, tag,
+            comment_delete, comment_downvote, comment_post, comment_upvote, edit_post,
+            edit_post_post, inn, inn_feed, inn_join, inn_list, mod_inn, mod_inn_post, post,
+            post_downvote, post_hide, post_lock, post_upvote, preview, tag,
         },
         notification, serve_dir,
         solo::{solo, solo_delete, solo_like, solo_post},
@@ -60,6 +60,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/inn/:iid/join", get(inn_join))
         .route("/inn/:iid/feed", get(inn_feed))
         .route("/post/:iid/:pid", get(post).post(comment_post))
+        .route("/post/:iid/:pid/:cid/delete", get(comment_delete))
         .route("/post/:iid/edit/:pid", get(edit_post).post(edit_post_post))
         .route("/post/:iid/:pid/upvote", get(post_upvote))
         .route("/post/:iid/:pid/downvote", get(post_downvote))
