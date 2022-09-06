@@ -38,7 +38,7 @@
             {% endif %} 
             👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% match page_data.claim %} {% when Some with (val) %}
-                {% if val.uid == post.uid %}
+                {% if post.can_edit %}
                     <a href="/post/{{post.iid}}/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
                 {% endif %}
 

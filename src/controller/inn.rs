@@ -437,6 +437,10 @@ pub(crate) async fn edit_post(
             return Err(AppError::Hidden);
         }
 
+        if post.created_at + 30 * 60 < OffsetDateTime::now_utc().unix_timestamp() {
+            return Err(AppError::Unauthorized);
+        }
+
         if post.uid != claim.uid {
             return Err(AppError::Unauthorized);
         }
@@ -1235,6 +1239,7 @@ struct OutPost {
     is_hidden: bool,
     is_upvoted: bool,
     is_downvoted: bool,
+    can_edit: bool,
 }
 
 /// Page data: `post.html`
@@ -1296,6 +1301,7 @@ pub(crate) async fn post(
     let mut is_upvoted = false;
     let mut is_downvoted = false;
     let mut is_mod = false;
+    let mut can_edit = false;
     let upvotes = get_count_by_prefix(&db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
     let downvotes =
         get_count_by_prefix(&db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
@@ -1306,6 +1312,10 @@ pub(crate) async fn post(
         }
         if db.open_tree("post_downvotes")?.contains_key(&k)? {
             is_downvoted = true;
+        }
+
+        if post.created_at + 30 * 60 >= OffsetDateTime::now_utc().unix_timestamp() {
+            can_edit = true;
         }
 
         let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
@@ -1348,6 +1358,7 @@ pub(crate) async fn post(
         downvotes,
         is_upvoted,
         is_downvoted,
+        can_edit,
     };
 
     let n = site_config.per_page;
@@ -1462,6 +1473,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         downvotes,
         is_upvoted: false,
         is_downvoted: false,
+        can_edit: false,
     };
 
     let n = 50;
