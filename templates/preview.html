@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+{% endblock %}
+
 {% block content %}
 <div class="box">
     <div class="list-item">
