@@ -115,8 +115,7 @@ pub(crate) async fn admin_view(
                 }
                 "posts" => {
                     let key = ivec_to_u64(&k);
-                    let (mut one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
-                    one.content_html = "".to_string();
+                    let (one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
                     ones.push(format!("{}: {:?}", key, one));
                 }
                 "post_comments" => {

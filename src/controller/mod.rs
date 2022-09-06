@@ -145,7 +145,6 @@ struct Post {
     title: String,
     tags: Vec<String>,
     content: String,
-    content_html: String,
     created_at: i64,
     is_locked: bool,
     is_hidden: bool,
