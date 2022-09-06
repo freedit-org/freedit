@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+  img-src 'self' data:; script-src 'none'; style-src 'self'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+{% endblock %}
+
 {% block section %}
 <section class="my-5 has-background-light">
 <div id="sign" class="container py-5">
