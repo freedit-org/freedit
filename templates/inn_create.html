@@ -10,7 +10,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="inn_name" placeholder="Inn name" required />
+                        <input class="input" type="text" name="inn_name" required maxlength="64" placeholder="Inn name" />
                     </div>
                 </div>
             </div>
@@ -23,7 +23,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="about" placeholder="About" required />
+                        <input class="input" type="text" name="about" required maxlength="512" placeholder="About" />
                     </div>
                 </div>
             </div>
@@ -36,7 +36,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <textarea class="textarea" name="description" required minlength="1" placeholder="Long description, markdown supported" ></textarea>
+                        <textarea class="textarea" name="description" required maxlength="65535" minlength="1" placeholder="Long description, markdown supported" ></textarea>
                     </div>
                 </div>
             </div>
@@ -49,7 +49,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="topics" required placeholder="topics, separated by #" />
+                        <input class="input" type="text" name="topics" maxlength="128" required placeholder="topics, separated by #" />
                     </div>
                 </div>
             </div>

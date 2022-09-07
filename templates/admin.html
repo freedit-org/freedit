@@ -10,7 +10,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="site_name" value="{{ site_config.site_name|trim }}" placeholder="Sitename" autocomplete="off" />
+                        <input class="input" type="text" name="site_name" required maxlength="64" value="{{ site_config.site_name|trim }}" placeholder="Sitename" autocomplete="off" />
                     </div>
                 </div>
             </div>
@@ -23,7 +23,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="description" value="{{ site_config.description|trim }}" placeholder="Sitename" />
+                        <input class="input" type="text" name="description" required maxlength="512" value="{{ site_config.description|trim }}" placeholder="Sitename" />
                     </div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="number" min="0" max="65535" name="title_max_length" value="{{ site_config.title_max_length }}" autocomplete="off" />
+                        <input class="input" type="number" min="0" max="256" name="title_max_length" value="{{ site_config.title_max_length }}" autocomplete="off" />
                     </div>
                 </div>
             </div>
@@ -89,7 +89,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="number" min="0" max="65535" name="solo_interval" value="{{ site_config.solo_interval }}" autocomplete="off" />
+                        <input class="input" type="number" min="0" max="3600" name="solo_interval" value="{{ site_config.solo_interval }}" autocomplete="off" />
                     </div>
                 </div>
             </div>
@@ -102,7 +102,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="number" min="0" max="65535" name="post_interval" value="{{ site_config.post_interval }}" autocomplete="off" />
+                        <input class="input" type="number" min="0" max="3600" name="post_interval" value="{{ site_config.post_interval }}" autocomplete="off" />
                     </div>
                 </div>
             </div>
@@ -115,7 +115,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="number" min="0" max="65535" name="comment_interval" value="{{ site_config.comment_interval }}" autocomplete="off" />
+                        <input class="input" type="number" min="0" max="3600" name="comment_interval" value="{{ site_config.comment_interval }}" autocomplete="off" />
                     </div>
                 </div>
             </div>
@@ -128,7 +128,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="number" min="0" max="255" name="per_page" value="{{ site_config.per_page }}" autocomplete="off" />
+                        <input class="input" type="number" min="0" max="100" name="per_page" value="{{ site_config.per_page }}" autocomplete="off" />
                     </div>
                 </div>
             </div>

@@ -158,7 +158,7 @@
         <div class="field">
             <label class="label" for="comment">New comment</label>
             <div class="control">
-                <textarea class="textarea" name="comment" {% if !has_joined %} disabled {% endif %} required minlength="1" placeholder="comment, markdown supported" /></textarea>
+                <textarea class="textarea" name="comment" {% if !has_joined %} disabled {% endif %} required maxlength="10000" placeholder="comment, markdown supported" /></textarea>
             </div>
         </div>
         <div class="control">

@@ -163,18 +163,26 @@ struct Comment {
 
 /// Go to source code to see default value: [SiteConfig::default()]
 // TODO: recaptcha && configuration
-// TODO: validate
 #[derive(Serialize, Deserialize, Encode, Decode, Validate, Debug)]
 pub(super) struct SiteConfig {
+    #[validate(length(max = 64))]
     site_name: String,
+    #[validate(length(max = 512))]
     description: String,
     read_only: bool,
+    #[validate(range(max = 256))]
     title_max_length: usize,
+    #[validate(range(max = 65535))]
     article_max_length: usize,
+    #[validate(range(max = 65535))]
     comment_max_length: usize,
+    #[validate(range(max = 3600))]
     solo_interval: i64,
+    #[validate(range(max = 3600))]
     post_interval: i64,
+    #[validate(range(max = 3600))]
     comment_interval: i64,
+    #[validate(range(max = 100))]
     per_page: usize,
     static_page: usize,
 }

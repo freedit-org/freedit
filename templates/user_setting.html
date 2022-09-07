@@ -35,7 +35,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                    <input name="username" class="input" type="text" value="{{username}}" placeholder="Username, Not start with number, 2 - 10 chars">
+                    <input name="username" class="input" type="text" required maxlength="64" value="{{username}}" placeholder="Username, Not start with number, 2 - 10 chars">
                     </div>
                 </div>
             </div>
@@ -48,7 +48,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input name="url" class="input" type="url" value="{{url}}" placeholder="https://">
+                        <input name="url" class="input" type="url" maxlength="256" value="{{url}}" placeholder="https://">
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                    <textarea name="about" class="textarea" placeholder="{{about}}">{{about}}</textarea>
+                    <textarea name="about" class="textarea" maxlength="1024" placeholder="{{about}}">{{about}}</textarea>
                     </div>
                 </div>
             </div>

@@ -95,7 +95,7 @@ pub(crate) async fn mod_inn(
 pub(crate) struct FormInn {
     #[validate(length(min = 1, max = 64))]
     inn_name: String,
-    #[validate(length(min = 1, max = 1024))]
+    #[validate(length(min = 1, max = 512))]
     about: String,
     #[validate(length(min = 1, max = 65535))]
     description: String,
