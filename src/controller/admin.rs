@@ -16,9 +16,10 @@ use bincode::config::standard;
 use serde::Deserialize;
 use sled::Db;
 
+/// Page data: `admin_view.html`
 #[derive(Template)]
 #[template(path = "admin_view.html", escape = "none")]
-struct AdminViewPage<'a> {
+struct PageAdminView<'a> {
     page_data: PageData<'a>,
     tree_names: Vec<String>,
     ones: Vec<String>,
@@ -28,7 +29,7 @@ struct AdminViewPage<'a> {
     n: usize,
 }
 
-/// url params: admin_view.html
+/// url params: `admin_view.html`
 #[derive(Deserialize)]
 pub(crate) struct ParamsAdminView {
     tree_name: Option<String>,
@@ -36,7 +37,7 @@ pub(crate) struct ParamsAdminView {
     is_desc: Option<bool>,
 }
 
-/// `GET /admin/view` admin view kv database
+/// `GET /admin/view`
 pub(crate) async fn admin_view(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
@@ -237,7 +238,7 @@ pub(crate) async fn admin_view(
     }
 
     let page_data = PageData::new("Admin view", &site_config.site_name, Some(claim), false);
-    let admin_view_page = AdminViewPage {
+    let page_admin_view = PageAdminView {
         page_data,
         tree_names,
         ones,
@@ -246,12 +247,13 @@ pub(crate) async fn admin_view(
         is_desc,
         n,
     };
-    Ok(into_response(&admin_view_page, "html"))
+    Ok(into_response(&page_admin_view, "html"))
 }
 
+/// Page data: `admin.html`
 #[derive(Template)]
 #[template(path = "admin.html")]
-struct AdminPage<'a> {
+struct PageAdmin<'a> {
     site_config: &'a SiteConfig,
     page_data: PageData<'a>,
 }
@@ -269,11 +271,11 @@ pub(crate) async fn admin(
     }
 
     let page_data = PageData::new("Admin", &site_config.site_name, Some(claim), false);
-    let admin_page = AdminPage {
+    let page_admin = PageAdmin {
         site_config: &site_config,
         page_data,
     };
-    Ok(into_response(&admin_page, "html"))
+    Ok(into_response(&page_admin, "html"))
 }
 
 /// `POST /admin`
@@ -311,13 +313,15 @@ impl Default for SiteConfig {
     }
 }
 
+/// Page data: `admin_stats.html`
 #[derive(Template)]
 #[template(path = "admin_stats.html")]
-struct AdminStatsPage<'a> {
+struct PageAdminStats<'a> {
     page_data: PageData<'a>,
     stats: Vec<(String, String, String, u64)>,
 }
 
+/// `GET /admin/stats`
 pub(crate) async fn admin_stats(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
@@ -347,6 +351,6 @@ pub(crate) async fn admin_stats(
     }
 
     let page_data = PageData::new("Admin-pageview", &site_config.site_name, Some(claim), false);
-    let admin_pageview_page = AdminStatsPage { page_data, stats };
-    Ok(into_response(&admin_pageview_page, "html"))
+    let page_admin_pageview = PageAdminStats { page_data, stats };
+    Ok(into_response(&page_admin_pageview, "html"))
 }
