@@ -1267,6 +1267,7 @@ struct OutComment {
     downvotes: usize,
     is_upvoted: bool,
     is_downvoted: bool,
+    is_hidden: bool,
 }
 
 /// url params: `post.html`
@@ -1410,6 +1411,7 @@ pub(crate) async fn post(
                     downvotes,
                     is_upvoted,
                     is_downvoted,
+                    is_hidden: comment.is_hidden,
                 };
                 out_comments.push(out_comment);
             }
@@ -1508,6 +1510,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
                     downvotes,
                     is_upvoted: false,
                     is_downvoted: false,
+                    is_hidden: comment.is_hidden,
                 };
                 out_comments.push(out_comment);
             }
@@ -1653,8 +1656,7 @@ pub(crate) async fn comment_post(
         reply_to: reply_to_cid,
         content: md2html(&content),
         created_at,
-        // TODO: comment is collapsed
-        is_collapsed: false,
+        is_hidden: false,
     };
     let comment_encoded = bincode::encode_to_vec(&comment, standard())?;
     let k = [&pid_ivec, &u64_to_ivec(cid)].concat();
@@ -1730,7 +1732,7 @@ pub(crate) async fn preview(
     Ok(into_response(&page_preview, "html"))
 }
 
-/// `GET /post/:iid/:pid/delete` comment delete
+/// `GET /post/:iid/:pid/:cid/delete` comment delete
 pub(crate) async fn comment_delete(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
@@ -1753,6 +1755,37 @@ pub(crate) async fn comment_delete(
 
     let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.remove(&k)?;
+
+    let target = format!("/post/{}/{}", iid, pid);
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /post/:iid/:pid/:cid/hide` comment hide
+pub(crate) async fn comment_hide(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
+    if !db.open_tree("mod_inns")?.contains_key(&k)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
+    let v = db
+        .open_tree("post_comments")?
+        .get(&k)?
+        .ok_or(AppError::NotFound)?;
+    let (mut comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
+    comment.is_hidden = !comment.is_hidden;
+
+    let comment_encode = bincode::encode_to_vec(&comment, standard())?;
+    db.open_tree("post_comments")?.insert(&k, comment_encode)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))

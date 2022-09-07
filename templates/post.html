@@ -88,7 +88,7 @@
     </div>
 </div>
 
-<div class="box" id="comment">
+<div class="box list" id="comment">
     {% for comment in comments %}
     <div class="list-item" id="{{comment.cid}}">
         <div class="list-item-image">
@@ -122,7 +122,11 @@
                     {% endif %}
                 </small>
             </p>
-            {{comment.content}}
+            {% if comment.is_hidden %}
+                <p><i>Hidden by mod.</i></p>
+            {% else %}
+                {{comment.content}}
+            {% endif %}
         </div>
         
         <div class="list-item-controls">
@@ -139,6 +143,15 @@
                 </div>
                 {% endif %}
             {% else %}{% endmatch %}
+            {% if is_mod %}
+            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
+                {% if comment.is_hidden %}
+                <span class="tag is-primary">Open</span>
+                {% else %}
+                <span class="tag is-danger">Hide</span>
+                {% endif %}
+            </a>
+            {% endif %}
             <a href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info">{{comment.cid}}</span></a>
         </div>
     </div>

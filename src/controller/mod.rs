@@ -158,7 +158,7 @@ struct Comment {
     reply_to: Option<u64>,
     content: String,
     created_at: i64,
-    is_collapsed: bool,
+    is_hidden: bool,
 }
 
 /// Go to source code to see default value: [SiteConfig::default()]
