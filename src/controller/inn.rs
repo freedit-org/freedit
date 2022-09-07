@@ -1860,7 +1860,6 @@ pub(crate) async fn comment_downvote(
     Ok(Redirect::to(&target))
 }
 
-// TODO: time limit to post modification
 /// `GET /inn/:iid/:pid/post_lock` post lock
 pub(crate) async fn post_lock(
     State(db): State<Db>,

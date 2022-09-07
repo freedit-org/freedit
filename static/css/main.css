@@ -94,3 +94,8 @@ pre {
 .list-item-content, .media-content {
     max-width: 85%;
 }
+
+p {
+    word-wrap: break-word;
+    text-align:justify
+}
