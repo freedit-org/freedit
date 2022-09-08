@@ -1,7 +1,7 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
-    has_unread, incr_id, into_response, ivec_to_u64, timestamp_to_date, u64_to_ivec,
-    u8_slice_to_u64, user_stats, utils::md2html, Claim, IterType, PageData, ParamsPage, Solo, User,
+    has_unread, incr_id, into_response, ivec_to_u32, timestamp_to_date, u32_to_ivec,
+    u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType, PageData, ParamsPage, Solo, User,
     ValidatedForm,
 };
 use crate::error::AppError;
@@ -31,7 +31,7 @@ pub(crate) struct FormSolo {
 struct PageSolo<'a> {
     page_data: PageData<'a>,
     solos: Vec<OutSolo>,
-    uid: u64,
+    uid: u32,
     username: String,
     anchor: usize,
     n: usize,
@@ -43,17 +43,17 @@ struct PageSolo<'a> {
 
 /// Vec data: solo
 struct OutSolo {
-    uid: u64,
-    sid: u64,
+    uid: u32,
+    sid: u32,
     username: String,
     content: String,
     created_at: String,
-    visibility: u64,
+    visibility: u32,
     like: bool,
     like_count: usize,
 }
 
-fn can_visit_solo(visibility: u64, followers: &[u64], solo_uid: u64, current_uid: u64) -> bool {
+fn can_visit_solo(visibility: u32, followers: &[u32], solo_uid: u32, current_uid: u32) -> bool {
     visibility == 0
         || (visibility == 10 && followers.contains(&solo_uid))
         || (visibility == 20 && solo_uid == current_uid)
@@ -72,7 +72,7 @@ pub(crate) struct ParamsSolo {
 pub(crate) async fn solo(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(uid): Path<u64>,
+    Path(uid): Path<u32>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -88,12 +88,12 @@ pub(crate) async fn solo(
     let mut followers = Vec::new();
     let mut current_uid = 0;
     if let Some(ref claim) = claim {
-        let following_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(uid)].concat();
+        let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
         if db.open_tree("user_following")?.contains_key(&following_k)? {
             is_following = true;
         }
 
-        if let Ok(v) = get_ids_by_prefix(&db, "user_followers", u64_to_ivec(claim.uid), None) {
+        if let Ok(v) = get_ids_by_prefix(&db, "user_followers", u32_to_ivec(claim.uid), None) {
             followers = v;
         }
         current_uid = claim.uid;
@@ -104,7 +104,7 @@ pub(crate) async fn solo(
         Some("Following") => {
             if let Some(ref claim) = claim {
                 if let Ok(uids) =
-                    get_ids_by_prefix(&db, "user_following", u64_to_ivec(claim.uid), None)
+                    get_ids_by_prefix(&db, "user_following", u32_to_ivec(claim.uid), None)
                 {
                     index = get_solos_by_uids(&db, &uids, &followers, current_uid, &page_params)?;
                 };
@@ -113,7 +113,7 @@ pub(crate) async fn solo(
         Some("Like") => {
             if let Some(ref claim) = claim {
                 if let Ok(sids) =
-                    get_ids_by_prefix(&db, "user_solos_like", u64_to_ivec(claim.uid), None)
+                    get_ids_by_prefix(&db, "user_solos_like", u32_to_ivec(claim.uid), None)
                 {
                     let (start, end) = get_range(sids.len(), &page_params);
                     index = sids[start - 1..end].to_vec();
@@ -140,14 +140,14 @@ pub(crate) async fn solo(
 
             let mut like = false;
             if let Some(ref claim) = claim {
-                let k = [&u64_to_ivec(sid), &u64_to_ivec(claim.uid)].concat();
+                let k = [&u32_to_ivec(sid), &u32_to_ivec(claim.uid)].concat();
                 if db.open_tree("solo_users_like")?.contains_key(&k)? {
                     like = true;
                 }
             }
 
             let like_count =
-                get_count_by_prefix(&db, "solo_users_like", &u64_to_ivec(sid)).unwrap_or_default();
+                get_count_by_prefix(&db, "solo_users_like", &u32_to_ivec(sid)).unwrap_or_default();
 
             let out_solo = OutSolo {
                 uid: solo.uid,
@@ -198,10 +198,10 @@ pub(crate) async fn solo(
 fn get_all_solos(
     db: &Db,
     timeline_tree: &str,
-    followers: &[u64],
-    current_uid: u64,
+    followers: &[u32],
+    current_uid: u32,
     page_params: &ParamsPage,
-) -> Result<Vec<u64>, AppError> {
+) -> Result<Vec<u32>, AppError> {
     let tree = db.open_tree(timeline_tree)?;
     let mut count: usize = 0;
     let mut result = Vec::with_capacity(page_params.n);
@@ -214,14 +214,14 @@ fn get_all_solos(
     for i in iter {
         // kv_pair: sid = uid#visibility
         let (k, v) = i?;
-        let solo_uid = u8_slice_to_u64(&v[0..8]);
-        let visibility = u8_slice_to_u64(&v[8..16]);
+        let solo_uid = u8_slice_to_u32(&v[0..4]);
+        let visibility = u8_slice_to_u32(&v[4..8]);
         if can_visit_solo(visibility, followers, solo_uid, current_uid) {
             if count < page_params.anchor {
                 count += 1;
                 continue;
             } else {
-                result.push(ivec_to_u64(&k));
+                result.push(ivec_to_u32(&k));
             }
         }
 
@@ -234,19 +234,19 @@ fn get_all_solos(
 
 fn get_solos_by_uids(
     db: &Db,
-    uids: &[u64],
-    followers: &[u64],
-    current_uid: u64,
+    uids: &[u32],
+    followers: &[u32],
+    current_uid: u32,
     page_params: &ParamsPage,
-) -> Result<Vec<u64>, AppError> {
+) -> Result<Vec<u32>, AppError> {
     let mut sids = Vec::with_capacity(page_params.n);
     for uid in uids {
-        let prefix = u64_to_ivec(*uid);
+        let prefix = u32_to_ivec(*uid);
         // kv_pair: uid#sid = visibility
         for i in db.open_tree("user_solos")?.scan_prefix(prefix) {
             let (k, v) = i?;
-            let sid = u8_slice_to_u64(&k[8..16]);
-            let visibility = u8_slice_to_u64(&v);
+            let sid = u8_slice_to_u32(&k[4..8]);
+            let visibility = u8_slice_to_u32(&v);
             if can_visit_solo(visibility, followers, *uid, current_uid) {
                 sids.push(sid);
             }
@@ -286,7 +286,7 @@ pub(crate) async fn solo_post(
     let uid = claim.uid;
 
     let sid = incr_id(&db, "solos_count")?;
-    let sid_ivec = u64_to_ivec(sid);
+    let sid_ivec = u32_to_ivec(sid);
     let mut content = input.content;
     let mut hashtags = Vec::new();
 
@@ -318,12 +318,12 @@ pub(crate) async fn solo_post(
     let solo_encode = bincode::encode_to_vec(&solo, standard())?;
 
     db.open_tree("solos")?.insert(&sid_ivec, solo_encode)?;
-    let k = [&u64_to_ivec(claim.uid), &sid_ivec].concat();
+    let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
     db.open_tree("user_solos")?
-        .insert(k, &u64_to_ivec(visibility))?;
+        .insert(k, &u32_to_ivec(visibility))?;
 
     // kv_pair: sid = uid#visibility
-    let v = [&u64_to_ivec(claim.uid), &u64_to_ivec(visibility)].concat();
+    let v = [&u32_to_ivec(claim.uid), &u32_to_ivec(visibility)].concat();
     db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
 
     user_stats(&db, claim.uid, "solo")?;
@@ -337,7 +337,7 @@ pub(crate) async fn solo_post(
 pub(crate) async fn solo_like(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(sid): Path<u64>,
+    Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -345,8 +345,8 @@ pub(crate) async fn solo_like(
 
     let solo: Solo = get_one(&db, "solos", sid)?;
 
-    let user_solos_like_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(sid)].concat();
-    let solo_users_like_k = [&u64_to_ivec(sid), &u64_to_ivec(claim.uid)].concat();
+    let user_solos_like_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(sid)].concat();
+    let solo_users_like_k = [&u32_to_ivec(sid), &u32_to_ivec(claim.uid)].concat();
     let user_solos_like_tree = db.open_tree("user_solos_like")?;
     let solo_users_like_tree = db.open_tree("solo_users_like")?;
 
@@ -369,7 +369,7 @@ pub(crate) async fn solo_like(
 pub(crate) async fn solo_delete(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(sid): Path<u64>,
+    Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -380,7 +380,7 @@ pub(crate) async fn solo_delete(
         return Err(AppError::Unauthorized);
     }
 
-    let sid_ivec = u64_to_ivec(sid);
+    let sid_ivec = u32_to_ivec(sid);
 
     db.open_tree("solos")?.remove(&sid_ivec)?;
     db.open_tree("solo_timeline")?.remove(&sid_ivec)?;
@@ -389,7 +389,7 @@ pub(crate) async fn solo_delete(
     let user_solos_like_tree = db.open_tree("user_solos_like")?;
     for i in solo_users_like_tree.scan_prefix(&sid_ivec) {
         let (k, _) = i?;
-        let uid = &k[8..16];
+        let uid = &k[4..8];
         let user_solos_like_k = [uid, &sid_ivec].concat();
         user_solos_like_tree.remove(&user_solos_like_k)?;
         solo_users_like_tree.remove(&k)?;
@@ -401,7 +401,7 @@ pub(crate) async fn solo_delete(
         hashtags_tree.remove(&k)?;
     }
 
-    let k = [&u64_to_ivec(claim.uid), &sid_ivec].concat();
+    let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
     db.open_tree("user_solos")?.remove(k)?;
 
     let target = format!("/solo/user/{}", solo.uid);

@@ -3,7 +3,7 @@
 use super::{
     generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
     get_range, get_site_config, get_uid_by_name, incr_id, into_response, is_mod, timestamp_to_date,
-    u64_to_ivec, u8_slice_to_u64, user_stats, Claim, Inn, IterType, PageData, ParamsPage,
+    u32_to_ivec, u8_slice_to_u32, user_stats, Claim, Inn, IterType, PageData, ParamsPage,
     SiteConfig, User, ValidatedForm,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
@@ -46,7 +46,7 @@ struct PageUser<'a> {
 
 /// Vec data: user
 struct OutUser {
-    uid: u64,
+    uid: u32,
     username: String,
     about: String,
     role: u8,
@@ -58,7 +58,7 @@ struct OutUser {
 pub(crate) async fn user(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(uid): Path<u64>,
+    Path(uid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
@@ -71,16 +71,16 @@ pub(crate) async fn user(
         url: user.url,
         created_at: timestamp_to_date(user.created_at)?,
     };
-    let uid_ivec = u64_to_ivec(uid);
+    let uid_ivec = u32_to_ivec(uid);
     let user_solos_count = get_count_by_prefix(&db, "user_solos", &uid_ivec)?;
     let user_posts_count = get_count_by_prefix(&db, "user_posts", &uid_ivec)?;
     let user_comments_count = get_count_by_prefix(&db, "user_comments", &uid_ivec)?;
-    let user_following_count = get_count_by_prefix(&db, "user_following", &u64_to_ivec(uid))?;
-    let user_followers_count = get_count_by_prefix(&db, "user_followers", &u64_to_ivec(uid))?;
+    let user_following_count = get_count_by_prefix(&db, "user_following", &u32_to_ivec(uid))?;
+    let user_followers_count = get_count_by_prefix(&db, "user_followers", &u32_to_ivec(uid))?;
 
     let has_followed = if let Some(ref claim) = claim {
         if claim.uid != uid {
-            let following_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(uid)].concat();
+            let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
             Some(db.open_tree("user_following")?.contains_key(following_k)?)
         } else {
             None
@@ -109,14 +109,14 @@ pub(crate) async fn user(
 pub(crate) async fn user_follow(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(uid): Path<u64>,
+    Path(uid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let following_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(uid)].concat();
-    let followers_k = [&u64_to_ivec(uid), &u64_to_ivec(claim.uid)].concat();
+    let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
+    let followers_k = [&u32_to_ivec(uid), &u32_to_ivec(claim.uid)].concat();
 
     let user_following_tree = db.open_tree("user_following")?;
     let user_followers_tree = db.open_tree("user_followers")?;
@@ -144,20 +144,20 @@ struct PageUserList<'a> {
     is_desc: bool,
     filter: Option<String>,
     role: Option<u8>,
-    info: (u64, String, bool),
+    info: (u32, String, bool),
     is_admin: bool,
 }
 
 /// Vec data: user list
 struct OutUserList {
-    uid: u64,
+    uid: u32,
     username: String,
     about: String,
     role: u8,
 }
 
 impl OutUserList {
-    fn new(uid: u64, username: String, about: String, role: u8) -> Self {
+    fn new(uid: u32, username: String, about: String, role: u8) -> Self {
         OutUserList {
             uid,
             username,
@@ -166,7 +166,7 @@ impl OutUserList {
         }
     }
 
-    fn get_from_uids(db: &Db, index: Vec<u64>, n: usize) -> Result<Vec<Self>, AppError> {
+    fn get_from_uids(db: &Db, index: Vec<u32>, n: usize) -> Result<Vec<Self>, AppError> {
         let mut users = Vec::with_capacity(n);
         for i in index {
             let user: User = get_one(db, "users", i)?;
@@ -178,12 +178,12 @@ impl OutUserList {
 
     fn get_inn_users(
         db: &Db,
-        iid: u64,
+        iid: u32,
         role: Option<u8>,
         page_params: &ParamsPage,
     ) -> Result<Vec<Self>, AppError> {
         let mut users = Vec::with_capacity(page_params.n);
-        let iter = db.open_tree("inn_users")?.scan_prefix(u64_to_ivec(iid));
+        let iter = db.open_tree("inn_users")?.scan_prefix(u32_to_ivec(iid));
         let iter = if page_params.is_desc {
             IterType::Rev(iter.rev())
         } else {
@@ -200,13 +200,13 @@ impl OutUserList {
             let (k, v) = i?;
             if let Some(role) = role {
                 if v[0] == role {
-                    let uid = u8_slice_to_u64(&k[8..]);
+                    let uid = u8_slice_to_u32(&k[8..]);
                     let user: User = get_one(db, "users", uid)?;
                     let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                     users.push(out_user_list);
                 }
             } else {
-                let uid = u8_slice_to_u64(&k[8..]);
+                let uid = u8_slice_to_u32(&k[8..]);
                 let user: User = get_one(db, "users", uid)?;
                 let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                 users.push(out_user_list);
@@ -222,7 +222,7 @@ pub(crate) struct ParamsUserList {
     anchor: Option<usize>,
     is_desc: Option<bool>,
     filter: Option<String>,
-    id: Option<u64>,
+    id: Option<u32>,
     role: Option<u8>,
 }
 
@@ -252,7 +252,7 @@ pub(crate) async fn user_list(
     let mut users = Vec::with_capacity(n);
 
     if let Some(id) = params.id {
-        let id_ivec = u64_to_ivec(id);
+        let id_ivec = u32_to_ivec(id);
         match params.filter.as_deref() {
             Some("followers") => {
                 let user: User = get_one(&db, "users", id)?;
@@ -308,7 +308,7 @@ pub(crate) async fn user_list(
         } else {
             count = get_count(&db, "default", "users_count")?;
             let (start, end) = get_range(count, &page_params);
-            index = (start..=end).map(|x| x as u64).collect();
+            index = (start..=end).map(|x| x as u32).collect();
             if is_desc {
                 index.reverse();
             }
@@ -342,7 +342,7 @@ pub struct FormRole {
 pub(crate) async fn role_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((id, uid)): Path<(u64, u64)>,
+    Path((id, uid)): Path<(u32, u32)>,
     Form(form): Form<FormRole>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
@@ -357,7 +357,7 @@ pub(crate) async fn role_post(
                 return Err(AppError::Unauthorized);
             }
 
-            let inn_users_k = [&u64_to_ivec(id), &u64_to_ivec(uid)].concat();
+            let inn_users_k = [&u32_to_ivec(id), &u32_to_ivec(uid)].concat();
 
             // protect super
             if let Some(user_inn_role) = get_inn_role(&db, id, uid)? {
@@ -394,7 +394,7 @@ pub(crate) async fn role_post(
             db.open_tree("inn_users")?
                 .insert(&inn_users_k, &[inn_role])?;
 
-            let user_inns_k = [&u64_to_ivec(uid), &u64_to_ivec(id)].concat();
+            let user_inns_k = [&u32_to_ivec(uid), &u32_to_ivec(id)].concat();
             if inn_role >= 3 {
                 db.open_tree("user_inns")?.insert(&user_inns_k, &[])?;
             } else {
@@ -423,7 +423,7 @@ pub(crate) async fn role_post(
             };
             let user_encode = bincode::encode_to_vec(&user, standard())?;
             db.open_tree("users")?
-                .insert(&u64_to_ivec(uid), user_encode)?;
+                .insert(&u32_to_ivec(uid), user_encode)?;
 
             Claim::update_role(&db, uid)?;
             target = "/user/list".to_string();
@@ -450,7 +450,7 @@ pub(crate) struct FormUser {
 #[template(path = "user_setting.html")]
 struct PageUserSetting<'a> {
     page_data: PageData<'a>,
-    uid: u64,
+    uid: u32,
     username: String,
     url: String,
     about: String,
@@ -526,7 +526,7 @@ pub(crate) async fn user_setting_post(
     let tree = db.open_tree("usernames")?;
     if user.username != input.username {
         tree.remove(&user.username)?;
-        tree.insert(&input.username, u64_to_ivec(user.uid))?;
+        tree.insert(&input.username, u32_to_ivec(user.uid))?;
     }
 
     user.username = input.username;
@@ -534,7 +534,7 @@ pub(crate) async fn user_setting_post(
     user.url = input.url;
     let user_encode = bincode::encode_to_vec(&user, standard())?;
     db.open_tree("users")?
-        .insert(u64_to_ivec(claim.uid), &*user_encode)?;
+        .insert(u32_to_ivec(claim.uid), &*user_encode)?;
 
     let target = format!("/user/{}", claim.uid);
     Ok(Redirect::to(&target))
@@ -567,7 +567,7 @@ pub(crate) async fn user_password_post(
         user.salt = salt;
         let user_encode = bincode::encode_to_vec(&user, standard())?;
         db.open_tree("users")?
-            .insert(u64_to_ivec(claim.uid), &*user_encode)?;
+            .insert(u32_to_ivec(claim.uid), &*user_encode)?;
         Ok(Redirect::to("/signout"))
     } else {
         sleep(Duration::from_secs(1)).await;
@@ -614,7 +614,7 @@ pub(crate) async fn signin_post(
     State(db): State<Db>,
     Form(input): Form<FormSignin>,
 ) -> impl IntoResponse {
-    let uid = match input.username.parse::<u64>() {
+    let uid = match input.username.parse::<u32>() {
         Ok(uid) => uid,
         Err(_) => get_uid_by_name(&db, &input.username)?.ok_or(AppError::WrongPassword)?,
     };
@@ -737,7 +737,7 @@ pub(crate) async fn signup_post(
     };
 
     let user_encode = bincode::encode_to_vec(&user, standard())?;
-    let uid_ivec = u64_to_ivec(uid);
+    let uid_ivec = u32_to_ivec(uid);
     db.open_tree("users")?.insert(&uid_ivec, user_encode)?;
     db.open_tree("usernames")?
         .insert(&user.username, &uid_ivec)?;
@@ -857,7 +857,7 @@ impl Claim {
         Ok(())
     }
 
-    fn update_role(db: &Db, uid: u64) -> Result<(), AppError> {
+    fn update_role(db: &Db, uid: u32) -> Result<(), AppError> {
         let user: User = get_one(db, "users", uid)?;
 
         let session_tree = db.open_tree("sessions")?;

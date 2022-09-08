@@ -1,7 +1,7 @@
 //! ## model
 //!
 //! In order to generate auto increment id, we need to get the max id, so we have **x_count** key
-//! to record the total number (we use **N** to refer this kind of value, and their type is [u64]).
+//! to record the total number (we use **N** to refer this kind of value, and their type is [u32]).
 //!
 //! ### user
 //! | tree             | key                  | value      | set       | get                   |
@@ -98,7 +98,7 @@
 /// * 0: banned
 #[derive(Default, Encode, Decode, Serialize, Debug)]
 struct User {
-    uid: u64,
+    uid: u32,
     username: String,
     salt: String,
     password_hash: String,
@@ -117,9 +117,9 @@ struct User {
 ///
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Solo {
-    sid: u64,
-    uid: u64,
-    visibility: u64,
+    sid: u32,
+    uid: u32,
+    visibility: u32,
     content: String,
     hashtags: Vec<String>,
     created_at: i64,
@@ -127,7 +127,7 @@ struct Solo {
 
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Inn {
-    iid: u64,
+    iid: u32,
     inn_name: String,
     about: String,
     description: String,
@@ -139,9 +139,9 @@ struct Inn {
 
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Post {
-    pid: u64,
-    uid: u64,
-    iid: u64,
+    pid: u32,
+    uid: u32,
+    iid: u32,
     title: String,
     tags: Vec<String>,
     content: String,
@@ -152,10 +152,10 @@ struct Post {
 
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Comment {
-    cid: u64,
-    pid: u64,
-    uid: u64,
-    reply_to: Option<u64>,
+    cid: u32,
+    pid: u32,
+    uid: u32,
+    reply_to: Option<u32>,
     content: String,
     created_at: i64,
     is_hidden: bool,
@@ -189,7 +189,7 @@ pub(super) struct SiteConfig {
 
 #[derive(Encode, Decode)]
 struct Claim {
-    uid: u64,
+    uid: u32,
     username: String,
     role: u8,
     last_write: i64,
@@ -269,7 +269,7 @@ pub(crate) async fn home() -> impl IntoResponse {
 #[derive(Deserialize)]
 pub(crate) struct UploadPicParams {
     page_type: String,
-    iid: Option<u64>,
+    iid: Option<u32>,
 }
 
 /// `POST /mod/inn_icon` && `/user/avatar`
@@ -406,19 +406,19 @@ pub(super) async fn shutdown_signal() {
 /// | comment | 0      | 100  |
 /// | post    | 1      | 101  |
 struct Notification {
-    uid: u64,
+    uid: u32,
     username: String,
-    iid: u64,
-    pid: u64,
+    iid: u32,
+    pid: u32,
     post_title: String,
-    cid: u64,
+    cid: u32,
     comment_content: String,
     notification_code: u8,
 }
 
 struct InnNotification {
-    iid: u64,
-    uid: u64,
+    iid: u32,
+    uid: u32,
 }
 
 /// notification.html
@@ -433,8 +433,8 @@ struct NotificationPage<'a> {
 #[derive(Deserialize)]
 pub(crate) struct NotifyParams {
     op_type: Option<String>,
-    pid: Option<u64>,
-    cid: Option<u64>,
+    pid: Option<u32>,
+    cid: Option<u32>,
 }
 
 /// work for [set_merge_operator](https://docs.rs/sled/latest/sled/struct.Db.html#method.set_merge_operator):
@@ -467,7 +467,7 @@ pub(super) async fn notification(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    let prefix = u64_to_ivec(claim.uid);
+    let prefix = u32_to_ivec(claim.uid);
     let tree = db.open_tree("notifications")?;
 
     // kv_paire: uid#pid#cid = notification_code
@@ -497,9 +497,9 @@ pub(super) async fn notification(
             "mark" => {
                 if let (Some(pid), Some(cid)) = (params.pid, params.cid) {
                     let k = [
-                        &u64_to_ivec(claim.uid),
-                        &u64_to_ivec(pid),
-                        &u64_to_ivec(cid),
+                        &u32_to_ivec(claim.uid),
+                        &u32_to_ivec(pid),
+                        &u32_to_ivec(cid),
                     ]
                     .concat();
                     tree.update_and_fetch(k, mark_read)?;
@@ -508,9 +508,9 @@ pub(super) async fn notification(
             "delete" => {
                 if let (Some(pid), Some(cid)) = (params.pid, params.cid) {
                     let k = [
-                        &u64_to_ivec(claim.uid),
-                        &u64_to_ivec(pid),
-                        &u64_to_ivec(cid),
+                        &u32_to_ivec(claim.uid),
+                        &u32_to_ivec(pid),
+                        &u32_to_ivec(cid),
                     ]
                     .concat();
                     tree.remove(k)?;
@@ -523,10 +523,10 @@ pub(super) async fn notification(
     let mut notifications = Vec::with_capacity(30);
     for (n, i) in tree.scan_prefix(&prefix).enumerate() {
         let (key, value) = i?;
-        let pid = u8_slice_to_u64(&key[8..16]);
-        let cid = u8_slice_to_u64(&key[16..24]);
+        let pid = u8_slice_to_u32(&key[4..8]);
+        let cid = u8_slice_to_u32(&key[8..12]);
 
-        let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
+        let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
         let v = &db.open_tree("post_comments")?.get(k)?;
 
         if let Some(v) = v {
@@ -555,11 +555,11 @@ pub(super) async fn notification(
     let mut inn_notifications = Vec::new();
     let mod_inns = get_ids_by_prefix(&db, "mod_inns", prefix, None)?;
     for i in mod_inns {
-        for i in db.open_tree("inn_apply")?.scan_prefix(u64_to_ivec(i)) {
+        for i in db.open_tree("inn_apply")?.scan_prefix(u32_to_ivec(i)) {
             let (k, _) = i?;
             let inn_notification = InnNotification {
-                iid: u8_slice_to_u64(&k[0..8]),
-                uid: u8_slice_to_u64(&k[8..]),
+                iid: u8_slice_to_u32(&k[0..4]),
+                uid: u8_slice_to_u32(&k[8..]),
             };
             inn_notifications.push(inn_notification);
         }
@@ -638,15 +638,15 @@ fn generate_nanoid_expire(seconds: i64) -> String {
 /// ```no_run
 /// let new_user_id = incr_id(db, "users_count")?;
 /// ```
-fn incr_id<K>(tree: &Tree, key: K) -> Result<u64, AppError>
+fn incr_id<K>(tree: &Tree, key: K) -> Result<u32, AppError>
 where
     K: AsRef<[u8]>,
 {
     let ivec = tree.update_and_fetch(key, increment)?.unwrap();
-    Ok(ivec_to_u64(&ivec))
+    Ok(ivec_to_u32(&ivec))
 }
 
-fn user_stats(db: &Db, uid: u64, stat_type: &str) -> Result<(), AppError> {
+fn user_stats(db: &Db, uid: u32, stat_type: &str) -> Result<(), AppError> {
     let expire = OffsetDateTime::now_utc()
         .replace_time(Time::MIDNIGHT)
         .saturating_add(time::Duration::days(3))
@@ -661,9 +661,13 @@ fn user_stats(db: &Db, uid: u64, stat_type: &str) -> Result<(), AppError> {
 fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
     let number = match old {
         Some(bytes) => {
-            let array: [u8; 8] = bytes.try_into().unwrap();
-            let number = u64::from_be_bytes(array);
-            number + 1
+            let array: [u8; 4] = bytes.try_into().unwrap();
+            let number = u32::from_be_bytes(array);
+            if let Some(new) = number.checked_add(1) {
+                new
+            } else {
+                panic!("overflow")
+            }
         }
         None => 1,
     };
@@ -680,25 +684,25 @@ fn timestamp_to_date(timestamp: i64) -> Result<String, AppError> {
     }
 }
 
-/// convert `u64` to [IVec]
-fn u64_to_ivec(number: u64) -> IVec {
+/// convert `u32` to [IVec]
+fn u32_to_ivec(number: u32) -> IVec {
     IVec::from(number.to_be_bytes().to_vec())
 }
 
-/// convert [IVec] to u64
-fn ivec_to_u64(iv: &IVec) -> u64 {
-    u64::from_be_bytes(iv.to_vec().as_slice().try_into().unwrap())
+/// convert [IVec] to u32
+fn ivec_to_u32(iv: &IVec) -> u32 {
+    u32::from_be_bytes(iv.to_vec().as_slice().try_into().unwrap())
 }
 
-/// convert `&[u8]` to `u64`
-fn u8_slice_to_u64(bytes: &[u8]) -> u64 {
-    u64::from_be_bytes(bytes.try_into().unwrap())
+/// convert `&[u8]` to `u32`
+fn u8_slice_to_u32(bytes: &[u8]) -> u32 {
+    u32::from_be_bytes(bytes.try_into().unwrap())
 }
 
 /// get uid by username
-fn get_uid_by_name(db: &Db, name: &str) -> Result<Option<u64>, AppError> {
+fn get_uid_by_name(db: &Db, name: &str) -> Result<Option<u32>, AppError> {
     let v = db.open_tree("usernames")?.get(name)?;
-    Ok(v.map(|v| ivec_to_u64(&v)))
+    Ok(v.map(|v| ivec_to_u32(&v)))
 }
 
 /// get [SiteConfig]
@@ -709,22 +713,22 @@ fn get_site_config(db: &Db) -> Result<SiteConfig, AppError> {
     Ok(site_config)
 }
 
-fn get_inn_role(db: &Db, iid: u64, uid: u64) -> Result<Option<u8>, AppError> {
-    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(uid)].concat();
+fn get_inn_role(db: &Db, iid: u32, uid: u32) -> Result<Option<u8>, AppError> {
+    let inn_users_k = [&u32_to_ivec(iid), &u32_to_ivec(uid)].concat();
     Ok(db
         .open_tree("inn_users")?
         .get(&inn_users_k)?
         .map(|role| role.to_vec()[0]))
 }
 
-fn is_mod(db: &Db, uid: u64, iid: u64) -> Result<bool, AppError> {
-    let k = [&u64_to_ivec(uid), &u64_to_ivec(iid)].concat();
+fn is_mod(db: &Db, uid: u32, iid: u32) -> Result<bool, AppError> {
+    let k = [&u32_to_ivec(uid), &u32_to_ivec(iid)].concat();
     Ok(db.open_tree("mod_inns")?.contains_key(k)?)
 }
 
 /// check if the user has unread notifications
-fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
-    let prefix = u64_to_ivec(uid);
+fn has_unread(db: &Db, uid: u32) -> Result<bool, AppError> {
+    let prefix = u32_to_ivec(uid);
     let iter = db.open_tree("notifications")?.scan_prefix(&prefix);
     for i in iter {
         let (_, v) = i?;
@@ -737,7 +741,7 @@ fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
     for i in mod_inns {
         if db
             .open_tree("inn_apply")?
-            .scan_prefix(u64_to_ivec(i))
+            .scan_prefix(u32_to_ivec(i))
             .next()
             .is_some()
         {
@@ -756,11 +760,11 @@ fn has_unread(db: &Db, uid: u64) -> Result<bool, AppError> {
 /// // get the user whose uid is 3.
 /// let user:User = get_one(&db, "users", 3)?;
 /// ```
-fn get_one<T>(db: &Db, tree_name: &str, id: u64) -> Result<T, AppError>
+fn get_one<T>(db: &Db, tree_name: &str, id: u32) -> Result<T, AppError>
 where
     T: Decode,
 {
-    let v = db.open_tree(tree_name)?.get(u64_to_ivec(id))?;
+    let v = db.open_tree(tree_name)?.get(u32_to_ivec(id))?;
     if let Some(v) = v {
         let (one, _): (T, usize) = bincode::decode_from_slice(&v, standard())?;
         Ok(one)
@@ -799,7 +803,7 @@ fn get_range(count: usize, page_params: &ParamsPage) -> (usize, usize) {
 ///
 /// ```no_run
 /// // get the comments count of the post 3.
-/// let comment_count = get_count(db, "post_comments_count", u64_to_ivec(pid))?
+/// let comment_count = get_count(db, "post_comments_count", u32_to_ivec(pid))?
 /// ```
 fn get_count<K>(db: &Db, count_tree: &str, key: K) -> Result<usize, AppError>
 where
@@ -811,7 +815,7 @@ where
         db.open_tree(count_tree)?.get(key)?
     };
     let count = match count {
-        Some(count) => ivec_to_u64(&count),
+        Some(count) => ivec_to_u32(&count),
         None => 0,
     };
     Ok(count as usize)
@@ -824,7 +828,7 @@ where
 /// ```no_run
 /// // get the third comment's upvotes of the post 1.
 /// // key: pid#cid#uid
-/// let prefix = [&u64_to_ivec(1), &u64_to_ivec(3)].concat();
+/// let prefix = [&u32_to_ivec(1), &u32_to_ivec(3)].concat();
 /// let upvotes = get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
 /// ```
 fn get_count_by_prefix(db: &Db, tree: &str, prefix: &[u8]) -> Result<usize, AppError> {
@@ -837,14 +841,14 @@ fn get_count_by_prefix(db: &Db, tree: &str, prefix: &[u8]) -> Result<usize, AppE
 ///
 /// ```no_run
 /// // get the id of inns that someone has joined.
-/// user_iins = get_ids_by_prefix(&db, "user_inns", u64_to_ivec(claim.uid), None).unwrap();
+/// user_iins = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None).unwrap();
 /// ```
 fn get_ids_by_prefix(
     db: &Db,
     tree: &str,
     prefix: impl AsRef<[u8]>,
     page_params: Option<&ParamsPage>,
-) -> Result<Vec<u64>, AppError> {
+) -> Result<Vec<u32>, AppError> {
     let mut res = vec![];
     let iter = db.open_tree(tree)?.scan_prefix(&prefix);
     if let Some(page_params) = page_params {
@@ -862,13 +866,13 @@ fn get_ids_by_prefix(
             }
             let (k, _) = i?;
             let id = &k[prefix.as_ref().len()..];
-            res.push(u8_slice_to_u64(id));
+            res.push(u8_slice_to_u32(id));
         }
     } else {
         for i in iter {
             let (k, _) = i?;
             let id = &k[prefix.as_ref().len()..];
-            res.push(u8_slice_to_u64(id));
+            res.push(u8_slice_to_u32(id));
         }
     }
 
@@ -903,7 +907,7 @@ where
 
     let mut output = Vec::with_capacity(page_params.n);
     for i in start..=end {
-        let out: Result<T, AppError> = get_one(db, tree, i as u64);
+        let out: Result<T, AppError> = get_one(db, tree, i as u32);
         if let Ok(out) = out {
             output.push(out);
         }
@@ -972,9 +976,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_u64_to_ivec() {
-        let iv = u64_to_ivec(12345678);
-        assert_eq!(ivec_to_u64(&iv), 12345678);
+    fn test_u32_to_ivec() {
+        let iv = u32_to_ivec(12345678);
+        assert_eq!(ivec_to_u32(&iv), 12345678);
     }
 
     #[test]

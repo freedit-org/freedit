@@ -14,7 +14,7 @@
 use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
     get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
-    ivec_to_u64, mark_read, timestamp_to_date, u64_to_ivec, u8_slice_to_u64, user_stats,
+    ivec_to_u32, mark_read, timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
     utils::md2html, Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
 };
 use crate::{
@@ -63,7 +63,7 @@ struct PageInnEdit<'a> {
 pub(crate) async fn mod_inn(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(iid): Path<u64>,
+    Path(iid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -110,7 +110,7 @@ pub(crate) struct FormInn {
 pub(crate) async fn mod_inn_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(mut iid): Path<u64>,
+    Path(mut iid): Path<u32>,
     ValidatedForm(input): ValidatedForm<FormInn>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
@@ -144,7 +144,7 @@ pub(crate) async fn mod_inn_post(
 
         // check if this name is used by other inn
         let search_iid = inn_names_tree.get(&input.inn_name)?;
-        if search_iid.is_some() && search_iid != Some(u64_to_ivec(iid)) {
+        if search_iid.is_some() && search_iid != Some(u32_to_ivec(iid)) {
             return Err(AppError::NameExists);
         }
 
@@ -167,27 +167,27 @@ pub(crate) async fn mod_inn_post(
 
         // remove the old inn topics
         for topic in inn.topics {
-            let k = [topic.as_bytes(), &u64_to_ivec(iid)].concat();
+            let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
             batch_topics.remove(&*k);
         }
     }
 
-    let iid_ivec = u64_to_ivec(iid);
+    let iid_ivec = u32_to_ivec(iid);
 
     // set topic index for inns
     for topic in &topics {
-        let k = [topic.as_bytes(), &u64_to_ivec(iid)].concat();
+        let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
         batch_topics.insert(&*k, &[]);
     }
     db.open_tree("topics")?.apply_batch(batch_topics)?;
 
     // set index for user mods and user inns
-    let k = [&u64_to_ivec(claim.uid), &iid_ivec].concat();
+    let k = [&u32_to_ivec(claim.uid), &iid_ivec].concat();
     db.open_tree("mod_inns")?.insert(&k, &[])?;
     db.open_tree("user_inns")?.insert(&k, &[])?;
 
     // set index for inn users
-    let k = [&iid_ivec, &u64_to_ivec(claim.uid)].concat();
+    let k = [&iid_ivec, &u32_to_ivec(claim.uid)].concat();
     db.open_tree("inn_users")?.insert(k, &[10])?;
 
     let inn = Inn {
@@ -227,7 +227,7 @@ pub(crate) struct ParamsInnList {
 
 /// Vec data: inn
 struct OutInnList {
-    iid: u64,
+    iid: u32,
     inn_name: String,
     about: String,
     topics: Vec<String>,
@@ -268,7 +268,7 @@ pub(crate) async fn inn_list(
             }
         }
     } else if let Some(claim) = &claim {
-        let uid_ivec = u64_to_ivec(claim.uid);
+        let uid_ivec = u32_to_ivec(claim.uid);
         if params.filter.as_deref() == Some("mod") {
             for i in get_ids_by_prefix(&db, "mod_inns", uid_ivec, Some(&page_params))? {
                 if let Ok(inn) = get_one(&db, "inns", i) {
@@ -389,7 +389,7 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
 #[template(path = "post_create.html")]
 struct PagePostCreate<'a> {
     page_data: PageData<'a>,
-    iid: u64,
+    iid: u32,
 }
 
 /// Page data: `post_edit.html`
@@ -406,7 +406,7 @@ struct PagePostEdit<'a> {
 pub(crate) async fn edit_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -417,7 +417,7 @@ pub(crate) async fn edit_post(
         return Err(AppError::Unauthorized);
     }
 
-    if !db.open_tree("inns")?.contains_key(u64_to_ivec(iid))? {
+    if !db.open_tree("inns")?.contains_key(u32_to_ivec(iid))? {
         return Err(AppError::NotFound);
     }
 
@@ -473,7 +473,7 @@ pub(crate) struct FormPost {
 pub(crate) async fn edit_post_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, old_pid)): Path<(u64, u64)>,
+    Path((iid, old_pid)): Path<(u32, u32)>,
     ValidatedForm(input): ValidatedForm<FormPost>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
@@ -497,7 +497,7 @@ pub(crate) async fn edit_post_post(
     } else {
         old_pid
     };
-    let pid_ivec = u64_to_ivec(pid);
+    let pid_ivec = u32_to_ivec(pid);
 
     let mut tags = vec![];
     let mut visibility = 0;
@@ -532,7 +532,7 @@ pub(crate) async fn edit_post_post(
             }
 
             for old_tag in post.tags.iter() {
-                let k = [old_tag.as_bytes(), &u64_to_ivec(old_pid)].concat();
+                let k = [old_tag.as_bytes(), &u32_to_ivec(old_pid)].concat();
                 batch.remove(k);
             }
         }
@@ -559,24 +559,24 @@ pub(crate) async fn edit_post_post(
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
     db.open_tree("posts")?.insert(&pid_ivec, post_encoded)?;
 
-    let iid_ivec = u64_to_ivec(iid);
-    let visibility_ivec = u64_to_ivec(visibility);
+    let iid_ivec = u32_to_ivec(iid);
+    let visibility_ivec = u32_to_ivec(visibility);
     if old_pid == 0 {
         let k = [&iid_ivec, &pid_ivec].concat();
         db.open_tree("inn_posts")?.insert(&k, &[])?;
 
-        let k = [&u64_to_ivec(claim.uid), &pid_ivec].concat();
+        let k = [&u32_to_ivec(claim.uid), &pid_ivec].concat();
         let v = [&iid_ivec, &visibility_ivec].concat();
         db.open_tree("user_posts")?.insert(&k, v)?;
     }
 
     if visibility < 10 {
         db.open_tree("static_user_post")?
-            .insert(u64_to_ivec(claim.uid), &[])?;
+            .insert(u32_to_ivec(claim.uid), &[])?;
         db.open_tree("static_inn_post")?.insert(&iid_ivec, &[])?;
     }
 
-    let created_at_ivec = u64_to_ivec(created_at as u64);
+    let created_at_ivec = u32_to_ivec(created_at as u32);
     let k = [&iid_ivec, &pid_ivec].concat();
 
     if old_pid > 0 {
@@ -604,14 +604,14 @@ pub(crate) async fn edit_post_post(
 
 /// Vec data: post list
 struct OutPostList {
-    pid: u64,
-    iid: u64,
+    pid: u32,
+    iid: u32,
     inn_name: String,
-    uid: u64,
+    uid: u32,
     username: String,
     title: String,
     created_at: String,
-    comment_count: u64,
+    comment_count: u32,
     is_hidden: bool,
 }
 
@@ -671,7 +671,7 @@ pub(crate) async fn tag(
 struct PageInn<'a> {
     page_data: PageData<'a>,
     posts: Vec<OutPostList>,
-    iid: u64,
+    iid: u32,
     inn_name: String,
     anchor: usize,
     n: usize,
@@ -695,7 +695,7 @@ pub(crate) struct ParamsInn {
 pub(crate) async fn inn(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(iid): Path<u64>,
+    Path(iid): Path<u32>,
     Query(params): Query<ParamsInn>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -708,13 +708,13 @@ pub(crate) async fn inn(
 
     let mut index = Vec::with_capacity(n);
     let mut joined_inns = &Vec::new();
-    let mut user_iins: Result<Vec<u64>, AppError> = Err(AppError::NotFound);
+    let mut user_iins: Result<Vec<u32>, AppError> = Err(AppError::NotFound);
     let mut username: Option<String> = None;
     let mut is_mod = false;
     if let Some(ref claim) = claim {
         is_mod = super::is_mod(&db, claim.uid, iid)?;
 
-        user_iins = get_ids_by_prefix(&db, "user_inns", u64_to_ivec(claim.uid), None);
+        user_iins = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None);
         if let Ok(ref user_iins) = user_iins {
             joined_inns = user_iins;
         }
@@ -728,14 +728,14 @@ pub(crate) async fn inn(
         }
         Some("following") => {
             if let Some(ref claim) = claim {
-                let user_following: Vec<u64> =
-                    get_ids_by_prefix(&db, "user_following", u64_to_ivec(claim.uid), None)
+                let user_following: Vec<u32> =
+                    get_ids_by_prefix(&db, "user_following", u32_to_ivec(claim.uid), None)
                         .unwrap_or_default();
                 index = get_pids_by_uids(&db, &user_following, joined_inns, &page_params)?;
             }
         }
         Some(uid) => {
-            if let Ok(uid) = uid.parse::<u64>() {
+            if let Ok(uid) = uid.parse::<u32>() {
                 let user: User = get_one(&db, "users", uid)?;
                 username = Some(user.username);
                 index = get_pids_by_uids(&db, &[uid], joined_inns, &page_params)?;
@@ -746,7 +746,7 @@ pub(crate) async fn inn(
                 index = get_pids_all(&db, joined_inns, &page_params)?
             } else if db
                 .open_tree("inns_private")?
-                .contains_key(u64_to_ivec(iid))?
+                .contains_key(u32_to_ivec(iid))?
             {
                 if joined_inns.contains(&iid) {
                     index = get_pids_by_iids(&db, &[iid], &page_params)?;
@@ -768,7 +768,7 @@ pub(crate) async fn inn(
     }
 
     let inn_users_count = if iid > 0 {
-        get_count_by_prefix(&db, "inn_users", &u64_to_ivec(iid))?
+        get_count_by_prefix(&db, "inn_users", &u32_to_ivec(iid))?
     } else {
         0
     };
@@ -817,7 +817,7 @@ struct PageInnFeed {
 /// `GET /inn/:iid/feed` inn page
 pub(crate) async fn inn_feed(
     State(db): State<Db>,
-    Path(iid): Path<u64>,
+    Path(iid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let page_params = ParamsPage {
         anchor: 0,
@@ -873,7 +873,7 @@ pub(crate) async fn inn_feed(
 struct PageInnStatic<'a> {
     page_data: &'a PageData<'a>,
     posts: Vec<OutPostList>,
-    id: u64,
+    id: u32,
     name: String,
     page: usize,
     is_last: bool,
@@ -883,10 +883,10 @@ struct PageInnStatic<'a> {
 /// render static inn page
 async fn render_post_list(
     db: &Db,
-    id: u64,
+    id: u32,
     page: usize,
     is_last: bool,
-    pids: &Vec<u64>,
+    pids: &Vec<u32>,
     page_data: &PageData<'_>,
     is_user: bool,
 ) -> Result<(), AppError> {
@@ -940,7 +940,7 @@ async fn render_post_list(
 pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppError> {
     let sleep = time::sleep(time::Duration::from_secs(interval));
     if let Some((k, _)) = db.open_tree("post_timeline")?.last()? {
-        let timestamp = u8_slice_to_u64(&k[0..8]);
+        let timestamp = u8_slice_to_u32(&k[0..4]) as u64;
         let last_check = OffsetDateTime::now_utc().unix_timestamp() as u64 - interval;
         if last_check - 3 > timestamp {
             sleep.await;
@@ -1002,7 +1002,7 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
     let tree = db.open_tree("static_inn_post")?;
     for i in tree.iter() {
         let (k, _) = i?;
-        let iid = ivec_to_u64(&k);
+        let iid = ivec_to_u32(&k);
         if inns_private_tree.contains_key(&k)? {
             debug!("inn {} is private", iid);
             continue;
@@ -1034,7 +1034,7 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
     let tree = db.open_tree("static_user_post")?;
     for i in tree.iter() {
         let (k, _) = i?;
-        let uid = ivec_to_u64(&k);
+        let uid = ivec_to_u32(&k);
         let mut page = 0;
         let page_params = ParamsPage { anchor, n, is_desc };
         let mut posts_count = get_count_by_prefix(db, "user_posts", &k)?;
@@ -1061,7 +1061,7 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
 }
 
 /// get [OutPostList] from pids
-fn get_out_post_list(db: &Db, index: &[u64]) -> Result<Vec<OutPostList>, AppError> {
+fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppError> {
     let mut post_lists = Vec::with_capacity(index.len());
     if !index.is_empty() {
         for pid in index {
@@ -1069,7 +1069,7 @@ fn get_out_post_list(db: &Db, index: &[u64]) -> Result<Vec<OutPostList>, AppErro
             let user: User = get_one(db, "users", post.uid)?;
             let date = timestamp_to_date(post.created_at)?;
             let inn: Inn = get_one(db, "inns", post.iid)?;
-            let comment_count = get_count(db, "post_comments_count", u64_to_ivec(*pid))? as u64;
+            let comment_count = get_count(db, "post_comments_count", u32_to_ivec(*pid))? as u32;
 
             let post_list = OutPostList {
                 pid: post.pid,
@@ -1091,9 +1091,9 @@ fn get_out_post_list(db: &Db, index: &[u64]) -> Result<Vec<OutPostList>, AppErro
 /// get pids all, controlled by `visibility`, sorted by timestamp
 fn get_pids_all(
     db: &Db,
-    joined_inns: &[u64],
+    joined_inns: &[u32],
     page_params: &ParamsPage,
-) -> Result<Vec<u64>, AppError> {
+) -> Result<Vec<u32>, AppError> {
     let tree = db.open_tree("post_timeline")?;
     let mut count: usize = 0;
     let mut result = Vec::with_capacity(page_params.n);
@@ -1106,10 +1106,10 @@ fn get_pids_all(
     // kvpaire: timestamp#iid#pid = visibility
     for i in iter {
         let (k, v) = i?;
-        let id = u8_slice_to_u64(&k[8..16]);
-        let out_id = u8_slice_to_u64(&k[16..24]);
+        let id = u8_slice_to_u32(&k[4..8]);
+        let out_id = u8_slice_to_u32(&k[8..12]);
 
-        let visibility = ivec_to_u64(&v);
+        let visibility = ivec_to_u32(&v);
         if visibility == 0 || (visibility == 10 && joined_inns.contains(&id)) {
             if count < page_params.anchor {
                 count += 1;
@@ -1128,16 +1128,16 @@ fn get_pids_all(
 }
 
 /// get pids by multi iids, sorted by timestamp
-fn get_pids_by_iids(db: &Db, iids: &[u64], page_params: &ParamsPage) -> Result<Vec<u64>, AppError> {
+fn get_pids_by_iids(db: &Db, iids: &[u32], page_params: &ParamsPage) -> Result<Vec<u32>, AppError> {
     let mut pids = Vec::with_capacity(page_params.n);
     let mut pairs = Vec::new();
     for iid in iids {
-        let prefix = u64_to_ivec(*iid);
+        let prefix = u32_to_ivec(*iid);
         // kv_pair: iid#pid = timestamp#visibility
         for i in db.open_tree("post_timeline_idx")?.scan_prefix(prefix) {
             let (k, v) = i?;
-            let pid = u8_slice_to_u64(&k[8..16]);
-            let timestamp = ivec_to_u64(&v);
+            let pid = u8_slice_to_u32(&k[4..8]);
+            let timestamp = ivec_to_u32(&v);
             pairs.push((pid, timestamp));
         }
     }
@@ -1154,19 +1154,19 @@ fn get_pids_by_iids(db: &Db, iids: &[u64], page_params: &ParamsPage) -> Result<V
 /// get pids by multi uids, controlled by `visibility`, sorted by timestamp
 fn get_pids_by_uids(
     db: &Db,
-    uids: &[u64],
-    joined_inns: &[u64],
+    uids: &[u32],
+    joined_inns: &[u32],
     page_params: &ParamsPage,
-) -> Result<Vec<u64>, AppError> {
+) -> Result<Vec<u32>, AppError> {
     let mut pids = Vec::with_capacity(page_params.n);
     for uid in uids {
-        let prefix = u64_to_ivec(*uid);
+        let prefix = u32_to_ivec(*uid);
         // kv_pair: uid#pid = iid#visibility
         for i in db.open_tree("user_posts")?.scan_prefix(prefix) {
             let (k, v) = i?;
-            let pid = u8_slice_to_u64(&k[8..16]);
-            let iid = u8_slice_to_u64(&v[0..8]);
-            let visibility = u8_slice_to_u64(&v[8..16]);
+            let pid = u8_slice_to_u32(&k[4..8]);
+            let iid = u8_slice_to_u32(&v[0..4]);
+            let visibility = u8_slice_to_u32(&v[4..8]);
             if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) {
                 pids.push(pid);
             }
@@ -1184,7 +1184,7 @@ fn get_pids_by_uids(
 pub(crate) async fn inn_join(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(iid): Path<u64>,
+    Path(iid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -1192,8 +1192,8 @@ pub(crate) async fn inn_join(
 
     let inn: Inn = get_one(&db, "inns", iid)?;
 
-    let user_inns_k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
-    let inn_users_k = [&u64_to_ivec(iid), &u64_to_ivec(claim.uid)].concat();
+    let user_inns_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
+    let inn_users_k = [&u32_to_ivec(iid), &u32_to_ivec(claim.uid)].concat();
     let user_inns_tree = db.open_tree("user_inns")?;
     let inn_users_tree = db.open_tree("inn_users")?;
     let inn_apply_tree = db.open_tree("inn_apply")?;
@@ -1223,10 +1223,10 @@ pub(crate) async fn inn_join(
 
 /// Vec data: post
 struct OutPost {
-    pid: u64,
-    iid: u64,
+    pid: u32,
+    iid: u32,
     inn_name: String,
-    uid: u64,
+    uid: u32,
     username: String,
     title: String,
     tags: Vec<String>,
@@ -1248,7 +1248,7 @@ struct PagePost<'a> {
     page_data: PageData<'a>,
     post: OutPost,
     comments: Vec<OutComment>,
-    pageview: u64,
+    pageview: u32,
     anchor: usize,
     n: usize,
     is_desc: bool,
@@ -1258,8 +1258,8 @@ struct PagePost<'a> {
 
 /// Vec data: Comment
 struct OutComment {
-    cid: u64,
-    uid: u64,
+    cid: u32,
+    uid: u32,
     username: String,
     content: String,
     created_at: String,
@@ -1275,14 +1275,14 @@ struct OutComment {
 pub(crate) struct ParamsPost {
     anchor: Option<usize>,
     is_desc: Option<bool>,
-    notification_cid: Option<u64>,
+    notification_cid: Option<u32>,
 }
 
 /// `GET /inn/:iid/:pid` post page
 pub(crate) async fn post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
     Query(params): Query<ParamsPost>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -1302,11 +1302,11 @@ pub(crate) async fn post(
     let mut is_downvoted = false;
     let mut is_mod = false;
     let mut can_edit = false;
-    let upvotes = get_count_by_prefix(&db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
+    let upvotes = get_count_by_prefix(&db, "post_upvotes", &u32_to_ivec(pid)).unwrap_or_default();
     let downvotes =
-        get_count_by_prefix(&db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
+        get_count_by_prefix(&db, "post_downvotes", &u32_to_ivec(pid)).unwrap_or_default();
     if let Some(ref claim) = claim {
-        let k = [&u64_to_ivec(pid), &u64_to_ivec(claim.uid)].concat();
+        let k = [&u32_to_ivec(pid), &u32_to_ivec(claim.uid)].concat();
         if db.open_tree("post_upvotes")?.contains_key(&k)? {
             is_upvoted = true;
         }
@@ -1318,7 +1318,7 @@ pub(crate) async fn post(
             can_edit = true;
         }
 
-        let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
+        let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
         if db.open_tree("user_inns")?.contains_key(&k)? {
             has_joined = true;
         }
@@ -1328,9 +1328,9 @@ pub(crate) async fn post(
 
         if let Some(notification_cid) = params.notification_cid {
             let k = [
-                &u64_to_ivec(claim.uid),
-                &u64_to_ivec(pid),
-                &u64_to_ivec(notification_cid),
+                &u32_to_ivec(claim.uid),
+                &u32_to_ivec(pid),
+                &u32_to_ivec(notification_cid),
             ]
             .concat();
             db.open_tree("notifications")?
@@ -1367,14 +1367,14 @@ pub(crate) async fn post(
     let page_params = ParamsPage { anchor, n, is_desc };
 
     let mut out_comments = Vec::with_capacity(n);
-    let count = get_count(&db, "post_comments_count", u64_to_ivec(pid))?;
+    let count = get_count(&db, "post_comments_count", u32_to_ivec(pid))?;
     if count > 0 {
         let (start, end) = get_range(count, &page_params);
         let post_comments_tree = db.open_tree("post_comments")?;
         let comment_upvotes_tree = db.open_tree("comment_upvotes")?;
         let comment_downvotes_tree = db.open_tree("comment_downvotes")?;
         for i in start..=end {
-            let k = [&u64_to_ivec(pid), &u64_to_ivec(i as u64)].concat();
+            let k = [&u32_to_ivec(pid), &u32_to_ivec(i as u32)].concat();
             let v = &post_comments_tree.get(k)?;
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
@@ -1386,16 +1386,16 @@ pub(crate) async fn post(
 
                 if let Some(ref claim) = claim {
                     let k = [
-                        &u64_to_ivec(pid),
-                        &u64_to_ivec(comment.cid),
-                        &u64_to_ivec(claim.uid),
+                        &u32_to_ivec(pid),
+                        &u32_to_ivec(comment.cid),
+                        &u32_to_ivec(claim.uid),
                     ]
                     .concat();
                     is_upvoted = comment_upvotes_tree.contains_key(&k)?;
                     is_downvoted = comment_downvotes_tree.contains_key(&k)?;
                 }
 
-                let prefix = [&u64_to_ivec(pid), &u64_to_ivec(comment.cid)].concat();
+                let prefix = [&u32_to_ivec(pid), &u32_to_ivec(comment.cid)].concat();
                 let upvotes =
                     get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
                 let downvotes =
@@ -1421,7 +1421,7 @@ pub(crate) async fn post(
         }
     }
 
-    let pageview = incr_id(&db.open_tree("post_pageviews")?, u64_to_ivec(pid))?;
+    let pageview = incr_id(&db.open_tree("post_pageviews")?, u32_to_ivec(pid))?;
     let has_unread = if let Some(ref claim) = claim {
         has_unread(&db, claim.uid)?
     } else {
@@ -1444,8 +1444,8 @@ pub(crate) async fn post(
 }
 
 /// generate static page `/static/post/:pid`
-async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
-    let pid_ivec = u64_to_ivec(pid);
+async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
+    let pid_ivec = u32_to_ivec(pid);
     let site_config = get_site_config(db)?;
     let post: Post = get_one(db, "posts", pid)?;
     if post.is_hidden {
@@ -1454,9 +1454,9 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     let user: User = get_one(db, "users", post.uid)?;
     let date = timestamp_to_date(post.created_at)?;
     let inn: Inn = get_one(db, "inns", post.iid)?;
-    let upvotes = get_count_by_prefix(db, "post_upvotes", &u64_to_ivec(pid)).unwrap_or_default();
+    let upvotes = get_count_by_prefix(db, "post_upvotes", &u32_to_ivec(pid)).unwrap_or_default();
     let downvotes =
-        get_count_by_prefix(db, "post_downvotes", &u64_to_ivec(pid)).unwrap_or_default();
+        get_count_by_prefix(db, "post_downvotes", &u32_to_ivec(pid)).unwrap_or_default();
 
     let out_post = OutPost {
         pid: post.pid,
@@ -1487,14 +1487,14 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
         // TODO: comments pagination
         let post_comments_tree = db.open_tree("post_comments")?;
         for i in 1..=count {
-            let k = [&u64_to_ivec(pid), &u64_to_ivec(i as u64)].concat();
+            let k = [&u32_to_ivec(pid), &u32_to_ivec(i as u32)].concat();
             let v = &post_comments_tree.get(k)?;
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                 let user: User = get_one(db, "users", comment.uid)?;
                 let date = timestamp_to_date(comment.created_at)?;
 
-                let prefix = [&u64_to_ivec(pid), &u64_to_ivec(comment.cid)].concat();
+                let prefix = [&u32_to_ivec(pid), &u32_to_ivec(comment.cid)].concat();
                 let upvotes =
                     get_count_by_prefix(db, "comment_upvotes", &prefix).unwrap_or_default();
                 let downvotes =
@@ -1518,7 +1518,7 @@ async fn static_post(db: &Db, pid: u64) -> Result<(), AppError> {
     }
 
     let pageview = if let Some(v) = &db.open_tree("post_pageviews")?.get(&pid_ivec)? {
-        ivec_to_u64(v)
+        ivec_to_u32(v)
     } else {
         0
     };
@@ -1567,7 +1567,7 @@ pub(crate) struct FormComment {
 pub(crate) async fn comment_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
     ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -1580,7 +1580,7 @@ pub(crate) async fn comment_post(
         return Err(AppError::Unauthorized);
     }
 
-    if !db.open_tree("inns")?.contains_key(u64_to_ivec(iid))? {
+    if !db.open_tree("inns")?.contains_key(u32_to_ivec(iid))? {
         return Err(AppError::NotFound);
     }
 
@@ -1600,7 +1600,7 @@ pub(crate) async fn comment_post(
         return Err(AppError::Hidden);
     }
 
-    let pid_ivec = u64_to_ivec(pid);
+    let pid_ivec = u32_to_ivec(pid);
     let cid = incr_id(&db.open_tree("post_comments_count")?, &pid_ivec)?;
 
     let mut content = input.comment;
@@ -1609,7 +1609,7 @@ pub(crate) async fn comment_post(
     let notifications = extract_element(&content, 5, '@');
     let notification_tree = db.open_tree("notifications")?;
     for notification in &notifications {
-        let (uid, username) = match notification.parse::<u64>() {
+        let (uid, username) = match notification.parse::<u32>() {
             Ok(uid) => {
                 if let Ok(user) = get_one::<User>(&db, "users", uid) {
                     (uid, user.username)
@@ -1631,14 +1631,14 @@ pub(crate) async fn comment_post(
         content = content.replace(&from, &to);
 
         // notify user to be mentioned in comment
-        let notify_key = [&u64_to_ivec(uid), &pid_ivec, &u64_to_ivec(cid)].concat();
+        let notify_key = [&u32_to_ivec(uid), &pid_ivec, &u32_to_ivec(cid)].concat();
         notification_tree.insert(notify_key, vec![0])?;
     }
 
     let reply_to = extract_element(&content, 1, '#');
     let mut reply_to_cid = None;
     if !reply_to.is_empty() {
-        if let Ok(reply_cid) = reply_to[0].parse::<u64>() {
+        if let Ok(reply_cid) = reply_to[0].parse::<u32>() {
             if reply_cid < cid {
                 let reply_link = format!("[{}](/post/{}/{}#{})", reply_to[0], iid, pid, reply_cid);
                 let from = format!("#{}", reply_cid);
@@ -1659,14 +1659,14 @@ pub(crate) async fn comment_post(
         is_hidden: false,
     };
     let comment_encoded = bincode::encode_to_vec(&comment, standard())?;
-    let k = [&pid_ivec, &u64_to_ivec(cid)].concat();
+    let k = [&pid_ivec, &u32_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.insert(&k, comment_encoded)?;
 
-    let k = [&u64_to_ivec(claim.uid), &pid_ivec, &u64_to_ivec(cid)].concat();
+    let k = [&u32_to_ivec(claim.uid), &pid_ivec, &u32_to_ivec(cid)].concat();
     db.open_tree("user_comments")?.insert(k, &[])?;
 
-    let created_at_ivec = u64_to_ivec(created_at as u64);
-    let iid_ivec = u64_to_ivec(iid);
+    let created_at_ivec = u32_to_ivec(created_at as u32);
+    let iid_ivec = u32_to_ivec(iid);
     let k = [&iid_ivec, &pid_ivec].concat();
 
     let old_timestamp = db.open_tree("post_timeline_idx")?.get(&k)?;
@@ -1674,7 +1674,7 @@ pub(crate) async fn comment_post(
     if let Some(v) = old_timestamp {
         let k = [&v, &iid_ivec, &pid_ivec].concat();
         if let Some(v) = db.open_tree("post_timeline")?.remove(&k)? {
-            visibility = ivec_to_u64(&v);
+            visibility = ivec_to_u32(&v);
         };
     }
 
@@ -1687,12 +1687,12 @@ pub(crate) async fn comment_post(
         let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
         // kv_pair: timestamp#iid#pid = visibility
         db.open_tree("post_timeline")?
-            .insert(k, u64_to_ivec(visibility))?;
+            .insert(k, u32_to_ivec(visibility))?;
     }
 
     // notify post author
     if post.uid != claim.uid {
-        let notify_key = [&u64_to_ivec(post.uid), &pid_ivec, &u64_to_ivec(cid)].concat();
+        let notify_key = [&u32_to_ivec(post.uid), &pid_ivec, &u32_to_ivec(cid)].concat();
         notification_tree.insert(notify_key, vec![1])?;
     }
 
@@ -1736,7 +1736,7 @@ pub(crate) async fn preview(
 pub(crate) async fn comment_delete(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+    Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -1744,16 +1744,16 @@ pub(crate) async fn comment_delete(
         .ok_or(AppError::NonLogin)?;
 
     let k = [
-        &u64_to_ivec(claim.uid),
-        &u64_to_ivec(pid),
-        &u64_to_ivec(cid),
+        &u32_to_ivec(claim.uid),
+        &u32_to_ivec(pid),
+        &u32_to_ivec(cid),
     ]
     .concat();
     if !db.open_tree("user_comments")?.contains_key(&k)? {
         return Err(AppError::Unauthorized);
     }
 
-    let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
+    let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.remove(&k)?;
 
     let target = format!("/post/{}/{}", iid, pid);
@@ -1764,19 +1764,19 @@ pub(crate) async fn comment_delete(
 pub(crate) async fn comment_hide(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+    Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    let k = [&u64_to_ivec(claim.uid), &u64_to_ivec(iid)].concat();
+    let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
     if !db.open_tree("mod_inns")?.contains_key(&k)? {
         return Err(AppError::Unauthorized);
     }
 
-    let k = [&u64_to_ivec(pid), &u64_to_ivec(cid)].concat();
+    let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
     let v = db
         .open_tree("post_comments")?
         .get(&k)?
@@ -1795,7 +1795,7 @@ pub(crate) async fn comment_hide(
 pub(crate) async fn post_upvote(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -1803,7 +1803,7 @@ pub(crate) async fn post_upvote(
         .ok_or(AppError::NonLogin)?;
 
     let post_upvotes_tree = db.open_tree("post_upvotes")?;
-    let k = [&u64_to_ivec(pid), &u64_to_ivec(claim.uid)].concat();
+    let k = [&u32_to_ivec(pid), &u32_to_ivec(claim.uid)].concat();
     if post_upvotes_tree.contains_key(&k)? {
         post_upvotes_tree.remove(&k)?;
     } else {
@@ -1818,16 +1818,16 @@ pub(crate) async fn post_upvote(
 pub(crate) async fn comment_upvote(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+    Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
     let k = [
-        &u64_to_ivec(pid),
-        &u64_to_ivec(cid),
-        &u64_to_ivec(claim.uid),
+        &u32_to_ivec(pid),
+        &u32_to_ivec(cid),
+        &u32_to_ivec(claim.uid),
     ]
     .concat();
 
@@ -1846,7 +1846,7 @@ pub(crate) async fn comment_upvote(
 pub(crate) async fn post_downvote(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -1854,7 +1854,7 @@ pub(crate) async fn post_downvote(
         .ok_or(AppError::NonLogin)?;
 
     let post_downvotes_tree = db.open_tree("post_downvotes")?;
-    let k = [&u64_to_ivec(pid), &u64_to_ivec(claim.uid)].concat();
+    let k = [&u32_to_ivec(pid), &u32_to_ivec(claim.uid)].concat();
     if post_downvotes_tree.contains_key(&k)? {
         post_downvotes_tree.remove(&k)?;
     } else {
@@ -1869,16 +1869,16 @@ pub(crate) async fn post_downvote(
 pub(crate) async fn comment_downvote(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid, cid)): Path<(u64, u64, u64)>,
+    Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
     let k = [
-        &u64_to_ivec(pid),
-        &u64_to_ivec(cid),
-        &u64_to_ivec(claim.uid),
+        &u32_to_ivec(pid),
+        &u32_to_ivec(cid),
+        &u32_to_ivec(claim.uid),
     ]
     .concat();
 
@@ -1897,7 +1897,7 @@ pub(crate) async fn comment_downvote(
 pub(crate) async fn post_lock(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -1914,7 +1914,7 @@ pub(crate) async fn post_lock(
 
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
     db.open_tree("posts")?
-        .insert(u64_to_ivec(pid), post_encoded)?;
+        .insert(u32_to_ivec(pid), post_encoded)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
@@ -1924,7 +1924,7 @@ pub(crate) async fn post_lock(
 pub(crate) async fn post_hide(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u64, u64)>,
+    Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie
@@ -1941,7 +1941,7 @@ pub(crate) async fn post_hide(
 
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
     db.open_tree("posts")?
-        .insert(u64_to_ivec(pid), post_encoded)?;
+        .insert(u32_to_ivec(pid), post_encoded)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))

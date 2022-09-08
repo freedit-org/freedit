@@ -73,7 +73,7 @@ async fn create_inn(inn_name: &str) -> Result<StatusCode, reqwest::Error> {
     send_post(&url, &params).await
 }
 
-async fn join_inn(iid: u64) {
+async fn join_inn(iid: u32) {
     let url = format!("{}/inn/{}/join", URL, iid);
     match CLIENT.get(&url).send().await {
         Ok(_) => {}
@@ -81,7 +81,7 @@ async fn join_inn(iid: u64) {
     };
 }
 
-async fn create_post(iid: u64) -> Result<StatusCode, reqwest::Error> {
+async fn create_post(iid: u32) -> Result<StatusCode, reqwest::Error> {
     let url = format!("{}/post/{}/edit/0", URL, iid);
     let title = format!("inn_{}, auto generate post", iid);
     let description = format!("description_{}", title);
@@ -93,7 +93,7 @@ async fn create_post(iid: u64) -> Result<StatusCode, reqwest::Error> {
     send_post(&url, &params).await
 }
 
-async fn create_comment(iid: u64, pid: u64) -> Result<StatusCode, reqwest::Error> {
+async fn create_comment(iid: u32, pid: u32) -> Result<StatusCode, reqwest::Error> {
     let url = format!("{}/post/{}/{}", URL, iid, pid);
     let comment = format!("pid_{}, auto generate post", pid);
     let params = [("comment", comment)];
