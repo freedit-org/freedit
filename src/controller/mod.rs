@@ -131,7 +131,6 @@ struct Inn {
     inn_name: String,
     about: String,
     description: String,
-    description_html: String,
     topics: Vec<String>,
     inn_type: String,
     created_at: i64,

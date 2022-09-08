@@ -192,7 +192,6 @@ pub(crate) async fn mod_inn_post(
 
     let inn = Inn {
         iid,
-        description_html: md2html(&input.description),
         inn_name: input.inn_name,
         about: input.about,
         description: input.description,
@@ -847,7 +846,7 @@ pub(crate) async fn inn_feed(
     } else {
         let inn: Inn = get_one(&db, "inns", iid)?;
         title = inn.inn_name;
-        description = inn.description;
+        description = md2html(&inn.description);
         link = format!("{}{}/inn/{}", prefix, CONFIG.addr, iid);
 
         if inn.inn_type != "Private" {
