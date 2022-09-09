@@ -211,7 +211,9 @@ use axum::{
 };
 use bincode::config::standard;
 use bincode::{Decode, Encode};
+use data_encoding::HEXLOWER;
 use nanoid::nanoid;
+use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::{Db, IVec, Iter, Tree};
@@ -311,6 +313,71 @@ pub(crate) async fn upload_pic_post(
     }
 
     Ok(Redirect::to(&target))
+}
+
+/// Page data: `upload.html`
+#[derive(Template)]
+#[template(path = "upload.html")]
+struct PageUpload<'a> {
+    page_data: PageData<'a>,
+    imgs: Vec<(String, String)>,
+}
+
+/// `GET /upload`
+pub(crate) async fn upload(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let page_data = PageData::new("upload images", &site_config.site_name, Some(claim), false);
+    let page_upload = PageUpload {
+        page_data,
+        imgs: vec![],
+    };
+
+    Ok(into_response(&page_upload, "html"))
+}
+
+/// `POST /upload`
+pub(crate) async fn upload_post(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    ContentLengthLimit(mut multipart): ContentLengthLimit<Multipart, { 30 * 1024 * 1024 }>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let mut imgs = Vec::with_capacity(10);
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        if imgs.len() > 10 {
+            break;
+        }
+
+        let file_name = field.file_name().unwrap().to_string();
+
+        let data = field.bytes().await.unwrap();
+        let image_format_detected = image::guess_format(&data)?;
+        image::load_from_memory_with_format(&data, image_format_detected)?;
+        let exts = image_format_detected.extensions_str();
+
+        let mut context = Context::new(&SHA1_FOR_LEGACY_USE_ONLY);
+        context.update(&data);
+        let digest = context.finish();
+        let sha1 = HEXLOWER.encode(digest.as_ref()); //push_str(exts[0]);
+        let fname = format!("{}.{}", &sha1[0..20], exts[0]);
+        let location = format!("{}/{}", &CONFIG.upload_path, fname);
+        fs::write(location, &data).await.unwrap();
+
+        imgs.push((fname, file_name));
+    }
+
+    let page_data = PageData::new("upload images", &site_config.site_name, Some(claim), false);
+    let page_upload = PageUpload { page_data, imgs };
+
+    Ok(into_response(&page_upload, "html"))
 }
 
 /// `GET /health_check`

@@ -10,7 +10,7 @@ use crate::{
         },
         notification, serve_dir,
         solo::{solo, solo_delete, solo_like, solo_post},
-        style, upload_pic_post,
+        style, upload, upload_pic_post, upload_post,
         user::{
             remove_session, role_post, signin, signin_post, signout, signup, signup_post, user,
             user_follow, user_list, user_password_post, user_setting, user_setting_post,
@@ -70,13 +70,15 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/preview", get(post).post(preview))
         .route("/solo/user/:uid", get(solo).post(solo_post))
         .route("/solo/:sid/like", get(solo_like))
-        .route("/solo/:sid/delete", get(solo_delete));
+        .route("/solo/:sid/delete", get(solo_delete))
+        .route("/upload", get(upload).post(upload_post));
 
     let mut router_static = Router::new()
         .route("/health_check", get(health_check))
         .route("/static/style.css", get(style))
         .nest("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
         .nest("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
+        .nest("/static/upload", serve_dir(&CONFIG.upload_path).await)
         .nest(
             "/static/inn",
             serve_dir(&format!("{}/inn", &CONFIG.html_path)).await,

@@ -52,6 +52,12 @@ async fn main() -> Result<(), AppError> {
     }
     info!("inn icons path: {}", &CONFIG.inn_icons_path);
 
+    let upload_path = Path::new(&CONFIG.upload_path);
+    if !upload_path.exists() {
+        fs::create_dir_all(upload_path).unwrap();
+    }
+    info!("upload path: {}", &CONFIG.upload_path);
+
     let html_path = Path::new(&CONFIG.html_path);
     if !html_path.exists() {
         fs::create_dir_all(html_path).unwrap();

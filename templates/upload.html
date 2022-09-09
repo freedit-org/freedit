@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<form id="upload" class="box" action="/upload" method="POST" enctype="multipart/form-data">
+    <fieldset>
+        <div class="field">
+            <div class="control">
+                <input class="input" type="file" name="imgs" required accept=".jpg, .jpeg, .png, .gif" placeholder="Upload image" multiple/>
+            </div>
+            <p class="help">Max 10 pictures; jpg jpeg png and gif is allowed.</p>
+            <div class="control">
+                <button type="submit" form="upload" class="button is-link">Upload</button>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<div class="content">
+    {% for img in imgs %}
+    <figure>
+        <img src="/static/upload/{{img.0}}" alt="{{img.1}}">
+        <figcaption>
+            <code>![{{img.1}}](/static/upload/{{img.0}})</code>
+        </figcaption>
+    </figure>
+    {% endfor %}
+
+    {% for img in imgs %}
+        <code>![{{img.1}}](/static/upload/{{img.0}})</code><br>
+    {% endfor %}
+
+</div>
+
+<div class="divider"></div>
+{% endblock %}
