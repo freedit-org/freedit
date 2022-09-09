@@ -174,19 +174,32 @@
                 <textarea class="textarea" name="comment" {% if !has_joined %} disabled {% endif %} required maxlength="10000" placeholder="comment, markdown supported" /></textarea>
             </div>
         </div>
-        <div class="control">
-            {% match page_data.claim %}
-            {% when Some with (val) %}
-                {% if has_joined %}
-                <button type="submit" class="button is-link is-rounded">Submit</button>
-                <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">Preview</button>
-                {% else %}
-                <a href="/inn/{{post.iid}}/join" class="button is-primary is-rounded">Join to comment</a>
-                {% endif %}
-            {% else %}
-            <a class="button is-primary is-rounded" href="/signin">Sign in to comment</a>
-            {% endmatch %}
-        </div>
+        <nav class="level is-mobile">
+            <div class="level-left">
+                <div class="level-item">
+                    <a href="/upload" class="button is-primary is-rounded" target="_blank">upload images</a>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="field is-grouped">
+                        <div class="control">
+                            {% match page_data.claim %}
+                            {% when Some with (val) %}
+                                {% if has_joined %}
+                                <button type="submit" class="button is-link is-rounded">Submit</button>
+                                <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">Preview</button>
+                                {% else %}
+                                <a href="/inn/{{post.iid}}/join" class="button is-primary is-rounded">Join to comment</a>
+                                {% endif %}
+                            {% else %}
+                            <a class="button is-primary is-rounded" href="/signin">Sign in to comment</a>
+                            {% endmatch %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
     </fieldset>
 </form>
 {% endif %}
