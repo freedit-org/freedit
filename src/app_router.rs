@@ -21,8 +21,11 @@ use axum::{error_handling::HandleErrorLayer, http::StatusCode, routing::get, Box
 use sled::Db;
 use std::time::Duration;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
-use tower_http::{compression::CompressionLayer, trace::TraceLayer};
-use tracing::info;
+use tower_http::{
+    compression::CompressionLayer,
+    trace::{DefaultMakeSpan, TraceLayer},
+};
+use tracing::{info, Level};
 
 pub(super) async fn router(db: Db) -> Router {
     let middleware_stack = ServiceBuilder::new()
@@ -31,7 +34,9 @@ pub(super) async fn router(db: Db) -> Router {
         }))
         .layer(TimeoutLayer::new(Duration::from_secs(10)))
         .layer(CompressionLayer::new())
-        .layer(TraceLayer::new_for_http().on_request(()).on_response(()));
+        .layer(
+            TraceLayer::new_for_http().make_span_with(DefaultMakeSpan::new().level(Level::INFO)),
+        );
 
     let router_db = Router::with_state(db)
         .route("/", get(home))

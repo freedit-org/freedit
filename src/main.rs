@@ -25,10 +25,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG")
-                .unwrap_or_else(|_| "RUST_LOG=info,tower_http=DEBUG,freedit=DEBUG".into()),
-        ))
+        .with(tracing_subscriber::EnvFilter::new("info"))
         .with(tracing_subscriber::fmt::layer())
         .init();
 

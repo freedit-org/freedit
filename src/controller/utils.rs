@@ -12,7 +12,7 @@ use std::{
 };
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
 use tokio::time;
-use tracing::{debug, instrument};
+use tracing::instrument;
 
 /// Returns SHA256 of the current running executable.
 /// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
@@ -54,7 +54,6 @@ pub(crate) async fn clear_invalid(db: &Db, tree_name: &str, interval: u64) -> Re
             .and_then(|s| i64::from_str_radix(s.0, 16).ok());
         if let Some(time_stamp) = time_stamp {
             if time_stamp < OffsetDateTime::now_utc().unix_timestamp() {
-                debug!("remove expired {}: {}", tree_name, k_str);
                 tree.remove(k)?;
             }
         }

@@ -39,7 +39,6 @@ use tokio::{
     io::AsyncWriteExt,
     time,
 };
-use tracing::debug;
 use validator::Validate;
 
 /// Page data: `inn_create.html`
@@ -366,7 +365,6 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
         let target = target_dir.join(format!("{}.html.gz", page));
         let mut file = File::create(&target).await?;
         file.write_all(&compressed_bytes).await?;
-        debug!("target {}", target.display());
 
         let is_last = inns_count <= n;
         if is_last {
@@ -885,7 +883,7 @@ async fn render_post_list(
     id: u32,
     page: usize,
     is_last: bool,
-    pids: &Vec<u32>,
+    pids: &[u32],
     page_data: &PageData<'_>,
     is_user: bool,
 ) -> Result<(), AppError> {
@@ -928,7 +926,6 @@ async fn render_post_list(
     let target = std::path::Path::new(&target);
     let mut file = File::create(target).await?;
     file.write_all(&compressed_bytes).await?;
-    debug!("target {} : pids: {:?}", target.display(), pids);
 
     Ok(())
 }
@@ -1003,7 +1000,6 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
         let (k, _) = i?;
         let iid = ivec_to_u32(&k);
         if inns_private_tree.contains_key(&k)? {
-            debug!("inn {} is private", iid);
             continue;
         }
 
@@ -1550,7 +1546,6 @@ async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
     let target = std::path::Path::new(&target);
     let mut file = File::create(target).await?;
     file.write_all(&compressed_bytes).await?;
-    debug!("target {} : pid: {:?}", target.display(), pid);
 
     Ok(())
 }
