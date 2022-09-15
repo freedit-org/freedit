@@ -666,7 +666,7 @@ impl<'a> PageData<'a> {
         let mut footer_links = vec![];
         for (path, _, link) in &CONFIG.serve_dir {
             if !link.is_empty() {
-                footer_links.push((path.to_owned(), link.to_owned()));
+                footer_links.push((path.clone(), link.clone()));
             }
         }
         Self {

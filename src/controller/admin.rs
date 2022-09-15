@@ -224,7 +224,7 @@ pub(crate) async fn admin_view(
                     ones.push(format!("timestamp: {}", time_stamp));
                 }
                 "post_timeline" => {
-                    let timestamp = u8_slice_to_u32(&k[0..4]) as i64;
+                    let timestamp = i64::from(u8_slice_to_u32(&k[0..4]));
                     let date = timestamp_to_date(timestamp)?;
                     let iid = u8_slice_to_u32(&k[4..8]);
                     let pid = u8_slice_to_u32(&k[8..12]);

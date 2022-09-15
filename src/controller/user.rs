@@ -157,7 +157,7 @@ struct OutUserList {
 }
 
 impl OutUserList {
-    fn new(uid: u32, username: String, about: String, role: u8) -> Self {
+    const fn new(uid: u32, username: String, about: String, role: u8) -> Self {
         OutUserList {
             uid,
             username,
@@ -384,9 +384,8 @@ pub(crate) async fn role_post(
                     // only super can lift others to super
                     if inn_role != 10 {
                         return Err(AppError::Unauthorized);
-                    } else {
-                        10
                     }
+                    10
                 }
                 _ => unreachable!(),
             };
@@ -428,7 +427,7 @@ pub(crate) async fn role_post(
             Claim::update_role(&db, uid)?;
             target = "/user/list".to_string();
         }
-        _ => unreachable!(),
+        Ordering::Less => unreachable!(),
     }
 
     Ok(Redirect::to(&target))
@@ -516,7 +515,7 @@ pub(crate) async fn user_setting_post(
     if input.username.chars().next().unwrap().is_numeric() {
         return Err(AppError::UsernameInvalid);
     }
-    if input.username.chars().any(|c| c.is_control()) {
+    if input.username.chars().any(char::is_control) {
         return Err(AppError::UsernameInvalid);
     }
     if input.username.contains(['@', '#']) {
@@ -691,7 +690,7 @@ pub(crate) async fn signup_post(
     if input.username.chars().next().unwrap().is_numeric() {
         return Err(AppError::UsernameInvalid);
     }
-    if input.username.chars().any(|c| c.is_control()) {
+    if input.username.chars().any(char::is_control) {
         return Err(AppError::UsernameInvalid);
     }
     if input.username.contains(['@', '#']) {
@@ -774,7 +773,7 @@ pub(crate) async fn signout(
 /// <https://rust-lang-nursery.github.io/rust-cookbook/cryptography/encryption.html>
 fn generate_salt() -> [u8; 64] {
     let rng = rand::SystemRandom::new();
-    let mut salt = [0u8; 64];
+    let mut salt = [0_u8; 64];
     rng.fill(&mut salt).unwrap();
     salt
 }
@@ -785,7 +784,7 @@ const N_ITER: Option<std::num::NonZeroU32> = NonZeroU32::new(100_000);
 fn generate_password_hash(password: &str) -> (String, String) {
     let n = N_ITER.unwrap();
     let salt = generate_salt();
-    let mut pbkdf2_hash = [0u8; 64];
+    let mut pbkdf2_hash = [0_u8; 64];
     pbkdf2::derive(
         pbkdf2::PBKDF2_HMAC_SHA512,
         n,

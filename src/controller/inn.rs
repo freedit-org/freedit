@@ -499,7 +499,7 @@ pub(crate) async fn edit_post_post(
     let mut tags = vec![];
     let mut visibility = 0;
     if inn.inn_type.as_str() == "Private" {
-        visibility = 10
+        visibility = 10;
     } else {
         tags = input
             .tags
@@ -528,13 +528,13 @@ pub(crate) async fn edit_post_post(
                 return Err(AppError::NotFound);
             }
 
-            for old_tag in post.tags.iter() {
+            for old_tag in &post.tags {
                 let k = [old_tag.as_bytes(), &u32_to_ivec(old_pid)].concat();
                 batch.remove(k);
             }
         }
 
-        for tag in tags.iter() {
+        for tag in &tags {
             let k = [tag.as_bytes(), &pid_ivec].concat();
             batch.insert(k, &[]);
         }
@@ -740,7 +740,7 @@ pub(crate) async fn inn(
         }
         _ => {
             if iid == 0 {
-                index = get_pids_all(&db, joined_inns, &page_params)?
+                index = get_pids_all(&db, joined_inns, &page_params)?;
             } else if db
                 .open_tree("inns_private")?
                 .contains_key(u32_to_ivec(iid))?
@@ -759,7 +759,7 @@ pub(crate) async fn inn(
     if let Some(ref claim) = claim {
         if iid > 0 {
             if let Ok(Some(role)) = get_inn_role(&db, iid, claim.uid) {
-                inn_role = role
+                inn_role = role;
             }
         }
     }
@@ -936,7 +936,7 @@ async fn render_post_list(
 pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppError> {
     let sleep = time::sleep(time::Duration::from_secs(interval));
     if let Some((k, _)) = db.open_tree("post_timeline")?.last()? {
-        let timestamp = u8_slice_to_u32(&k[0..4]) as u64;
+        let timestamp = u64::from(u8_slice_to_u32(&k[0..4]));
         let last_check = OffsetDateTime::now_utc().unix_timestamp() as u64 - interval;
         if last_check - 3 > timestamp {
             sleep.await;
@@ -1109,9 +1109,8 @@ fn get_pids_all(
             if count < page_params.anchor {
                 count += 1;
                 continue;
-            } else {
-                result.push(out_id);
             }
+            result.push(out_id);
         }
 
         if result.len() == page_params.n {

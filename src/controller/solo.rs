@@ -124,7 +124,7 @@ pub(crate) async fn solo(
             if let Some(ref hashtag) = params.hashtag {
                 index = get_ids_by_prefix(&db, "hashtags", hashtag, Some(&page_params))?;
             } else if uid == 0 {
-                index = get_all_solos(&db, "solo_timeline", &followers, current_uid, &page_params)?
+                index = get_all_solos(&db, "solo_timeline", &followers, current_uid, &page_params)?;
             } else {
                 index = get_solos_by_uids(&db, &[uid], &followers, current_uid, &page_params)?;
             }
@@ -220,9 +220,8 @@ fn get_all_solos(
             if count < page_params.anchor {
                 count += 1;
                 continue;
-            } else {
-                result.push(ivec_to_u32(&k));
             }
+            result.push(ivec_to_u32(&k));
         }
 
         if result.len() == page_params.n {

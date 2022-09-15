@@ -17,9 +17,6 @@ use tracing::instrument;
 /// Returns SHA256 of the current running executable.
 /// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
 pub(crate) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
-    let file = env::current_exe().unwrap();
-    let input = File::open(file).unwrap();
-
     fn sha256_digest<R: Read>(mut reader: R) -> Digest {
         let mut context = Context::new(&SHA256);
         let mut buffer = [0; 1024];
@@ -34,6 +31,8 @@ pub(crate) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
         context.finish()
     }
 
+    let file = env::current_exe().unwrap();
+    let input = File::open(file).unwrap();
     let reader = BufReader::new(input);
     let digest = sha256_digest(reader);
 
@@ -68,7 +67,7 @@ struct SyntaxPreprocessor<'a, I: Iterator<Item = Event<'a>>> {
 
 impl<'a, I: Iterator<Item = Event<'a>>> SyntaxPreprocessor<'a, I> {
     /// Create a new syntax preprocessor from `parent`.
-    fn new(parent: I) -> Self {
+    const fn new(parent: I) -> Self {
         Self { parent }
     }
 }
@@ -107,8 +106,8 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
             other => return Some(other),
         };
 
-        while let Some(Event::Text(text)) | Some(Event::Html(text)) = self.parent.next() {
-            code.push_str(&text)
+        while let Some(Event::Text(text) | Event::Html(text)) = self.parent.next() {
+            code.push_str(&text);
         }
 
         if lang.as_ref() == "math" {
