@@ -231,6 +231,11 @@ pub(crate) async fn admin_view(
                     let visibility = u8_slice_to_u32(&v);
                     ones.push(format!("{} - {} - {} - {}", date, iid, pid, visibility));
                 }
+                "user_uploads" => {
+                    let uid = u8_slice_to_u32(&k[0..4]);
+                    let img = String::from_utf8_lossy(&k[4..]);
+                    ones.push(format!("{} - {}", uid, img));
+                }
                 _ => ones.push(format!("{} has not been supported yet", tree_name)),
             }
         }
