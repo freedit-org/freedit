@@ -12,6 +12,7 @@
 //! | "user_following" | `uid#uid`            | `&[]`      |           | [get_ids_by_prefix]   |
 //! | "user_followers" | `uid#uid`            | `&[]`      |           | [get_ids_by_prefix]   |
 //! | "user_stats"     | `timestamp_uid_type` | N          |           |                       |
+//! | "user_uploads"   | `uid#image_hash.ext` | `&[]`      |           |                       |
 //!
 //! ### notification
 //! | tree            | key           | value                             |
@@ -216,7 +217,7 @@ use nanoid::nanoid;
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use sled::{Db, IVec, Iter, Tree};
+use sled::{Batch, Db, IVec, Iter, Tree};
 use std::iter::Rev;
 use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
@@ -351,6 +352,7 @@ pub(crate) async fn upload_post(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let mut imgs = Vec::with_capacity(10);
+    let mut batch = Batch::default();
     while let Some(field) = multipart.next_field().await.unwrap() {
         if imgs.len() > 10 {
             break;
@@ -370,9 +372,12 @@ pub(crate) async fn upload_post(
         let fname = format!("{}.{}", &sha1[0..20], exts[0]);
         let location = format!("{}/{}", &CONFIG.upload_path, fname);
         fs::write(location, &data).await.unwrap();
+        let k = [&u32_to_ivec(claim.uid), fname.as_bytes()].concat();
+        batch.insert(k, &[]);
 
         imgs.push((fname, file_name));
     }
+    db.open_tree("user_uploads")?.apply_batch(batch)?;
 
     let page_data = PageData::new("upload images", &site_config.site_name, Some(claim), false);
     let page_upload = PageUpload { page_data, imgs };
