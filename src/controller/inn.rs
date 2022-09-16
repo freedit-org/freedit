@@ -1332,9 +1332,11 @@ pub(crate) async fn post(
         }
     }
 
-    if post.is_hidden && !is_mod {
-        return Err(AppError::Hidden);
-    }
+    let content = if post.is_hidden && !is_mod {
+        "<p><i>Hidden by mod.</i></p>".into()
+    } else {
+        md2html(&post.content)
+    };
 
     let out_post = OutPost {
         pid: post.pid,
@@ -1346,7 +1348,7 @@ pub(crate) async fn post(
         tags: post.tags,
         is_locked: post.is_locked,
         is_hidden: post.is_hidden,
-        content_html: md2html(&post.content),
+        content_html: content,
         created_at: date,
         upvotes,
         downvotes,
@@ -1588,9 +1590,6 @@ pub(crate) async fn comment_post(
     }
     if post.is_locked {
         return Err(AppError::Locked);
-    }
-    if post.is_hidden {
-        return Err(AppError::Hidden);
     }
 
     let pid_ivec = u32_to_ivec(pid);
