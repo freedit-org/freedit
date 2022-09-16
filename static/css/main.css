@@ -92,7 +92,7 @@ pre {
 }
 
 .list-item-content, .media-content {
-    max-width: 85%;
+    overflow: scroll;
 }
 
 p {

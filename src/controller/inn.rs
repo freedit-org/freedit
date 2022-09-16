@@ -1553,7 +1553,7 @@ async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormComment {
     #[validate(length(min = 1, max = 10000))]
-    comment: String,
+    content: String,
 }
 
 /// `POST /post/:iid/:pid/` comment create
@@ -1596,7 +1596,7 @@ pub(crate) async fn comment_post(
     let pid_ivec = u32_to_ivec(pid);
     let cid = incr_id(&db.open_tree("post_comments_count")?, &pid_ivec)?;
 
-    let mut content = input.comment;
+    let mut content = input.content;
 
     // extract @username or @uid notificaiton
     let notifications = extract_element(&content, 5, '@');
@@ -1705,7 +1705,7 @@ pub(crate) async fn comment_post(
 #[template(path = "preview.html", escape = "none")]
 struct PagePreview<'a> {
     page_data: PageData<'a>,
-    comment: String,
+    content: String,
 }
 
 /// `POST /preview`
@@ -1716,10 +1716,9 @@ pub(crate) async fn preview(
     let site_config = get_site_config(&db)?;
     let page_data = PageData::new("inn", &site_config.site_name, None, false);
 
-    let html = md2html(&input.comment);
     let page_preview = PagePreview {
         page_data,
-        comment: html,
+        content: md2html(&input.content),
     };
 
     Ok(into_response(&page_preview, "html"))

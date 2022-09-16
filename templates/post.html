@@ -53,7 +53,7 @@
     </div>
     <div class="media-right">
         <figure>
-            <p class="image is-48x48">
+            <p class="image is-48x48 is-hidden-mobile">
                 <a href="/user/{{post.uid}}"><img src="/static/avatars/{{post.uid}}.png" alt="{{post.username}}"></a>
             </p>
         </figure>
@@ -88,11 +88,11 @@
     </div>
 </div>
 
-<div class="box list" id="comment">
+<div class="box list has-visible-pointer-controls" id="comment">
     {% for comment in comments %}
     <div class="list-item" id="{{comment.cid}}">
         <div class="list-item-image">
-            <figure class="image is-48x48">
+            <figure class="image is-48x48 is-hidden-mobile">
                 <a href="/user/{{comment.uid}}"><img src="/static/avatars/{{comment.uid}}.png"></a>
             </figure>
         </div>
@@ -120,6 +120,30 @@
                     {% if comment.uid == post.uid %}
                         [op]
                     {% endif %}
+
+                    {% if is_mod %}
+                    <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
+                        {% if comment.is_hidden %}
+                        Open
+                        {% else %}
+                        Hide
+                        {% endif %}
+                    </a>
+                    {% endif %}
+
+                    {% match page_data.claim %} {% when Some with (val) %}
+                    {% if comment.uid == val.uid %}
+                    <a href="#delete_pop_{{comment.cid}}">Delete</a>
+                    <div id="delete_pop_{{comment.cid}}" class="overlay">
+                        <div class="popup content">
+                            <h3>Delete permanently?</h3>
+                            <a class="close" href="#">&times;</a>
+                            <p>Are you sure you want to delete this comment?</p>
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete" class="button is-danger">Delete</a>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}{% endmatch %}
                 </small>
             </p>
             {% if comment.is_hidden %}
@@ -129,29 +153,7 @@
             {% endif %}
         </div>
         
-        <div class="list-item-controls">
-            {% match page_data.claim %} {% when Some with (val) %}
-                {% if comment.uid == val.uid %}
-                <a href="#delete_pop_{{comment.cid}}"><span class="tag is-danger">Del</span></a>
-                <div id="delete_pop_{{comment.cid}}" class="overlay">
-                    <div class="popup content">
-                        <h3>Delete permanently?</h3>
-                        <a class="close" href="#">&times;</a>
-                        <p>Are you sure you want to delete this comment?</p>
-                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete" class="button is-danger">Delete</a>
-                    </div>
-                </div>
-                {% endif %}
-            {% else %}{% endmatch %}
-            {% if is_mod %}
-            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
-                {% if comment.is_hidden %}
-                <span class="tag is-primary">Open</span>
-                {% else %}
-                <span class="tag is-danger">Hide</span>
-                {% endif %}
-            </a>
-            {% endif %}
+        <div class="list-item-controls is-hidden-mobile">
             <a href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info">{{comment.cid}}</span></a>
         </div>
     </div>
@@ -169,15 +171,15 @@
 <form class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">
     <fieldset>
         <div class="field">
-            <label class="label" for="comment">New comment</label>
+            <label class="label" for="content">New comment</label>
             <div class="control">
-                <textarea class="textarea" name="comment" {% if !has_joined %} disabled {% endif %} required maxlength="10000" placeholder="comment, markdown supported" /></textarea>
+                <textarea class="textarea" name="content" {% if !has_joined %} disabled {% endif %} required maxlength="10000" placeholder="comment, markdown supported" /></textarea>
             </div>
         </div>
         <nav class="level is-mobile">
             <div class="level-left">
                 <div class="level-item">
-                    <a href="/upload" class="button is-primary is-rounded" target="_blank">upload images</a>
+                    <a href="/upload" class="button is-primary is-rounded" target="_blank">upload</a>
                 </div>
             </div>
             <div class="level-right">

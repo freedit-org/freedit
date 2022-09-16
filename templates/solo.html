@@ -82,7 +82,7 @@
 {% match page_data.claim %} {% when Some with (claim) %}
     <article class="media box">
         <figure class="media-left is-hidden-mobile">
-            <p class="image is-64x64">
+            <p class="image is-48x48">
                 <img src="/static/avatars/{{claim.uid}}.png">
             </p>
         </figure>
@@ -93,26 +93,29 @@
                         <p class="control">
                             <textarea name="content" class="textarea" required minlength="1" maxlength="1000" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
                         </p>
+                        <div class="select is-small">
+                            <select name="visibility" title="Who can see">
+                                <option selected>Everyone</option>
+                                <option>Following</option>
+                                <option>Just me</option>
+                            </select>
+                        </div>
                     </div>
                     <nav class="level is-mobile">
                         <div class="level-left">
                             <div class="level-item">
-                                <div class="select">
-                                    <select name="visibility" title="Who can see">
-                                        <option selected>Everyone</option>
-                                        <option>Following</option>
-                                        <option>Just me</option>
-                                    </select>
-                                </div>
+                                <a href="/upload" class="button is-primary is-small is-responsive" target="_blank">upload</a>
                             </div>
                         </div>
                         <div class="level-right">
                             <div class="level-item">
                                 <div class="field is-grouped">
                                     <div class="control">
-                                        <a href="/upload" class="button is-primary is-rounded" target="_blank">upload images</a>
-                                        <button type="submit" form="solo" class="button is-link is-rounded">Submit</button>
-                                    </div>
+                                        <div class="buttons">
+                                            <button type="submit" form="solo" class="button is-info is-small is-responsive">Submit</button>
+                                            <button type="submit" class="button is-info is-small is-responsive" formaction="/preview" formtarget="_blank">Preview</button>
+                                        </div>
+                                     </div>
                                 </div>
                             </div>
                         </div>
@@ -125,7 +128,7 @@
 
 {% for solo in solos %}
 <article class="media box">
-    <figure class="media-left">
+    <figure class="media-left is-hidden-mobile">
         <p class="image is-48x48">
             <a href="/user/{{solo.uid}}"><img src="/static/avatars/{{solo.uid}}.png"></a>
         </p>
