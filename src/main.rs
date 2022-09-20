@@ -20,7 +20,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use time::format_description;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -42,24 +42,27 @@ async fn main() -> Result<(), AppError> {
     let checksum = db.checksum().unwrap();
     info!(%checksum);
 
-    if std::env!("PROFILE") == "debug" {
-        info!("debug mode, no snapshot created");
-    } else {
-        let format =
-            format_description::parse("[year]-[month]-[day]-[hour]:[minute]:[second]").unwrap();
-        let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
-        let mut snapshot_path = PathBuf::from("snapshots");
-        if !snapshot_path.exists() {
-            fs::create_dir_all(&snapshot_path).unwrap();
+    match std::env::var("PROFILE") {
+        Ok(key) if key.as_str() == "debug" => {
+            warn!("debug mode, no snapshot created");
         }
-        snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
-        let snapshot_cfg = sled::Config::default()
-            .path(&snapshot_path)
-            .use_compression(true);
-        let snapshot = snapshot_cfg.open().unwrap();
-        snapshot.import(db.export());
-        info!("create snapshot: {}", snapshot_path.display());
-        drop(snapshot);
+        _ => {
+            let format =
+                format_description::parse("[year]-[month]-[day]-[hour]:[minute]:[second]").unwrap();
+            let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
+            let mut snapshot_path = PathBuf::from("snapshots");
+            if !snapshot_path.exists() {
+                fs::create_dir_all(&snapshot_path).unwrap();
+            }
+            snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
+            let snapshot_cfg = sled::Config::default()
+                .path(&snapshot_path)
+                .use_compression(true);
+            let snapshot = snapshot_cfg.open().unwrap();
+            snapshot.import(db.export());
+            info!("create snapshot: {}", snapshot_path.display());
+            drop(snapshot);
+        }
     }
 
     let avatars_path = Path::new(&CONFIG.avatars_path);
