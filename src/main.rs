@@ -127,7 +127,7 @@ async fn main() -> Result<(), AppError> {
         }
     });
 
-    let app = router(db.clone()).await;
+    let app = router(db).await;
 
     let addr = CONFIG.addr.parse().unwrap();
 

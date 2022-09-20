@@ -51,10 +51,12 @@ jobs:
           wait-for-processing: true
 
       - name: doc build
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: cargo doc --no-deps &&
           echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
 
       - name: Upload artifact
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/upload-pages-artifact@v1
         with:
           path: 'target/doc'
