@@ -15,7 +15,11 @@ use crate::{
 };
 use config::CONFIG;
 use error::AppError;
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+use time::format_description;
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -35,6 +39,24 @@ async fn main() -> Result<(), AppError> {
     let config = sled::Config::default().path(db_url).use_compression(true);
     let db = config.open()?;
     info!(%db_url);
+    let checksum = db.checksum().unwrap();
+    info!(%checksum);
+
+    let format =
+        format_description::parse("[year]-[month]-[day]-[hour]:[minute]:[second]").unwrap();
+    let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
+    let mut snapshot_path = PathBuf::from("snapshots");
+    if !snapshot_path.exists() {
+        fs::create_dir_all(&snapshot_path).unwrap();
+    }
+    snapshot_path.push(format!("{VERSION}-{checksum}-{ts}"));
+    let snapshot_cfg = sled::Config::default()
+        .path(&snapshot_path)
+        .use_compression(true);
+    let snapshot = snapshot_cfg.open().unwrap();
+    snapshot.import(db.export());
+    info!("create snapshot: {}", snapshot_path.display());
+    drop(snapshot);
 
     let avatars_path = Path::new(&CONFIG.avatars_path);
     if !avatars_path.exists() {
@@ -105,7 +127,7 @@ async fn main() -> Result<(), AppError> {
         }
     });
 
-    let app = router(db).await;
+    let app = router(db.clone()).await;
 
     let addr = CONFIG.addr.parse().unwrap();
 

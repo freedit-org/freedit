@@ -6,3 +6,4 @@
 .rustc_info.json
 .rustdoc_fingerprint.json
 config.toml
+/snapshots
