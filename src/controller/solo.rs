@@ -23,12 +23,13 @@ pub(crate) struct FormSolo {
     #[validate(length(min = 1, max = 1000))]
     content: String,
     visibility: String,
+    reply_to: u32,
 }
 
-/// Page data: `solo.html`
+/// Page data: `solo_list.html`
 #[derive(Template)]
-#[template(path = "solo.html", escape = "none")]
-struct PageSolo<'a> {
+#[template(path = "solo_list.html", escape = "none")]
+struct PageSoloList<'a> {
     page_data: PageData<'a>,
     solos: Vec<OutSolo>,
     uid: u32,
@@ -51,6 +52,42 @@ struct OutSolo {
     visibility: u32,
     like: bool,
     like_count: usize,
+    reply_to: Option<u32>,
+    replies: Vec<u32>,
+}
+
+impl OutSolo {
+    fn get(db: &Db, sid: u32, current_uid: Option<u32>) -> Result<Self, AppError> {
+        let solo: Solo = get_one(db, "solos", sid)?;
+        let user: User = get_one(db, "users", solo.uid)?;
+        let date = timestamp_to_date(solo.created_at)?;
+
+        let mut like = false;
+        if let Some(uid) = current_uid {
+            let k = [&u32_to_ivec(sid), &u32_to_ivec(uid)].concat();
+            if db.open_tree("solo_users_like")?.contains_key(&k)? {
+                like = true;
+            }
+        }
+
+        let like_count =
+            get_count_by_prefix(db, "solo_users_like", &u32_to_ivec(sid)).unwrap_or_default();
+
+        let out_solo = Self {
+            uid: solo.uid,
+            sid: solo.sid,
+            username: user.username,
+            content: solo.content,
+            created_at: date,
+            visibility: solo.visibility,
+            like,
+            like_count,
+            reply_to: solo.reply_to,
+            replies: solo.replies,
+        };
+
+        Ok(out_solo)
+    }
 }
 
 fn can_visit_solo(visibility: u32, followers: &[u32], solo_uid: u32, current_uid: u32) -> bool {
@@ -69,7 +106,7 @@ pub(crate) struct ParamsSolo {
 }
 
 /// `GET /solo/user/:uid` solo page
-pub(crate) async fn solo(
+pub(crate) async fn solo_list(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u32>,
@@ -134,32 +171,7 @@ pub(crate) async fn solo(
     let mut out_solos = Vec::with_capacity(index.len());
     if !index.is_empty() {
         for sid in index {
-            let solo: Solo = get_one(&db, "solos", sid)?;
-            let user: User = get_one(&db, "users", solo.uid)?;
-            let date = timestamp_to_date(solo.created_at)?;
-
-            let mut like = false;
-            if let Some(ref claim) = claim {
-                let k = [&u32_to_ivec(sid), &u32_to_ivec(claim.uid)].concat();
-                if db.open_tree("solo_users_like")?.contains_key(&k)? {
-                    like = true;
-                }
-            }
-
-            let like_count =
-                get_count_by_prefix(&db, "solo_users_like", &u32_to_ivec(sid)).unwrap_or_default();
-
-            let out_solo = OutSolo {
-                uid: solo.uid,
-                sid: solo.sid,
-                username: user.username,
-                content: solo.content,
-                created_at: date,
-                visibility: solo.visibility,
-                like,
-                like_count,
-            };
-
+            let out_solo = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?;
             out_solos.push(out_solo);
         }
     }
@@ -180,7 +192,7 @@ pub(crate) async fn solo(
     };
     let page_data = PageData::new("Solo", &site_config.site_name, claim, has_unread);
 
-    let page_solo = PageSolo {
+    let page_solo_list = PageSoloList {
         page_data,
         solos: out_solos,
         uid,
@@ -192,6 +204,59 @@ pub(crate) async fn solo(
         filter,
         hashtag: params.hashtag,
     };
+    Ok(into_response(&page_solo_list, "html"))
+}
+
+/// Page data: `solo.html`
+#[derive(Template)]
+#[template(path = "solo.html", escape = "none")]
+struct PageSolo<'a> {
+    page_data: PageData<'a>,
+    solo: OutSolo,
+    reply_solos: Vec<OutSolo>,
+}
+
+/// `GET /solo/:sid`
+pub(crate) async fn solo(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(sid): Path<u32>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config);
+
+    let out_solo = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?;
+
+    if let Some(ref claim) = claim {
+        if out_solo.visibility == 20 {
+            if claim.uid != out_solo.uid {
+                return Err(AppError::NotFound);
+            }
+        } else if out_solo.visibility == 10 {
+            let k = [&u32_to_ivec(out_solo.uid), &u32_to_ivec(claim.uid)].concat();
+            if !db.open_tree("user_followers")?.contains_key(&k)? {
+                return Err(AppError::NotFound);
+            }
+        }
+    } else if out_solo.visibility > 0 {
+        return Err(AppError::NotFound);
+    }
+
+    let mut reply_solos = Vec::with_capacity(out_solo.replies.len());
+    for i in &out_solo.replies {
+        if let Ok(out_solo) = OutSolo::get(&db, *i, claim.as_ref().map(|c| c.uid)) {
+            reply_solos.push(out_solo);
+        }
+    }
+
+    let page_data = PageData::new("Solo", &site_config.site_name, claim, false);
+    let page_solo = PageSolo {
+        page_data,
+        solo: out_solo,
+        reply_solos,
+    };
+
     Ok(into_response(&page_solo, "html"))
 }
 
@@ -305,6 +370,18 @@ pub(crate) async fn solo_post(
         }
     }
 
+    let reply_to = if input.reply_to == 0 {
+        None
+    } else {
+        let mut solo_replied: Solo = get_one(&db, "solos", input.reply_to)?;
+        solo_replied.replies.push(sid);
+        let solo_replied_encode = bincode::encode_to_vec(&solo_replied, standard())?;
+        db.open_tree("solos")?
+            .insert(&u32_to_ivec(input.reply_to), solo_replied_encode)?;
+
+        Some(input.reply_to)
+    };
+
     let solo = Solo {
         sid,
         uid,
@@ -312,6 +389,8 @@ pub(crate) async fn solo_post(
         content: md2html(&content),
         hashtags,
         created_at,
+        reply_to,
+        replies: vec![],
     };
 
     let solo_encode = bincode::encode_to_vec(&solo, standard())?;
@@ -328,7 +407,11 @@ pub(crate) async fn solo_post(
     user_stats(&db, claim.uid, "solo")?;
     claim.update_last_write(&db)?;
 
-    let target = format!("/solo/user/{}", uid);
+    let target = if input.reply_to > 0 {
+        format!("/solo/{}", input.reply_to)
+    } else {
+        "/solo/user/0".to_string()
+    };
     Ok(Redirect::to(&target))
 }
 

@@ -9,7 +9,7 @@ use crate::{
             post, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
         },
         notification, serve_dir,
-        solo::{solo, solo_delete, solo_like, solo_post},
+        solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         style, upload, upload_pic_post, upload_post,
         user::{
             remove_session, role_post, signin, signin_post, signout, signup, signup_post, user,
@@ -73,9 +73,10 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/post/:iid/:pid/:cid/upvote", get(comment_upvote))
         .route("/post/:iid/:pid/:cid/downvote", get(comment_downvote))
         .route("/preview", get(post).post(preview))
-        .route("/solo/user/:uid", get(solo).post(solo_post))
+        .route("/solo/user/:uid", get(solo_list).post(solo_post))
         .route("/solo/:sid/like", get(solo_like))
         .route("/solo/:sid/delete", get(solo_delete))
+        .route("/solo/:sid", get(solo))
         .route("/upload", get(upload).post(upload_post));
 
     let mut router_static = Router::new()

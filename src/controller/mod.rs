@@ -124,6 +124,8 @@ struct Solo {
     content: String,
     hashtags: Vec<String>,
     created_at: i64,
+    reply_to: Option<u32>,
+    replies: Vec<u32>,
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]

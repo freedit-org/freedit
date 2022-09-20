@@ -23,110 +23,98 @@
         <div class="level-left">
             <div class="tabs is-small is-toggle is-toggle-rounded">
                 <ul>
-                {% match hashtag %} {% when Some with (val) %}
                     <li><a href="/solo/user/0">All</a></li>
-                    {% if page_data.claim.is_some() %}
-                    <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                    <li><a href="/solo/user/0?filter=Like">Like</a></li>
-                    {% endif %}
-                    <li class="is-active"><a href="/solo/user/0?hashtag={{val}}">🏷️ {{val}}</a></li>
-                {% else %}
-                    {% if page_data.claim.is_some() %}
-                        {% match filter.as_deref() %} {% when Some with ("Following") %}
-                            <li><a href="/solo/user/0">All</a></li>
-                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
-                            <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                        {% when Some with ("Like") %}
-                            <li><a href="/solo/user/0">All</a></li>
-                            <li><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
-                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                        {% else %}
-                            {% if uid > 0 %}
-                                <li><a href="/solo/user/0">All</a></li>
-                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
-                            {% else %}
-                                <li class="is-active"><a href="/solo/user/0">All</a></li>
-                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                            {% endif %}
-                        {% endmatch %}
+                    {% match page_data.claim %} {% when Some with (val) %}
+                        <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                        <li><a href="/solo/user/{{val.uid}}?filter=Like">Like</a></li>
                     {% else %}
-                        {% if uid > 0 %}
-                            <li><a href="/solo/user/0">All</a></li>
-                            <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
-                        {% else %}
-                            <li class="is-active"><a href="/solo/user/0">All</a></li>
-                        {% endif %}
-                    {% endif %}
-                {% endmatch %}
+                    {% endmatch %}
+                    <li class="is-active"><a href="/solo/{{solo.sid}}">#{{solo.sid}}</a></li>
                 </ul>
             </div>
         </div>
         <div class="level-right">
             <div class="buttons">
-                {% if is_following %}
-                    <a href="/user/{{uid}}/follow"><button class="button is-danger is-small is-rounded">Unfollow</button></a>
-                {% else %}
-                    {% match page_data.claim %} {% when Some with (val) %}
-                        {% if uid > 0 && uid != val.uid %}
-                            <a href="/user/{{uid}}/follow"><button class="button is-primary is-small is-rounded">Follow</button></a>
-                        {% endif %}
-                    {% else %}{% endmatch %}
-                {% endif %}
             </div>
         </div>
     </div>
 
-{% match page_data.claim %} {% when Some with (claim) %}
     <article class="media box">
         <figure class="media-left is-hidden-mobile">
             <p class="image is-48x48">
-                <img src="/static/avatars/{{claim.uid}}.png">
+                <a href="/user/{{solo.uid}}"><img src="/static/avatars/{{solo.uid}}.png"></a>
             </p>
         </figure>
         <div class="media-content">
-            <form id="solo" action="/solo/user/0" method="post">
-                <fieldset>
-                    <div class="field">
-                        <p class="control">
-                            <textarea name="content" class="textarea" required minlength="1" maxlength="1000" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
-                        </p>
-                        <div class="select is-small">
-                            <select name="visibility" title="Who can see">
-                                <option selected>Everyone</option>
-                                <option>Following</option>
-                                <option>Just me</option>
-                            </select>
+            <div class="content">
+                <p>
+                    {% match solo.reply_to %}{% when Some with (val) %}
+                        <small> Replying to <a href="/solo/{{val}}">{{val}}</a></small><br>
+                    {% else %}{% endmatch %}
+                    <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
+                    <small>{{solo.created_at}}</small>
+                    <br> {{solo.content}}
+                </p>
+            </div>
+            <nav class="level is-mobile">
+                <div class="level-left">
+                    <a class="level-item" href="/solo/{{solo.sid}}/like">
+                        <span class="icon is-small">
+                            {% if solo.like %}❤️{% else %}🤍{% endif %}
+                        </span>
+                        {% if solo.like_count > 0 %}
+                        <span>{{solo.like_count}}</span>
+                        {% endif %}
+                    </a>
+                    {% match page_data.claim %} {% when Some with (claim) %}
+                    {% if solo.uid == claim.uid %}
+                    <a class="level-item" href="#delete">
+                        <span class="icon is-small">
+                            <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 11V20.4C19 20.7314 18.7314 21 18.4 21H5.6C5.26863 21 5 20.7314 5 20.4V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M10 17V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M14 17V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21 7L16 7M3 7L8 7M8 7V3.6C8 3.26863 8.26863 3 8.6 3L15.4 3C15.7314 3 16 3.26863 16 3.6V7M8 7L16 7" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                    </a>
+                    <div id="delete" class="overlay">
+                        <div class="popup content">
+                            <h3>Delete permanently?</h3>
+                            <a class="close" href="#">&times;</a>
+                            <p>Are you sure you want to delete this solo?</p>
+                            <a href="/solo/{{solo.sid}}/delete" class="button is-danger">Delete</a>
                         </div>
                     </div>
-                    <nav class="level is-mobile">
-                        <div class="level-left">
-                            <div class="level-item">
-                                <a href="/upload" class="button is-primary is-small is-responsive" target="_blank">upload</a>
-                            </div>
-                        </div>
-                        <div class="level-right">
-                            <div class="level-item">
-                                <div class="field is-grouped">
-                                    <div class="control">
-                                        <div class="buttons">
-                                            <button type="submit" form="solo" class="button is-info is-small is-responsive">Submit</button>
-                                            <button type="submit" class="button is-info is-small is-responsive" formaction="/preview" formtarget="_blank">Preview</button>
-                                        </div>
-                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
-                </fieldset>
-            </form>
+                    {% endif %}
+                    {% else %}{% endmatch %}
+                    <a href="/solo/{{solo.sid}}">🎤
+                        {% if solo.replies.len() >0 %}
+                            {{solo.replies.len()}}
+                        {% endif %}
+                    </a>
+                </div>
+            </nav>
+        </div>
+        
+        <div class="media-right">
+            {% if solo.visibility == 20 %}
+            <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <title>Only you can see</title>
+                <path d="M14.6667 12H15.4C15.7314 12 16 12.2686 16 12.6V16.4C16 16.7314 15.7314 17 15.4 17H8.6C8.26863 17 8 16.7314 8 16.4V12.6C8 12.2686 8.26863 12 8.6 12H9.33333M14.6667 12V9.5C14.6667 8.66667 14.1333 7 12 7C9.86667 7 9.33333 8.66667 9.33333 9.5V12M14.6667 12H9.33333" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 19V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19Z" stroke="#363636" stroke-width="1.5"/>
+            </svg>
+            {% elseif solo.visibility == 10 %}
+            <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <title>Those you are following can see</title>
+                <path d="M16 12H17.4C17.7314 12 18 12.2686 18 12.6V19.4C18 19.7314 17.7314 20 17.4 20H6.6C6.26863 20 6 19.7314 6 19.4V12.6C6 12.2686 6.26863 12 6.6 12H8M16 12V8C16 6.66667 15.2 4 12 4C8.8 4 8 6.66667 8 8V12M16 12H8" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            {% else %}
+            {% endif %}
         </div>
     </article>
-{% else %} {% endmatch %}
 
-{% for solo in solos %}
+{% for solo in reply_solos %}
 <article class="media box">
     <figure class="media-left is-hidden-mobile">
         <p class="image is-48x48">
@@ -153,7 +141,7 @@
                 </a>
                 {% match page_data.claim %} {% when Some with (claim) %}
                 {% if solo.uid == claim.uid %}
-                <a class="level-item" href="#delete">
+                <a class="level-item" href="#delete_{{solo.sid}}">
                     <span class="icon is-small">
                         <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M19 11V20.4C19 20.7314 18.7314 21 18.4 21H5.6C5.26863 21 5 20.7314 5 20.4V11" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
@@ -163,7 +151,7 @@
                         </svg>
                     </span>
                 </a>
-                <div id="delete" class="overlay">
+                <div id="delete_{{solo.sid}}" class="overlay">
                     <div class="popup content">
                         <h3>Delete permanently?</h3>
                         <a class="close" href="#">&times;</a>
@@ -173,6 +161,11 @@
                 </div>
                 {% endif %}
                 {% else %}{% endmatch %}
+                <a href="/solo/{{solo.sid}}">🎤
+                    {% if solo.replies.len() >0 %}
+                        {{solo.replies.len()}}
+                    {% endif %}
+                </a>
             </div>
         </nav>
     </div>
@@ -194,33 +187,52 @@
 </article>
 {% endfor %}
 
-<nav class="pagination">
-    {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
-    {% else %}
-        {% match filter.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
-        {% else %}
-            {% match hashtag.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&hashtag={{val}}">Prev</a>
-            {% else %}
-            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
-            {% endmatch %}
-        {% endmatch %}
-    {% endif %}
+{% match page_data.claim %} {% when Some with (claim) %}
+    <article class="media box">
+        <figure class="media-left is-hidden-mobile">
+            <p class="image is-48x48">
+                <img src="/static/avatars/{{claim.uid}}.png">
+            </p>
+        </figure>
+        <div class="media-content">
+            <form id="solo" action="/solo/user/0" method="post">
+                <fieldset>
+                    <div class="field">
+                        <p class="control">
+                            <textarea name="content" class="textarea" required minlength="1" maxlength="1000" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
+                        </p>
+                        <div class="select is-small">
+                            <select name="visibility" title="Who can see">
+                                <option selected>Everyone</option>
+                                <option>Following</option>
+                                <option>Just me</option>
+                            </select>
+                        </div>
+                    </div>
+                    <input type="hidden" name="reply_to" value="{{solo.sid}}"> 
+                    <nav class="level is-mobile">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <a href="/upload" class="button is-primary is-small is-responsive" target="_blank">upload</a>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <div class="buttons">
+                                            <button type="submit" form="solo" class="button is-info is-small is-responsive">Submit</button>
+                                            <button type="submit" class="button is-info is-small is-responsive" formaction="/preview" formtarget="_blank">Preview</button>
+                                        </div>
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </fieldset>
+            </form>
+        </div>
+    </article>
+{% else %} {% endmatch %}
 
-    {% if solos.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
-    {% else %}
-        {% match filter.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
-        {% else %}
-            {% match hashtag.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&tag={{val}}">Next</a>
-            {% else %}
-            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
-            {% endmatch %}
-        {% endmatch %}
-    {% endif %}
-</nav>
 {% endblock %}
