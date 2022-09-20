@@ -96,7 +96,7 @@ async fn create_post(iid: u32) -> Result<StatusCode, reqwest::Error> {
 async fn create_comment(iid: u32, pid: u32) -> Result<StatusCode, reqwest::Error> {
     let url = format!("{}/post/{}/{}", URL, iid, pid);
     let comment = format!("pid_{}, auto generate post", pid);
-    let params = [("comment", comment)];
+    let params = [("content", comment)];
     send_post(&url, &params).await
 }
 
