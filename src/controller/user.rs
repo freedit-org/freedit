@@ -830,11 +830,11 @@ impl Claim {
         let now = OffsetDateTime::now_utc();
 
         if timestamp < now.unix_timestamp() {
-            tree.remove(&session).ok()?;
+            tree.remove(session).ok()?;
             return None;
         }
 
-        let v = tree.get(&session).ok()??;
+        let v = tree.get(session).ok()??;
         let (claim, _): (Claim, usize) = bincode::decode_from_slice(&v, standard()).ok()?;
 
         if site_config.read_only && claim.role != u8::MAX {
