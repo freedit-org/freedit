@@ -365,8 +365,8 @@ pub(crate) async fn solo_post(
             }
         }
         for tag in &hashtags {
-            let tag_link = format!("[{}](/solo/user/0?hashtag={})", tag, tag);
-            content = content.replace(tag, &tag_link);
+            let tag_link = format!("#[{}](/solo/user/0?hashtag={})", tag, tag);
+            content = content.replace(&format!("#{tag}"), &tag_link);
         }
     }
 
