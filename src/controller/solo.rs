@@ -222,9 +222,8 @@ pub(crate) async fn solo(
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
-    let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config);
+    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let out_solo = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?;
 
