@@ -967,7 +967,7 @@ fn get_ids_by_tag(
     page_params: Option<&ParamsPage>,
 ) -> Result<Vec<u32>, AppError> {
     let mut res = vec![];
-    let iter = db.open_tree(tree)?.scan_prefix(&tag);
+    let iter = db.open_tree(tree)?.scan_prefix(tag);
     if let Some(page_params) = page_params {
         let iter = if page_params.is_desc {
             IterType::Rev(iter.rev())
