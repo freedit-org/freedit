@@ -952,6 +952,58 @@ fn get_ids_by_prefix(
     Ok(res)
 }
 
+/// get batch ids by scanning the prefix of the tag with the format of `tag#id`
+///
+/// # Examples
+///
+/// ```no_run
+/// // get the id of inns that someone has joined.
+/// index = get_ids_by_tag((&db, "hashtags", hashtag, Some(&page_params))?;
+/// ```
+fn get_ids_by_tag(
+    db: &Db,
+    tree: &str,
+    tag: &str,
+    page_params: Option<&ParamsPage>,
+) -> Result<Vec<u32>, AppError> {
+    let mut res = vec![];
+    let iter = db.open_tree(tree)?.scan_prefix(&tag);
+    if let Some(page_params) = page_params {
+        let iter = if page_params.is_desc {
+            IterType::Rev(iter.rev())
+        } else {
+            IterType::Iter(iter)
+        };
+        for (idx, i) in iter.enumerate() {
+            if idx < page_params.anchor {
+                continue;
+            }
+            if idx >= page_params.anchor + page_params.n {
+                break;
+            }
+            let (k, _) = i?;
+            let len = k.len();
+            let str = String::from_utf8_lossy(&k[0..len - 4]);
+            if tag == str {
+                let id = u8_slice_to_u32(&k[len - 4..]);
+                res.push(id);
+            }
+        }
+    } else {
+        for i in iter {
+            let (k, _) = i?;
+            let len = k.len();
+            let str = String::from_utf8_lossy(&k[0..len - 4]);
+            if tag == str {
+                let id = u8_slice_to_u32(&k[len - 4..]);
+                res.push(id);
+            }
+        }
+    }
+
+    Ok(res)
+}
+
 /// get objects in batch that has been encoded by bincode
 ///
 /// # Examples

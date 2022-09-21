@@ -12,10 +12,11 @@
 //! | Super   | 10   | ✅      | ✅   | ✅              | ✅        | ✅        | ✅        |                  |
 
 use super::{
-    extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
-    get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
-    ivec_to_u32, mark_read, timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
-    utils::md2html, Claim, Comment, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
+    extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag,
+    get_inn_role, get_one, get_range, get_site_config, get_uid_by_name, has_unread, incr_id,
+    into_response, is_mod, ivec_to_u32, mark_read, timestamp_to_date, u32_to_ivec, u8_slice_to_u32,
+    user_stats, utils::md2html, Claim, Comment, Inn, PageData, ParamsPage, Post, User,
+    ValidatedForm,
 };
 use crate::{
     config::CONFIG,
@@ -646,7 +647,7 @@ pub(crate) async fn tag(
     let is_desc = params.is_desc.unwrap_or(true);
     let page_params = ParamsPage { anchor, n, is_desc };
 
-    let index = get_ids_by_prefix(&db, "tags", &tag, Some(&page_params))?;
+    let index = get_ids_by_tag(&db, "tags", &tag, Some(&page_params))?;
     let out_post_list = get_out_post_list(&db, &index)?;
 
     let page_data = PageData::new("inn", &site_config.site_name, claim, false);

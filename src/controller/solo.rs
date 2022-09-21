@@ -1,8 +1,8 @@
 use super::{
-    extract_element, get_count_by_prefix, get_ids_by_prefix, get_one, get_range, get_site_config,
-    has_unread, incr_id, into_response, ivec_to_u32, timestamp_to_date, u32_to_ivec,
-    u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType, PageData, ParamsPage, Solo, User,
-    ValidatedForm,
+    extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
+    get_site_config, has_unread, incr_id, into_response, ivec_to_u32, timestamp_to_date,
+    u32_to_ivec, u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType, PageData,
+    ParamsPage, Solo, User, ValidatedForm,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -174,7 +174,7 @@ pub(crate) async fn solo_list(
         }
         _ => {
             if let Some(ref hashtag) = params.hashtag {
-                index = get_ids_by_prefix(&db, "hashtags", hashtag, Some(&page_params))?;
+                index = get_ids_by_tag(&db, "hashtags", hashtag, Some(&page_params))?;
             } else if uid == 0 {
                 index = get_all_solos(&db, "solo_timeline", &followers, current_uid, &page_params)?;
             } else {
