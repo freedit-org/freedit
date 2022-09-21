@@ -57,10 +57,25 @@ struct OutSolo {
 }
 
 impl OutSolo {
-    fn get(db: &Db, sid: u32, current_uid: Option<u32>) -> Result<Self, AppError> {
+    fn get(db: &Db, sid: u32, current_uid: Option<u32>) -> Result<Option<Self>, AppError> {
         let solo: Solo = get_one(db, "solos", sid)?;
         let user: User = get_one(db, "users", solo.uid)?;
         let date = timestamp_to_date(solo.created_at)?;
+
+        if let Some(uid) = current_uid {
+            if solo.visibility == 20 {
+                if uid != solo.uid {
+                    return Ok(None);
+                }
+            } else if solo.visibility == 10 && uid != solo.uid {
+                let k = [&u32_to_ivec(solo.uid), &u32_to_ivec(uid)].concat();
+                if !db.open_tree("user_followers")?.contains_key(&k)? {
+                    return Ok(None);
+                }
+            }
+        } else if solo.visibility > 0 {
+            return Ok(None);
+        }
 
         let mut like = false;
         if let Some(uid) = current_uid {
@@ -86,7 +101,7 @@ impl OutSolo {
             replies: solo.replies,
         };
 
-        Ok(out_solo)
+        Ok(Some(out_solo))
     }
 }
 
@@ -169,9 +184,8 @@ pub(crate) async fn solo_list(
     }
 
     let mut out_solos = Vec::with_capacity(index.len());
-    if !index.is_empty() {
-        for sid in index {
-            let out_solo = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?;
+    for sid in index {
+        if let Some(out_solo) = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))? {
             out_solos.push(out_solo);
         }
     }
@@ -225,26 +239,12 @@ pub(crate) async fn solo(
     let site_config = get_site_config(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
-    let out_solo = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?;
-
-    if let Some(ref claim) = claim {
-        if out_solo.visibility == 20 {
-            if claim.uid != out_solo.uid {
-                return Err(AppError::NotFound);
-            }
-        } else if out_solo.visibility == 10 {
-            let k = [&u32_to_ivec(out_solo.uid), &u32_to_ivec(claim.uid)].concat();
-            if !db.open_tree("user_followers")?.contains_key(&k)? {
-                return Err(AppError::NotFound);
-            }
-        }
-    } else if out_solo.visibility > 0 {
-        return Err(AppError::NotFound);
-    }
+    let out_solo =
+        OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?.ok_or(AppError::NotFound)?;
 
     let mut reply_solos = Vec::with_capacity(out_solo.replies.len());
     for i in &out_solo.replies {
-        if let Ok(out_solo) = OutSolo::get(&db, *i, claim.as_ref().map(|c| c.uid)) {
+        if let Ok(Some(out_solo)) = OutSolo::get(&db, *i, claim.as_ref().map(|c| c.uid)) {
             reply_solos.push(out_solo);
         }
     }
@@ -303,10 +303,11 @@ fn get_solos_by_uids(
     page_params: &ParamsPage,
 ) -> Result<Vec<u32>, AppError> {
     let mut sids = Vec::with_capacity(page_params.n);
+    let user_solos_tree = db.open_tree("user_solos")?;
     for uid in uids {
         let prefix = u32_to_ivec(*uid);
         // kv_pair: uid#sid = visibility
-        for i in db.open_tree("user_solos")?.scan_prefix(prefix) {
+        for i in user_solos_tree.scan_prefix(prefix) {
             let (k, v) = i?;
             let sid = u8_slice_to_u32(&k[4..8]);
             let visibility = u8_slice_to_u32(&v);
