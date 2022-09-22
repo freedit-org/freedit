@@ -24,11 +24,18 @@
         {% match filter.as_deref() %} {% when Some with ("inn") %}
         <div class="dropdown is-hoverable is-right">
             <div class="dropdown-trigger">
-                <figure>
-                    <p class="image is-48x48">
-                        <a href="/inn/{{info.0}}"><img class="is-rounded" src="/static/inn_icons/{{info.0}}.png" alt="{{info.1}}"></a>
-                    </p>
-                </figure>
+                <button class="button is-small is-rounded">
+                    <span>
+                        {% match role %}{% when Some(10) %} Super
+                        {% when Some(8) %} Mod
+                        {% when Some(5) %} Fellow
+                        {% when Some(4) %} Intern
+                        {% when Some(3) %} Limited
+                        {% when Some(2) %} Deny
+                        {% when Some(1) %} Pending
+                        {% else %} Inn Role {% endmatch %}
+                    </span>
+                </button>
             </div>
             <div class="dropdown-menu">
                 <div class="dropdown-content">
@@ -41,6 +48,8 @@
                     <a href="/user/list?filter=inn&id={{info.0}}&role=5" class="dropdown-item">Fellow</a>
                     <a href="/user/list?filter=inn&id={{info.0}}&role=8" class="dropdown-item">Mod</a>
                     <a href="/user/list?filter=inn&id={{info.0}}&role=10" class="dropdown-item">Super</a>
+                    <hr class="dropdown-divider">
+                    <a href="/user/list?filter=inn&id={{info.0}}" class="dropdown-item">All</a>
                 </div>
             </div>
         </div>
@@ -48,7 +57,13 @@
         <div class="dropdown is-hoverable is-right">
             <div class="dropdown-trigger">
                 <button class="button is-small is-rounded">
-                    <span>role</span>
+                    <span>
+                        {% match role %}{% when Some(255) %} Admin
+                        {% when Some(100) %} Senior
+                        {% when Some(10) %} Normal
+                        {% when Some(0) %} Banned
+                        {% else %} Role {% endmatch %}
+                    </span>
                 </button>
             </div>
             <div class="dropdown-menu">
@@ -57,6 +72,8 @@
                     <a href="/user/list?role=100" class="dropdown-item">Senior</a>
                     <a href="/user/list?role=10" class="dropdown-item">Normal</a>
                     <a href="/user/list?role=0" class="dropdown-item">Banned</a>
+                    <hr class="dropdown-divider">
+                    <a href="/user/list" class="dropdown-item">All</a>
                 </div>
             </div>
         </div>
