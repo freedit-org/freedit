@@ -725,7 +725,13 @@ pub(crate) async fn signup_post(
     }
 
     let created_at = OffsetDateTime::now_utc().unix_timestamp();
-    let role = if uid == 1 { u8::MAX } else { 10 };
+    let role = if uid == 1 {
+        u8::MAX
+    } else if uid <= 500 {
+        100
+    } else {
+        10
+    };
     let user = User {
         uid,
         username: input.username,
