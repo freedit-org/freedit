@@ -200,13 +200,13 @@ impl OutUserList {
             let (k, v) = i?;
             if let Some(role) = role {
                 if v[0] == role {
-                    let uid = u8_slice_to_u32(&k[8..]);
+                    let uid = u8_slice_to_u32(&k[4..]);
                     let user: User = get_one(db, "users", uid)?;
                     let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                     users.push(out_user_list);
                 }
             } else {
-                let uid = u8_slice_to_u32(&k[8..]);
+                let uid = u8_slice_to_u32(&k[4..]);
                 let user: User = get_one(db, "users", uid)?;
                 let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                 users.push(out_user_list);
