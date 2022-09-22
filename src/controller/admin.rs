@@ -305,6 +305,7 @@ impl Default for SiteConfig {
             site_name: "freedit".to_string(),
             description: "a forum powered by rust".to_string(),
             read_only: false,
+            inn_mod_max: 5,
             title_max_length: 100,
             article_max_length: 65535,
             comment_max_length: 10_000,

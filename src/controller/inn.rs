@@ -73,6 +73,13 @@ pub(crate) async fn mod_inn(
         return Err(AppError::Unauthorized);
     }
 
+    if site_config.inn_mod_max > 0 {
+        let mod_counts = get_count_by_prefix(&db, "mod_inns", &u32_to_ivec(claim.uid))?;
+        if mod_counts >= site_config.inn_mod_max {
+            return Err(AppError::InnCreateLimit);
+        }
+    }
+
     // create new inn
     if iid == 0 {
         let page_data = PageData::new("create new inn", &site_config.site_name, Some(claim), false);
@@ -118,6 +125,13 @@ pub(crate) async fn mod_inn_post(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if claim.role < 10 {
         return Err(AppError::Unauthorized);
+    }
+
+    if site_config.inn_mod_max > 0 {
+        let mod_counts = get_count_by_prefix(&db, "mod_inns", &u32_to_ivec(claim.uid))?;
+        if mod_counts >= site_config.inn_mod_max {
+            return Err(AppError::InnCreateLimit);
+        }
     }
 
     // get inn topics

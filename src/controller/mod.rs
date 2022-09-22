@@ -172,6 +172,8 @@ pub(super) struct SiteConfig {
     #[validate(length(max = 512))]
     description: String,
     read_only: bool,
+    #[validate(range(max = 32))]
+    inn_mod_max: usize,
     #[validate(range(max = 256))]
     title_max_length: usize,
     #[validate(range(max = 65535))]
@@ -953,13 +955,6 @@ fn get_ids_by_prefix(
 }
 
 /// get batch ids by scanning the prefix of the tag with the format of `tag#id`
-///
-/// # Examples
-///
-/// ```no_run
-/// // get the id of inns that someone has joined.
-/// index = get_ids_by_tag((&db, "hashtags", hashtag, Some(&page_params))?;
-/// ```
 fn get_ids_by_tag(
     db: &Db,
     tree: &str,

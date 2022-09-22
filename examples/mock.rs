@@ -1,6 +1,6 @@
 /// ## README
 ///
-/// You must set `Solo interval` `Post interval` and `Comment interval` to 0 to use this example.
+/// You must set `Inn mod max` `Solo interval` `Post interval` and `Comment interval` to 0 to use this example.
 /// <http://localhost:3001/admin>
 use once_cell::sync::Lazy;
 use reqwest::{header, Client, StatusCode};

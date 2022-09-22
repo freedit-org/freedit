@@ -45,6 +45,19 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
+                <label class="label" for="inn_mod_max">Inn mod max</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="number" min="0" max="32" name="inn_mod_max" value="{{ site_config.inn_mod_max }}" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
                 <label class="label" for="title_max_length">Title max length</label>
             </div>
             <div class="field-body">

@@ -32,6 +32,8 @@ pub(super) enum AppError {
     CaptchaError,
     #[error("Name already exists")]
     NameExists,
+    #[error("Too many inns you are managing")]
+    InnCreateLimit,
     #[error("Username should not start with a number, should not contain '@' or '#'")]
     UsernameInvalid,
     #[error("Not found")]
@@ -66,6 +68,7 @@ impl IntoResponse for AppError {
         let status = match self {
             AppError::CaptchaError
             | AppError::NameExists
+            | AppError::InnCreateLimit
             | AppError::UsernameInvalid
             | AppError::NotFound
             | AppError::WrongPassword
