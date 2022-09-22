@@ -15,15 +15,18 @@ use crate::{
 };
 use config::CONFIG;
 use error::AppError;
+use once_cell::sync::Lazy;
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 use time::format_description;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+static IS_DEBUG: Lazy<bool> =
+    Lazy::new(|| matches!(std::env::var("PROFILE"), Ok(key) if key.as_str() == "debug"));
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
@@ -39,55 +42,15 @@ async fn main() -> Result<(), AppError> {
     let config = sled::Config::default().path(db_url).use_compression(true);
     let db = config.open()?;
     info!(%db_url);
-    let checksum = db.checksum().unwrap();
-    info!(%checksum);
 
-    match std::env::var("PROFILE") {
-        Ok(key) if key.as_str() == "debug" => {
-            warn!("debug mode, no snapshot created");
-        }
-        _ => {
-            let format =
-                format_description::parse("[year]-[month]-[day]-[hour]:[minute]:[second]").unwrap();
-            let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
-            let mut snapshot_path = PathBuf::from("snapshots");
-            if !snapshot_path.exists() {
-                fs::create_dir_all(&snapshot_path).unwrap();
-            }
-            snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
-            let snapshot_cfg = sled::Config::default()
-                .path(&snapshot_path)
-                .use_compression(true);
-            let snapshot = snapshot_cfg.open().unwrap();
-            snapshot.import(db.export());
-            info!("create snapshot: {}", snapshot_path.display());
-            drop(snapshot);
-        }
+    if !*IS_DEBUG {
+        create_snapshot(&db);
     }
 
-    let avatars_path = Path::new(&CONFIG.avatars_path);
-    if !avatars_path.exists() {
-        fs::create_dir_all(avatars_path).unwrap();
-    }
-    info!("avatars path: {}", &CONFIG.avatars_path);
-
-    let inn_icons_path = Path::new(&CONFIG.inn_icons_path);
-    if !inn_icons_path.exists() {
-        fs::create_dir_all(inn_icons_path).unwrap();
-    }
-    info!("inn icons path: {}", &CONFIG.inn_icons_path);
-
-    let upload_path = Path::new(&CONFIG.upload_path);
-    if !upload_path.exists() {
-        fs::create_dir_all(upload_path).unwrap();
-    }
-    info!("upload path: {}", &CONFIG.upload_path);
-
-    let html_path = Path::new(&CONFIG.html_path);
-    if !html_path.exists() {
-        fs::create_dir_all(html_path).unwrap();
-    }
-    info!("html path: {}", &CONFIG.html_path);
+    check_path(&CONFIG.avatars_path);
+    check_path(&CONFIG.inn_icons_path);
+    check_path(&CONFIG.upload_path);
+    check_path(&CONFIG.html_path);
 
     let db2 = db.clone();
     tokio::spawn(async move {
@@ -162,3 +125,32 @@ async fn main() -> Result<(), AppError> {
 // TODO: endorsements
 // TODO: TEST with https://github.com/hatoo/oha
 // TODO: book/music/movie/list=entity
+
+fn create_snapshot(db: &sled::Db) {
+    let checksum = db.checksum().unwrap();
+    info!(%checksum);
+
+    let format =
+        format_description::parse("[year]-[month]-[day]-[hour]:[minute]:[second]").unwrap();
+    let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
+    let mut snapshot_path = PathBuf::from("snapshots");
+    if !snapshot_path.exists() {
+        fs::create_dir_all(&snapshot_path).unwrap();
+    }
+    snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
+    let snapshot_cfg = sled::Config::default()
+        .path(&snapshot_path)
+        .use_compression(true);
+    let snapshot = snapshot_cfg.open().unwrap();
+    snapshot.import(db.export());
+    info!("create snapshot: {}", snapshot_path.display());
+    drop(snapshot);
+}
+
+fn check_path(path_str: &str) {
+    let path = Path::new(path_str);
+    if !path.exists() {
+        fs::create_dir_all(path).unwrap();
+    }
+    info!("static path {path_str}");
+}
