@@ -416,6 +416,7 @@ pub(crate) async fn role_post(
             let mut user: User = get_one(&db, "users", uid)?;
             user.role = match form.role.as_str() {
                 "Admin" => 255,
+                "Senior" => 100,
                 "Normal" => 10,
                 "Banned" => 0,
                 _ => unreachable!(),

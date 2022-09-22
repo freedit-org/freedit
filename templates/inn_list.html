@@ -46,7 +46,9 @@
     </div>
     <div class="level-right">
         {% match page_data.claim %} {% when Some with (val) %}
+            {% if val.role >= 100 %}
             <a href="/mod/0"><button class="button is-primary is-small is-rounded">New</button></a>
+            {% endif %}
         {% else %}{% endmatch %}
     </div>
 </div>

@@ -69,7 +69,7 @@ pub(crate) async fn mod_inn(
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    if claim.role < 10 {
+    if claim.role < 100 {
         return Err(AppError::Unauthorized);
     }
 
@@ -123,7 +123,7 @@ pub(crate) async fn mod_inn_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if claim.role < 10 {
+    if claim.role < 100 {
         return Err(AppError::Unauthorized);
     }
 
