@@ -670,7 +670,21 @@ pub(crate) async fn signup(State(db): State<Db>) -> Result<impl IntoResponse, Ap
     }
     let page_data = PageData::new("Sign up", &site_config.site_name, None, false);
 
-    let captcha = captcha::by_name(Difficulty::Easy, CaptchaName::Amelia);
+    let captcha_difficulty = match site_config.captcha_difficulty.as_str() {
+        "Easy" => Difficulty::Easy,
+        "Medium" => Difficulty::Medium,
+        "Hard" => Difficulty::Hard,
+        _ => unreachable!(),
+    };
+
+    let captcha_name = match site_config.captcha_name.as_str() {
+        "Amelia" => CaptchaName::Amelia,
+        "Lucy" => CaptchaName::Lucy,
+        "Mila" => CaptchaName::Mila,
+        _ => unreachable!(),
+    };
+
+    let captcha = captcha::by_name(captcha_difficulty, captcha_name);
     let captcha_id = generate_nanoid_expire(60);
     db.open_tree("captcha")?
         .insert(&captcha_id, &*captcha.chars_as_string())?;

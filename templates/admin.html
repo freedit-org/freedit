@@ -161,6 +161,37 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="captcha_difficulty">Captcha difficulty</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <p class="help">About <a href="https://docs.rs/captcha/0.0.9/captcha/fn.by_name.html" target="_blank">captcha</a></p>
+                    <div class="control">
+                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Easy" {% if site_config.captcha_difficulty.as_str() == "Easy" %} checked {% endif %} autocomplete="off" /> Easy</label>
+                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Medium" {% if site_config.captcha_difficulty.as_str() == "Medium" %} checked {% endif %} autocomplete="off" /> Medium</label>
+                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Hard" {% if site_config.captcha_difficulty.as_str() == "Hard" %} checked {% endif %} autocomplete="off" /> Hard</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="captcha_name">Captcha type</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <label class="radio"><input type="radio" name="captcha_name" value="Amelia" {% if site_config.captcha_name.as_str() == "Amelia" %} checked {% endif %} autocomplete="off" /> Amelia</label>
+                        <label class="radio"><input type="radio" name="captcha_name" value="Lucy" {% if site_config.captcha_name.as_str() == "Lucy" %} checked {% endif %} autocomplete="off" /> Lucy</label>
+                        <label class="radio"><input type="radio" name="captcha_name" value="Mila" {% if site_config.captcha_name.as_str() == "Mila" %} checked {% endif %} autocomplete="off" /> Mila</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">

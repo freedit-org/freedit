@@ -167,7 +167,6 @@ struct Comment {
 }
 
 /// Go to source code to see default value: [SiteConfig::default()]
-// TODO: recaptcha && configuration
 #[derive(Serialize, Deserialize, Encode, Decode, Validate, Debug)]
 pub(super) struct SiteConfig {
     #[validate(length(max = 64))]
@@ -192,6 +191,8 @@ pub(super) struct SiteConfig {
     #[validate(range(max = 100))]
     per_page: usize,
     static_page: usize,
+    captcha_difficulty: String,
+    captcha_name: String,
 }
 
 #[derive(Encode, Decode)]
