@@ -1,6 +1,6 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
-    get_site_config, has_unread, incr_id, into_response, ivec_to_u32, timestamp_to_date,
+    get_site_config, has_unread, incr_id, into_response, ivec_to_u32, mark_read, timestamp_to_date,
     u32_to_ivec, u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType, PageData,
     ParamsPage, Solo, User, ValidatedForm,
 };
@@ -118,6 +118,7 @@ pub(crate) struct ParamsSolo {
     is_desc: Option<bool>,
     filter: Option<String>,
     hashtag: Option<String>,
+    notification_sid: Option<u32>,
 }
 
 /// `GET /solo/user/:uid` solo page
@@ -235,6 +236,7 @@ pub(crate) async fn solo(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u32>,
+    Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
@@ -246,6 +248,19 @@ pub(crate) async fn solo(
     for i in &out_solo.replies {
         if let Ok(Some(out_solo)) = OutSolo::get(&db, *i, claim.as_ref().map(|c| c.uid)) {
             reply_solos.push(out_solo);
+        }
+    }
+
+    if let Some(notification_sid) = params.notification_sid {
+        if let Some(ref claim) = claim {
+            let k = [
+                &u32_to_ivec(claim.uid),
+                &u32_to_ivec(0),
+                &u32_to_ivec(notification_sid),
+            ]
+            .concat();
+            db.open_tree("notifications")?
+                .update_and_fetch(k, mark_read)?;
         }
     }
 
@@ -378,6 +393,11 @@ pub(crate) async fn solo_post(
         let solo_replied_encode = bincode::encode_to_vec(&solo_replied, standard())?;
         db.open_tree("solos")?
             .insert(&u32_to_ivec(input.reply_to), solo_replied_encode)?;
+
+        if solo_replied.uid != uid {
+            let k = [&u32_to_ivec(solo_replied.uid), &u32_to_ivec(0), &sid_ivec].concat();
+            db.open_tree("notifications")?.insert(k, &[2])?;
+        }
 
         Some(input.reply_to)
     };

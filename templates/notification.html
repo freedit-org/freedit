@@ -67,6 +67,10 @@
                     {{nt.username}} commented your post <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
                 {% when 101 %}
                     {{nt.username}} commented your post <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
+                {% when 2 %}
+                    {{nt.username}} mentioned you in solo <small><a href="/solo/{{nt.iid}}?notification_sid={{nt.iid}}">{{nt.iid}}</a></small>
+                {% when 102 %}
+                    {{nt.username}} mentioned you in solo <small><a href="/solo/{{nt.iid}}?notification_sid={{nt.iid}}">{{nt.iid}}</a></small>
                 {% else %}{% endmatch %}
             </div>
             <div class="list-item-description">

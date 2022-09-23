@@ -226,7 +226,7 @@ use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::{Batch, Db, IVec, Iter, Tree};
-use std::iter::Rev;
+use std::{cmp::Ordering, iter::Rev};
 use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
@@ -519,6 +519,7 @@ pub(super) async fn shutdown_signal() {
 /// |---------|--------|------|
 /// | comment | 0      | 100  |
 /// | post    | 1      | 101  |
+/// | solo    | 2      | 102  |
 struct Notification {
     uid: u32,
     username: String,
@@ -638,25 +639,47 @@ pub(super) async fn notification(
     for (n, i) in tree.scan_prefix(&prefix).enumerate() {
         let (key, value) = i?;
         let pid = u8_slice_to_u32(&key[4..8]);
-        let cid = u8_slice_to_u32(&key[8..12]);
 
-        if let Some(v) = &db.open_tree("post_comments")?.get(&key[4..12])? {
-            let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
-            let post: Post = get_one(&db, "posts", pid)?;
-            let user: User = get_one(&db, "users", comment.uid)?;
-            let notification_code = value[0];
-            let notification = Notification {
-                uid: comment.uid,
-                username: user.username,
-                pid,
-                iid: post.iid,
-                post_title: post.title,
-                cid,
-                comment_content: comment.content,
-                notification_code,
-            };
-            notifications.push(notification);
+        match pid.cmp(&0) {
+            Ordering::Greater => {
+                let cid = u8_slice_to_u32(&key[8..12]);
+                if let Some(v) = &db.open_tree("post_comments")?.get(&key[4..12])? {
+                    let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
+                    let post: Post = get_one(&db, "posts", pid)?;
+                    let user: User = get_one(&db, "users", comment.uid)?;
+                    let notification = Notification {
+                        uid: comment.uid,
+                        username: user.username,
+                        pid,
+                        iid: post.iid,
+                        post_title: post.title,
+                        cid,
+                        comment_content: comment.content,
+                        notification_code: value[0],
+                    };
+                    notifications.push(notification);
+                }
+            }
+            Ordering::Equal => {
+                let sid = u8_slice_to_u32(&key[8..12]);
+                if let Ok(solo) = get_one::<Solo>(&db, "solos", sid) {
+                    let user: User = get_one(&db, "users", solo.uid)?;
+                    let notification = Notification {
+                        uid: solo.uid,
+                        username: user.username,
+                        pid,
+                        iid: solo.sid,
+                        post_title: "".into(),
+                        cid: sid,
+                        comment_content: solo.content,
+                        notification_code: value[0],
+                    };
+                    notifications.push(notification);
+                }
+            }
+            Ordering::Less => unreachable!(),
         }
+
         if n >= 30 {
             break;
         }
