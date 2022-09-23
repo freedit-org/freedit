@@ -1,7 +1,4 @@
-use axum::{
-    http::{uri::InvalidUri, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
-};
+use axum::http::uri::InvalidUri;
 use thiserror::Error;
 use tracing::error;
 
@@ -60,41 +57,4 @@ pub(super) enum AppError {
     ValidationError(#[from] validator::ValidationErrors),
     #[error(transparent)]
     AxumFormRejection(#[from] axum::extract::rejection::FormRejection),
-}
-
-// TODO: CSS Better style
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        let status = match self {
-            AppError::CaptchaError
-            | AppError::NameExists
-            | AppError::InnCreateLimit
-            | AppError::UsernameInvalid
-            | AppError::NotFound
-            | AppError::WrongPassword
-            | AppError::ImageError(_)
-            | AppError::Locked
-            | AppError::Hidden
-            | AppError::ReadOnly
-            | AppError::ValidationError(_)
-            | AppError::AxumFormRejection(_) => StatusCode::BAD_REQUEST,
-            AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,
-            AppError::NonLogin => return Redirect::to("/signin").into_response(),
-            AppError::Unauthorized => StatusCode::UNAUTHORIZED,
-            AppError::Banned => StatusCode::FORBIDDEN,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        error!("{}, {}", status, self);
-
-        let html = format!(
-            r#"<strong>Error: {}</strong>
-            <p>{}</p>
-            <p><a href="/">Home</p>"#,
-            status, self
-        );
-        let body = Html(html);
-
-        (status, body).into_response()
-    }
 }

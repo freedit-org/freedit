@@ -214,7 +214,7 @@ use axum::{
     },
     headers::{Cookie, HeaderName},
     http::{HeaderMap, HeaderValue, Request, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Redirect, Response},
     routing::{get_service, MethodRouter},
     TypedHeader,
 };
@@ -230,6 +230,7 @@ use std::iter::Rev;
 use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
+use tracing::error;
 use utils::CURRENT_SHA256;
 use validator::Validate;
 
@@ -250,6 +251,48 @@ fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
             .status(StatusCode::INTERNAL_SERVER_ERROR)
             .body(body::boxed(Full::from(format!("{err}"))))
             .unwrap(),
+    }
+}
+
+#[derive(Template)]
+#[template(path = "error.html")]
+struct PageError<'a> {
+    page_data: PageData<'a>,
+    status: String,
+    error: String,
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        let status = match self {
+            AppError::CaptchaError
+            | AppError::NameExists
+            | AppError::InnCreateLimit
+            | AppError::UsernameInvalid
+            | AppError::NotFound
+            | AppError::WrongPassword
+            | AppError::ImageError(_)
+            | AppError::Locked
+            | AppError::Hidden
+            | AppError::ReadOnly
+            | AppError::ValidationError(_)
+            | AppError::AxumFormRejection(_) => StatusCode::BAD_REQUEST,
+            AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,
+            AppError::NonLogin => return Redirect::to("/signin").into_response(),
+            AppError::Unauthorized => StatusCode::UNAUTHORIZED,
+            AppError::Banned => StatusCode::FORBIDDEN,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        error!("{}, {}", status, self);
+        let page_data = PageData::new("Error", "Error found", None, false);
+        let page_error = PageError {
+            page_data,
+            status: status.to_string(),
+            error: self.to_string(),
+        };
+
+        into_response(&page_error, "html")
     }
 }
 
@@ -417,14 +460,7 @@ pub(super) async fn serve_dir(path: &str) -> MethodRouter {
 
 // TODO: CSS Better style
 pub(super) async fn handler_404() -> impl IntoResponse {
-    let html = format!(
-        r#"<strong>Error:</strong>
-        <p>{}</p>
-        <p><a href="/">Home</p>"#,
-        StatusCode::NOT_FOUND
-    );
-    let body = Html(html);
-    (StatusCode::NOT_FOUND, body)
+    AppError::NotFound.into_response()
 }
 
 pub(crate) async fn style() -> (HeaderMap, String) {
