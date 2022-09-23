@@ -269,7 +269,6 @@ impl IntoResponse for AppError {
             | AppError::NameExists
             | AppError::InnCreateLimit
             | AppError::UsernameInvalid
-            | AppError::NotFound
             | AppError::WrongPassword
             | AppError::ImageError(_)
             | AppError::Locked
@@ -277,6 +276,7 @@ impl IntoResponse for AppError {
             | AppError::ReadOnly
             | AppError::ValidationError(_)
             | AppError::AxumFormRejection(_) => StatusCode::BAD_REQUEST,
+            AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,
             AppError::NonLogin => return Redirect::to("/signin").into_response(),
             AppError::Unauthorized => StatusCode::UNAUTHORIZED,
@@ -294,6 +294,10 @@ impl IntoResponse for AppError {
 
         into_response(&page_error, "html")
     }
+}
+
+pub(super) async fn handler_404() -> impl IntoResponse {
+    AppError::NotFound.into_response()
 }
 
 pub(super) struct ValidatedForm<T>(pub(super) T);
@@ -456,11 +460,6 @@ pub(super) async fn serve_dir(path: &str) -> MethodRouter {
             format!("Unhandled internal error: {}", error),
         )
     })
-}
-
-// TODO: CSS Better style
-pub(super) async fn handler_404() -> impl IntoResponse {
-    AppError::NotFound.into_response()
 }
 
 pub(crate) async fn style() -> (HeaderMap, String) {
@@ -641,10 +640,7 @@ pub(super) async fn notification(
         let pid = u8_slice_to_u32(&key[4..8]);
         let cid = u8_slice_to_u32(&key[8..12]);
 
-        let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
-        let v = &db.open_tree("post_comments")?.get(k)?;
-
-        if let Some(v) = v {
+        if let Some(v) = &db.open_tree("post_comments")?.get(&key[4..12])? {
             let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
             let post: Post = get_one(&db, "posts", pid)?;
             let user: User = get_one(&db, "users", comment.uid)?;
@@ -674,7 +670,7 @@ pub(super) async fn notification(
             let (k, _) = i?;
             let inn_notification = InnNotification {
                 iid: u8_slice_to_u32(&k[0..4]),
-                uid: u8_slice_to_u32(&k[8..]),
+                uid: u8_slice_to_u32(&k[4..]),
             };
             inn_notifications.push(inn_notification);
         }
