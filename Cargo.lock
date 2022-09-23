@@ -437,8 +437,8 @@ dependencies = [
  "captcha",
  "data-encoding",
  "flate2",
- "hash_avatar",
  "http-body",
+ "identicon",
  "image",
  "latex2mathml",
  "nanoid",
@@ -570,15 +570,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hash_avatar"
-version = "0.1.5"
-source = "git+https://github.com/t924417424/rust_hash_avatar#e0d7c3684696b550f6dde2f0553868d796b69a03"
-dependencies = [
- "image",
- "rand",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -696,6 +687,14 @@ dependencies = [
  "rustls",
  "tokio",
  "tokio-rustls",
+]
+
+[[package]]
+name = "identicon"
+version = "0.2.1"
+source = "git+https://github.com/freedit-dev/identicon.git#f93015a2bbc8c4b8725eb60ae94d7793aecb5944"
+dependencies = [
+ "image",
 ]
 
 [[package]]

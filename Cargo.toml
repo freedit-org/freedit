@@ -12,8 +12,8 @@ bincode = "2.0.0-rc.1"
 captcha = { version = "0.0.9", default-features = false }
 data-encoding = "*"
 flate2 = "1.0"
-hash_avatar = { git = "https://github.com/t924417424/rust_hash_avatar" }
 http-body = "0.4.5"
+identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 latex2mathml = "0.2.3"
 nanoid = "0.4.0"

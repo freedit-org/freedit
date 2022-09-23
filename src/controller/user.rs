@@ -18,7 +18,7 @@ use axum::{
 use bincode::config::standard;
 use captcha::{CaptchaName, Difficulty};
 use data_encoding::BASE64;
-use hash_avatar::Generator;
+use identicon::Identicon;
 use ring::{
     pbkdf2,
     rand::{self, SecureRandom},
@@ -731,12 +731,7 @@ pub(crate) async fn signup_post(
     let uid = incr_id(&db, "users_count")?;
 
     let avatar = format!("{}/{}.png", &CONFIG.avatars_path, uid);
-    match Generator::new().create().save_to_png(&avatar) {
-        Ok(_) => (),
-        Err(e) => {
-            return Err(AppError::GenerateAvatarError(e));
-        }
-    }
+    Identicon::new(avatar.as_bytes()).image().save(avatar)?;
 
     let created_at = OffsetDateTime::now_utc().unix_timestamp();
     let role = if uid == 1 {

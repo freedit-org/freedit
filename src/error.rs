@@ -6,8 +6,6 @@ pub(super) enum AppError {
     // 5XX
     #[error("Sled db error: {}", .0)]
     SledError(#[from] sled::Error),
-    #[error("save avatar to png error: {}", .0)]
-    GenerateAvatarError(&'static str),
     #[error("Bincode encode error: {}", .0)]
     BincodeEnError(#[from] bincode::error::EncodeError),
     #[error("Bincode decode error: {}", .0)]
