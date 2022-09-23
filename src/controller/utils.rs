@@ -12,7 +12,6 @@ use std::{
 };
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
 use tokio::time;
-use tracing::instrument;
 
 /// Returns SHA256 of the current running executable.
 /// Cookbook: [Calculate the SHA-256 digest of a file](https://rust-lang-nursery.github.io/rust-cookbook/cryptography/hashing.html)
@@ -42,7 +41,6 @@ pub(crate) static CURRENT_SHA256: Lazy<String> = Lazy::new(|| {
 /// Cron job: Scan all the keys in the `Tree` regularly and remove the expired ones.
 ///
 /// The keys must be the format of `timestamp_id`. See [generate_nanoid_expire](../controller/fn.generate_nanoid_expire.html).
-#[instrument(skip(db))]
 pub(crate) async fn clear_invalid(db: &Db, tree_name: &str, interval: u64) -> Result<(), AppError> {
     let tree = db.open_tree(tree_name)?;
     for i in tree.iter() {

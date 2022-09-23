@@ -1077,7 +1077,7 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
         for pid in index {
             let post: Post = get_one(db, "posts", *pid)?;
             let user: User = get_one(db, "users", post.uid)?;
-            let date = timestamp_to_date(post.created_at)?;
+            let date = timestamp_to_date(post.created_at);
             let inn: Inn = get_one(db, "inns", post.iid)?;
             let comment_count = get_count(db, "post_comments_count", u32_to_ivec(*pid))? as u32;
 
@@ -1299,7 +1299,7 @@ pub(crate) async fn post(
 
     let post: Post = get_one(&db, "posts", pid)?;
     let user: User = get_one(&db, "users", post.uid)?;
-    let date = timestamp_to_date(post.created_at)?;
+    let date = timestamp_to_date(post.created_at);
     let inn: Inn = get_one(&db, "inns", post.iid)?;
 
     if post.iid != iid {
@@ -1390,7 +1390,7 @@ pub(crate) async fn post(
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                 let user: User = get_one(&db, "users", comment.uid)?;
-                let date = timestamp_to_date(comment.created_at)?;
+                let date = timestamp_to_date(comment.created_at);
 
                 let mut is_upvoted = false;
                 let mut is_downvoted = false;
@@ -1463,7 +1463,7 @@ async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
         return Ok(());
     }
     let user: User = get_one(db, "users", post.uid)?;
-    let date = timestamp_to_date(post.created_at)?;
+    let date = timestamp_to_date(post.created_at);
     let inn: Inn = get_one(db, "inns", post.iid)?;
     let upvotes = get_count_by_prefix(db, "post_upvotes", &u32_to_ivec(pid)).unwrap_or_default();
     let downvotes =
@@ -1503,7 +1503,7 @@ async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                 let user: User = get_one(db, "users", comment.uid)?;
-                let date = timestamp_to_date(comment.created_at)?;
+                let date = timestamp_to_date(comment.created_at);
 
                 let prefix = [&u32_to_ivec(pid), &u32_to_ivec(comment.cid)].concat();
                 let upvotes =

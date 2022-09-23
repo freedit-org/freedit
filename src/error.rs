@@ -1,4 +1,3 @@
-use axum::http::uri::InvalidUri;
 use thiserror::Error;
 use tracing::error;
 
@@ -7,18 +6,12 @@ pub(super) enum AppError {
     // 5XX
     #[error("Sled db error: {}", .0)]
     SledError(#[from] sled::Error),
-    #[error("Sled transaction error: {}", .0)]
-    SledTransactionError(#[from] sled::transaction::TransactionError),
     #[error("save avatar to png error: {}", .0)]
     GenerateAvatarError(&'static str),
     #[error("Bincode encode error: {}", .0)]
     BincodeEnError(#[from] bincode::error::EncodeError),
     #[error("Bincode decode error: {}", .0)]
     BincodeDeError(#[from] bincode::error::DecodeError),
-    #[error("time error: {}", .0)]
-    TimeError(String),
-    #[error("Invalid Uri: {}", .0)]
-    InvalidUri(#[from] InvalidUri),
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
     #[error(transparent)]

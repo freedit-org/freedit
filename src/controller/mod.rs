@@ -222,6 +222,7 @@ use bincode::config::standard;
 use bincode::{Decode, Encode};
 use data_encoding::HEXLOWER;
 use nanoid::nanoid;
+use once_cell::sync::Lazy;
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -244,7 +245,7 @@ fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
     match t.render() {
         Ok(body) => Response::builder()
             .status(StatusCode::OK)
-            .header("content-type", ext.to_string())
+            .header("content-type", ext)
             .body(body::boxed(Full::from(body)))
             .unwrap(),
         Err(err) => Response::builder()
@@ -462,11 +463,15 @@ pub(super) async fn serve_dir(path: &str) -> MethodRouter {
     })
 }
 
-pub(crate) async fn style() -> (HeaderMap, String) {
+static CSS: Lazy<String> = Lazy::new(|| {
+    let mut css = include_str!("../../static/css/bulma.min.css").to_string();
+    css.push('\n');
+    css.push_str(include_str!("../../static/css/main.css"));
+    css
+});
+
+pub(crate) async fn style() -> (HeaderMap, &'static str) {
     let mut headers = HeaderMap::new();
-    let mut style = include_str!("../../static/css/bulma.min.css").to_string();
-    style.push('\n');
-    style.push_str(include_str!("../../static/css/main.css"));
 
     headers.insert(
         HeaderName::from_static("content-type"),
@@ -477,7 +482,7 @@ pub(crate) async fn style() -> (HeaderMap, String) {
         HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
     );
 
-    (headers, style)
+    (headers, &CSS)
 }
 
 pub(super) async fn shutdown_signal() {
@@ -724,9 +729,9 @@ struct PageData<'a> {
     site_name: &'a str,
     claim: Option<Claim>,
     has_unread: bool,
-    sha256: String,
-    version: String,
-    footer_links: Vec<(String, String)>,
+    sha256: &'a str,
+    version: &'a str,
+    footer_links: Vec<(&'a str, &'a str)>,
 }
 
 impl<'a> PageData<'a> {
@@ -734,7 +739,7 @@ impl<'a> PageData<'a> {
         let mut footer_links = vec![];
         for (path, _, link) in &CONFIG.serve_dir {
             if !link.is_empty() {
-                footer_links.push((path.clone(), link.clone()));
+                footer_links.push((path.as_str(), link.as_str()));
             }
         }
         Self {
@@ -742,8 +747,8 @@ impl<'a> PageData<'a> {
             site_name,
             claim,
             has_unread,
-            sha256: CURRENT_SHA256.to_string(),
-            version: VERSION.to_string(),
+            sha256: &CURRENT_SHA256,
+            version: VERSION,
             footer_links,
         }
     }
@@ -810,12 +815,11 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
 }
 
 /// convert a `i64` timestamp to a date [`String`]
-fn timestamp_to_date(timestamp: i64) -> Result<String, AppError> {
-    let date = OffsetDateTime::from_unix_timestamp(timestamp);
-    match date {
-        Ok(timestamp) => Ok(timestamp.date().to_string()),
-        Err(e) => Err(AppError::TimeError(e.to_string())),
-    }
+fn timestamp_to_date(timestamp: i64) -> String {
+    OffsetDateTime::from_unix_timestamp(timestamp)
+        .unwrap()
+        .date()
+        .to_string()
 }
 
 /// convert `u32` to [IVec]

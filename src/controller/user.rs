@@ -69,7 +69,7 @@ pub(crate) async fn user(
         about: user.about,
         role: user.role,
         url: user.url,
-        created_at: timestamp_to_date(user.created_at)?,
+        created_at: timestamp_to_date(user.created_at),
     };
     let uid_ivec = u32_to_ivec(uid);
     let user_solos_count = get_count_by_prefix(&db, "user_solos", &uid_ivec)?;

@@ -173,7 +173,7 @@ pub(crate) async fn admin_view(
                 "user_stats" => {
                     let mut k_str = std::str::from_utf8(&k)?.split('_');
                     let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
-                    let date = timestamp_to_date(timestamp)?;
+                    let date = timestamp_to_date(timestamp);
                     let uid = k_str.next().unwrap();
                     let stat_type = k_str.next().unwrap().to_owned();
                     let count = ivec_to_u32(&v);
@@ -225,7 +225,7 @@ pub(crate) async fn admin_view(
                 }
                 "post_timeline" => {
                     let timestamp = i64::from(u8_slice_to_u32(&k[0..4]));
-                    let date = timestamp_to_date(timestamp)?;
+                    let date = timestamp_to_date(timestamp);
                     let iid = u8_slice_to_u32(&k[4..8]);
                     let pid = u8_slice_to_u32(&k[8..12]);
                     let visibility = u8_slice_to_u32(&v);
@@ -345,7 +345,7 @@ pub(crate) async fn admin_stats(
         let (k, v) = i?;
         let mut k_str = std::str::from_utf8(&k)?.split('_');
         let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
-        let date = timestamp_to_date(timestamp)?;
+        let date = timestamp_to_date(timestamp);
         let uid = k_str.next().unwrap().to_owned();
         let stat_type = k_str.next().unwrap().to_owned();
         let count = ivec_to_u32(&v);

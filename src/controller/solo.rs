@@ -60,7 +60,7 @@ impl OutSolo {
     fn get(db: &Db, sid: u32, current_uid: Option<u32>) -> Result<Option<Self>, AppError> {
         let solo: Solo = get_one(db, "solos", sid)?;
         let user: User = get_one(db, "users", solo.uid)?;
-        let date = timestamp_to_date(solo.created_at)?;
+        let date = timestamp_to_date(solo.created_at);
 
         if let Some(uid) = current_uid {
             if solo.visibility == 20 {
