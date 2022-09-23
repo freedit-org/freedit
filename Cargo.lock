@@ -692,7 +692,7 @@ dependencies = [
 [[package]]
 name = "identicon"
 version = "0.2.1"
-source = "git+https://github.com/freedit-dev/identicon.git#f93015a2bbc8c4b8725eb60ae94d7793aecb5944"
+source = "git+https://github.com/freedit-dev/identicon.git#44cb2bc0d58fd0029fe70acc5dc2057ba3bcecad"
 dependencies = [
  "image",
 ]
