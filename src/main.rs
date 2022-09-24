@@ -131,7 +131,7 @@ fn create_snapshot(db: &sled::Db) {
     info!(%checksum);
 
     let format =
-        format_description::parse("[year]-[month]-[day]-[hour]:[minute]:[second]").unwrap();
+        format_description::parse("[year]-[month]-[day]-[hour]-[minute]-[second]").unwrap();
     let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
     let mut snapshot_path = PathBuf::from("snapshots");
     if !snapshot_path.exists() {
