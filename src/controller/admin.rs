@@ -314,7 +314,7 @@ impl Default for SiteConfig {
             comment_interval: 10,
             per_page: 30,
             static_page: 10,
-            captcha_difficulty: "easy".into(),
+            captcha_difficulty: "Easy".into(),
             captcha_name: "Amelia".into(),
         }
     }
