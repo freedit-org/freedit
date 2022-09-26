@@ -1215,8 +1215,13 @@ pub(crate) async fn inn_join(
                 inn_apply_tree.insert(&inn_users_k, &[])?;
             } else {
                 user_inns_tree.insert(&user_inns_k, &[])?;
-                // 4: Public, default Intern
-                inn_users_tree.insert(&inn_users_k, &[4])?;
+                // 4: Public, the first 50 members are Fellow, otherwise Intern
+                let count = get_count_by_prefix(&db, "inn_users", &u32_to_ivec(iid))?;
+                if count <= 50 {
+                    inn_users_tree.insert(&inn_users_k, &[5])?;
+                } else {
+                    inn_users_tree.insert(&inn_users_k, &[4])?;
+                }
             }
         }
         Some(_) => {
