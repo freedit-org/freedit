@@ -679,12 +679,14 @@ pub(crate) async fn tag(
 
 /// Page data: `inn.html`
 #[derive(Template)]
-#[template(path = "inn.html")]
+#[template(path = "inn.html", escape = "none")]
 struct PageInn<'a> {
     page_data: PageData<'a>,
     posts: Vec<OutPostList>,
     iid: u32,
     inn_name: String,
+    about: String,
+    description: String,
     anchor: usize,
     n: usize,
     is_desc: bool,
@@ -792,14 +794,27 @@ pub(crate) async fn inn(
         false
     };
     let page_data = PageData::new("inn", &site_config.site_name, claim, has_unread);
-    let inn_name = if iid > 0 && !out_post_list.is_empty() {
-        &out_post_list[0].inn_name
+
+    let inn_name;
+    let about;
+    let description;
+
+    if iid > 0 {
+        let inn: Inn = get_one(&db, "inns", iid)?;
+        inn_name = inn.inn_name;
+        about = inn.about;
+        description = md2html(&inn.description);
     } else {
-        "No Post"
+        inn_name = "No post".into();
+        about = site_config.description;
+        description = "".into();
     };
+
     let page_inn = PageInn {
         page_data,
-        inn_name: inn_name.to_string(),
+        inn_name,
+        about,
+        description,
         posts: out_post_list,
         anchor,
         iid,

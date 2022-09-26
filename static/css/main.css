@@ -91,7 +91,7 @@ pre {
     padding: 1rem;
 }
 
-.list-item-content, .media-content {
+.list-item-content, .media-content, .column {
     overflow: scroll;
 }
 

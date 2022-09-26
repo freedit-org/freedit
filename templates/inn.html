@@ -143,11 +143,14 @@
 {% if iid > 0 %}
 <div class="box">
     <div class="level-item has-text-centered">
-        <figure class="image is-64x64">
+        <figure class="image is-128x128">
             <a href="/inn/{{iid}}"><img class="is-rounded" src="/static/inn_icons/{{iid}}.png"></a>
         </figure>
     </div>
     <br>
+    <div class="content has-text-centered">
+        <h4">{{about}}</h4>
+    </div>
     <nav class="level is-mobile">
         <div class="level-item has-text-centered">
             <div>
@@ -175,6 +178,15 @@
         {% endif %}
     </nav>
 </div>
-<div class="divider"></div>
+<div class="box">
+    <details>
+        <summary>Description</summary>
+        <div class="content">
+            <br>
+            {{description}}
+        </div>
+    </details>
+</div>
+
 {% endif %}
 {% endblock %}
