@@ -417,7 +417,7 @@ pub(crate) async fn role_post(
             user.role = match form.role.as_str() {
                 "Admin" => 255,
                 "Senior" => 100,
-                "Normal" => 10,
+                "Standard" => 10,
                 "Banned" => 0,
                 _ => unreachable!(),
             };

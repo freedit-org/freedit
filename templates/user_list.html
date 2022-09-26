@@ -60,7 +60,7 @@
                     <span>
                         {% match role %}{% when Some(255) %} Admin
                         {% when Some(100) %} Senior
-                        {% when Some(10) %} Normal
+                        {% when Some(10) %} Standard
                         {% when Some(0) %} Banned
                         {% else %} Role {% endmatch %}
                     </span>
@@ -70,7 +70,7 @@
                 <div class="dropdown-content">
                     <a href="/user/list?role=255" class="dropdown-item">Admin</a>
                     <a href="/user/list?role=100" class="dropdown-item">Senior</a>
-                    <a href="/user/list?role=10" class="dropdown-item">Normal</a>
+                    <a href="/user/list?role=10" class="dropdown-item">Standard</a>
                     <a href="/user/list?role=0" class="dropdown-item">Banned</a>
                     <hr class="dropdown-divider">
                     <a href="/user/list" class="dropdown-item">All</a>
@@ -135,7 +135,7 @@
                                 <select name="role" required autocomplete="off">
                                     <option {% if user.role == 255 %} selected {% endif %}>Admin</option>
                                     <option {% if user.role == 100 %} selected {% endif %}>Senior</option>
-                                    <option {% if user.role == 10 %} selected {% endif %}>Normal</option>
+                                    <option {% if user.role == 10 %} selected {% endif %}>Standard</option>
                                     <option {% if user.role == 0 %} selected {% endif %}>Banned</option>
                                 </select>
                             </span>

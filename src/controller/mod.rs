@@ -94,12 +94,12 @@
 /// user
 ///
 /// ### Permissions
-/// | role   | code | post/solo | creat inn | site admin |
-/// |--------|------|:---------:|:---------:|:----------:|
-/// | Banned | 0    |           |           |            |
-/// | Normal | 10   | ✅        |           |            |
-/// | Senior | 100  | ✅        | ✅        |            |
-/// | Admin  | 255  | ✅        | ✅        | ✅         |
+/// | role     | code | post/solo | creat inn | site admin |
+/// |----------|------|:---------:|:---------:|:----------:|
+/// | Banned   | 0    |           |           |            |
+/// | Standard | 10   | ✅        |           |            |
+/// | Senior   | 100  | ✅        | ✅        |            |
+/// | Admin    | 255  | ✅        | ✅        | ✅         |
 #[derive(Default, Encode, Decode, Serialize, Debug)]
 struct User {
     uid: u32,
