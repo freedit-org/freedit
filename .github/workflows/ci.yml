@@ -35,16 +35,19 @@ jobs:
       - name: rustfmt
         run: cargo fmt -- --check
 
-      - name: Install clippy-sarif sarif-fmt (require cargo)
-        run: cargo install clippy-sarif sarif-fmt
-
       - name: Run rust-clippy
-        run:
-          cargo clippy --all-features --message-format=json
-          -- -D warnings | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+        run: echo "::set-output name=clippy_result::$(cargo clippy --all-features --message-format=json -- -D warnings)"
+        id: clippy_run
         continue-on-error: true
+      
+      - name: Install clippy-sarif sarif-fmt (require cargo)
+        if: ${{ endsWith(steps.clippy_run.outputs.clippy_result, 'false}'}}
+        run: |
+          cargo install clippy-sarif sarif-fmt
+          echo ${{ steps.clippy_run.outputs.clippy_result }} | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
 
       - name: Upload analysis results to GitHub
+        if: ${{ endsWith(steps.clippy_run.outputs.clippy_result, 'false}'}}
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: rust-clippy-results.sarif
@@ -52,7 +55,8 @@ jobs:
 
       - name: doc build
         if: ${{ github.ref == 'refs/heads/main' }}
-        run: cargo doc --no-deps &&
+        run: |
+          cargo doc --no-deps
           echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
 
       - name: Upload artifact

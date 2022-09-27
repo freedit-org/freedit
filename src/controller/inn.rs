@@ -795,7 +795,7 @@ pub(crate) async fn inn(
     };
     let page_data = PageData::new("inn", &site_config.site_name, claim, has_unread);
 
-    let inn_name;
+    let mut inn_name;
     let about;
     let description;
 
