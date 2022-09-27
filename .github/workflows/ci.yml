@@ -10,7 +10,7 @@ on:
       
 jobs:
   cargo:
-    name: cargo test, clippy and doc
+    name: Cargo test, clippy and doc
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -32,10 +32,10 @@ jobs:
       - name: Cargo test
         run: cargo test
       
-      - name: rustfmt
+      - name: Cargo fmt
         run: cargo fmt -- --check
 
-      - name: Run rust-clippy
+      - name: Cargo clippy
         run: cargo clippy --all-features --message-format=json -- -D warnings > clippy_result.json
         id: clippy_run
         continue-on-error: true
@@ -53,7 +53,7 @@ jobs:
           sarif_file: rust-clippy-results.sarif
           wait-for-processing: true
 
-      - name: doc build
+      - name: Cargo doc
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           cargo doc --no-deps
