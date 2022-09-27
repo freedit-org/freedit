@@ -37,17 +37,14 @@ jobs:
 
       - name: Cargo clippy
         run: cargo clippy --all-features --message-format=json -- -D warnings > clippy_result.json
-        id: clippy_run
         continue-on-error: true
       
       - name: Install clippy-sarif sarif-fmt (require cargo)
-        if: ${{ steps.clippy_run.outcome == 'failure'}}
         run: |
           cargo install clippy-sarif sarif-fmt
           cat clippy_result.json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
 
       - name: Upload analysis results to GitHub
-        if: ${{ steps.clippy_run.outcome == 'failure'}}
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: rust-clippy-results.sarif
