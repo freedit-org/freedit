@@ -10,11 +10,14 @@
 	{% for post in posts %}
 	<entry>
 		<title>{{ post.title }}</title>
-		<author><name>{{post.username}}</name></author>
+		<author><name>{{ post.username }}</name></author>
 		<published>{{ post.created_at }}</published>
 		<updated>{{ post.created_at }}</updated>
 		<link rel="alternate" href="/post/{{ post.iid }}/{{ post.pid }}" type="text/html"/>
 		<id>{{ post.pid }}</id>
+		<content type="html">
+			{{ post.content }}
+		</content>
 	</entry>
 	{%- endfor %}
 </feed>

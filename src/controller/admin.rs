@@ -303,6 +303,7 @@ impl Default for SiteConfig {
     fn default() -> Self {
         SiteConfig {
             site_name: "freedit".to_string(),
+            domain: "http://127.0.0.:3001".to_string(),
             description: "a forum powered by rust".to_string(),
             read_only: false,
             inn_mod_max: 5,

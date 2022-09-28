@@ -6,6 +6,8 @@
 
 The safest and lightest forum, powered by rust.
 
+Online: <https://freedit.eu/>
+
 GitHub: <https://github.com/freedit-org/freedit>
 
 ## Features

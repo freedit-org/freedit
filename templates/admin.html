@@ -18,6 +18,19 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
+                <label class="label" for="domain">Domain</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="domain" required maxlength="64" value="{{ site_config.domain }}" placeholder="domain" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
                 <label class="label" for="description">Description</label>
             </div>
             <div class="field-body">

@@ -171,6 +171,8 @@ struct Comment {
 pub(super) struct SiteConfig {
     #[validate(length(max = 64))]
     site_name: String,
+    // domain only used for inn feed
+    domain: String,
     #[validate(length(max = 512))]
     description: String,
     read_only: bool,

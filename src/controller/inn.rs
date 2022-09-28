@@ -838,7 +838,16 @@ struct PageInnFeed {
     description: String,
     link: String,
     updated: String,
-    posts: Vec<OutPostList>,
+    posts: Vec<FeedPost>,
+}
+
+struct FeedPost {
+    pid: u32,
+    iid: u32,
+    username: String,
+    title: String,
+    created_at: String,
+    content: String,
 }
 
 /// `GET /inn/:iid/feed` inn page
@@ -857,39 +866,45 @@ pub(crate) async fn inn_feed(
     let mut index = Vec::with_capacity(page_params.n);
     let title;
     let description;
-    let link;
-
-    // TODO: link needs test, domain needs to be configed.
-    let prefix = if CONFIG.tls_config().await.is_some() {
-        "https://"
-    } else {
-        "http://"
-    };
+    let link = format!("{}/inn/{}", site_config.domain, iid);
 
     if iid == 0 {
         index = get_pids_all(&db, &[], &page_params)?;
         title = site_config.site_name;
         description = site_config.description;
-        link = format!("{}{}/inn/0", prefix, CONFIG.addr);
     } else {
         let inn: Inn = get_one(&db, "inns", iid)?;
         title = inn.inn_name;
         description = md2html(&inn.description);
-        link = format!("{}{}/inn/{}", prefix, CONFIG.addr, iid);
 
         if inn.inn_type != "Private" {
             index = get_pids_by_iids(&db, &[iid], &page_params)?;
         }
     }
 
-    let out_post_list = get_out_post_list(&db, &index)?;
+    let mut feed_posts = Vec::with_capacity(index.len());
+    for i in index {
+        let post: Post = get_one(&db, "posts", i)?;
+        let user: User = get_one(&db, "users", post.uid)?;
+        let date = timestamp_to_date(post.created_at);
+
+        let feed_post = FeedPost {
+            pid: post.pid,
+            iid: post.iid,
+            username: user.username,
+            title: post.title,
+            created_at: date,
+            content: md2html(&post.content),
+        };
+        feed_posts.push(feed_post);
+    }
 
     let page_inn_feed = PageInnFeed {
         title,
         description,
         link,
-        updated: out_post_list[0].created_at.clone(),
-        posts: out_post_list,
+        updated: feed_posts[0].created_at.clone(),
+        posts: feed_posts,
     };
     Ok(into_response(&page_inn_feed, "html"))
 }
