@@ -1337,6 +1337,18 @@ pub(crate) async fn post(
     let date = timestamp_to_date(post.created_at);
     let inn: Inn = get_one(&db, "inns", post.iid)?;
 
+    if inn.inn_type.as_str() == "Private" {
+        match claim.as_ref() {
+            Some(claim) => {
+                let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
+                if !db.open_tree("user_inns")?.contains_key(k)? {
+                    return Err(AppError::NotFound);
+                }
+            }
+            None => return Err(AppError::NotFound),
+        }
+    }
+
     if post.iid != iid {
         return Err(AppError::NotFound);
     }
