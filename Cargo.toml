@@ -19,6 +19,7 @@ latex2mathml = "0.2.3"
 nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.9", features = ["simd"], default-features = false }
+rexif = "0.7.3"
 ring = { version = "0.16.20", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 sled = { version = "0.34.7", features = ["compression"] }

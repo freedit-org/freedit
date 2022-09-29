@@ -16,6 +16,8 @@ pub(super) enum AppError {
     IoError(#[from] std::io::Error),
 
     // 4XX
+    #[error("image {} contains sensitive data, {}. See https://www.verexif.com/",.0,.1)]
+    ImagePrivacyRisk(String, String),
     #[error("Captcha Error")]
     CaptchaError,
     #[error("Name already exists")]
