@@ -110,6 +110,7 @@ pub(crate) struct FormInn {
     #[validate(length(min = 1, max = 128))]
     topics: String,
     inn_type: String,
+    early_birds: u32,
 }
 
 /// `POST /mod/:iid` inn create/edit page
@@ -212,6 +213,7 @@ pub(crate) async fn mod_inn_post(
         description: input.description,
         topics,
         inn_type: input.inn_type,
+        early_birds: input.early_birds,
         created_at: OffsetDateTime::now_utc().unix_timestamp(),
     };
 
@@ -1257,9 +1259,8 @@ pub(crate) async fn inn_join(
                 inn_apply_tree.insert(&inn_users_k, &[])?;
             } else {
                 user_inns_tree.insert(&user_inns_k, &[])?;
-                // 4: Public, the first 50 members are Fellow, otherwise Intern
-                let count = get_count_by_prefix(&db, "inn_users", &u32_to_ivec(iid))?;
-                if count <= 50 {
+                let count = get_count_by_prefix(&db, "inn_users", &u32_to_ivec(iid))? as u32;
+                if inn.early_birds > 0 && count <= inn.early_birds {
                     inn_users_tree.insert(&inn_users_k, &[5])?;
                 } else {
                     inn_users_tree.insert(&inn_users_k, &[4])?;
