@@ -23,6 +23,7 @@ use crate::{
     controller::{get_count, IterType},
     error::AppError,
 };
+use ::time::format_description::well_known::Rfc3339;
 use ::time::OffsetDateTime;
 use askama::Template;
 use axum::{
@@ -34,7 +35,7 @@ use bincode::config::standard;
 use flate2::{write::GzEncoder, Compression};
 use serde::Deserialize;
 use sled::{Batch, Db};
-use std::io::Write;
+use std::{io::Write, path::PathBuf};
 use tokio::{
     fs::{create_dir_all, File},
     io::AsyncWriteExt,
@@ -866,7 +867,11 @@ pub(crate) async fn inn_feed(
     let mut index = Vec::with_capacity(page_params.n);
     let title;
     let description;
-    let link = format!("{}/inn/{}", site_config.domain, iid);
+    let link = PathBuf::from(&site_config.domain)
+        .join("inn")
+        .join(iid.to_string())
+        .display()
+        .to_string();
 
     if iid == 0 {
         index = get_pids_all(&db, &[], &page_params)?;
@@ -883,10 +888,17 @@ pub(crate) async fn inn_feed(
     }
 
     let mut feed_posts = Vec::with_capacity(index.len());
-    for i in index {
+    let mut updated = OffsetDateTime::now_utc().format(&Rfc3339).unwrap();
+    for (idx, i) in index.into_iter().enumerate() {
         let post: Post = get_one(&db, "posts", i)?;
         let user: User = get_one(&db, "users", post.uid)?;
         let date = timestamp_to_date(post.created_at);
+        if idx == 0 {
+            updated = OffsetDateTime::from_unix_timestamp(post.created_at)
+                .unwrap()
+                .format(&Rfc3339)
+                .unwrap();
+        }
 
         let feed_post = FeedPost {
             pid: post.pid,
@@ -903,7 +915,7 @@ pub(crate) async fn inn_feed(
         title,
         description,
         link,
-        updated: feed_posts[0].created_at.clone(),
+        updated,
         posts: feed_posts,
     };
     Ok(into_response(&page_inn_feed, "html"))

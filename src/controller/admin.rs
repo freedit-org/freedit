@@ -302,9 +302,9 @@ pub(crate) async fn admin_post(
 impl Default for SiteConfig {
     fn default() -> Self {
         SiteConfig {
-            site_name: "freedit".to_string(),
-            domain: "http://127.0.0.:3001".to_string(),
-            description: "a forum powered by rust".to_string(),
+            site_name: "freedit".into(),
+            domain: "http://127.0.0.1:3001".into(),
+            description: "a forum powered by rust".into(),
             read_only: false,
             inn_mod_max: 5,
             title_max_length: 100,
