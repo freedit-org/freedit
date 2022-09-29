@@ -140,10 +140,15 @@ pub(crate) async fn mod_inn_post(
     let mut topics: Vec<String> = input
         .topics
         .split('#')
-        .map(|s| s.trim().to_string())
+        .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
         .collect();
     topics.truncate(5);
+    if input.inn_type.as_str() == "Private" {
+        topics.push("private".into())
+    } else {
+        topics.retain(|t| t != "private")
+    }
 
     let inn_names_tree = db.open_tree("inn_names")?;
 
