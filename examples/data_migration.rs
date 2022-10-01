@@ -23,6 +23,7 @@ fn main() {
             role: old.role,
             url: old.url,
             password_hash,
+            recovery_hash: None,
             created_at: old.created_at,
         };
 
@@ -91,6 +92,7 @@ struct User {
     uid: u32,
     username: String,
     password_hash: String,
+    recovery_hash: Option<String>,
     created_at: i64,
     role: u8,
     url: String,

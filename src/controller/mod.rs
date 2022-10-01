@@ -105,6 +105,7 @@ struct User {
     uid: u32,
     username: String,
     password_hash: String,
+    recovery_hash: Option<String>,
     created_at: i64,
     role: u8,
     url: String,

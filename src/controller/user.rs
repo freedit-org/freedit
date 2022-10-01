@@ -782,6 +782,52 @@ pub(crate) async fn signout(
     Ok((headers, Redirect::to("/")))
 }
 
+#[derive(Template)]
+#[template(path = "show_recovery.html")]
+struct PageShowRecovery<'a> {
+    page_data: PageData<'a>,
+    recovery_code: String,
+}
+
+/// Form data: `/user/recovery`
+#[derive(Deserialize, Validate)]
+pub(crate) struct FormRecoverySet {
+    #[validate(length(min = 7))]
+    password: String,
+}
+
+/// `POST /user/recovery`
+pub(crate) async fn user_recovery_code(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    ValidatedForm(input): ValidatedForm<FormRecoverySet>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let mut user: User = get_one(&db, "users", claim.uid)?;
+
+    if check_password(&input.password, &user.password_hash) {
+        let salt = generate_salt();
+        let recovery_code = BASE64.encode(&salt);
+        user.recovery_hash = Some(generate_password_hash(&recovery_code));
+        let user_encode = bincode::encode_to_vec(&user, standard())?;
+        db.open_tree("users")?
+            .insert(u32_to_ivec(claim.uid), &*user_encode)?;
+
+        let page_data = PageData::new("Recovery code", &site_config.site_name, Some(claim), false);
+        let page_show_recovery = PageShowRecovery {
+            page_data,
+            recovery_code,
+        };
+
+        Ok(into_response(&page_show_recovery, "html"))
+    } else {
+        sleep(Duration::from_secs(1)).await;
+        Err(AppError::WrongPassword)
+    }
+}
+
 /// generate salt
 ///
 /// <https://rust-lang-nursery.github.io/rust-cookbook/cryptography/encryption.html>

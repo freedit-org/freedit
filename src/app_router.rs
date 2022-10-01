@@ -13,7 +13,8 @@ use crate::{
         style, upload, upload_pic_post, upload_post,
         user::{
             remove_session, role_post, signin, signin_post, signout, signup, signup_post, user,
-            user_follow, user_list, user_password_post, user_setting, user_setting_post,
+            user_follow, user_list, user_password_post, user_recovery_code, user_setting,
+            user_setting_post,
         },
     },
 };
@@ -48,6 +49,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/user/setting", get(user_setting).post(user_setting_post))
         .route("/user/avatar", get(user_setting).post(upload_pic_post))
         .route("/user/password", get(user_setting).post(user_password_post))
+        .route("/user/recovery", get(user_setting).post(user_recovery_code))
         .route("/user/list", get(user_list))
         .route("/user/remove/:session_id", get(remove_session))
         .route("/role/:id/:uid", get(user_list).post(role_post))

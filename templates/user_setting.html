@@ -134,6 +134,36 @@
     </fieldset>
 </form>
 
+
+<form id="recovery" class="box" action="/user/recovery" method="post">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">password</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input name="password" class="input" type="password" required minlength="7">
+                    </div>
+                    <p class="help">You must input your password to generate or reset your recovery code.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="recovery" class="button is-link">Generate recovery code</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
 <div class="box">
     <div class="content">
         <h3>Sessions</h3>

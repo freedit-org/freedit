@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="box">
+    <div class="content">
+        <h2>Recovery code</h2>
+        <br>
+        <p><b>Note:</b></p>
+        <p>We will <b>not</b> save this code in database. If you close this page, nobody will see this code again.</p>
+        <p>Each time you generate a new code and only the last one will be valid.</p>
+        <br>
+        <p>recovery_code: </p>
+        <p><code>{{recovery_code}}</code></p>
+    </div>
+</div>
+
+<div class="divider"></div>
+{% endblock %}

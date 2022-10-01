@@ -100,6 +100,7 @@ pub(crate) async fn admin_view(
                     let key = ivec_to_u32(&k);
                     let (mut one, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                     one.password_hash = String::from("******");
+                    one.recovery_hash = None;
                     ones.push(format!("{}: {:?}", key, one));
                 }
                 "solos" => {
