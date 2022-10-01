@@ -488,6 +488,32 @@ pub(crate) async fn user_setting(
     Ok(into_response(&page_user_setting, "html"))
 }
 
+/// Page data: `reset.html`
+#[derive(Template)]
+#[template(path = "reset.html")]
+struct PageReset<'a> {
+    page_data: PageData<'a>,
+}
+
+/// `GET /user/reset`
+pub(crate) async fn reset(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+
+    if let Some(cookie) = cookie {
+        let claim = Claim::get(&db, &cookie, &site_config);
+        if claim.is_some() {
+            return Ok(Redirect::to("/user/setting").into_response());
+        }
+    };
+
+    let page_data = PageData::new("Forgot password", &site_config.site_name, None, false);
+    let page_reset = PageReset { page_data };
+    Ok(into_response(&page_reset, "html"))
+}
+
 /// `GET /user/remove/:session_id`
 pub(crate) async fn remove_session(
     State(db): State<Db>,

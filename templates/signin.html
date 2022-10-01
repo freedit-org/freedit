@@ -1,6 +1,6 @@
 {% extends "layout.html" %} 
 
-{% block section %}
+{% block content %}
 <section class="my-5 has-background-light">
 <div id="sign" class="container py-5">
     <form id="signin" class="box" action="/signin" method="post">
@@ -51,7 +51,9 @@
                         <button type="submit" form="signin" class="button is-link">Submit</button>
                     </div>
                 </div>
-                <p>New to freedit? <a href="/signup">Sign up</a></p>
+                <br>
+                <p>New to freedit? <a href="/signup">Sign up</a></p><br>
+                <p>Forgot password? <a href="/user/reset">Password reset</a></p>
             </center>
         </fieldset>
     </form>
