@@ -104,7 +104,6 @@
 struct User {
     uid: u32,
     username: String,
-    salt: String,
     password_hash: String,
     created_at: i64,
     role: u8,

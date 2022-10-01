@@ -561,10 +561,9 @@ pub(crate) async fn user_password_post(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&db, "users", claim.uid)?;
 
-    if check_password(&input.old_password, &user.salt, &user.password_hash) {
-        let (password_hash, salt) = generate_password_hash(&input.password);
+    if check_password(&input.old_password, &user.password_hash) {
+        let password_hash = generate_password_hash(&input.password);
         user.password_hash = password_hash;
-        user.salt = salt;
         let user_encode = bincode::encode_to_vec(&user, standard())?;
         db.open_tree("users")?
             .insert(u32_to_ivec(claim.uid), &*user_encode)?;
@@ -619,7 +618,7 @@ pub(crate) async fn signin_post(
         Err(_) => get_uid_by_name(&db, &input.username)?.ok_or(AppError::WrongPassword)?,
     };
     let user: User = get_one(&db, "users", uid)?;
-    if check_password(&input.password, &user.salt, &user.password_hash) {
+    if check_password(&input.password, &user.password_hash) {
         let site_config = get_site_config(&db)?;
         if site_config.read_only && user.role != u8::MAX {
             return Err(AppError::ReadOnly);
@@ -727,7 +726,7 @@ pub(crate) async fn signup_post(
         return Err(AppError::NameExists);
     }
 
-    let (password_hash, salt) = generate_password_hash(&input.password);
+    let password_hash = generate_password_hash(&input.password);
     let uid = incr_id(&db, "users_count")?;
 
     let avatar = format!("{}/{}.png", &CONFIG.avatars_path, uid);
@@ -744,7 +743,6 @@ pub(crate) async fn signup_post(
     let user = User {
         uid,
         username: input.username,
-        salt,
         password_hash,
         created_at,
         role,
@@ -797,7 +795,7 @@ fn generate_salt() -> [u8; 64] {
 const N_ITER: Option<std::num::NonZeroU32> = NonZeroU32::new(100_000);
 
 /// return hashed password and salt
-fn generate_password_hash(password: &str) -> (String, String) {
+fn generate_password_hash(password: &str) -> String {
     let n = N_ITER.unwrap();
     let salt = generate_salt();
     let mut pbkdf2_hash = [0_u8; 64];
@@ -808,22 +806,21 @@ fn generate_password_hash(password: &str) -> (String, String) {
         password.as_bytes(),
         &mut pbkdf2_hash,
     );
-    let password_hash = BASE64.encode(&pbkdf2_hash);
-    let salt = BASE64.encode(&salt);
 
-    (password_hash, salt)
+    BASE64.encode(&[&pbkdf2_hash[..], &salt[..]].concat())
 }
 
 /// check password
-fn check_password(password: &str, salt: &str, password_hash: &str) -> bool {
+fn check_password(password: &str, password_hash: &str) -> bool {
     let n = N_ITER.unwrap();
+    let decoded = BASE64.decode(password_hash.as_bytes()).unwrap();
 
     pbkdf2::verify(
         pbkdf2::PBKDF2_HMAC_SHA512,
         n,
-        &BASE64.decode(salt.as_bytes()).unwrap(),
+        &decoded[64..],
         password.as_bytes(),
-        &BASE64.decode(password_hash.as_bytes()).unwrap(),
+        &decoded[0..64],
     )
     .is_ok()
 }
@@ -951,14 +948,13 @@ mod tests {
 
     #[test]
     fn test_check_password() {
-        let (password_hash, salt) = generate_password_hash("password");
-        assert!(check_password("password", &salt, &password_hash));
+        let password_hash = generate_password_hash("password");
+        assert!(check_password("password", &password_hash));
 
-        let (password_hash2, salt2) = generate_password_hash("password");
-        assert!(check_password("password", &salt2, &password_hash2));
+        let password_hash2 = generate_password_hash("password");
+        assert!(check_password("password", &password_hash2));
 
         // must generate different password_hash and salt with the same password
         assert_ne!(password_hash, password_hash2);
-        assert_ne!(salt, salt2);
     }
 }
