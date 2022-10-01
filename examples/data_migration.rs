@@ -69,9 +69,9 @@ struct Inn {
     description: String,
     topics: Vec<String>,
     inn_type: String,
-    created_at: i64,
     // add new field, breaking the api
     early_birds: u32,
+    created_at: i64,
 }
 
 #[derive(Encode, Decode)]
