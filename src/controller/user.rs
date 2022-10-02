@@ -7,6 +7,7 @@ use super::{
     SiteConfig, User, ValidatedForm,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
+use ::rand::{thread_rng, Rng};
 use askama::Template;
 use axum::{
     extract::{Form, Path, Query, State},
@@ -514,6 +515,52 @@ pub(crate) async fn reset(
     Ok(into_response(&page_reset, "html"))
 }
 
+/// Form data: `/user/setting`
+#[derive(Deserialize, Validate)]
+pub(crate) struct FormReset {
+    username: String,
+    recovery_code: String,
+    #[validate(must_match(other = "password2", message = "Two passwords do not match"))]
+    password: String,
+    #[validate(length(min = 7))]
+    password2: String,
+}
+
+/// `POST /user/reset`
+pub(crate) async fn reset_post(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Form(input): Form<FormReset>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+
+    if let Some(cookie) = cookie {
+        let claim = Claim::get(&db, &cookie, &site_config);
+        if claim.is_some() {
+            return Ok(Redirect::to("/user/setting").into_response());
+        }
+    };
+
+    let uid = match input.username.parse::<u32>() {
+        Ok(uid) => uid,
+        Err(_) => get_uid_by_name(&db, &input.username)?.ok_or(AppError::NotFound)?,
+    };
+
+    let mut user: User = get_one(&db, "users", uid)?;
+    if let Some(ref recovery_hash) = user.recovery_hash {
+        if check_password(&input.recovery_code, recovery_hash) {
+            user.password_hash = generate_password_hash(&input.password);
+            let user_encode = bincode::encode_to_vec(&user, standard())?;
+            db.open_tree("users")?
+                .insert(u32_to_ivec(uid), user_encode)?;
+
+            return Ok(Redirect::to("/signin").into_response());
+        };
+    }
+
+    Err(AppError::NotFound)
+}
+
 /// `GET /user/remove/:session_id`
 pub(crate) async fn remove_session(
     State(db): State<Db>,
@@ -834,8 +881,7 @@ pub(crate) async fn user_recovery_code(
     let mut user: User = get_one(&db, "users", claim.uid)?;
 
     if check_password(&input.password, &user.password_hash) {
-        let salt = generate_salt();
-        let recovery_code = BASE64.encode(&salt);
+        let recovery_code = gen_password();
         user.recovery_hash = Some(generate_password_hash(&recovery_code));
         let user_encode = bincode::encode_to_vec(&user, standard())?;
         db.open_tree("users")?
@@ -852,6 +898,21 @@ pub(crate) async fn user_recovery_code(
         sleep(Duration::from_secs(1)).await;
         Err(AppError::WrongPassword)
     }
+}
+
+fn gen_password() -> String {
+    let mut rng = thread_rng();
+    let n: u8 = rng.gen_range(10..=24);
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+                            abcdefghijklmnopqrstuvwxyz\
+                            0123456789)(*&^%$#@!~";
+    let password: String = (0..n)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect();
+    password
 }
 
 /// generate salt
