@@ -224,9 +224,9 @@ use axum::{
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use data_encoding::HEXLOWER;
+use img_parts::{DynImage, ImageEXIF};
 use nanoid::nanoid;
 use once_cell::sync::Lazy;
-use rexif::{ExifTag, IfdKind};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -270,8 +270,7 @@ struct PageError<'a> {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let status = match self {
-            AppError::ImagePrivacyRisk(_, _)
-            | AppError::CaptchaError
+            AppError::CaptchaError
             | AppError::NameExists
             | AppError::InnCreateLimit
             | AppError::UsernameInvalid
@@ -423,50 +422,22 @@ pub(crate) async fn upload_post(
 
         let data = field.bytes().await.unwrap();
 
-        if let Ok(exif) = rexif::parse_buffer(&data) {
-            for entry in &exif.entries {
-                match entry.tag {
-                    ExifTag::Make
-                    | ExifTag::Model
-                    | ExifTag::Software
-                    | ExifTag::HostComputer
-                    | ExifTag::Copyright
-                    | ExifTag::GPSOffset
-                    | ExifTag::DateTimeOriginal
-                    | ExifTag::DateTimeDigitized
-                    | ExifTag::MakerNote
-                    | ExifTag::UserComment => {
-                        return Err(AppError::ImagePrivacyRisk(
-                            file_name,
-                            entry.value_more_readable.to_string(),
-                        ))
-                    }
-                    _ => {}
-                }
-
-                match entry.kind {
-                    IfdKind::Gps | IfdKind::Makernote => {
-                        return Err(AppError::ImagePrivacyRisk(
-                            file_name,
-                            entry.value_more_readable.to_string(),
-                        ))
-                    }
-                    _ => {}
-                }
-            }
-        }
-
         let image_format_detected = image::guess_format(&data)?;
         image::load_from_memory_with_format(&data, image_format_detected)?;
         let exts = image_format_detected.extensions_str();
 
+        let mut img = DynImage::from_bytes(data).unwrap().unwrap();
+        img.set_exif(None);
+        let out = img.encoder().bytes();
+
         let mut context = Context::new(&SHA1_FOR_LEGACY_USE_ONLY);
-        context.update(&data);
+        context.update(&out);
         let digest = context.finish();
-        let sha1 = HEXLOWER.encode(digest.as_ref()); //push_str(exts[0]);
+        let sha1 = HEXLOWER.encode(digest.as_ref());
         let fname = format!("{}.{}", &sha1[0..20], exts[0]);
         let location = format!("{}/{}", &CONFIG.upload_path, fname);
-        fs::write(location, &data).await.unwrap();
+
+        fs::write(location, &out).await.unwrap();
         let k = [&u32_to_ivec(claim.uid), fname.as_bytes()].concat();
         batch.insert(k, &[]);
 
