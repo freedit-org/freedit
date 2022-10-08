@@ -426,22 +426,23 @@ pub(crate) async fn upload_post(
         image::load_from_memory_with_format(&data, image_format_detected)?;
         let exts = image_format_detected.extensions_str();
 
-        let mut img = DynImage::from_bytes(data).unwrap().unwrap();
-        img.set_exif(None);
-        let out = img.encoder().bytes();
+        if let Ok(Some(mut img)) = DynImage::from_bytes(data) {
+            img.set_exif(None);
+            let out = img.encoder().bytes();
 
-        let mut context = Context::new(&SHA1_FOR_LEGACY_USE_ONLY);
-        context.update(&out);
-        let digest = context.finish();
-        let sha1 = HEXLOWER.encode(digest.as_ref());
-        let fname = format!("{}.{}", &sha1[0..20], exts[0]);
-        let location = format!("{}/{}", &CONFIG.upload_path, fname);
+            let mut context = Context::new(&SHA1_FOR_LEGACY_USE_ONLY);
+            context.update(&out);
+            let digest = context.finish();
+            let sha1 = HEXLOWER.encode(digest.as_ref());
+            let fname = format!("{}.{}", &sha1[0..20], exts[0]);
+            let location = format!("{}/{}", &CONFIG.upload_path, fname);
 
-        fs::write(location, &out).await.unwrap();
-        let k = [&u32_to_ivec(claim.uid), fname.as_bytes()].concat();
-        batch.insert(k, &[]);
+            fs::write(location, &out).await.unwrap();
+            let k = [&u32_to_ivec(claim.uid), fname.as_bytes()].concat();
+            batch.insert(k, &[]);
 
-        imgs.push((fname, file_name));
+            imgs.push((fname, file_name));
+        }
     }
     db.open_tree("user_uploads")?.apply_batch(batch)?;
 
