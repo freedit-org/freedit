@@ -18,15 +18,15 @@
 <div class="content">
     {% for img in imgs %}
     <figure>
-        <img src="/static/upload/{{img.0}}" alt="{{img.1}}">
+        <img src="/static/upload/{{img}}">
         <figcaption>
-            <code>![{{img.1}}](/static/upload/{{img.0}})</code>
+            <code>![](/static/upload/{{img}})</code>
         </figcaption>
     </figure>
     {% endfor %}
 
     {% for img in imgs %}
-        <code>![{{img.1}}](/static/upload/{{img.0}})</code><br>
+        <code>![](/static/upload/{{img}})</code><br>
     {% endfor %}
 
 </div>

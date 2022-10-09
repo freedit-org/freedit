@@ -381,7 +381,7 @@ pub(crate) async fn upload_pic_post(
 #[template(path = "upload.html")]
 struct PageUpload<'a> {
     page_data: PageData<'a>,
-    imgs: Vec<(String, String)>,
+    imgs: Vec<String>,
 }
 
 /// `GET /upload`
@@ -418,8 +418,6 @@ pub(crate) async fn upload_post(
             break;
         }
 
-        let file_name = field.file_name().unwrap().to_string();
-
         let data = field.bytes().await.unwrap();
 
         let image_format_detected = image::guess_format(&data)?;
@@ -441,7 +439,7 @@ pub(crate) async fn upload_post(
             let k = [&u32_to_ivec(claim.uid), fname.as_bytes()].concat();
             batch.insert(k, &[]);
 
-            imgs.push((fname, file_name));
+            imgs.push(fname);
         }
     }
     db.open_tree("user_uploads")?.apply_batch(batch)?;
