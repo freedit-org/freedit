@@ -422,7 +422,7 @@ pub(crate) async fn upload_post(
 
         let data = field.bytes().await.unwrap();
         let image_format_detected = image::guess_format(&data)?;
-        let exts = image_format_detected.extensions_str();
+        let ext;
         let img_data = match image_format_detected {
             ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP => {
                 if let Ok(Some(mut img)) = DynImage::from_bytes(data) {
@@ -467,6 +467,7 @@ pub(crate) async fn upload_post(
                     comp.finish_compress();
 
                     if let Ok(comp) = comp.data_to_vec() {
+                        ext = "jpeg";
                         comp
                     } else {
                         continue;
@@ -475,7 +476,10 @@ pub(crate) async fn upload_post(
                     continue;
                 }
             }
-            ImageFormat::Gif => data.to_vec(),
+            ImageFormat::Gif => {
+                ext = "gif";
+                data.to_vec()
+            }
             _ => {
                 continue;
             }
@@ -485,7 +489,7 @@ pub(crate) async fn upload_post(
         context.update(&img_data);
         let digest = context.finish();
         let sha1 = HEXLOWER.encode(digest.as_ref());
-        let fname = format!("{}.{}", &sha1[0..20], exts[0]);
+        let fname = format!("{}.{}", &sha1[0..20], ext);
         let location = format!("{}/{}", &CONFIG.upload_path, fname);
 
         fs::write(location, &img_data).await.unwrap();
