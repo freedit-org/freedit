@@ -439,7 +439,7 @@ pub(crate) async fn upload_post(
                     // resize
                     let width = (dyn_img.width() as f32 * factor.size_ratio) as u32;
                     let height = (dyn_img.width() as f32 * factor.size_ratio) as u32;
-                    let resized_img = dyn_img.resize(width, height, FilterType::Triangle);
+                    let resized_img = dyn_img.resize(width, height, FilterType::Lanczos3);
 
                     // compress
                     let mut comp = Compress::new(ColorSpace::JCS_RGB);
