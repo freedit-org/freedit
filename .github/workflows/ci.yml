@@ -27,7 +27,7 @@ jobs:
           components: clippy, rustfmt
       
       - name: Setup cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - name: Cargo test
         run: cargo test
