@@ -6,16 +6,19 @@
 
 The safest and lightest forum, powered by rust.
 
-Online: <https://freedit.eu/>
+Demo: <https://freedit.eu/>
 
 GitHub: <https://github.com/freedit-org/freedit>
 
 ## Features
 
+* Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled) 
 * No javascript at all, for safety maximization. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
-* Use embedded database [sled](https://github.com/spacejam/sled), easy to deploy, high performance.
-* Powered by Rust, with code highlighting, markdown and latex support.
-* Sub communities like reddit, multicentered; Personal space like twitter.
+* LaTex and Code highlighting support without JavaScript
+* Markdown support
+* inn: Subgroup like Subreddits
+* solo: Personal space like Twitter
+* https support
 
 ## Usage
 
