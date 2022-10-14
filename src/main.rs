@@ -125,7 +125,6 @@ async fn main() -> Result<(), AppError> {
 // TODO: endorsements
 // TODO: TEST with https://github.com/hatoo/oha
 // TODO: book/music/movie/list=entity
-// TODO: TOS
 
 fn create_snapshot(db: &sled::Db) {
     let checksum = db.checksum().unwrap();

@@ -24,6 +24,8 @@
     {% when Some with (false) %}
         <a href="/user/{{user.uid}}/follow"><button class="button is-primary is-small is-rounded">Follow</button></a>
     {% else %}
+        {% match page_data.claim %}{% when Some with (val) %}
+        {% if val.uid == user.uid %}
         <a href="/user/setting">
             <span class="icon is-large">
                 <span class="icon">
@@ -35,6 +37,8 @@
                 </span>
             </span>
         </a>
+        {% endif %}
+        {% else %}{% endmatch %}
     {% endmatch %}
     </div>
 </article>
