@@ -1,6 +1,6 @@
 use super::{
-    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, utils::md2html, Claim,
-    IterType, PageData, SiteConfig, ValidatedForm,
+    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, Claim, IterType, PageData,
+    SiteConfig, ValidatedForm,
 };
 use crate::{
     controller::{ivec_to_u32, Comment, Inn, Post, Solo, User},
