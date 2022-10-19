@@ -63,4 +63,4 @@ COOKIE=<cookie> cargo run --example mock
 
 * icon: <https://iconoir.com/>
 * CSS framework: <https://bulma.io/>
-* Rust crates: [Cargo.toml](./Cargo.toml)
+* Rust crates: [Cargo.toml](https://github.com/freedit-org/freedit/blob/main/Cargo.toml)

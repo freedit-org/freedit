@@ -241,6 +241,8 @@ use tracing::error;
 use utils::CURRENT_SHA256;
 use validator::Validate;
 
+use self::utils::md2html;
+
 pub(super) mod admin;
 pub(super) mod inn;
 pub(super) mod solo;
@@ -833,7 +835,7 @@ pub(super) async fn notification(
 struct PageData<'a> {
     title: &'a str,
     site_name: &'a str,
-    site_description: &'a str,
+    site_description: String,
     claim: Option<Claim>,
     has_unread: bool,
     sha256: &'a str,
@@ -854,10 +856,11 @@ impl<'a> PageData<'a> {
                 footer_links.push((path.as_str(), link.as_str()));
             }
         }
+        let site_description = md2html(&site_config.description);
         Self {
             title,
             site_name: &site_config.site_name,
-            site_description: &site_config.description,
+            site_description,
             claim,
             has_unread,
             sha256: &CURRENT_SHA256,
