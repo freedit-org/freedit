@@ -83,7 +83,7 @@ pub(crate) async fn mod_inn(
 
     // create new inn
     if iid == 0 {
-        let page_data = PageData::new("create new inn", &site_config.site_name, Some(claim), false);
+        let page_data = PageData::new("create new inn", &site_config, Some(claim), false);
         let page_inn_create = PageInnCreate { page_data };
         Ok(into_response(&page_inn_create, "html"))
     } else {
@@ -91,7 +91,7 @@ pub(crate) async fn mod_inn(
             return Err(AppError::Unauthorized);
         }
 
-        let page_data = PageData::new("edit inn", &site_config.site_name, Some(claim), false);
+        let page_data = PageData::new("edit inn", &site_config, Some(claim), false);
         let inn: Inn = get_one(&db, "inns", iid)?;
         let page_inn_edit = PageInnEdit { page_data, inn };
         Ok(into_response(&page_inn_edit, "html"))
@@ -256,7 +256,7 @@ struct OutInnList {
 
 /// Page data: `inn_list.html`
 #[derive(Template)]
-#[template(path = "inn_list.html")]
+#[template(path = "inn_list.html", escape = "none")]
 struct PageInnList<'a> {
     page_data: PageData<'a>,
     inns: Vec<OutInnList>,
@@ -326,7 +326,7 @@ pub(crate) async fn inn_list(
     } else {
         false
     };
-    let page_data = PageData::new("inns", &site_config.site_name, claim, has_unread);
+    let page_data = PageData::new("inns", &site_config, claim, has_unread);
     let page_inn_list = PageInnList {
         page_data,
         inns: out_inns,
@@ -363,7 +363,7 @@ async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
             };
             out_inns.push(out_inn);
         }
-        let page_data = PageData::new("inns", &site_config.site_name, None, false);
+        let page_data = PageData::new("inns", &site_config, None, false);
         let page_inn_list = PageInnList {
             page_data,
             inns: out_inns,
@@ -442,7 +442,7 @@ pub(crate) async fn edit_post(
     }
 
     if pid == 0 {
-        let page_data = PageData::new("new post", &site_config.site_name, Some(claim), false);
+        let page_data = PageData::new("new post", &site_config, Some(claim), false);
         let page_post_create = PagePostCreate { page_data, iid };
 
         Ok(into_response(&page_post_create, "html"))
@@ -469,7 +469,7 @@ pub(crate) async fn edit_post(
             return Err(AppError::NotFound);
         }
 
-        let page_data = PageData::new("edit post", &site_config.site_name, Some(claim), false);
+        let page_data = PageData::new("edit post", &site_config, Some(claim), false);
         let page_post_edit = PagePostEdit { page_data, post };
 
         Ok(into_response(&page_post_edit, "html"))
@@ -672,7 +672,7 @@ pub(crate) async fn tag(
     let index = get_ids_by_tag(&db, "tags", &tag, Some(&page_params))?;
     let out_post_list = get_out_post_list(&db, &index)?;
 
-    let page_data = PageData::new("inn", &site_config.site_name, claim, false);
+    let page_data = PageData::new("inn", &site_config, claim, false);
     let page_tag = PageTag {
         page_data,
         posts: out_post_list,
@@ -801,7 +801,7 @@ pub(crate) async fn inn(
     } else {
         false
     };
-    let page_data = PageData::new("inn", &site_config.site_name, claim, has_unread);
+    let page_data = PageData::new("inn", &site_config, claim, has_unread);
 
     let inn_name;
     let about;
@@ -814,7 +814,7 @@ pub(crate) async fn inn(
         description = md2html(&inn.description);
     } else {
         inn_name = "No post".into();
-        about = site_config.description;
+        about = "".into();
         description = "".into();
     };
 
@@ -1012,7 +1012,7 @@ pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppErro
     let n = 30;
     let is_desc = true;
     let mut anchor = 0;
-    let page_data = &PageData::new("inn", &site_config.site_name, None, false);
+    let page_data = &PageData::new("inn", &site_config, None, false);
 
     let mut posts_count = get_count(db, "default", "posts_count")?;
     for i in db.open_tree("inns_private")?.iter() {
@@ -1055,7 +1055,7 @@ pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppE
     let n = 30;
     let is_desc = true;
     let mut anchor = 0;
-    let page_data = &PageData::new("inn", &site_config.site_name, None, false);
+    let page_data = &PageData::new("inn", &site_config, None, false);
 
     // update inn post list
     let inns_private_tree = db.open_tree("inns_private")?;
@@ -1503,7 +1503,7 @@ pub(crate) async fn post(
     } else {
         false
     };
-    let page_data = PageData::new("post", &site_config.site_name, claim, has_unread);
+    let page_data = PageData::new("post", &site_config, claim, has_unread);
     let page_post = PagePost {
         page_data,
         post: out_post,
@@ -1598,7 +1598,7 @@ async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
     } else {
         0
     };
-    let page_data = PageData::new("post", &site_config.site_name, None, false);
+    let page_data = PageData::new("post", &site_config, None, false);
     let page_post = PagePost {
         page_data,
         post: out_post,
@@ -1793,7 +1793,7 @@ pub(crate) async fn preview(
     ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
-    let page_data = PageData::new("inn", &site_config.site_name, None, false);
+    let page_data = PageData::new("inn", &site_config, None, false);
 
     let page_preview = PagePreview {
         page_data,

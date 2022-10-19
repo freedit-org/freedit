@@ -91,7 +91,7 @@ pub(crate) async fn user(
     };
 
     let title = format!("{}-{}", out_user.username, out_user.uid);
-    let page_data = PageData::new(&title, &site_config.site_name, claim, false);
+    let page_data = PageData::new(&title, &site_config, claim, false);
     let page_user = PageUser {
         page_data,
         user: out_user,
@@ -317,7 +317,7 @@ pub(crate) async fn user_list(
         }
     }
 
-    let page_data = PageData::new("User list", &site_config.site_name, claim, false);
+    let page_data = PageData::new("User list", &site_config, claim, false);
     let page_user_list = PageUserList {
         page_data,
         users,
@@ -479,7 +479,7 @@ pub(crate) async fn user_setting(
 
     let page_user_setting = PageUserSetting {
         uid: claim.uid,
-        page_data: PageData::new("setting", &site_config.site_name, Some(claim), false),
+        page_data: PageData::new("setting", &site_config, Some(claim), false),
         username: user.username,
         about: user.about,
         url: user.url,
@@ -510,7 +510,7 @@ pub(crate) async fn reset(
         }
     };
 
-    let page_data = PageData::new("Forgot password", &site_config.site_name, None, false);
+    let page_data = PageData::new("Forgot password", &site_config, None, false);
     let page_reset = PageReset { page_data };
     Ok(into_response(&page_reset, "html"))
 }
@@ -675,7 +675,7 @@ pub(crate) async fn signin(
         let redirect = Redirect::to("/");
         return Ok(redirect.into_response());
     }
-    let page_data = PageData::new("Sign in", &site_config.site_name, claim, false);
+    let page_data = PageData::new("Sign in", &site_config, claim, false);
 
     let page_signin = PageSignin { page_data };
     Ok(into_response(&page_signin, "html"))
@@ -740,7 +740,7 @@ pub(crate) async fn signup(State(db): State<Db>) -> Result<impl IntoResponse, Ap
     if site_config.read_only {
         return Err(AppError::ReadOnly);
     }
-    let page_data = PageData::new("Sign up", &site_config.site_name, None, false);
+    let page_data = PageData::new("Sign up", &site_config, None, false);
 
     let captcha_difficulty = match site_config.captcha_difficulty.as_str() {
         "Easy" => Difficulty::Easy,
@@ -887,7 +887,7 @@ pub(crate) async fn user_recovery_code(
         db.open_tree("users")?
             .insert(u32_to_ivec(claim.uid), &*user_encode)?;
 
-        let page_data = PageData::new("Recovery code", &site_config.site_name, Some(claim), false);
+        let page_data = PageData::new("Recovery code", &site_config, Some(claim), false);
         let page_show_recovery = PageShowRecovery {
             page_data,
             recovery_code,

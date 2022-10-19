@@ -292,7 +292,8 @@ impl IntoResponse for AppError {
         };
 
         error!("{}, {}", status, self);
-        let page_data = PageData::new("Error", "Error found", None, false);
+        let site_config = SiteConfig::default();
+        let page_data = PageData::new("Error", &site_config, None, false);
         let page_error = PageError {
             page_data,
             status: status.to_string(),
@@ -394,7 +395,7 @@ pub(crate) async fn upload(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    let page_data = PageData::new("upload images", &site_config.site_name, Some(claim), false);
+    let page_data = PageData::new("upload images", &site_config, Some(claim), false);
     let page_upload = PageUpload {
         page_data,
         imgs: vec![],
@@ -500,7 +501,7 @@ pub(crate) async fn upload_post(
     }
     db.open_tree("user_uploads")?.apply_batch(batch)?;
 
-    let page_data = PageData::new("upload images", &site_config.site_name, Some(claim), false);
+    let page_data = PageData::new("upload images", &site_config, Some(claim), false);
     let page_upload = PageUpload { page_data, imgs };
 
     Ok(into_response(&page_upload, "html"))
@@ -819,12 +820,7 @@ pub(super) async fn notification(
     }
 
     let has_unread = has_unread(&db, claim.uid)?;
-    let page_data = PageData::new(
-        "notification",
-        &site_config.site_name,
-        Some(claim),
-        has_unread,
-    );
+    let page_data = PageData::new("notification", &site_config, Some(claim), has_unread);
     let notification_page = NotificationPage {
         page_data,
         notifications,
@@ -837,6 +833,7 @@ pub(super) async fn notification(
 struct PageData<'a> {
     title: &'a str,
     site_name: &'a str,
+    site_description: &'a str,
     claim: Option<Claim>,
     has_unread: bool,
     sha256: &'a str,
@@ -845,7 +842,12 @@ struct PageData<'a> {
 }
 
 impl<'a> PageData<'a> {
-    fn new(title: &'a str, site_name: &'a str, claim: Option<Claim>, has_unread: bool) -> Self {
+    fn new(
+        title: &'a str,
+        site_config: &'a SiteConfig,
+        claim: Option<Claim>,
+        has_unread: bool,
+    ) -> Self {
         let mut footer_links = vec![];
         for (path, _, link) in &CONFIG.serve_dir {
             if !link.is_empty() {
@@ -854,7 +856,8 @@ impl<'a> PageData<'a> {
         }
         Self {
             title,
-            site_name,
+            site_name: &site_config.site_name,
+            site_description: &site_config.description,
             claim,
             has_unread,
             sha256: &CURRENT_SHA256,

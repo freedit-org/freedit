@@ -36,7 +36,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="description" required maxlength="512" value="{{ site_config.description|trim }}" placeholder="Sitename" />
+                        <textarea name="description" class="textarea" maxlength="2048" placeholder="{{site_config.description}}">{{site_config.description}}</textarea>
                     </div>
                 </div>
             </div>

@@ -205,7 +205,7 @@ pub(crate) async fn solo_list(
     } else {
         "All".to_owned()
     };
-    let page_data = PageData::new("Solo", &site_config.site_name, claim, has_unread);
+    let page_data = PageData::new("Solo", &site_config, claim, has_unread);
 
     let page_solo_list = PageSoloList {
         page_data,
@@ -264,7 +264,7 @@ pub(crate) async fn solo(
         }
     }
 
-    let page_data = PageData::new("Solo", &site_config.site_name, claim, false);
+    let page_data = PageData::new("Solo", &site_config, claim, false);
     let page_solo = PageSolo {
         page_data,
         solo: out_solo,
