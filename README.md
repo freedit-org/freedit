@@ -58,3 +58,9 @@ integration testing
 ```bash
 COOKIE=<cookie> cargo run --example mock
 ```
+
+## Credits
+
+* icon: <https://iconoir.com/>
+* CSS framework: <https://bulma.io/>
+* Rust crates: [Cargo.toml](./Cargo.toml)
