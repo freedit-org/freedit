@@ -286,14 +286,13 @@ pub(crate) async fn admin(
 pub(crate) async fn admin_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(mut input): ValidatedForm<SiteConfig>,
+    ValidatedForm(input): ValidatedForm<SiteConfig>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &input).ok_or(AppError::NonLogin)?;
     if claim.role != u8::MAX {
         return Err(AppError::Unauthorized);
     }
-    input.description = md2html(&input.description);
 
     let site_config = bincode::encode_to_vec(&input, standard())?;
     db.insert("site_config", site_config)?;
