@@ -99,3 +99,7 @@ p {
     word-wrap: break-word;
     text-align: justify
 }
+
+details summary { 
+    cursor: pointer;
+}
