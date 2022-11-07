@@ -583,11 +583,11 @@ pub(crate) async fn edit_post_post(
     let visibility_ivec = u32_to_ivec(visibility);
     if old_pid == 0 {
         let k = [&iid_ivec, &pid_ivec].concat();
-        db.open_tree("inn_posts")?.insert(&k, &[])?;
+        db.open_tree("inn_posts")?.insert(k, &[])?;
 
         let k = [&u32_to_ivec(claim.uid), &pid_ivec].concat();
         let v = [&iid_ivec, &visibility_ivec].concat();
-        db.open_tree("user_posts")?.insert(&k, v)?;
+        db.open_tree("user_posts")?.insert(k, v)?;
     }
 
     if visibility < 10 {
@@ -603,7 +603,7 @@ pub(crate) async fn edit_post_post(
         let old_timestamp = db.open_tree("post_timeline_idx")?.get(&k)?;
         if let Some(v) = old_timestamp {
             let k = [&v, &iid_ivec, &pid_ivec].concat();
-            db.open_tree("post_timeline")?.remove(&k)?;
+            db.open_tree("post_timeline")?.remove(k)?;
         }
     }
     // kv_pair: iid#pid = timestamp
@@ -1745,7 +1745,7 @@ pub(crate) async fn comment_post(
     let mut visibility = 0;
     if let Some(v) = old_timestamp {
         let k = [&v, &iid_ivec, &pid_ivec].concat();
-        if let Some(v) = db.open_tree("post_timeline")?.remove(&k)? {
+        if let Some(v) = db.open_tree("post_timeline")?.remove(k)? {
             visibility = ivec_to_u32(&v);
         };
     }
@@ -1820,12 +1820,12 @@ pub(crate) async fn comment_delete(
         &u32_to_ivec(cid),
     ]
     .concat();
-    if !db.open_tree("user_comments")?.contains_key(&k)? {
+    if !db.open_tree("user_comments")?.contains_key(k)? {
         return Err(AppError::Unauthorized);
     }
 
     let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
-    db.open_tree("post_comments")?.remove(&k)?;
+    db.open_tree("post_comments")?.remove(k)?;
 
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
@@ -1843,7 +1843,7 @@ pub(crate) async fn comment_hide(
         .ok_or(AppError::NonLogin)?;
 
     let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
-    if !db.open_tree("mod_inns")?.contains_key(&k)? {
+    if !db.open_tree("mod_inns")?.contains_key(k)? {
         return Err(AppError::Unauthorized);
     }
 

@@ -69,7 +69,7 @@ impl OutSolo {
                 }
             } else if solo.visibility == 10 && uid != solo.uid {
                 let k = [&u32_to_ivec(solo.uid), &u32_to_ivec(uid)].concat();
-                if !db.open_tree("user_followers")?.contains_key(&k)? {
+                if !db.open_tree("user_followers")?.contains_key(k)? {
                     return Ok(None);
                 }
             }
@@ -80,7 +80,7 @@ impl OutSolo {
         let mut like = false;
         if let Some(uid) = current_uid {
             let k = [&u32_to_ivec(sid), &u32_to_ivec(uid)].concat();
-            if db.open_tree("solo_users_like")?.contains_key(&k)? {
+            if db.open_tree("solo_users_like")?.contains_key(k)? {
                 like = true;
             }
         }
@@ -142,7 +142,7 @@ pub(crate) async fn solo_list(
     let mut current_uid = 0;
     if let Some(ref claim) = claim {
         let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
-        if db.open_tree("user_following")?.contains_key(&following_k)? {
+        if db.open_tree("user_following")?.contains_key(following_k)? {
             is_following = true;
         }
 
@@ -493,14 +493,14 @@ pub(crate) async fn solo_delete(
         let (k, _) = i?;
         let uid = &k[4..8];
         let user_solos_like_k = [uid, &sid_ivec].concat();
-        user_solos_like_tree.remove(&user_solos_like_k)?;
+        user_solos_like_tree.remove(user_solos_like_k)?;
         solo_users_like_tree.remove(&k)?;
     }
 
     let hashtags_tree = db.open_tree("hashtags")?;
     for hashtag in solo.hashtags {
         let k = [hashtag.as_bytes(), &sid_ivec].concat();
-        hashtags_tree.remove(&k)?;
+        hashtags_tree.remove(k)?;
     }
 
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();

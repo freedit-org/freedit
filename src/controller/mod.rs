@@ -971,7 +971,7 @@ fn get_inn_role(db: &Db, iid: u32, uid: u32) -> Result<Option<u8>, AppError> {
     let inn_users_k = [&u32_to_ivec(iid), &u32_to_ivec(uid)].concat();
     Ok(db
         .open_tree("inn_users")?
-        .get(&inn_users_k)?
+        .get(inn_users_k)?
         .map(|role| role.to_vec()[0]))
 }
 
