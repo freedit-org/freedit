@@ -6,7 +6,7 @@ license = "MIT"
 
 [dependencies]
 askama = { version = "0.11", default-features = false } # templates engine 
-axum = { version = "0.6.0-rc.1", features = ["http2", "headers", "form", "query", "multipart"], default-features = false }
+axum = { version = "0.6.0-rc.4", features = ["http2", "headers", "form", "query", "multipart"], default-features = false }
 axum-server = { version = "0.4", features = ["tls-rustls"] }
 bincode = "2.0.0-rc.1"
 captcha = { version = "0.0.9", default-features = false }
