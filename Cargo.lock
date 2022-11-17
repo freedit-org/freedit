@@ -115,9 +115,9 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
 name = "axum"
-version = "0.6.0-rc.2"
+version = "0.6.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2628a243073c55aef15a1c1fe45c87f21b84f9e89ca9e7b262a180d3d03543d"
+checksum = "11ce1fe515f70a98649f95d9434e8ad2ce8d581b5c9763a15470da5f6ef2e481"
 dependencies = [
  "async-trait",
  "axum-core",
@@ -147,9 +147,9 @@ dependencies = [
 
 [[package]]
 name = "axum-core"
-version = "0.3.0-rc.2"
+version = "0.3.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "473bd0762170028bb6b5068be9e97de2a9f0af3bf2084498d840498f47194d3d"
+checksum = "5d1aa274f0599e5100cbc24e1f184d437d8086ea0bba0b5f68326e2ad5a48567"
 dependencies = [
  "async-trait",
  "bytes",
@@ -163,9 +163,9 @@ dependencies = [
 
 [[package]]
 name = "axum-server"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe9d24aee451033964a43eba3e4ecb98543fd8ec7c57f24b6fc73c9bea8864b8"
+checksum = "8456dab8f11484979a86651da8e619b355ede5d61a160755155f6c344bd18c47"
 dependencies = [
  "arc-swap",
  "bytes",
@@ -284,9 +284,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.74"
+version = "1.0.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "581f5dba903aac52ea3feb5ec4810848460ee833876f1f9b0fdeab1f19091574"
+checksum = "76a284da2e6fe2092f2353e51713435363112dfd60030e22add80be333fb928f"
 dependencies = [
  "jobserver",
 ]
@@ -361,9 +361,9 @@ checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
 
 [[package]]
 name = "digest"
-version = "0.10.5"
+version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adfbc57365a37acbd2ebf2b64d7e69bb766e2fea813521ed536f5d0520dcf86c"
+checksum = "8168378f4e5023e7218c89c891c0fd8ecdb5e5e4f18cb78f38cf245dd021e76f"
 dependencies = [
  "block-buffer",
  "crypto-common",
@@ -386,9 +386,9 @@ dependencies = [
 
 [[package]]
 name = "fallible_collections"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c195cf4b2285d3c993eb887b4dc56b0d5728bbe1d0f9a99c0ac6bec2da3e4d85"
+checksum = "3f57ccc32870366ae684be48b32a1a2e196f98a42a9b4361fe77e13fd4a34755"
 dependencies = [
  "hashbrown",
 ]
@@ -658,9 +658,9 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "hyper"
-version = "0.14.22"
+version = "0.14.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abfba89e19b959ca163c7752ba59d737c1ceea53a5d31a149c805446fc958064"
+checksum = "034711faac9d2166cb1baf1a2fb0b60b1f277f8492fd72176c17f3515e1abd3c"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -682,9 +682,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-rustls"
-version = "0.23.0"
+version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d87c48c02e0dc5e3b849a2041db3029fd066650f8f717c07bf8ed78ccb895cac"
+checksum = "59df7c4e19c950e6e0e868dcc0a300b09a9b88e9ec55bd879ca819087a77355d"
 dependencies = [
  "http",
  "hyper",
@@ -730,9 +730,9 @@ checksum = "cb56e1aa765b4b4f3aadfab769793b7087bb03a4ea4920644a6d238e2df5b9ed"
 
 [[package]]
 name = "image"
-version = "0.24.4"
+version = "0.24.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd8e4fb07cf672b1642304e731ef8a6a4c7891d67bb4fd4f5ce58cd6ed86803c"
+checksum = "69b7ea949b537b0fd0af141fff8c77690f2ce96f4f41f042ccb6c69c6c965945"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -797,9 +797,9 @@ dependencies = [
 
 [[package]]
 name = "jpeg-decoder"
-version = "0.2.6"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9478aa10f73e7528198d75109c8be5cd7d15fb530238040148d5f9a22d4c5b3b"
+checksum = "bc0000e42512c92e31c2252315bda326620a4e034105e900c98ec492fa077b3e"
 
 [[package]]
 name = "js-sys"
@@ -1278,9 +1278,9 @@ checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
 
 [[package]]
 name = "reqwest"
-version = "0.11.12"
+version = "0.11.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "431949c384f4e2ae07605ccaa56d1d9d2ecdb5cadd4f9577ccfab29f2e5149fc"
+checksum = "68cc60575865c7831548863cc02356512e3f1dc2f3f82cb837d7fc4cc8f3c97c"
 dependencies = [
  "base64",
  "bytes",

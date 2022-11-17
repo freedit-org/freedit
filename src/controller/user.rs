@@ -571,7 +571,7 @@ pub(crate) async fn remove_session(
     let site_config = get_site_config(&db)?;
     Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    db.open_tree("sessions")?.remove(&session_id)?;
+    db.open_tree("sessions")?.remove(session_id)?;
     Ok(Redirect::to("/user/setting"))
 }
 

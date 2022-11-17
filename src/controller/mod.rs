@@ -212,9 +212,7 @@ use askama::Template;
 use axum::{
     async_trait,
     body::{self, BoxBody, Empty, Full},
-    extract::{
-        rejection::FormRejection, ContentLengthLimit, Form, FromRequest, Multipart, Query, State,
-    },
+    extract::{rejection::FormRejection, Form, FromRequest, Multipart, Query, State},
     headers::{Cookie, HeaderName},
     http::{HeaderMap, HeaderValue, Request, StatusCode},
     response::{IntoResponse, Redirect, Response},
@@ -344,7 +342,7 @@ pub(crate) async fn upload_pic_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<UploadPicParams>,
-    ContentLengthLimit(mut multipart): ContentLengthLimit<Multipart, { 3 * 1024 * 1024 }>,
+    mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -410,7 +408,7 @@ pub(crate) async fn upload(
 pub(crate) async fn upload_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    ContentLengthLimit(mut multipart): ContentLengthLimit<Multipart, { 30 * 1024 * 1024 }>,
+    mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
@@ -971,7 +969,7 @@ fn get_inn_role(db: &Db, iid: u32, uid: u32) -> Result<Option<u8>, AppError> {
     let inn_users_k = [&u32_to_ivec(iid), &u32_to_ivec(uid)].concat();
     Ok(db
         .open_tree("inn_users")?
-        .get(&inn_users_k)?
+        .get(inn_users_k)?
         .map(|role| role.to_vec()[0]))
 }
 

@@ -18,7 +18,10 @@ use crate::{
         },
     },
 };
-use axum::{error_handling::HandleErrorLayer, http::StatusCode, routing::get, BoxError, Router};
+use axum::{
+    error_handling::HandleErrorLayer, extract::DefaultBodyLimit, handler::Handler,
+    http::StatusCode, routing::get, BoxError, Router,
+};
 use sled::Db;
 use std::time::Duration;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
@@ -27,6 +30,8 @@ use tower_http::{
     trace::{DefaultMakeSpan, TraceLayer},
 };
 use tracing::{info, Level};
+
+const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
 
 pub(super) async fn router(db: Db) -> Router {
     let middleware_stack = ServiceBuilder::new()
@@ -59,7 +64,10 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/admin/view", get(admin_view))
         .route("/admin/stats", get(admin_stats))
         .route("/mod/:iid", get(mod_inn).post(mod_inn_post))
-        .route("/mod/inn_icon", get(mod_inn).post(upload_pic_post))
+        .route(
+            "/mod/inn_icon",
+            get(mod_inn).post(upload_pic_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),
+        )
         .route("/mod/:iid/:pid/lock", get(post_lock))
         .route("/mod/:iid/:pid/hide", get(post_hide))
         .route("/inn/list", get(inn_list))
@@ -80,19 +88,22 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/solo/:sid/like", get(solo_like))
         .route("/solo/:sid/delete", get(solo_delete))
         .route("/solo/:sid", get(solo))
-        .route("/upload", get(upload).post(upload_post));
+        .route(
+            "/upload",
+            get(upload).post(upload_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),
+        );
 
     let mut router_static = Router::new()
         .route("/health_check", get(health_check))
         .route("/static/style.css", get(style))
-        .nest("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
-        .nest("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
-        .nest("/static/upload", serve_dir(&CONFIG.upload_path).await)
-        .nest(
+        .nest_service("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
+        .nest_service("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
+        .nest_service("/static/upload", serve_dir(&CONFIG.upload_path).await)
+        .nest_service(
             "/static/inn",
             serve_dir(&format!("{}/inn", &CONFIG.html_path)).await,
         )
-        .nest(
+        .nest_service(
             "/static/post",
             serve_dir(&format!("{}/post", &CONFIG.html_path)).await,
         );
@@ -100,7 +111,7 @@ pub(super) async fn router(db: Db) -> Router {
     for (path, dir, _) in &CONFIG.serve_dir {
         let path = format!("/{}", path);
         info!("serve dir: {} -> {}", path, dir);
-        router_static = router_static.nest(&path, serve_dir(dir).await);
+        router_static = router_static.nest_service(&path, serve_dir(dir).await);
     }
 
     let app = Router::new().merge(router_db).merge(router_static);
