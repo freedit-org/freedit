@@ -316,7 +316,7 @@ impl Default for SiteConfig {
             per_page: 30,
             static_page: 10,
             captcha_difficulty: "Easy".into(),
-            captcha_name: "Amelia".into(),
+            captcha_name: "Lucy".into(),
         }
     }
 }
