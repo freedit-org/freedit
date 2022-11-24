@@ -369,7 +369,6 @@ pub(crate) async fn solo_post(
     let mut content = input.content;
     let mut hashtags = Vec::new();
 
-    // TODO: hashtag per user, note-taking
     if visibility == 0 {
         hashtags = extract_element(&content, 5, '#');
         if !hashtags.is_empty() {
