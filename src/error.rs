@@ -1,5 +1,4 @@
 use thiserror::Error;
-use tracing::error;
 
 #[derive(Error, Debug)]
 pub(super) enum AppError {
@@ -48,4 +47,8 @@ pub(super) enum AppError {
     ValidationError(#[from] validator::ValidationErrors),
     #[error(transparent)]
     AxumFormRejection(#[from] axum::extract::rejection::FormRejection),
+    #[error("Invalid feed link")]
+    InvalidFeedLink,
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
 }

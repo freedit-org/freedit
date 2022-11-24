@@ -2,6 +2,7 @@ use crate::{
     config::CONFIG,
     controller::{
         admin::{admin, admin_post, admin_stats, admin_view},
+        feed::{feed, feed_add, feed_add_post},
         handler_404, health_check, home,
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
@@ -91,7 +92,9 @@ pub(super) async fn router(db: Db) -> Router {
         .route(
             "/upload",
             get(upload).post(upload_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),
-        );
+        )
+        .route("/feed", get(feed))
+        .route("/feed/add", get(feed_add).post(feed_add_post));
 
     let mut router_static = Router::new()
         .route("/health_check", get(health_check))

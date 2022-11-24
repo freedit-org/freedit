@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<form id="feed_add" class="box" action="/feed/add" method="POST">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="url">url</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="url" required maxlength="500" placeholder="url" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="folder">Folder</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        {% for folder in folders %}
+                        <label class="radio"><input type="radio" name="folder" value={{folder}} required="required" autocomplete="off" /> {{folder}} </label>
+                        {% endfor %}
+                        <label class="radio"><input type="radio" name="folder" value="New" autocomplete="off" /> New </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="new_folder">New folder</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="new_folder" maxlength="64" placeholder="Only works when new is selected" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="feed_add" class="button is-link">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<div class="divider"></div>
+{% endblock %}
+
+{% block aside %}
+<div class="box">
+    <a href="/feed">
+        <span class="tag is-link">Feed</span>
+    </a>
+</div>
+{% endblock %}

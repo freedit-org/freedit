@@ -90,6 +90,19 @@
 //! | "user_comments"       | `uid#pid#cid`        | `&[]`       |
 //! | "comment_upvotes"     | `pid#cid#uid`        | `&[]`       |
 //! | "comment_downvotes"   | `pid#cid#uid`        | `&[]`       |
+//!
+//! ### rss
+//! | tree                  | key                  | value       |
+//! |-----------------------|----------------------|-------------|
+//! | default               | "feeds_count"        | N           |
+//! | default               | "items_count"        | N           |
+//! | "user_folders"        | `uid#folder#feed_id` | `&[]`       |
+//! | "feeds"               | `feed_id`            | [`Feed`]    |
+//! | "item_links"          | `item_link`          | `item_id`   |
+//! | "items"               | `item_id`            | [`Item`]    |
+//! | "feed_links"          | `feed_link`          | `feed_id`   |
+//! | "read"                | `uid#item_id`        | `&[]`       |
+//! | "star"                | `uid#item_id`        | `&[]`       |
 
 /// user
 ///
@@ -167,6 +180,44 @@ struct Comment {
     is_hidden: bool,
 }
 
+#[derive(Encode, Decode, Debug)]
+struct Feed {
+    link: String,
+    title: String,
+    item_ids: Vec<u32>,
+}
+
+#[derive(Encode, Decode, Debug)]
+struct Item {
+    link: String,
+    title: String,
+    updated: String,
+}
+
+impl From<rss::Item> for Item {
+    fn from(rss: rss::Item) -> Self {
+        let mut updated = rss.pub_date.unwrap_or_default();
+        updated.truncate(16);
+        Item {
+            link: rss.link.unwrap(),
+            title: rss.title.unwrap_or("No Title".to_owned()),
+            updated,
+        }
+    }
+}
+
+impl From<atom_syndication::Entry> for Item {
+    fn from(atom: atom_syndication::Entry) -> Self {
+        let mut updated = atom.updated.to_rfc2822();
+        updated.truncate(16);
+        Item {
+            link: atom.links[0].href.clone(),
+            title: atom.title.to_string(),
+            updated,
+        }
+    }
+}
+
 /// Go to source code to see default value: [SiteConfig::default()]
 #[derive(Serialize, Deserialize, Encode, Decode, Validate, Debug)]
 pub(super) struct SiteConfig {
@@ -242,6 +293,7 @@ use validator::Validate;
 use self::utils::md2html;
 
 pub(super) mod admin;
+pub(super) mod feed;
 pub(super) mod inn;
 pub(super) mod solo;
 pub(super) mod user;

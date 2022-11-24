@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="level is-mobile px-3">
+    <div class="level-left">
+        <div class="tabs is-small is-toggle is-toggle-rounded">
+            <ul>
+                {% match filter.as_deref() %}{% when Some with ("star") %}
+                    <li><a href="/feed">All</a></li>
+                    <li class="is-active"><a href="/feed?filter=star">Star</a></li>
+                {% else %}
+                    <li class="is-active"><a href="/feed">All</a></li>
+                    <li><a href="/feed?filter=star">Star</a></li>
+                {% endmatch %}
+            </ul>
+        </div>
+    </div>
+    <div class="level-right">
+        <a href="/feed/add"><button class="button is-primary is-small is-rounded">New Feed</button></a>
+    </div>
+</div>
+
+<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+    {% for item in items %}
+    <div class="list-item">
+        <div class="list-item-content">
+            <div class="list-item-title">
+                <strong><a href="{{item.link}}" target="_blank">{{item.title}}</a></strong>
+            </div>
+            <div class="list-item-description">
+                <span class="tag">{{item.updated}}</span>
+            </div>
+        </div>
+        <!-- TODO: -->
+        <div class="list-item-controls">
+            <span class="tag">⭐</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<nav class="pagination">
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+        {% match filter %} {% when Some with (val) %}
+            {% match filter_value %} {% when Some with (value) %}
+                <a class="pagination-previous" href="/feed?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Prev</a>
+            {% else %}
+                <a class="pagination-previous" href="/feed?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            {% endmatch %}
+        {% else %}
+            <a class="pagination-previous" href="/feed?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+        {% endmatch %}
+    {% endif %}
+
+    {% if items.len() < n %}
+        <a class="pagination-next" disabled>Next</a>
+    {% else %}
+        {% match filter %} {% when Some with (val) %}
+            {% match filter_value %} {% when Some with (value) %}
+                <a class="pagination-next" href="/feed?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Next</a>
+            {% else %}
+                <a class="pagination-next" href="/feed?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            {% endmatch %}
+        {% else %}
+            <a class="pagination-next" href="/feed?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+        {% endmatch %}
+    {% endif %}
+</nav>
+
+{% endblock %}
+        
+
+{% block aside %}
+
+<div class="box">
+    {% match filter_value %} {% when Some(val) %}
+        {% for feed in feeds %}
+        <a href="/feed?filter=folder&filter_value={{feed.0}}">
+            {% if feed.0 == val %}
+            <span class="tag is-success">{{feed.0}}</span>
+            {% else %}
+            <span class="tag is-info">{{feed.0}}</span>
+            {% endif %}
+        </a>
+        {% endfor %}
+    {% else %}
+        {% for feed in feeds %}
+        <a href="/feed?filter=folder&filter_value={{feed.0}}">
+            <span class="tag is-info">{{feed.0}}</span>
+        </a>
+        {% endfor %}
+    {% endmatch %}
+</div>
+
+<div class="box">
+    
+        {% for feed in feeds %}
+        {% for item in feed.1 %}
+        <div class="py-1">
+        <a href="/feed?filter=item&filter_value={{item.0}}">
+            {% if item.2 %}
+            <span class="tag is-success">{{item.1}}</span>
+            {% else %}
+            <span class="tag is-info">{{item.1}}</span>
+            {% endif %}
+        </a>
+        </div>
+        {% endfor %}
+        {% endfor %}
+    
+</div>
+
+{% endblock %}
