@@ -6,7 +6,7 @@
         {% for i in tree_names %}
             <a href="/admin/view?tree_name={{i}}">
                 {% if i == tree_name.as_str() %}
-                <span class="tag is-primary">{{i}}</span>
+                <span class="tag is-success">{{i}}</span>
                 {% else %}
                 <span class="tag is-info">{{i}}</span>
                 {% endif %}

@@ -47,7 +47,7 @@
     <div class="level-right">
         {% match page_data.claim %} {% when Some with (val) %}
             {% if val.role >= 100 %}
-            <a href="/mod/0"><button class="button is-primary is-small is-rounded">New</button></a>
+            <a href="/mod/0"><button class="button is-success is-small is-rounded">New</button></a>
             {% endif %}
         {% else %}{% endmatch %}
     </div>
@@ -84,7 +84,7 @@
             {% endfor %}
             
             {% match filter.as_deref() %} {% when Some with ("mod") %}
-                <a href="/mod/{{inn.iid}}"><span class="tag is-primary">Edit</span></a>
+                <a href="/mod/{{inn.iid}}"><span class="tag is-success">Edit</span></a>
             {% when Some with ("joined") %}
                 <a href="/inn/{{inn.iid}}/join"><span class="tag is-danger">Exit</span></a>
             {% else %}{% endmatch %}

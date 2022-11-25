@@ -6,17 +6,27 @@
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
                 {% match filter.as_deref() %}{% when Some with ("star") %}
-                    <li><a href="/feed">All</a></li>
-                    <li class="is-active"><a href="/feed?filter=star">Star</a></li>
+                    <li><a href="/feed/{{uid}}">All</a></li>
+                    <li class="is-active"><a href="/feed/{{uid}}?filter=star">Star</a></li>
                 {% else %}
-                    <li class="is-active"><a href="/feed">All</a></li>
-                    <li><a href="/feed?filter=star">Star</a></li>
+                    <li class="is-active"><a href="/feed/{{uid}}">All</a></li>
+                    <li><a href="/feed/{{uid}}?filter=star">Star</a></li>
                 {% endmatch %}
             </ul>
         </div>
     </div>
     <div class="level-right">
-        <a href="/feed/add"><button class="button is-primary is-small is-rounded">New Feed</button></a>
+        {% match page_data.claim %}{% when Some with (val) %}
+            {% if val.uid != uid %}
+                {% match filter.as_deref() %}{% when Some with ("item") %}
+                <a href="/feed/add"><button class="button is-success is-small is-rounded">Add to my feed</button></a>
+                {% else %}{% endmatch %}
+            {% else %}
+                <a href="/feed/add"><button class="button is-success is-small is-rounded">New Feed</button></a>
+            {% endif %}
+        {% else %}
+            <a href="/feed/add"><button class="button is-success is-small is-rounded">New Feed</button></a>
+        {% endmatch %}    
     </div>
 </div>
 
@@ -45,12 +55,12 @@
     {% else %}
         {% match filter %} {% when Some with (val) %}
             {% match filter_value %} {% when Some with (value) %}
-                <a class="pagination-previous" href="/feed?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Prev</a>
+                <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Prev</a>
             {% else %}
-                <a class="pagination-previous" href="/feed?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+                <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
             {% endmatch %}
         {% else %}
-            <a class="pagination-previous" href="/feed?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
         {% endmatch %}
     {% endif %}
 
@@ -59,12 +69,12 @@
     {% else %}
         {% match filter %} {% when Some with (val) %}
             {% match filter_value %} {% when Some with (value) %}
-                <a class="pagination-next" href="/feed?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Next</a>
+                <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Next</a>
             {% else %}
-                <a class="pagination-next" href="/feed?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+                <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
             {% endmatch %}
         {% else %}
-            <a class="pagination-next" href="/feed?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
         {% endmatch %}
     {% endif %}
 </nav>
@@ -76,40 +86,58 @@
 
 <div class="box">
     {% match filter_value %} {% when Some(val) %}
-        {% for feed in feeds %}
-        <a href="/feed?filter=folder&filter_value={{feed.0}}">
-            {% if feed.0 == val %}
-            <span class="tag is-success">{{feed.0}}</span>
+        {% for folder in folders %}
+        <a href="/feed/{{uid}}?filter=folder&filter_value={{folder.0}}">
+            {% if folder.0 == val %}
+            <span class="tag is-success">{{folder.0}}</span>
             {% else %}
-            <span class="tag is-info">{{feed.0}}</span>
+            <span class="tag is-info">{{folder.0}}</span>
             {% endif %}
         </a>
         {% endfor %}
     {% else %}
-        {% for feed in feeds %}
-        <a href="/feed?filter=folder&filter_value={{feed.0}}">
-            <span class="tag is-info">{{feed.0}}</span>
+        {% for folder in folders %}
+        <a href="/feed/{{uid}}?filter=folder&filter_value={{folder.0}}">
+            <span class="tag is-info">{{folder.0}}</span>
         </a>
         {% endfor %}
     {% endmatch %}
 </div>
 
 <div class="box">
-    
-        {% for feed in feeds %}
-        {% for item in feed.1 %}
-        <div class="py-1">
-        <a href="/feed?filter=item&filter_value={{item.0}}">
-            {% if item.2 %}
-            <span class="tag is-success">{{item.1}}</span>
+    {% for folder in folders %}
+    {% for feed in folder.1 %}
+    <div class="py-1">
+        <a href="/feed/{{uid}}?filter=item&filter_value={{feed.feed_id}}">
+            {% if feed.is_active %}
+            <span class="tag is-success">
+                {% if !feed.is_public %}
+                <span class="icon">
+                    <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <title>Only you can see</title>
+                        <path d="M16 12H17.4C17.7314 12 18 12.2686 18 12.6V19.4C18 19.7314 17.7314 20 17.4 20H6.6C6.26863 20 6 19.7314 6 19.4V12.6C6 12.2686 6.26863 12 6.6 12H8M16 12V8C16 6.66667 15.2 4 12 4C8.8 4 8 6.66667 8 8V12M16 12H8" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>&nbsp
+                {% endif %}
+                {{feed.title}}
+            </span>
             {% else %}
-            <span class="tag is-info">{{item.1}}</span>
+            <span class="tag is-info">
+                {% if !feed.is_public %}
+                <span class="icon">
+                    <svg width="32" height="32" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <title>Only you can see</title>
+                        <path d="M16 12H17.4C17.7314 12 18 12.2686 18 12.6V19.4C18 19.7314 17.7314 20 17.4 20H6.6C6.26863 20 6 19.7314 6 19.4V12.6C6 12.2686 6.26863 12 6.6 12H8M16 12V8C16 6.66667 15.2 4 12 4C8.8 4 8 6.66667 8 8V12M16 12H8" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>&nbsp
+                {% endif %}
+                {{feed.title}}
+            </span>
             {% endif %}
         </a>
-        </div>
-        {% endfor %}
-        {% endfor %}
-    
+    </div>
+    {% endfor %}
+    {% endfor %}
 </div>
 
 {% endblock %}

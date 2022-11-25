@@ -8,7 +8,7 @@ use crate::{
 };
 use askama::Template;
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     headers::Cookie,
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
@@ -26,13 +26,21 @@ use std::{collections::HashSet, time::Duration};
 #[template(path = "feed.html")]
 struct PageFeed<'a> {
     page_data: PageData<'a>,
-    feeds: IndexMap<String, Vec<(u32, String, bool)>>,
+    folders: IndexMap<String, Vec<OutFeed>>,
     items: Vec<Item>,
     filter: Option<String>,
     filter_value: Option<String>,
     anchor: usize,
     n: usize,
     is_desc: bool,
+    uid: u32,
+}
+
+struct OutFeed {
+    feed_id: u32,
+    title: String,
+    is_active: bool,
+    is_public: bool,
 }
 
 /// url params: `feed.html`
@@ -48,39 +56,40 @@ pub(crate) struct ParamsFeed {
 pub(crate) async fn feed(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
+    Path(uid): Path<u32>,
     Query(params): Query<ParamsFeed>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
-    let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let mut map = IndexMap::new();
     let mut item_ids = vec![];
 
-    for i in db
-        .open_tree("user_folders")?
-        .scan_prefix(u32_to_ivec(claim.uid))
-        .keys()
-    {
-        let i = i?;
-        let feed_id = u8_slice_to_u32(&i[(i.len() - 4)..]);
-        let folder = String::from_utf8_lossy(&i[4..(i.len() - 4)]).to_string();
+    for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
+        // is not public and is nonlogin
+        let (k, v) = i?;
+        let is_public = v[0] == 1;
+        if claim.is_none() && !is_public {
+            continue;
+        }
+        let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
+        let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
         let mut feed: Feed = get_one(&db, "feeds", feed_id)?;
 
-        let mut is_active_feed = false;
+        let mut is_active = false;
         if let (Some(filter), Some(filter_value)) = (&params.filter, &params.filter_value) {
             match filter.as_ref() {
                 "item" => {
                     if let Ok(id) = filter_value.parse::<u32>() {
                         if id == feed_id {
                             item_ids.append(&mut feed.item_ids);
-                            is_active_feed = true;
+                            is_active = true;
                         }
                     }
                 }
                 "folder" => {
                     if &folder == filter_value {
-                        is_active_feed = true;
+                        is_active = true;
                         item_ids.append(&mut feed.item_ids);
                     }
                 }
@@ -93,7 +102,13 @@ pub(crate) async fn feed(
         }
 
         let e = map.entry(folder).or_insert(vec![]);
-        e.push((feed_id, feed.title, is_active_feed));
+        let out_feed = OutFeed {
+            feed_id,
+            title: feed.title,
+            is_active,
+            is_public,
+        };
+        e.push(out_feed);
     }
 
     let n = site_config.per_page;
@@ -112,16 +127,17 @@ pub(crate) async fn feed(
         items.push(item);
     }
 
-    let page_data = PageData::new("Feed", &site_config, Some(claim), false);
+    let page_data = PageData::new("Feed", &site_config, claim, false);
     let page_feed = PageFeed {
         page_data,
-        feeds: map,
+        folders: map,
         items,
         filter: params.filter,
         filter_value: params.filter_value,
         n,
         anchor,
         is_desc,
+        uid,
     };
 
     Ok(into_response(&page_feed, "html"))
@@ -170,6 +186,7 @@ pub(crate) struct FormFeedAdd {
     url: String,
     folder: String,
     new_folder: String,
+    is_public: bool,
 }
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -280,7 +297,8 @@ pub(crate) async fn feed_add_post(
     ]
     .concat();
 
-    user_folders_tree.insert(k, &[])?;
+    let v = if form.is_public { &[1] } else { &[0] };
+    user_folders_tree.insert(k, v)?;
 
-    Ok(Redirect::to("/feed"))
+    Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
 }

@@ -179,7 +179,7 @@
         <nav class="level is-mobile">
             <div class="level-left">
                 <div class="level-item">
-                    <a href="/upload" class="button is-primary is-rounded" target="_blank">upload</a>
+                    <a href="/upload" class="button is-success is-rounded" target="_blank">upload</a>
                 </div>
             </div>
             <div class="level-right">
@@ -192,10 +192,10 @@
                                 <button type="submit" class="button is-link is-rounded">Submit</button>
                                 <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">Preview</button>
                                 {% else %}
-                                <a href="/inn/{{post.iid}}/join" class="button is-primary is-rounded">Join to comment</a>
+                                <a href="/inn/{{post.iid}}/join" class="button is-success is-rounded">Join to comment</a>
                                 {% endif %}
                             {% else %}
-                            <a class="button is-primary is-rounded" href="/signin">Sign in to comment</a>
+                            <a class="button is-success is-rounded" href="/signin">Sign in to comment</a>
                             {% endmatch %}
                         </div>
                     </div>

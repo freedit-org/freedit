@@ -46,6 +46,20 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="is_public">Is public</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <label class="radio"><input type="radio" name="is_public" required value="true" autocomplete="off" /> True</label>
+                        <label class="radio"><input type="radio" name="is_public" required value="false" autocomplete="off" /> False</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">
@@ -62,9 +76,11 @@
 {% endblock %}
 
 {% block aside %}
+{% match page_data.claim %} {% when Some with (val) %}
 <div class="box">
-    <a href="/feed">
+    <a href="/feed/{{val.uid}}">
         <span class="tag is-link">Feed</span>
     </a>
 </div>
+{% else %}{% endmatch %}
 {% endblock %}

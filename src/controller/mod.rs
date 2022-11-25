@@ -96,8 +96,9 @@
 //! |-----------------------|----------------------|-------------|
 //! | default               | "feeds_count"        | N           |
 //! | default               | "items_count"        | N           |
-//! | "user_folders"        | `uid#folder#feed_id` | `&[]`       |
+//! | "user_folders"        | `uid#folder#feed_id` | `&[0/1]`    |
 //! | "feeds"               | `feed_id`            | [`Feed`]    |
+//! | "feed_items"          | `feed_id#item_id`    | `&[]`       |
 //! | "item_links"          | `item_link`          | `item_id`   |
 //! | "items"               | `item_id`            | [`Item`]    |
 //! | "feed_links"          | `feed_link`          | `feed_id`   |

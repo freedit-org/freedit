@@ -93,7 +93,7 @@ pub(super) async fn router(db: Db) -> Router {
             "/upload",
             get(upload).post(upload_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),
         )
-        .route("/feed", get(feed))
+        .route("/feed/:uid", get(feed))
         .route("/feed/add", get(feed_add).post(feed_add_post));
 
     let mut router_static = Router::new()
