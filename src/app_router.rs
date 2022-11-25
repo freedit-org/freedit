@@ -45,7 +45,7 @@ pub(super) async fn router(db: Db) -> Router {
             TraceLayer::new_for_http().make_span_with(DefaultMakeSpan::new().level(Level::INFO)),
         );
 
-    let router_db = Router::with_state(db)
+    let router_db = Router::new()
         .route("/", get(home))
         .route("/signup", get(signup).post(signup_post))
         .route("/signin", get(signin).post(signin_post))
@@ -95,7 +95,8 @@ pub(super) async fn router(db: Db) -> Router {
         )
         .route("/feed/:uid", get(feed))
         .route("/feed/add", get(feed_add).post(feed_add_post))
-        .route("/feed/update", get(feed_update));
+        .route("/feed/update", get(feed_update))
+        .with_state(db);
 
     let mut router_static = Router::new()
         .route("/health_check", get(health_check))
@@ -118,6 +119,6 @@ pub(super) async fn router(db: Db) -> Router {
         router_static = router_static.nest_service(&path, serve_dir(dir).await);
     }
 
-    let app = Router::new().merge(router_db).merge(router_static);
+    let app = router_static.merge(router_db);
     app.layer(middleware_stack).fallback(handler_404)
 }
