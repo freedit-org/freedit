@@ -225,59 +225,7 @@ pub(crate) async fn feed_add_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let content = CLIENT.get(&form.url).send().await?.bytes().await?;
-
-    let item_links_tree = db.open_tree("item_links")?;
-    let items_tree = db.open_tree("items")?;
-    let mut item_ids = vec![];
-    let feed = match rss::Channel::read_from(&content[..]) {
-        Ok(rss) => {
-            for item in rss.items {
-                let item: Item = item.into();
-                let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
-                    ivec_to_u32(&v)
-                } else {
-                    incr_id(&db, "items_count")?
-                };
-                item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
-                let item_encode = bincode::encode_to_vec(&item, standard())?;
-                items_tree.insert(u32_to_ivec(item_id), item_encode)?;
-
-                item_ids.push(item_id);
-            }
-
-            Feed {
-                link: rss.link,
-                title: rss.title,
-            }
-        }
-        Err(_) => match atom_syndication::Feed::read_from(&content[..]) {
-            Ok(atom) => {
-                for entry in atom.entries {
-                    let item: Item = entry.into();
-                    let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
-                        ivec_to_u32(&v)
-                    } else {
-                        incr_id(&db, "items_count")?
-                    };
-                    item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
-                    let item_encode = bincode::encode_to_vec(&item, standard())?;
-                    items_tree.insert(u32_to_ivec(item_id), item_encode)?;
-
-                    item_ids.push(item_id);
-                }
-
-                Feed {
-                    link: atom.links[0].href.clone(),
-                    title: atom.title.to_string(),
-                }
-            }
-            Err(_) => {
-                return Err(AppError::InvalidFeedLink);
-            }
-        },
-    };
-
+    let (feed, item_ids) = update(form.url, &db).await?;
     let feed_links_tree = db.open_tree("feed_links")?;
     let user_folders_tree = db.open_tree("user_folders")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
@@ -325,4 +273,84 @@ pub(crate) async fn feed_add_post(
     user_folders_tree.insert(k, v)?;
 
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
+}
+
+/// `GET /feed/update`
+pub(crate) async fn feed_update(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    for i in db
+        .open_tree("user_folders")?
+        .scan_prefix(u32_to_ivec(claim.uid))
+        .keys()
+    {
+        let i = i?;
+        let feed_id = u8_slice_to_u32(&i[i.len() - 4..]);
+        let feed: Feed = get_one(&db, "feeds", feed_id)?;
+        update(feed.link, &db).await?;
+    }
+
+    Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
+}
+
+async fn update(url: String, db: &Db) -> Result<(Feed, Vec<u32>), AppError> {
+    let content = CLIENT.get(&url).send().await?.bytes().await?;
+
+    let item_links_tree = db.open_tree("item_links")?;
+    let items_tree = db.open_tree("items")?;
+    let mut item_ids = vec![];
+    let feed = match rss::Channel::read_from(&content[..]) {
+        Ok(rss) => {
+            for item in rss.items {
+                let item: Item = item.into();
+                let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
+                    ivec_to_u32(&v)
+                } else {
+                    incr_id(db, "items_count")?
+                };
+                item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
+                let item_encode = bincode::encode_to_vec(&item, standard())?;
+                items_tree.insert(u32_to_ivec(item_id), item_encode)?;
+
+                item_ids.push(item_id);
+            }
+
+            Feed {
+                link: url,
+                title: rss.title,
+            }
+        }
+        Err(_) => match atom_syndication::Feed::read_from(&content[..]) {
+            Ok(atom) => {
+                for entry in atom.entries {
+                    let item: Item = entry.into();
+                    let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
+                        ivec_to_u32(&v)
+                    } else {
+                        incr_id(db, "items_count")?
+                    };
+                    item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
+                    let item_encode = bincode::encode_to_vec(&item, standard())?;
+                    items_tree.insert(u32_to_ivec(item_id), item_encode)?;
+
+                    item_ids.push(item_id);
+                }
+
+                Feed {
+                    link: url,
+                    title: atom.title.to_string(),
+                }
+            }
+            Err(_) => {
+                return Err(AppError::InvalidFeedLink);
+            }
+        },
+    };
+
+    Ok((feed, item_ids))
 }

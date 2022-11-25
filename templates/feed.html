@@ -6,7 +6,7 @@
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
                 {% match username %}{% when Some with (val) %}
-                    <li class="is-active"><a href="/feed/{{uid}}">{{val}}'s feed</a></li>
+                    <li class="is-active"><a href="/feed/{{uid}}">{{val}}'s public feeds</a></li>
                 {% else %}
                     {% match filter.as_deref() %}{% when Some with ("star") %}
                     <li><a href="/feed/{{uid}}">All</a></li>
@@ -87,6 +87,14 @@
         
 
 {% block aside %}
+
+<div class="box">
+    {% match username %} {% when None %}
+        <a href="/feed/update">
+            <span class="tag is-success">Refresh Feeds</span>
+        </a>
+    {% else %}{% endmatch %}
+</div>
 
 <div class="box">
     {% match filter_value %} {% when Some(val) %}

@@ -560,7 +560,7 @@ pub(crate) async fn upload_post(
 }
 
 #[derive(Copy, Clone)]
-pub struct Factor {
+struct Factor {
     /// Quality of the new compressed image.
     /// Values range from 0 to 100 in float.
     quality: f32,

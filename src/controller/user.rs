@@ -335,7 +335,7 @@ pub(crate) async fn user_list(
 
 /// Form data: `/role/:id/:uid`
 #[derive(Deserialize)]
-pub struct FormRole {
+pub(crate) struct FormRole {
     role: String,
 }
 
@@ -714,7 +714,7 @@ pub(crate) async fn signin_post(
 
 /// Form data: `/signup`
 #[derive(Deserialize, Validate)]
-pub struct FormSignup {
+pub(crate) struct FormSignup {
     #[validate(length(min = 1, max = 64))]
     username: String,
     #[validate(must_match(other = "password2", message = "Two passwords do not match"))]
