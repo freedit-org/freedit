@@ -1,6 +1,6 @@
 use super::{
-    get_one, get_range, get_site_config, into_response, u32_to_ivec, u8_slice_to_u32, Claim,
-    PageData, ParamsPage,
+    get_ids_by_prefix, get_one, get_range, get_site_config, into_response, u32_to_ivec,
+    u8_slice_to_u32, Claim, PageData, ParamsPage, User,
 };
 use crate::{
     controller::{incr_id, ivec_to_u32, Feed, Item},
@@ -20,6 +20,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
 use std::{collections::HashSet, time::Duration};
+use validator::Validate;
 
 /// Page data: `feed.html`
 #[derive(Template)]
@@ -34,6 +35,7 @@ struct PageFeed<'a> {
     n: usize,
     is_desc: bool,
     uid: u32,
+    username: Option<String>,
 }
 
 struct OutFeed {
@@ -61,20 +63,27 @@ pub(crate) async fn feed(
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let username = match claim {
+        Some(ref claim) if claim.uid == uid => None,
+        _ => {
+            let user: User = get_one(&db, "users", uid)?;
+            Some(user.username)
+        }
+    };
 
     let mut map = IndexMap::new();
-    let mut item_ids = vec![];
+    let mut feed_ids = vec![];
 
     for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
         // is not public and is nonlogin
         let (k, v) = i?;
         let is_public = v[0] == 1;
-        if claim.is_none() && !is_public {
+        if username.is_some() && !is_public {
             continue;
         }
         let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
         let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
-        let mut feed: Feed = get_one(&db, "feeds", feed_id)?;
+        let feed: Feed = get_one(&db, "feeds", feed_id)?;
 
         let mut is_active = false;
         if let (Some(filter), Some(filter_value)) = (&params.filter, &params.filter_value) {
@@ -82,7 +91,7 @@ pub(crate) async fn feed(
                 "item" => {
                     if let Ok(id) = filter_value.parse::<u32>() {
                         if id == feed_id {
-                            item_ids.append(&mut feed.item_ids);
+                            feed_ids.push(id);
                             is_active = true;
                         }
                     }
@@ -90,15 +99,15 @@ pub(crate) async fn feed(
                 "folder" => {
                     if &folder == filter_value {
                         is_active = true;
-                        item_ids.append(&mut feed.item_ids);
+                        feed_ids.push(feed_id);
                     }
                 }
                 _ => {
-                    item_ids.append(&mut feed.item_ids);
+                    feed_ids.push(feed_id);
                 }
             }
         } else {
-            item_ids.append(&mut feed.item_ids);
+            feed_ids.push(feed_id);
         }
 
         let e = map.entry(folder).or_insert(vec![]);
@@ -109,6 +118,12 @@ pub(crate) async fn feed(
             is_public,
         };
         e.push(out_feed);
+    }
+
+    let mut item_ids = vec![];
+    for id in feed_ids {
+        let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(id), None)?;
+        item_ids.append(&mut ids);
     }
 
     let n = site_config.per_page;
@@ -138,6 +153,7 @@ pub(crate) async fn feed(
         anchor,
         is_desc,
         uid,
+        username,
     };
 
     Ok(into_response(&page_feed, "html"))
@@ -181,10 +197,13 @@ pub(crate) async fn feed_add(
 }
 
 /// Form data: `/feed/add`
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Validate)]
 pub(crate) struct FormFeedAdd {
+    #[validate(length(max = 256))]
     url: String,
+    #[validate(length(max = 256))]
     folder: String,
+    #[validate(length(max = 256))]
     new_folder: String,
     is_public: bool,
 }
@@ -210,9 +229,9 @@ pub(crate) async fn feed_add_post(
 
     let item_links_tree = db.open_tree("item_links")?;
     let items_tree = db.open_tree("items")?;
+    let mut item_ids = vec![];
     let feed = match rss::Channel::read_from(&content[..]) {
         Ok(rss) => {
-            let mut item_ids = Vec::with_capacity(rss.items.len());
             for item in rss.items {
                 let item: Item = item.into();
                 let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
@@ -230,12 +249,10 @@ pub(crate) async fn feed_add_post(
             Feed {
                 link: rss.link,
                 title: rss.title,
-                item_ids,
             }
         }
         Err(_) => match atom_syndication::Feed::read_from(&content[..]) {
             Ok(atom) => {
-                let mut item_ids = Vec::with_capacity(atom.entries.len());
                 for entry in atom.entries {
                     let item: Item = entry.into();
                     let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
@@ -253,7 +270,6 @@ pub(crate) async fn feed_add_post(
                 Feed {
                     link: atom.links[0].href.clone(),
                     title: atom.title.to_string(),
-                    item_ids,
                 }
             }
             Err(_) => {
@@ -277,6 +293,14 @@ pub(crate) async fn feed_add_post(
     } else {
         incr_id(&db, "feeds_count")?
     };
+
+    let feed_items_tree = db.open_tree("feed_items")?;
+    let feed_id_ivec = u32_to_ivec(feed_id);
+    for id in item_ids {
+        let k = [&feed_id_ivec, &u32_to_ivec(id)].concat();
+        feed_items_tree.insert(k, &[])?;
+    }
+
     feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
 
     let feeds_tree = db.open_tree("feeds")?;

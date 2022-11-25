@@ -5,12 +5,16 @@
     <div class="level-left">
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
-                {% match filter.as_deref() %}{% when Some with ("star") %}
+                {% match username %}{% when Some with (val) %}
+                    <li class="is-active"><a href="/feed/{{uid}}">{{val}}'s feed</a></li>
+                {% else %}
+                    {% match filter.as_deref() %}{% when Some with ("star") %}
                     <li><a href="/feed/{{uid}}">All</a></li>
                     <li class="is-active"><a href="/feed/{{uid}}?filter=star">Star</a></li>
-                {% else %}
+                    {% else %}
                     <li class="is-active"><a href="/feed/{{uid}}">All</a></li>
                     <li><a href="/feed/{{uid}}?filter=star">Star</a></li>
+                    {% endmatch %}
                 {% endmatch %}
             </ul>
         </div>
