@@ -11,9 +11,15 @@
                     {% match filter.as_deref() %}{% when Some with ("star") %}
                     <li><a href="/feed/{{uid}}">All</a></li>
                     <li class="is-active"><a href="/feed/{{uid}}?filter=star">Star</a></li>
+                    <li><a href="/feed/{{uid}}?filter=unread">Unread</a></li>
+                    {% when Some with ("unread") %}
+                    <li><a href="/feed/{{uid}}">All</a></li>
+                    <li><a href="/feed/{{uid}}?filter=star">Star</a></li>
+                    <li class="is-active"><a href="/feed/{{uid}}?filter=unread">Unread</a></li>
                     {% else %}
                     <li class="is-active"><a href="/feed/{{uid}}">All</a></li>
                     <li><a href="/feed/{{uid}}?filter=star">Star</a></li>
+                    <li><a href="/feed/{{uid}}?filter=unread">Unread</a></li>
                     {% endmatch %}
                 {% endmatch %}
             </ul>
@@ -111,6 +117,7 @@
 {% else %}{% endmatch %}
 
 {% match filter.as_deref() %} {% when Some("star") %}
+{% when Some("unread") %}
 {% else %}
 <div class="box">
     {% match filter_value %} {% when Some(val) %}
@@ -139,6 +146,8 @@
     <div class="py-1">
         {% match filter.as_deref() %} {% when Some("star") %}
         <a href="/feed/{{uid}}?filter=star&filter_value={{feed.feed_id}}">
+        {% when Some("unread") %}
+        <a href="/feed/{{uid}}?filter=unread&filter_value={{feed.feed_id}}">
         {% else %}
         <a href="/feed/{{uid}}?filter=feed&filter_value={{feed.feed_id}}">
         {% endmatch %}

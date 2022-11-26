@@ -85,6 +85,7 @@ pub(crate) async fn feed(
     let mut map = IndexMap::new();
     let mut feed_ids = vec![];
     let mut item_ids = vec![];
+    let mut read_ids = vec![];
     for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
         // is not public and is nonlogin
         let (k, v) = i?;
@@ -118,12 +119,12 @@ pub(crate) async fn feed(
                     if id == feed_id {
                         is_active = true;
                         if let Some(ref claim) = claim {
-                            let mut star_ids =
+                            let star_ids =
                                 get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
-                            let ids_in_feed =
+                            let mut ids_in_feed =
                                 get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
-                            star_ids.retain(|i| ids_in_feed.contains(i));
-                            item_ids = star_ids;
+                            ids_in_feed.retain(|i| star_ids.contains(i));
+                            item_ids = ids_in_feed;
                         }
                     }
                 }
@@ -131,6 +132,32 @@ pub(crate) async fn feed(
             (Some(ref filter), None) if filter == "star" => {
                 if let Some(ref claim) = claim {
                     item_ids = get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
+                }
+            }
+            (Some(ref filter), Some(filter_value)) if filter == "unread" => {
+                if let Ok(id) = filter_value.parse::<u32>() {
+                    if id == feed_id {
+                        is_active = true;
+                        if let Some(ref claim) = claim {
+                            let read_ids =
+                                get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
+                            let mut ids_in_feed =
+                                get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
+                            ids_in_feed.retain(|i| !read_ids.contains(i));
+                            item_ids = ids_in_feed;
+                        }
+                    }
+                }
+            }
+            (Some(ref filter), None) if filter == "unread" => {
+                if let Some(ref claim) = claim {
+                    if read_ids.is_empty() {
+                        read_ids = get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
+                    }
+                    let mut ids_in_feed =
+                        get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
+                    ids_in_feed.retain(|i| !read_ids.contains(i));
+                    item_ids.append(&mut ids_in_feed);
                 }
             }
             (_, _) => {
