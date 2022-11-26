@@ -102,13 +102,13 @@
 
 {% block aside %}
 
+{% match username %} {% when None %}
 <div class="box">
-    {% match username %} {% when None %}
-        <a href="/feed/update">
-            <span class="tag is-success">Refresh Feeds</span>
-        </a>
-    {% else %}{% endmatch %}
+    <a href="/feed/update">
+        <span class="tag is-success">Refresh Feeds</span>
+    </a>
 </div>
+{% else %}{% endmatch %}
 
 {% match filter.as_deref() %} {% when Some("star") %}
 {% else %}
