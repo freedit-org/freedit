@@ -19,12 +19,6 @@
 //! |-----------------|---------------|-----------------------------------|
 //! | "notifications" | `uid#pid#cid` | [notification_code][Notification] |
 //!
-//! ### static
-//! | tree               | key   | value |
-//! |--------------------|-------|-------|
-//! | "static_user_post" | `uid` | `&[]` |
-//! | "static_inn_post"  | `iid` | `&[]` |
-//!
 //! ### captcha
 //! About key `timestamp_nanoid`, see [generate_nanoid_expire].
 //!
@@ -244,7 +238,6 @@ pub(super) struct SiteConfig {
     comment_interval: i64,
     #[validate(range(max = 100))]
     per_page: usize,
-    static_page: usize,
     captcha_difficulty: String,
     captcha_name: String,
 }

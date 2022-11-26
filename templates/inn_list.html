@@ -1,15 +1,9 @@
 {% extends "layout.html" %} 
 
 {% block tabs %}
-    {% if page_data.claim.is_some() %}
     <li><a href="/inn/0">Inn</a></li>
     <li><a href="/solo/user/0">Solo</a></li>
     <li class="is-active"><a href="/inn/list">Explore</a></li>
-    {% else %}
-    <li><a href="/static/inn/0/1.html">Inn</a></li>
-    <li><a href="/solo/user/0">Solo</a></li>
-    <li class="is-active"><a href="/static/inn/list/1.html">Explore</a></li>
-    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -56,7 +50,6 @@
 <div class="list has-visible-pointer-controls has-overflow-ellipsis box">
     {% for inn in inns %}
     <div class="list-item">
-        {% if page_data.claim.is_some() %}
         <div class="list-item-image">
             <figure class="image is-64x64">
                 <a href="/inn/{{inn.iid}}"><img class="is-rounded" src="/static/inn_icons/{{inn.iid}}.png"></a>
@@ -66,17 +59,6 @@
             <div class="list-item-title"><a href="/inn/{{inn.iid}}">{{inn.inn_name}}</a></div>
             <div class="list-item-description">{{inn.about}}</div>
         </div>
-        {% else %}
-        <div class="list-item-image">
-            <figure class="image is-64x64">
-                <a href="/static/inn/{{inn.iid}}/1.html"><img class="is-rounded" src="/static/inn_icons/{{inn.iid}}.png"></a>
-            </figure>
-        </div>
-        <div class="list-item-content">
-            <div class="list-item-title"><a href="/static/inn/{{inn.iid}}/1.html">{{inn.inn_name}}</a></div>
-            <div class="list-item-description">{{inn.about}}</div>
-        </div>
-        {% endif %}
         
         <div class="list-item-controls">
             {% for topic in inn.topics %}
@@ -97,37 +79,29 @@
     {% if anchor < n %}
         <a class="pagination-previous" disabled>Prev</a>
     {% else %}
-        {% if page_data.claim.is_some() %}
-            {% match filter.as_deref() %} {% when Some with (val) %}
+        {% match filter.as_deref() %} {% when Some with (val) %}
             <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
-            {% else %}
-                {% match topic.as_deref() %} {% when Some with (val) %}
-                <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}&topic={{val}}">Prev</a>
-                {% else %}
-                <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
-                {% endmatch %}
-            {% endmatch %}
         {% else %}
-        <a class="pagination-previous" href="/static/inn/list/{{anchor / 30}}.html">Prev</a>
-        {% endif %}
+            {% match topic.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}&topic={{val}}">Prev</a>
+            {% else %}
+            <a class="pagination-previous" href="/inn/list?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            {% endmatch %}
+        {% endmatch %}
     {% endif %}
 
     {% if inns.len() < n %}
         <a class="pagination-next" disabled >Next</a>
     {% else %}
-        {% if page_data.claim.is_some() %}
-            {% match filter.as_deref() %} {% when Some with (val) %}
+        {% match filter.as_deref() %} {% when Some with (val) %}
             <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
-            {% else %}
-                {% match topic.as_deref() %} {% when Some with (val) %}
-                <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}&topic={{val}}">Next</a>
-                {% else %}
-                <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
-                {% endmatch %}
-            {% endmatch %}
         {% else %}
-        <a class="pagination-next" href="/static/inn/list/{{anchor / 30 + 2 }}.html">Next</a>
-        {% endif %} 
+            {% match topic.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}&topic={{val}}">Next</a>
+            {% else %}
+            <a class="pagination-next" href="/inn/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            {% endmatch %}
+        {% endmatch %}
     {% endif %}
 </nav>
 

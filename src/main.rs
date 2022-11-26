@@ -8,7 +8,6 @@ mod error;
 use crate::{
     app_router::router,
     controller::{
-        inn::{static_inn_all, static_inn_update},
         shutdown_signal,
         utils::{clear_invalid, CURRENT_SHA256},
     },
@@ -50,25 +49,6 @@ async fn main() -> Result<(), AppError> {
     check_path(&CONFIG.avatars_path);
     check_path(&CONFIG.inn_icons_path);
     check_path(&CONFIG.upload_path);
-    check_path(&CONFIG.html_path);
-
-    let db2 = db.clone();
-    tokio::spawn(async move {
-        loop {
-            if let Err(e) = static_inn_all(&db2, 60).await {
-                error!(%e);
-            }
-        }
-    });
-
-    let db2 = db.clone();
-    tokio::spawn(async move {
-        loop {
-            if let Err(e) = static_inn_update(&db2, 10).await {
-                error!(%e);
-            }
-        }
-    });
 
     let db2 = db.clone();
     tokio::spawn(async move {

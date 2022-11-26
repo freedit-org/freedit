@@ -19,7 +19,6 @@ use super::{
     ValidatedForm,
 };
 use crate::{
-    config::CONFIG,
     controller::{get_count, IterType},
     error::AppError,
 };
@@ -32,15 +31,9 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use bincode::config::standard;
-use flate2::{write::GzEncoder, Compression};
 use serde::Deserialize;
 use sled::{Batch, Db};
-use std::{io::Write, path::PathBuf};
-use tokio::{
-    fs::{create_dir_all, File},
-    io::AsyncWriteExt,
-    time,
-};
+use std::path::PathBuf;
 use validator::Validate;
 
 /// Page data: `inn_create.html`
@@ -231,8 +224,6 @@ pub(crate) async fn mod_inn_post(
     db.open_tree("inns")?.insert(&iid_ivec, inn_encoded)?;
     inn_names_tree.insert(inn.inn_name, iid_ivec)?;
 
-    static_inn_list_update(&db).await?;
-
     let target = format!("/inn/{}", iid);
     Ok(Redirect::to(&target))
 }
@@ -338,70 +329,6 @@ pub(crate) async fn inn_list(
     };
 
     Ok(into_response(&page_inn_list, "html"))
-}
-
-/// `/static/inn/list/:page.html`
-async fn static_inn_list_update(db: &Db) -> Result<(), AppError> {
-    let site_config = get_site_config(db)?;
-    let n = 30;
-    let mut anchor = 0;
-    let is_desc = true;
-
-    let mut inns_count = get_count(db, "default", "inns_count")?;
-    let mut page = 0;
-    while inns_count > 0 {
-        page += 1;
-        let page_params = ParamsPage { anchor, n, is_desc };
-        let inns: Vec<Inn> = get_batch(db, "default", "inns_count", "inns", &page_params)?;
-        let mut out_inns = Vec::with_capacity(inns.len());
-        for i in inns {
-            let out_inn = OutInnList {
-                iid: i.iid,
-                inn_name: i.inn_name,
-                about: i.about,
-                topics: i.topics,
-            };
-            out_inns.push(out_inn);
-        }
-        let page_data = PageData::new("inns", &site_config, None, false);
-        let page_inn_list = PageInnList {
-            page_data,
-            inns: out_inns,
-            anchor,
-            n,
-            is_desc,
-            topic: None,
-            filter: None,
-        };
-
-        let res = page_inn_list.render().unwrap();
-        let mut e = GzEncoder::new(Vec::with_capacity(8192), Compression::default());
-        e.write_all(res.as_bytes()).unwrap();
-        let compressed_bytes = e.finish().unwrap();
-
-        let target_dir = format!("{}/inn/list/", &CONFIG.html_path);
-        let target_dir = std::path::Path::new(&target_dir);
-        if !target_dir.exists() {
-            create_dir_all(target_dir).await?;
-        }
-
-        let target = target_dir.join(format!("{}.html.gz", page));
-        let mut file = File::create(&target).await?;
-        file.write_all(&compressed_bytes).await?;
-
-        let is_last = inns_count <= n;
-        if is_last {
-            break;
-        }
-        anchor += n;
-        inns_count -= n;
-
-        if page >= site_config.static_page {
-            break;
-        }
-    }
-
-    Ok(())
 }
 
 /// Page data: `post_create.html`
@@ -590,12 +517,6 @@ pub(crate) async fn edit_post_post(
         db.open_tree("user_posts")?.insert(k, v)?;
     }
 
-    if visibility < 10 {
-        db.open_tree("static_user_post")?
-            .insert(u32_to_ivec(claim.uid), &[])?;
-        db.open_tree("static_inn_post")?.insert(&iid_ivec, &[])?;
-    }
-
     let created_at_ivec = u32_to_ivec(created_at as u32);
     let k = [&iid_ivec, &pid_ivec].concat();
 
@@ -613,7 +534,6 @@ pub(crate) async fn edit_post_post(
     let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
     // kv_pair: timestamp#iid#pid = visibility
     db.open_tree("post_timeline")?.insert(k, visibility_ivec)?;
-    static_post(&db, pid).await?;
 
     user_stats(&db, claim.uid, "post")?;
     claim.update_last_write(&db)?;
@@ -926,197 +846,6 @@ pub(crate) async fn inn_feed(
         posts: feed_posts,
     };
     Ok(into_response(&page_inn_feed, "html"))
-}
-
-/// Page data: `inn_static.html`
-#[derive(Template)]
-#[template(path = "inn_static.html")]
-struct PageInnStatic<'a> {
-    page_data: &'a PageData<'a>,
-    posts: Vec<OutPostList>,
-    id: u32,
-    name: String,
-    page: usize,
-    is_last: bool,
-    is_user: bool,
-}
-
-/// render static inn page
-async fn render_post_list(
-    db: &Db,
-    id: u32,
-    page: usize,
-    is_last: bool,
-    pids: &[u32],
-    page_data: &PageData<'_>,
-    is_user: bool,
-) -> Result<(), AppError> {
-    let out_post_list = get_out_post_list(db, pids)?;
-    let name = if is_user {
-        let user: User = get_one(db, "users", id)?;
-        user.username
-    } else if id > 0 && !out_post_list.is_empty() {
-        out_post_list[0].inn_name.clone()
-    } else {
-        "No Post".to_owned()
-    };
-
-    let page_inn_static = PageInnStatic {
-        page_data,
-        id,
-        name,
-        posts: out_post_list,
-        page,
-        is_last,
-        is_user,
-    };
-
-    let res = &page_inn_static.render().unwrap();
-    let mut e = GzEncoder::new(Vec::with_capacity(8192), Compression::default());
-    e.write_all(res.as_bytes()).unwrap();
-    let compressed_bytes = e.finish().unwrap();
-
-    let target_dir = if is_user {
-        format!("{}/inn/user/{}", &CONFIG.html_path, id)
-    } else {
-        format!("{}/inn/{}", &CONFIG.html_path, id)
-    };
-    let target_dir = std::path::Path::new(&target_dir);
-    if !target_dir.exists() {
-        create_dir_all(target_dir).await?;
-    }
-
-    let target = target_dir.join(format!("{}.html.gz", page));
-    let target = std::path::Path::new(&target);
-    let mut file = File::create(target).await?;
-    file.write_all(&compressed_bytes).await?;
-
-    Ok(())
-}
-
-/// Cron job: generate static page `/static/inn` tab `All`
-///
-/// `/static/inn/0/:page.html`
-pub(crate) async fn static_inn_all(db: &Db, interval: u64) -> Result<(), AppError> {
-    let sleep = time::sleep(time::Duration::from_secs(interval));
-    if let Some((k, _)) = db.open_tree("post_timeline")?.last()? {
-        let timestamp = u64::from(u8_slice_to_u32(&k[0..4]));
-        let last_check = OffsetDateTime::now_utc().unix_timestamp() as u64 - interval;
-        if last_check - 3 > timestamp {
-            sleep.await;
-            return Ok(());
-        }
-    };
-
-    let site_config = get_site_config(db)?;
-    let n = 30;
-    let is_desc = true;
-    let mut anchor = 0;
-    let page_data = &PageData::new("inn", &site_config, None, false);
-
-    let mut posts_count = get_count(db, "default", "posts_count")?;
-    for i in db.open_tree("inns_private")?.iter() {
-        let (k, _) = i?;
-        let count = get_count_by_prefix(db, "inn_posts", &k)?;
-        posts_count -= count;
-    }
-
-    let mut page: usize = 0;
-    while posts_count > 0 {
-        let iid = 0;
-        page += 1;
-        let page_params = ParamsPage { anchor, n, is_desc };
-        let index = get_pids_all(db, &[], &page_params)?;
-        let is_last = posts_count <= n;
-        render_post_list(db, iid, page, is_last, &index, page_data, false).await?;
-        if is_last {
-            break;
-        }
-        anchor += n;
-        posts_count -= n;
-
-        if page >= site_config.static_page {
-            break;
-        }
-    }
-
-    sleep.await;
-    Ok(())
-}
-
-/// Cron job: generate static page`/static/inn` tab `:Inn` and `:User`
-///
-/// `/static/inn/:iid/:page.html`
-///
-/// `/static/inn/user/:uid/:page.html`
-pub(crate) async fn static_inn_update(db: &Db, interval: u64) -> Result<(), AppError> {
-    let site_config = get_site_config(db)?;
-
-    let n = 30;
-    let is_desc = true;
-    let mut anchor = 0;
-    let page_data = &PageData::new("inn", &site_config, None, false);
-
-    // update inn post list
-    let inns_private_tree = db.open_tree("inns_private")?;
-    let tree = db.open_tree("static_inn_post")?;
-    for i in tree.iter() {
-        let (k, _) = i?;
-        let iid = ivec_to_u32(&k);
-        if inns_private_tree.contains_key(&k)? {
-            continue;
-        }
-
-        let mut page = 0;
-        let mut posts_count = get_count_by_prefix(db, "inn_posts", &k)?;
-        while posts_count > 0 {
-            page += 1;
-            let page_params = ParamsPage { anchor, n, is_desc };
-            let index = get_pids_by_iids(db, &[iid], &page_params)?;
-            let is_last = posts_count <= n;
-            render_post_list(db, iid, page, is_last, &index, page_data, false).await?;
-
-            if is_last {
-                break;
-            }
-            anchor += n;
-            posts_count -= n;
-
-            if page >= site_config.static_page {
-                break;
-            }
-        }
-        tree.remove(&k)?;
-    }
-
-    // update user post list
-    let tree = db.open_tree("static_user_post")?;
-    for i in tree.iter() {
-        let (k, _) = i?;
-        let uid = ivec_to_u32(&k);
-        let mut page = 0;
-        let page_params = ParamsPage { anchor, n, is_desc };
-        let mut posts_count = get_count_by_prefix(db, "user_posts", &k)?;
-        while posts_count > 0 {
-            page += 1;
-            let index = get_pids_by_uids(db, &[uid], &[], &page_params)?;
-            let is_last = posts_count <= n;
-            render_post_list(db, uid, page, is_last, &index, page_data, true).await?;
-            if is_last {
-                break;
-            }
-            anchor += n;
-            posts_count -= n;
-
-            if page >= 10 {
-                break;
-            }
-        }
-        tree.remove(&k)?;
-    }
-
-    time::sleep(time::Duration::from_secs(interval)).await;
-    Ok(())
 }
 
 /// get [OutPostList] from pids
@@ -1519,118 +1248,6 @@ pub(crate) async fn post(
     Ok(into_response(&page_post, "html"))
 }
 
-/// generate static page `/static/post/:pid`
-async fn static_post(db: &Db, pid: u32) -> Result<(), AppError> {
-    let pid_ivec = u32_to_ivec(pid);
-    let site_config = get_site_config(db)?;
-    let post: Post = get_one(db, "posts", pid)?;
-    if post.is_hidden {
-        return Ok(());
-    }
-    let user: User = get_one(db, "users", post.uid)?;
-    let date = timestamp_to_date(post.created_at);
-    let inn: Inn = get_one(db, "inns", post.iid)?;
-    let upvotes = get_count_by_prefix(db, "post_upvotes", &u32_to_ivec(pid)).unwrap_or_default();
-    let downvotes =
-        get_count_by_prefix(db, "post_downvotes", &u32_to_ivec(pid)).unwrap_or_default();
-
-    let out_post = OutPost {
-        pid: post.pid,
-        uid: post.uid,
-        username: user.username,
-        iid: post.iid,
-        inn_name: inn.inn_name,
-        title: post.title,
-        tags: post.tags,
-        content_html: md2html(&post.content),
-        created_at: date,
-        is_locked: post.is_locked,
-        is_hidden: false,
-        upvotes,
-        downvotes,
-        is_upvoted: false,
-        is_downvoted: false,
-        can_edit: false,
-    };
-
-    let n = 50;
-    let anchor = 0;
-    let is_desc = true;
-
-    let mut out_comments = Vec::with_capacity(n);
-    let count = get_count(db, "post_comments_count", &pid_ivec)?;
-    if count > 0 {
-        // TODO: comments pagination
-        let post_comments_tree = db.open_tree("post_comments")?;
-        for i in 1..=count {
-            let k = [&u32_to_ivec(pid), &u32_to_ivec(i as u32)].concat();
-            let v = &post_comments_tree.get(k)?;
-            if let Some(v) = v {
-                let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
-                let user: User = get_one(db, "users", comment.uid)?;
-                let date = timestamp_to_date(comment.created_at);
-
-                let prefix = [&u32_to_ivec(pid), &u32_to_ivec(comment.cid)].concat();
-                let upvotes =
-                    get_count_by_prefix(db, "comment_upvotes", &prefix).unwrap_or_default();
-                let downvotes =
-                    get_count_by_prefix(db, "comment_downvotes", &prefix).unwrap_or_default();
-
-                let out_comment = OutComment {
-                    cid: comment.cid,
-                    uid: comment.uid,
-                    username: user.username,
-                    content: comment.content,
-                    created_at: date,
-                    upvotes,
-                    downvotes,
-                    is_upvoted: false,
-                    is_downvoted: false,
-                    is_hidden: comment.is_hidden,
-                };
-                out_comments.push(out_comment);
-            }
-        }
-    }
-
-    let pageview = if let Some(v) = &db.open_tree("post_pageviews")?.get(&pid_ivec)? {
-        ivec_to_u32(v)
-    } else {
-        0
-    };
-    let page_data = PageData::new("post", &site_config, None, false);
-    let page_post = PagePost {
-        page_data,
-        post: out_post,
-        comments: out_comments,
-        pageview,
-        anchor,
-        n,
-        is_desc,
-        has_joined: false,
-        is_mod: false,
-    };
-
-    let res = &page_post.render().unwrap();
-
-    let target_dir = format!("{}/post", &CONFIG.html_path);
-    let target_dir = std::path::Path::new(&target_dir);
-    if !target_dir.exists() {
-        create_dir_all(target_dir).await?;
-    }
-
-    let mut e = GzEncoder::new(Vec::with_capacity(8192), Compression::default());
-    e.write_all(res.as_bytes()).unwrap();
-    let compressed_bytes = e.finish().unwrap();
-
-    let target = target_dir.join(format!("{}.html.gz", pid));
-    let target = std::path::Path::new(&target);
-    let mut file = File::create(target).await?;
-    file.write_all(&compressed_bytes).await?;
-
-    Ok(())
-}
-
 /// Form data: `/inn/:iid/:pid/` comment create
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormComment {
@@ -1732,7 +1349,7 @@ pub(crate) async fn comment_post(
     };
     let comment_encoded = bincode::encode_to_vec(&comment, standard())?;
     let k = [&pid_ivec, &u32_to_ivec(cid)].concat();
-    db.open_tree("post_comments")?.insert(&k, comment_encoded)?;
+    db.open_tree("post_comments")?.insert(k, comment_encoded)?;
 
     let k = [&u32_to_ivec(claim.uid), &pid_ivec, &u32_to_ivec(cid)].concat();
     db.open_tree("user_comments")?.insert(k, &[])?;
@@ -1771,10 +1388,6 @@ pub(crate) async fn comment_post(
     user_stats(&db, claim.uid, "comment")?;
     claim.update_last_write(&db)?;
 
-    static_post(&db, pid).await?;
-    if visibility < 10 {
-        db.open_tree("static_inn_post")?.insert(&iid_ivec, &[])?;
-    }
     let target = format!("/post/{}/{}", iid, pid);
     Ok(Redirect::to(&target))
 }

@@ -184,7 +184,7 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u32(&v);
                     ones.push(format!("name: {}, id: {}", name, id));
                 }
-                "static_user_post" | "static_inn_post" | "inns_private" => {
+                "inns_private" => {
                     let id = u8_slice_to_u32(&k);
                     ones.push(format!("id: {}", id));
                 }
@@ -314,7 +314,6 @@ impl Default for SiteConfig {
             post_interval: 30,
             comment_interval: 10,
             per_page: 30,
-            static_page: 10,
             captcha_difficulty: "Easy".into(),
             captcha_name: "Lucy".into(),
         }

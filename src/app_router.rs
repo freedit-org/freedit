@@ -105,15 +105,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/static/style.css", get(style))
         .nest_service("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
         .nest_service("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
-        .nest_service("/static/upload", serve_dir(&CONFIG.upload_path).await)
-        .nest_service(
-            "/static/inn",
-            serve_dir(&format!("{}/inn", &CONFIG.html_path)).await,
-        )
-        .nest_service(
-            "/static/post",
-            serve_dir(&format!("{}/post", &CONFIG.html_path)).await,
-        );
+        .nest_service("/static/upload", serve_dir(&CONFIG.upload_path).await);
 
     for (path, dir, _) in &CONFIG.serve_dir {
         let path = format!("/{}", path);
