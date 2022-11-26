@@ -20,6 +20,7 @@ use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
 use std::{collections::HashSet, time::Duration};
+use tracing::error;
 use validator::Validate;
 
 /// Page data: `feed.html`
@@ -389,6 +390,21 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<u32>), AppError> {
     };
 
     Ok((feed, item_ids))
+}
+
+pub(crate) async fn cron_feed(db: &Db, interval: u64) -> Result<(), AppError> {
+    let sleep = tokio::time::sleep(std::time::Duration::from_secs(interval));
+
+    for i in &db.open_tree("feed_links")? {
+        let (k, _) = i?;
+        let link = String::from_utf8_lossy(&k);
+        if let Err(e) = update(link.to_string(), db).await {
+            error!(%e);
+        }
+    }
+
+    sleep.await;
+    Ok(())
 }
 
 /// `GET /feed/star`

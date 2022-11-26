@@ -8,6 +8,7 @@ mod error;
 use crate::{
     app_router::router,
     controller::{
+        feed::cron_feed,
         shutdown_signal,
         utils::{clear_invalid, CURRENT_SHA256},
     },
@@ -54,6 +55,15 @@ async fn main() -> Result<(), AppError> {
     tokio::spawn(async move {
         loop {
             if let Err(e) = clear_invalid(&db2, "captcha", 3600 * 6).await {
+                error!(%e);
+            }
+        }
+    });
+
+    let db2 = db.clone();
+    tokio::spawn(async move {
+        loop {
+            if let Err(e) = cron_feed(&db2, 3600 * 8).await {
                 error!(%e);
             }
         }
