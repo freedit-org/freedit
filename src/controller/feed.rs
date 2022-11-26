@@ -48,10 +48,10 @@ struct OutFeed {
 
 struct OutItem {
     item_id: u32,
-    link: String,
     title: String,
     updated: String,
     is_starred: bool,
+    is_read: bool,
 }
 
 /// url params: `feed.html`
@@ -72,9 +72,11 @@ pub(crate) async fn feed(
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let mut read = false;
     let username = match claim {
         Some(ref claim) if claim.uid == uid => None,
         _ => {
+            read = true;
             let user: User = get_one(&db, "users", uid)?;
             Some(user.username)
         }
@@ -82,7 +84,7 @@ pub(crate) async fn feed(
 
     let mut map = IndexMap::new();
     let mut feed_ids = vec![];
-
+    let mut item_ids = vec![];
     for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
         // is not public and is nonlogin
         let (k, v) = i?;
@@ -95,28 +97,46 @@ pub(crate) async fn feed(
         let feed: Feed = get_one(&db, "feeds", feed_id)?;
 
         let mut is_active = false;
-        if let (Some(filter), Some(filter_value)) = (&params.filter, &params.filter_value) {
-            match filter.as_ref() {
-                "item" => {
-                    if let Ok(id) = filter_value.parse::<u32>() {
-                        if id == feed_id {
-                            feed_ids.push(id);
-                            is_active = true;
-                        }
-                    }
-                }
-                "folder" => {
-                    if &folder == filter_value {
+
+        match (&params.filter, &params.filter_value) {
+            (Some(ref filter), Some(filter_value)) if filter == "feed" => {
+                if let Ok(id) = filter_value.parse::<u32>() {
+                    if id == feed_id {
                         is_active = true;
                         feed_ids.push(feed_id);
                     }
                 }
-                _ => {
+            }
+            (Some(ref filter), Some(filter_value)) if filter == "folder" => {
+                if &folder == filter_value {
+                    is_active = true;
                     feed_ids.push(feed_id);
                 }
             }
-        } else {
-            feed_ids.push(feed_id);
+            (Some(ref filter), Some(filter_value)) if filter == "star" => {
+                if let Ok(id) = filter_value.parse::<u32>() {
+                    if id == feed_id {
+                        is_active = true;
+                        if let Some(ref claim) = claim {
+                            let mut star_ids =
+                                get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
+                            let ids_in_feed =
+                                get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
+                            star_ids.retain(|i| ids_in_feed.contains(i));
+                            item_ids = star_ids;
+                        }
+                    }
+                }
+            }
+            (Some(ref filter), None) if filter == "star" => {
+                if let Some(ref claim) = claim {
+                    item_ids = get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
+                }
+            }
+            (_, _) => {
+                let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
+                item_ids.append(&mut ids);
+            }
         }
 
         let e = map.entry(folder).or_insert(vec![]);
@@ -129,24 +149,9 @@ pub(crate) async fn feed(
         e.push(out_feed);
     }
 
-    let mut item_ids = vec![];
-    if let Some(ref claim) = claim {
-        match params.filter {
-            Some(ref filter) if filter == "star" => {
-                item_ids = get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
-            }
-            _ => {
-                for id in feed_ids {
-                    let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(id), None)?;
-                    item_ids.append(&mut ids);
-                }
-            }
-        }
-    } else {
-        for id in feed_ids {
-            let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(id), None)?;
-            item_ids.append(&mut ids);
-        }
+    for id in feed_ids {
+        let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(id), None)?;
+        item_ids.append(&mut ids);
     }
 
     let n = site_config.per_page;
@@ -161,20 +166,25 @@ pub(crate) async fn feed(
 
     let mut items = Vec::with_capacity(n);
     let star_tree = db.open_tree("star")?;
+    let read_tree = db.open_tree("read")?;
     for i in item_ids {
         let item: Item = get_one(&db, "items", i)?;
+        let mut is_read = read;
         let is_starred = if let Some(ref claim) = claim {
             let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(i)].concat();
+            if read_tree.contains_key(&k)? {
+                is_read = true;
+            }
             star_tree.contains_key(k)?
         } else {
             false
         };
         let out_item = OutItem {
             item_id: i,
-            link: item.link,
             title: item.title,
             updated: item.updated,
             is_starred,
+            is_read,
         };
         items.push(out_item);
     }
@@ -194,6 +204,24 @@ pub(crate) async fn feed(
     };
 
     Ok(into_response(&page_feed, "html"))
+}
+
+/// `GET /feed/read/:item_id`
+pub(crate) async fn feed_read(
+    State(db): State<Db>,
+    Path(item_id): Path<u32>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = get_site_config(&db)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+
+    let item: Item = get_one(&db, "items", item_id)?;
+    if let Some(ref claim) = claim {
+        let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(item_id)].concat();
+        db.open_tree("read")?.insert(k, &[])?;
+    }
+
+    Ok(Redirect::to(&item.link))
 }
 
 /// Page data: `feed_add.html`

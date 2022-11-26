@@ -2,7 +2,7 @@ use crate::{
     config::CONFIG,
     controller::{
         admin::{admin, admin_post, admin_stats, admin_view},
-        feed::{feed, feed_add, feed_add_post, feed_star, feed_subscribe, feed_update},
+        feed::{feed, feed_add, feed_add_post, feed_read, feed_star, feed_subscribe, feed_update},
         handler_404, health_check, home,
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
@@ -98,6 +98,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/feed/update", get(feed_update))
         .route("/feed/star/:item_id", get(feed_star))
         .route("/feed/subscribe/:uid/:item_id", get(feed_subscribe))
+        .route("/feed/read/:item_id", get(feed_read))
         .with_state(db);
 
     let mut router_static = Router::new()

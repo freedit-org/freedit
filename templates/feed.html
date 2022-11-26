@@ -20,7 +20,7 @@
         </div>
     </div>
     <div class="level-right">
-        {% match filter.as_deref() %}{% when Some with ("item") %}
+        {% match filter.as_deref() %}{% when Some with ("feed") %}
             {% match filter_value %}{% when Some with (fid) %}
                 <a href="/feed/subscribe/{{uid}}/{{fid}}">
                     {% if username.is_some() %}
@@ -38,10 +38,13 @@
 
 <div class="list has-visible-pointer-controls has-overflow-ellipsis box">
     {% for item in items %}
-    <div class="list-item">
+    <div class="list-item
+        {% if !item.is_read %}
+        has-background-success-light
+        {% endif %} ">
         <div class="list-item-content">
             <div class="list-item-title">
-                <strong><a href="{{item.link}}" target="_blank">{{item.title}}</a></strong>
+                <strong><a href="/feed/read/{{item.item_id}}" target="_blank">{{item.title}}</a></strong>
             </div>
             <div class="list-item-description">
                 <span class="tag">{{item.updated}}</span>
@@ -107,6 +110,8 @@
     {% else %}{% endmatch %}
 </div>
 
+{% match filter.as_deref() %} {% when Some("star") %}
+{% else %}
 <div class="box">
     {% match filter_value %} {% when Some(val) %}
         {% for folder in folders %}
@@ -126,12 +131,17 @@
         {% endfor %}
     {% endmatch %}
 </div>
+{% endmatch %}
 
 <div class="box">
     {% for folder in folders %}
     {% for feed in folder.1 %}
     <div class="py-1">
-        <a href="/feed/{{uid}}?filter=item&filter_value={{feed.feed_id}}">
+        {% match filter.as_deref() %} {% when Some("star") %}
+        <a href="/feed/{{uid}}?filter=star&filter_value={{feed.feed_id}}">
+        {% else %}
+        <a href="/feed/{{uid}}?filter=feed&filter_value={{feed.feed_id}}">
+        {% endmatch %}
             {% if feed.is_active %}
             <span class="tag is-success">
                 {% if !feed.is_public %}
