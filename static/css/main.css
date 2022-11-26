@@ -91,10 +91,6 @@ pre {
     padding: 1rem;
 }
 
-.list-item-content, .media-content, .column {
-    overflow: scroll;
-}
-
 p {
     word-wrap: break-word;
     text-align: justify
