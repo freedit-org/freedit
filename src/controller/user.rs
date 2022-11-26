@@ -39,7 +39,7 @@ struct PageUser<'a> {
     page_data: PageData<'a>,
     user_solos_count: usize,
     user_posts_count: usize,
-    user_comments_count: usize,
+    user_feeds_count: usize,
     user_following_count: usize,
     user_followers_count: usize,
     has_followed: Option<bool>,
@@ -75,7 +75,7 @@ pub(crate) async fn user(
     let uid_ivec = u32_to_ivec(uid);
     let user_solos_count = get_count_by_prefix(&db, "user_solos", &uid_ivec)?;
     let user_posts_count = get_count_by_prefix(&db, "user_posts", &uid_ivec)?;
-    let user_comments_count = get_count_by_prefix(&db, "user_comments", &uid_ivec)?;
+    let user_feeds_count = get_count_by_prefix(&db, "user_folders", &uid_ivec)?;
     let user_following_count = get_count_by_prefix(&db, "user_following", &u32_to_ivec(uid))?;
     let user_followers_count = get_count_by_prefix(&db, "user_followers", &u32_to_ivec(uid))?;
 
@@ -97,7 +97,7 @@ pub(crate) async fn user(
         user: out_user,
         user_solos_count,
         user_posts_count,
-        user_comments_count,
+        user_feeds_count,
         user_following_count,
         user_followers_count,
         has_followed,
