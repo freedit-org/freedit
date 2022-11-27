@@ -13,6 +13,7 @@ use crate::{
         utils::{clear_invalid, CURRENT_SHA256},
     },
 };
+use chrono::Utc;
 use config::CONFIG;
 use error::AppError;
 use once_cell::sync::Lazy;
@@ -20,7 +21,6 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use time::format_description;
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -118,9 +118,7 @@ fn create_snapshot(db: &sled::Db) {
     let checksum = db.checksum().unwrap();
     info!(%checksum);
 
-    let format =
-        format_description::parse("[year]-[month]-[day]-[hour]-[minute]-[second]").unwrap();
-    let ts = time::OffsetDateTime::now_utc().format(&format).unwrap();
+    let ts = Utc::now().format("%Y-%m-%d-%H-%M-%S");
     let mut snapshot_path = PathBuf::from("snapshots");
     if !snapshot_path.exists() {
         fs::create_dir_all(&snapshot_path).unwrap();

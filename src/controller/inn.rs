@@ -22,8 +22,6 @@ use crate::{
     controller::{get_count, IterType},
     error::AppError,
 };
-use ::time::format_description::well_known::Rfc3339;
-use ::time::OffsetDateTime;
 use askama::Template;
 use axum::{
     extract::{Path, Query, State, TypedHeader},
@@ -31,6 +29,7 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use bincode::config::standard;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use sled::{Batch, Db};
 use std::path::PathBuf;
@@ -212,7 +211,7 @@ pub(crate) async fn mod_inn_post(
         topics,
         inn_type: input.inn_type,
         early_birds: input.early_birds,
-        created_at: OffsetDateTime::now_utc().unix_timestamp(),
+        created_at: Utc::now().timestamp(),
     };
 
     if inn.inn_type.as_str() == "Private" {
@@ -384,7 +383,7 @@ pub(crate) async fn edit_post(
             return Err(AppError::Hidden);
         }
 
-        if post.created_at + 30 * 60 < OffsetDateTime::now_utc().unix_timestamp() {
+        if post.created_at + 30 * 60 < Utc::now().timestamp() {
             return Err(AppError::Unauthorized);
         }
 
@@ -432,7 +431,7 @@ pub(crate) async fn edit_post_post(
         return Err(AppError::Unauthorized);
     }
 
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    let created_at = Utc::now().timestamp();
     if created_at - claim.last_write < site_config.post_interval {
         return Err(AppError::WriteInterval);
     }
@@ -815,16 +814,14 @@ pub(crate) async fn inn_feed(
     }
 
     let mut feed_posts = Vec::with_capacity(index.len());
-    let mut updated = OffsetDateTime::now_utc().format(&Rfc3339).unwrap();
+    let mut updated = Utc::now().to_rfc3339();
     for (idx, i) in index.into_iter().enumerate() {
         let post: Post = get_one(&db, "posts", i)?;
         let user: User = get_one(&db, "users", post.uid)?;
         let date = timestamp_to_date(post.created_at);
         if idx == 0 {
-            updated = OffsetDateTime::from_unix_timestamp(post.created_at)
-                .unwrap()
-                .format(&Rfc3339)
-                .unwrap();
+            let naivedatetime = NaiveDateTime::from_timestamp_opt(post.created_at, 0).unwrap();
+            updated = DateTime::<Utc>::from_utc(naivedatetime, Utc).to_rfc3339();
         }
 
         let feed_post = FeedPost {
@@ -1117,7 +1114,7 @@ pub(crate) async fn post(
             is_downvoted = true;
         }
 
-        if post.created_at + 30 * 60 >= OffsetDateTime::now_utc().unix_timestamp() {
+        if post.created_at + 30 * 60 >= Utc::now().timestamp() {
             can_edit = true;
         }
 
@@ -1276,7 +1273,7 @@ pub(crate) async fn comment_post(
         return Err(AppError::NotFound);
     }
 
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    let created_at = Utc::now().timestamp();
     if created_at - claim.last_write < site_config.comment_interval {
         return Err(AppError::WriteInterval);
     }

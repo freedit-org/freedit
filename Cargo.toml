@@ -9,11 +9,10 @@ askama = { version = "0.11", default-features = false } # templates engine
 atom_syndication = { version = "0.11.0", default-features = false }
 axum = { version = "0.6.0", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
 axum-server = { version = "0.4", features = ["tls-rustls"] }
-bincode = "2.0.0-rc.1"
+bincode = "2.0.0-rc.2"
 captcha = { version = "0.0.9", default-features = false }
+chrono = { version = "0.4.23", default-features = false, features = ["clock"] }
 data-encoding = "*"
-flate2 = "1.0"
-http-body = "0.4.5"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
@@ -31,7 +30,6 @@ serde = { version = "1.0", features = ["derive"] }
 sled = { version = "0.34.7", features = ["compression"] }
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
 thiserror = "1"
-time = { version = "0.3", features = ["std", "formatting"], default-features = false }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 toml = "0.5"
 tower = { version = "0.4", features = ["timeout"] }
@@ -39,7 +37,6 @@ tower-http = { version = "0.3", features = ["fs", "compression-gzip", "trace"] }
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.16", features = ["derive"] }
-chrono = "0.4.23"
 
 [profile.release]
 lto = true

@@ -14,7 +14,7 @@ use axum::{
     Form, TypedHeader,
 };
 use bincode::config::standard;
-use chrono::Local;
+use chrono::Utc;
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -557,7 +557,7 @@ pub(crate) async fn feed_star(
         if star_tree.contains_key(&k)? {
             star_tree.remove(&k)?;
         } else {
-            let now = Local::now().timestamp();
+            let now = Utc::now().timestamp();
             star_tree.insert(&k, i64_to_ivec(now))?;
         }
     }

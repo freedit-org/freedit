@@ -12,9 +12,9 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use bincode::config::standard;
+use chrono::Utc;
 use serde::Deserialize;
 use sled::Db;
-use time::OffsetDateTime;
 use validator::Validate;
 
 /// Form data: `/solo/user/:uid` solo create.
@@ -350,7 +350,7 @@ pub(crate) async fn solo_post(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    let created_at = Utc::now().timestamp();
     if created_at - claim.last_write < site_config.solo_interval {
         return Err(AppError::WriteInterval);
     }

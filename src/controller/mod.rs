@@ -194,10 +194,10 @@ impl From<rss::Item> for Item {
             if let Ok(ts) = DateTime::parse_from_rfc2822(pub_date) {
                 ts.timestamp()
             } else {
-                Local::now().timestamp()
+                Utc::now().timestamp()
             }
         } else {
-            Local::now().timestamp()
+            Utc::now().timestamp()
         };
 
         Item {
@@ -271,7 +271,7 @@ use axum::{
 };
 use bincode::config::standard;
 use bincode::{Decode, Encode};
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Days, NaiveDateTime, Utc};
 use data_encoding::HEXLOWER;
 use image::{imageops::FilterType, ImageFormat};
 use img_parts::{DynImage, ImageEXIF};
@@ -283,7 +283,6 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::{Batch, Db, IVec, Iter, Tree};
 use std::{cmp::Ordering, iter::Rev};
-use time::{OffsetDateTime, Time};
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
 use tracing::error;
@@ -932,7 +931,7 @@ impl<'a> PageData<'a> {
 /// ```
 fn generate_nanoid_expire(seconds: i64) -> String {
     let nanoid = nanoid!();
-    let exp = OffsetDateTime::now_utc().unix_timestamp() + seconds;
+    let exp = Utc::now().timestamp() + seconds;
     format!("{:x}_{}", exp, nanoid)
 }
 
@@ -952,10 +951,13 @@ where
 }
 
 fn user_stats(db: &Db, uid: u32, stat_type: &str) -> Result<(), AppError> {
-    let expire = OffsetDateTime::now_utc()
-        .replace_time(Time::MIDNIGHT)
-        .saturating_add(time::Duration::days(3))
-        .unix_timestamp();
+    let expire = Utc::now()
+        .date_naive()
+        .checked_add_days(Days::new(3))
+        .unwrap()
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .timestamp();
     let key = format!("{:x}_{}_{}", expire, uid, stat_type);
     incr_id(&db.open_tree("user_stats")?, key)?;
     Ok(())
@@ -982,9 +984,9 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
 
 /// convert a `i64` timestamp to a date [`String`]
 fn timestamp_to_date(timestamp: i64) -> String {
-    OffsetDateTime::from_unix_timestamp(timestamp)
+    NaiveDateTime::from_timestamp_opt(timestamp, 0)
         .unwrap()
-        .date()
+        .format("%Y-%m-%d")
         .to_string()
 }
 

@@ -18,6 +18,7 @@ use axum::{
 };
 use bincode::config::standard;
 use captcha::{CaptchaName, Difficulty};
+use chrono::Utc;
 use data_encoding::BASE64;
 use identicon::Identicon;
 use ring::{
@@ -27,7 +28,6 @@ use ring::{
 use serde::Deserialize;
 use sled::Db;
 use std::{cmp::Ordering, num::NonZeroU32, time::Duration};
-use time::OffsetDateTime;
 use tokio::time::sleep;
 use validator::Validate;
 
@@ -805,7 +805,7 @@ pub(crate) async fn signup_post(
     let avatar = format!("{}/{}.png", &CONFIG.avatars_path, uid);
     Identicon::new(&generate_salt()).image().save(avatar)?;
 
-    let created_at = OffsetDateTime::now_utc().unix_timestamp();
+    let created_at = Utc::now().timestamp();
     let role = if uid == 1 {
         u8::MAX
     } else if uid <= 500 {
@@ -973,9 +973,9 @@ impl Claim {
         let timestamp = session.split_once('_')?.0;
         let tree = &db.open_tree("sessions").ok()?;
         let timestamp = i64::from_str_radix(timestamp, 16).ok()?;
-        let now = OffsetDateTime::now_utc();
+        let now = Utc::now();
 
-        if timestamp < now.unix_timestamp() {
+        if timestamp < now.timestamp() {
             tree.remove(session).ok()?;
             return None;
         }
@@ -995,7 +995,7 @@ impl Claim {
     }
 
     pub(super) fn update_last_write(mut self, db: &Db) -> Result<(), AppError> {
-        self.last_write = OffsetDateTime::now_utc().unix_timestamp();
+        self.last_write = Utc::now().timestamp();
         let claim_encode = bincode::encode_to_vec(&self, standard())?;
         db.open_tree("sessions")?
             .insert(&self.session_id, claim_encode)?;
@@ -1025,7 +1025,7 @@ impl Claim {
             return Err(AppError::Banned);
         }
         let seconds = expire_seconds(expiry);
-        let now = OffsetDateTime::now_utc().unix_timestamp();
+        let now = Utc::now().timestamp();
         let session_id = generate_nanoid_expire(seconds);
 
         let claim = Claim {
