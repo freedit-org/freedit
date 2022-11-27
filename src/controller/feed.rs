@@ -47,6 +47,17 @@ struct OutFeed {
     is_public: bool,
 }
 
+impl OutFeed {
+    fn new(feed_id: u32, title: String, is_active: bool, is_public: bool) -> Self {
+        OutFeed {
+            feed_id,
+            title,
+            is_active,
+            is_public,
+        }
+    }
+}
+
 struct OutItem {
     item_id: u32,
     title: String,
@@ -62,6 +73,12 @@ pub(crate) struct ParamsFeed {
     is_desc: Option<bool>,
     filter: Option<String>,
     filter_value: Option<String>,
+}
+
+struct Folder {
+    folder: String,
+    feed_id: u32,
+    is_public: bool,
 }
 
 /// `GET /feed`
@@ -86,59 +103,96 @@ pub(crate) async fn feed(
     let mut map = IndexMap::new();
     let mut feed_ids = vec![];
     let mut item_ids = vec![];
-    let mut read_ids = vec![];
 
-    // TODO: bug match first, iter later
+    let mut folders = vec![];
     for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
-        // is not public and is nonlogin
         let (k, v) = i?;
-        let is_public = v[0] == 1;
-        if username.is_some() && !is_public {
-            continue;
-        }
         let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
         let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
-        let feed: Feed = get_one(&db, "feeds", feed_id)?;
+        let is_public = v[0] == 1;
+        folders.push(Folder {
+            folder,
+            feed_id,
+            is_public,
+        })
+    }
 
-        let mut is_active = false;
-
-        match (&params.filter, &params.filter_value) {
-            (Some(ref filter), Some(filter_value)) if filter == "feed" => {
-                if let Ok(id) = filter_value.parse::<u32>() {
-                    if id == feed_id {
-                        is_active = true;
-                        feed_ids.push(feed_id);
+    match (&params.filter, &params.filter_value) {
+        (Some(ref filter), Some(filter_value)) if filter == "feed" => {
+            if let Ok(id) = filter_value.parse::<u32>() {
+                for i in folders {
+                    if username.is_some() && !i.is_public {
+                        continue;
                     }
+
+                    let mut is_active = false;
+                    if id == i.feed_id {
+                        is_active = true;
+                        feed_ids.push(i.feed_id);
+                    }
+                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
+                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    e.push(out_feed);
                 }
             }
-            (Some(ref filter), Some(filter_value)) if filter == "folder" => {
-                if &folder == filter_value {
+        }
+        (Some(ref filter), Some(filter_value)) if filter == "folder" => {
+            for i in folders {
+                if username.is_some() && !i.is_public {
+                    continue;
+                }
+
+                let mut is_active = false;
+                if filter_value == &i.folder {
                     is_active = true;
-                    feed_ids.push(feed_id);
+                    feed_ids.push(i.feed_id);
                 }
+                let e = map.entry(i.folder).or_insert(vec![]);
+                let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
+                let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                e.push(out_feed);
             }
-            (Some(ref filter), Some(filter_value)) if filter == "star" => {
-                if let Ok(id) = filter_value.parse::<u32>() {
-                    if id == feed_id {
+        }
+        (Some(ref filter), Some(filter_value)) if filter == "star" => {
+            if let Ok(id) = filter_value.parse::<u32>() {
+                for i in folders {
+                    if username.is_some() {
+                        break;
+                    }
+
+                    let mut is_active = false;
+                    if id == i.feed_id {
                         is_active = true;
                         if let Some(ref claim) = claim {
                             let mut star_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
                             let ids_in_feed =
-                                get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
+                                get_ids_by_prefix(&db, "feed_items", u32_to_ivec(i.feed_id), None)?;
                             star_ids.retain(|(i, _)| ids_in_feed.contains(i));
                             item_ids = star_ids;
                         }
                     }
+                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
+                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    e.push(out_feed);
                 }
             }
-            (Some(ref filter), None) if filter == "star" => {
-                if let Some(ref claim) = claim {
-                    item_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
-                }
+        }
+        (Some(ref filter), None) if filter == "star" => {
+            if let Some(ref claim) = claim {
+                item_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
             }
-            (Some(ref filter), Some(filter_value)) if filter == "unread" => {
-                if let Ok(id) = filter_value.parse::<u32>() {
-                    if id == feed_id {
+        }
+        (Some(ref filter), Some(filter_value)) if filter == "unread" => {
+            if let Ok(id) = filter_value.parse::<u32>() {
+                for i in folders {
+                    if username.is_some() {
+                        break;
+                    }
+
+                    let mut is_active = false;
+                    if id == i.feed_id {
                         is_active = true;
                         if let Some(ref claim) = claim {
                             let read_ids =
@@ -148,32 +202,45 @@ pub(crate) async fn feed(
                             item_ids = ids_in_feed;
                         }
                     }
+                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
+                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    e.push(out_feed);
                 }
-            }
-            (Some(ref filter), None) if filter == "unread" => {
-                if let Some(ref claim) = claim {
-                    if read_ids.is_empty() {
-                        read_ids = get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
-                    }
-                    let mut ids_in_feed = get_item_ids_and_ts(&db, "feed_items", feed_id)?;
-                    ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
-                    item_ids.append(&mut ids_in_feed);
-                }
-            }
-            (_, _) => {
-                let mut ids = get_item_ids_and_ts(&db, "feed_items", feed_id)?;
-                item_ids.append(&mut ids);
             }
         }
+        (Some(ref filter), None) if filter == "unread" => {
+            if let Some(ref claim) = claim {
+                let read_ids = get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
+                for i in folders {
+                    let is_active = false;
+                    let mut ids_in_feed = get_item_ids_and_ts(&db, "feed_items", i.feed_id)?;
+                    ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
+                    item_ids.append(&mut ids_in_feed);
 
-        let e = map.entry(folder).or_insert(vec![]);
-        let out_feed = OutFeed {
-            feed_id,
-            title: feed.title,
-            is_active,
-            is_public,
-        };
-        e.push(out_feed);
+                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
+                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    e.push(out_feed);
+                }
+            }
+        }
+        (_, _) => {
+            for i in folders {
+                if username.is_some() && !i.is_public {
+                    continue;
+                }
+
+                let mut ids = get_item_ids_and_ts(&db, "feed_items", i.feed_id)?;
+                item_ids.append(&mut ids);
+
+                let is_active = false;
+                let e = map.entry(i.folder).or_insert(vec![]);
+                let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
+                let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                e.push(out_feed);
+            }
+        }
     }
 
     for id in feed_ids {
