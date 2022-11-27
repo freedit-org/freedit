@@ -130,7 +130,7 @@ pub(crate) async fn feed(
                         is_active = true;
                         feed_ids.push(i.feed_id);
                     }
-                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let e: &mut Vec<OutFeed> = map.entry(i.folder).or_default();
                     let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
                     let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
                     e.push(out_feed);
@@ -148,7 +148,7 @@ pub(crate) async fn feed(
                     is_active = true;
                     feed_ids.push(i.feed_id);
                 }
-                let e = map.entry(i.folder).or_insert(vec![]);
+                let e = map.entry(i.folder).or_default();
                 let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
                 let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
                 e.push(out_feed);
@@ -172,7 +172,7 @@ pub(crate) async fn feed(
                             item_ids = star_ids;
                         }
                     }
-                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let e = map.entry(i.folder).or_default();
                     let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
                     let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
                     e.push(out_feed);
@@ -202,7 +202,7 @@ pub(crate) async fn feed(
                             item_ids = ids_in_feed;
                         }
                     }
-                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let e = map.entry(i.folder).or_default();
                     let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
                     let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
                     e.push(out_feed);
@@ -218,7 +218,7 @@ pub(crate) async fn feed(
                     ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
                     item_ids.append(&mut ids_in_feed);
 
-                    let e = map.entry(i.folder).or_insert(vec![]);
+                    let e = map.entry(i.folder).or_default();
                     let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
                     let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
                     e.push(out_feed);
@@ -235,7 +235,7 @@ pub(crate) async fn feed(
                 item_ids.append(&mut ids);
 
                 let is_active = false;
-                let e = map.entry(i.folder).or_insert(vec![]);
+                let e = map.entry(i.folder).or_default();
                 let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
                 let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
                 e.push(out_feed);
@@ -477,7 +477,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
     let feed = match rss::Channel::read_from(&content[..]) {
         Ok(rss) => {
             for item in rss.items {
-                let item: Item = item.into();
+                let item: Item = item.try_into()?;
                 let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
                     ivec_to_u32(&v)
                 } else {

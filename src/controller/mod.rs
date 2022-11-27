@@ -188,8 +188,9 @@ struct Item {
     updated: i64,
 }
 
-impl From<rss::Item> for Item {
-    fn from(rss: rss::Item) -> Self {
+impl TryFrom<rss::Item> for Item {
+    type Error = AppError;
+    fn try_from(rss: rss::Item) -> Result<Self, Self::Error> {
         let updated = if let Some(ref pub_date) = rss.pub_date {
             if let Ok(ts) = DateTime::parse_from_rfc2822(pub_date) {
                 ts.timestamp()
@@ -200,11 +201,15 @@ impl From<rss::Item> for Item {
             Utc::now().timestamp()
         };
 
-        Item {
-            link: rss.link.unwrap(),
-            title: rss.title.unwrap_or("No Title".to_owned()),
+        let Some(link) = rss.link else {
+            return Err(AppError::InvalidFeedLink);
+        };
+
+        Ok(Item {
+            link,
+            title: rss.title.unwrap_or_else(|| "No Title".to_owned()),
             updated,
-        }
+        })
     }
 }
 
