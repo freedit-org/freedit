@@ -1,6 +1,6 @@
 use super::{
-    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, Claim, IterType, PageData,
-    SiteConfig, ValidatedForm,
+    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, Claim, Feed, Item,
+    IterType, PageData, SiteConfig, ValidatedForm,
 };
 use crate::{
     controller::{ivec_to_u32, Comment, Inn, Post, Solo, User},
@@ -165,7 +165,7 @@ pub(crate) async fn admin_view(
                 }
                 "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
                 | "inn_apply" | "post_upvotes" | "post_downvotes" | "user_solos_like"
-                | "inn_posts" | "solo_users_like" => {
+                | "inn_posts" | "solo_users_like" | "feed_items" | "read" | "star" => {
                     let id1 = u8_slice_to_u32(&k[0..4]);
                     let id2 = u8_slice_to_u32(&k[4..8]);
                     ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
@@ -179,7 +179,7 @@ pub(crate) async fn admin_view(
                     let count = ivec_to_u32(&v);
                     ones.push(format!("{} - {} - {} - {}", uid, date, stat_type, count));
                 }
-                "inn_names" | "usernames" => {
+                "inn_names" | "usernames" | "feed_links" | "item_links" => {
                     let name = std::str::from_utf8(&k)?;
                     let id = u8_slice_to_u32(&v);
                     ones.push(format!("name: {}, id: {}", name, id));
@@ -235,6 +235,26 @@ pub(crate) async fn admin_view(
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let img = String::from_utf8_lossy(&k[4..]);
                     ones.push(format!("{} - {}", uid, img));
+                }
+                "user_folders" => {
+                    let uid = u8_slice_to_u32(&k[0..4]);
+                    let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
+                    let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
+                    let is_public = v[0] == 1;
+                    ones.push(format!(
+                        "{} - {} - {} - {}",
+                        uid, folder, feed_id, is_public
+                    ));
+                }
+                "feeds" => {
+                    let key = ivec_to_u32(&k);
+                    let (one, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
+                    ones.push(format!("{}: {:?}", key, one));
+                }
+                "items" => {
+                    let key = ivec_to_u32(&k);
+                    let (one, _): (Item, usize) = bincode::decode_from_slice(&v, standard())?;
+                    ones.push(format!("{}: {:?}", key, one));
                 }
                 _ => ones.push(format!("{} has not been supported yet", tree_name)),
             }
