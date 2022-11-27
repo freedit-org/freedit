@@ -39,6 +39,7 @@ tower-http = { version = "0.3", features = ["fs", "compression-gzip", "trace"] }
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.16", features = ["derive"] }
+chrono = "0.4.23"
 
 [profile.release]
 lto = true

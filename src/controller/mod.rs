@@ -92,12 +92,12 @@
 //! | default               | "items_count"        | N           |
 //! | "user_folders"        | `uid#folder#feed_id` | `&[0/1]`    |
 //! | "feeds"               | `feed_id`            | [`Feed`]    |
-//! | "feed_items"          | `feed_id#item_id`    | `&[]`       |
+//! | "feed_items"          | `feed_id#item_id`    | `i64`       |
 //! | "feed_links"          | `feed_link`          | `feed_id`   |
 //! | "item_links"          | `item_link`          | `item_id`   |
 //! | "items"               | `item_id`            | [`Item`]    |
 //! | "read"                | `uid#item_id`        | `&[]`       |
-//! | "star"                | `uid#item_id`        | `&[]`       |
+//! | "star"                | `uid#item_id`        | `i64`       |
 
 /// user
 ///
@@ -185,13 +185,21 @@ struct Feed {
 struct Item {
     link: String,
     title: String,
-    updated: String,
+    updated: i64,
 }
 
 impl From<rss::Item> for Item {
     fn from(rss: rss::Item) -> Self {
-        let mut updated = rss.pub_date.unwrap_or_default();
-        updated.truncate(16);
+        let updated = if let Some(ref pub_date) = rss.pub_date {
+            if let Ok(ts) = DateTime::parse_from_rfc2822(pub_date) {
+                ts.timestamp()
+            } else {
+                Local::now().timestamp()
+            }
+        } else {
+            Local::now().timestamp()
+        };
+
         Item {
             link: rss.link.unwrap(),
             title: rss.title.unwrap_or("No Title".to_owned()),
@@ -202,12 +210,10 @@ impl From<rss::Item> for Item {
 
 impl From<atom_syndication::Entry> for Item {
     fn from(atom: atom_syndication::Entry) -> Self {
-        let mut updated = atom.updated.to_rfc2822();
-        updated.truncate(16);
         Item {
             link: atom.links[0].href.clone(),
             title: atom.title.to_string(),
-            updated,
+            updated: atom.updated.timestamp(),
         }
     }
 }
@@ -265,6 +271,7 @@ use axum::{
 };
 use bincode::config::standard;
 use bincode::{Decode, Encode};
+use chrono::{DateTime, Local};
 use data_encoding::HEXLOWER;
 use image::{imageops::FilterType, ImageFormat};
 use img_parts::{DynImage, ImageEXIF};

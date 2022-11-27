@@ -1,6 +1,6 @@
 use super::{
-    get_ids_by_prefix, get_one, get_range, get_site_config, into_response, u32_to_ivec,
-    u8_slice_to_u32, Claim, PageData, ParamsPage, User,
+    get_ids_by_prefix, get_one, get_range, get_site_config, into_response, timestamp_to_date,
+    u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, User,
 };
 use crate::{
     controller::{incr_id, ivec_to_u32, Feed, Item},
@@ -14,11 +14,12 @@ use axum::{
     Form, TypedHeader,
 };
 use bincode::config::standard;
+use chrono::Local;
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
-use sled::Db;
+use sled::{Db, IVec};
 use std::{collections::HashSet, time::Duration};
 use tracing::error;
 use validator::Validate;
@@ -86,6 +87,8 @@ pub(crate) async fn feed(
     let mut feed_ids = vec![];
     let mut item_ids = vec![];
     let mut read_ids = vec![];
+
+    // TODO: bug match first, iter later
     for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
         // is not public and is nonlogin
         let (k, v) = i?;
@@ -119,19 +122,18 @@ pub(crate) async fn feed(
                     if id == feed_id {
                         is_active = true;
                         if let Some(ref claim) = claim {
-                            let star_ids =
-                                get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
-                            let mut ids_in_feed =
+                            let mut star_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
+                            let ids_in_feed =
                                 get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
-                            ids_in_feed.retain(|i| star_ids.contains(i));
-                            item_ids = ids_in_feed;
+                            star_ids.retain(|(i, _)| ids_in_feed.contains(i));
+                            item_ids = star_ids;
                         }
                     }
                 }
             }
             (Some(ref filter), None) if filter == "star" => {
                 if let Some(ref claim) = claim {
-                    item_ids = get_ids_by_prefix(&db, "star", u32_to_ivec(claim.uid), None)?;
+                    item_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
                 }
             }
             (Some(ref filter), Some(filter_value)) if filter == "unread" => {
@@ -141,9 +143,8 @@ pub(crate) async fn feed(
                         if let Some(ref claim) = claim {
                             let read_ids =
                                 get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
-                            let mut ids_in_feed =
-                                get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
-                            ids_in_feed.retain(|i| !read_ids.contains(i));
+                            let mut ids_in_feed = get_item_ids_and_ts(&db, "feed_items", id)?;
+                            ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
                             item_ids = ids_in_feed;
                         }
                     }
@@ -154,14 +155,13 @@ pub(crate) async fn feed(
                     if read_ids.is_empty() {
                         read_ids = get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
                     }
-                    let mut ids_in_feed =
-                        get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
-                    ids_in_feed.retain(|i| !read_ids.contains(i));
+                    let mut ids_in_feed = get_item_ids_and_ts(&db, "feed_items", feed_id)?;
+                    ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
                     item_ids.append(&mut ids_in_feed);
                 }
             }
             (_, _) => {
-                let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(feed_id), None)?;
+                let mut ids = get_item_ids_and_ts(&db, "feed_items", feed_id)?;
                 item_ids.append(&mut ids);
             }
         }
@@ -177,24 +177,23 @@ pub(crate) async fn feed(
     }
 
     for id in feed_ids {
-        let mut ids = get_ids_by_prefix(&db, "feed_items", u32_to_ivec(id), None)?;
+        let mut ids = get_item_ids_and_ts(&db, "feed_items", id)?;
         item_ids.append(&mut ids);
     }
-
+    item_ids.sort_unstable_by(|a, b| a.1.cmp(&b.1));
     let n = site_config.per_page;
     let anchor = params.anchor.unwrap_or(0);
     let is_desc = params.is_desc.unwrap_or(true);
     let page_params = ParamsPage { anchor, n, is_desc };
     let (start, end) = get_range(item_ids.len(), &page_params);
     item_ids = item_ids[start - 1..end].to_vec();
-    if !is_desc {
+    if is_desc {
         item_ids.reverse();
     }
-
     let mut items = Vec::with_capacity(n);
     let star_tree = db.open_tree("star")?;
     let read_tree = db.open_tree("read")?;
-    for i in item_ids {
+    for (i, _) in item_ids {
         let item: Item = get_one(&db, "items", i)?;
         let mut is_read = read;
         let is_starred = if let Some(ref claim) = claim {
@@ -206,10 +205,11 @@ pub(crate) async fn feed(
         } else {
             false
         };
+
         let out_item = OutItem {
             item_id: i,
             title: item.title,
-            updated: item.updated,
+            updated: timestamp_to_date(item.updated),
             is_starred,
             is_read,
         };
@@ -231,6 +231,17 @@ pub(crate) async fn feed(
     };
 
     Ok(into_response(&page_feed, "html"))
+}
+
+fn get_item_ids_and_ts(db: &Db, tree: &str, id: u32) -> Result<Vec<(u32, i64)>, AppError> {
+    let mut res = vec![];
+    for i in db.open_tree(tree)?.scan_prefix(u32_to_ivec(id)) {
+        let (k, v) = i?;
+        let item_id = u8_slice_to_u32(&k[4..8]);
+        let ts = i64::from_be_bytes(v.to_vec().try_into().unwrap());
+        res.push((item_id, ts))
+    }
+    Ok(res)
 }
 
 /// `GET /feed/read/:item_id`
@@ -336,9 +347,9 @@ pub(crate) async fn feed_add_post(
 
     let feed_items_tree = db.open_tree("feed_items")?;
     let feed_id_ivec = u32_to_ivec(feed_id);
-    for id in item_ids {
+    for (id, ts) in item_ids {
         let k = [&feed_id_ivec, &u32_to_ivec(id)].concat();
-        feed_items_tree.insert(k, &[])?;
+        feed_items_tree.insert(k, i64_to_ivec(ts))?;
     }
 
     feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
@@ -390,7 +401,7 @@ pub(crate) async fn feed_update(
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
 }
 
-async fn update(url: String, db: &Db) -> Result<(Feed, Vec<u32>), AppError> {
+async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError> {
     let content = CLIENT.get(&url).send().await?.bytes().await?;
 
     let item_links_tree = db.open_tree("item_links")?;
@@ -409,7 +420,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<u32>), AppError> {
                 let item_encode = bincode::encode_to_vec(&item, standard())?;
                 items_tree.insert(u32_to_ivec(item_id), item_encode)?;
 
-                item_ids.push(item_id);
+                item_ids.push((item_id, item.updated));
             }
 
             Feed {
@@ -430,7 +441,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<u32>), AppError> {
                     let item_encode = bincode::encode_to_vec(&item, standard())?;
                     items_tree.insert(u32_to_ivec(item_id), item_encode)?;
 
-                    item_ids.push(item_id);
+                    item_ids.push((item_id, item.updated));
                 }
 
                 Feed {
@@ -479,7 +490,8 @@ pub(crate) async fn feed_star(
         if star_tree.contains_key(&k)? {
             star_tree.remove(&k)?;
         } else {
-            star_tree.insert(&k, &[])?;
+            let now = Local::now().timestamp();
+            star_tree.insert(&k, i64_to_ivec(now))?;
         }
     }
 
@@ -516,4 +528,9 @@ pub(crate) async fn feed_subscribe(
     }
 
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
+}
+
+/// convert `i64` to [IVec]
+fn i64_to_ivec(number: i64) -> IVec {
+    IVec::from(number.to_be_bytes().to_vec())
 }
