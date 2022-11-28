@@ -525,18 +525,22 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
     Ok((feed, item_ids))
 }
 
-pub(crate) async fn cron_feed(db: &Db, interval: u64) -> Result<(), AppError> {
-    let sleep = tokio::time::sleep(std::time::Duration::from_secs(interval));
-
-    for i in &db.open_tree("feed_links")? {
+pub(crate) async fn cron_feed(db: &Db) -> Result<(), AppError> {
+    let mut set = HashSet::new();
+    for i in &db.open_tree("user_folders")? {
         let (k, _) = i?;
-        let link = String::from_utf8_lossy(&k);
-        if let Err(e) = update(link.to_string(), db).await {
-            error!(%e);
-        }
+        let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
+        set.insert(feed_id);
     }
 
-    sleep.await;
+    for id in set {
+        if let Ok(feed) = get_one::<Feed>(db, "feeds", id) {
+            if let Err(e) = update(feed.link, db).await {
+                error!("update {} failed, error: {e}", feed.title);
+            }
+        };
+    }
+
     Ok(())
 }
 

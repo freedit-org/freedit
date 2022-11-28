@@ -54,41 +54,30 @@ async fn main() -> Result<(), AppError> {
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {
-            if let Err(e) = clear_invalid(&db2, "captcha", 3600 * 6).await {
+            if let Err(e) = clear_invalid(&db2, "captcha").await {
                 error!(%e);
             }
+            if let Err(e) = clear_invalid(&db2, "sessions").await {
+                error!(%e);
+            }
+            sleep_seconds(300).await;
         }
     });
 
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {
-            if let Err(e) = cron_feed(&db2, 3600 * 8).await {
+            if let Err(e) = cron_feed(&db2).await {
                 error!(%e);
             }
-        }
-    });
-
-    let db2 = db.clone();
-    tokio::spawn(async move {
-        loop {
-            if let Err(e) = clear_invalid(&db2, "sessions", 300).await {
+            if let Err(e) = clear_invalid(&db2, "user_stats").await {
                 error!(%e);
             }
-        }
-    });
-
-    let db2 = db.clone();
-    tokio::spawn(async move {
-        loop {
-            if let Err(e) = clear_invalid(&db2, "user_stats", 3600 * 6).await {
-                error!(%e);
-            }
+            sleep_seconds(3600 * 8).await;
         }
     });
 
     let app = router(db).await;
-
     let addr = CONFIG.addr.parse().unwrap();
 
     match CONFIG.tls_config().await {
@@ -139,4 +128,8 @@ fn check_path(path_str: &str) {
         fs::create_dir_all(path).unwrap();
     }
     info!("static path {path_str}");
+}
+
+async fn sleep_seconds(seconds: u64) {
+    tokio::time::sleep(std::time::Duration::from_secs(seconds)).await
 }
