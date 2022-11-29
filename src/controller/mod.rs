@@ -185,10 +185,17 @@ struct Feed {
 struct Item {
     link: String,
     title: String,
+    feed_title: String,
     updated: i64,
 }
 
-impl TryFrom<rss::Item> for Item {
+struct SourceItem {
+    link: String,
+    title: String,
+    updated: i64,
+}
+
+impl TryFrom<rss::Item> for SourceItem {
     type Error = AppError;
     fn try_from(rss: rss::Item) -> Result<Self, Self::Error> {
         let updated = if let Some(ref pub_date) = rss.pub_date {
@@ -205,7 +212,7 @@ impl TryFrom<rss::Item> for Item {
             return Err(AppError::InvalidFeedLink);
         };
 
-        Ok(Item {
+        Ok(Self {
             link,
             title: rss.title.unwrap_or_else(|| "No Title".to_owned()),
             updated,
@@ -213,9 +220,9 @@ impl TryFrom<rss::Item> for Item {
     }
 }
 
-impl From<atom_syndication::Entry> for Item {
+impl From<atom_syndication::Entry> for SourceItem {
     fn from(atom: atom_syndication::Entry) -> Self {
-        Item {
+        Self {
             link: atom.links[0].href.clone(),
             title: atom.title.to_string(),
             updated: atom.updated.timestamp(),

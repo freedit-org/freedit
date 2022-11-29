@@ -1,6 +1,6 @@
 use super::{
     get_ids_by_prefix, get_one, get_range, get_site_config, into_response, timestamp_to_date,
-    u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, User,
+    u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, SourceItem, User,
 };
 use crate::{
     controller::{incr_id, ivec_to_u32, Feed, Item},
@@ -61,6 +61,7 @@ impl OutFeed {
 struct OutItem {
     item_id: u32,
     title: String,
+    feed_title: String,
     updated: String,
     is_starred: bool,
     is_read: bool,
@@ -276,6 +277,7 @@ pub(crate) async fn feed(
         let out_item = OutItem {
             item_id: i,
             title: item.title,
+            feed_title: item.feed_title,
             updated: timestamp_to_date(item.updated),
             is_starred,
             is_read,
@@ -477,12 +479,20 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
     let feed = match rss::Channel::read_from(&content[..]) {
         Ok(rss) => {
             for item in rss.items {
-                let item: Item = item.try_into()?;
-                let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
+                let source_item: SourceItem = item.try_into()?;
+                let item_id = if let Some(v) = item_links_tree.get(&source_item.link)? {
                     ivec_to_u32(&v)
                 } else {
                     incr_id(db, "items_count")?
                 };
+
+                let item = Item {
+                    link: source_item.link,
+                    title: source_item.title,
+                    feed_title: rss.title.clone(),
+                    updated: source_item.updated,
+                };
+
                 item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                 let item_encode = bincode::encode_to_vec(&item, standard())?;
                 items_tree.insert(u32_to_ivec(item_id), item_encode)?;
@@ -498,11 +508,17 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
         Err(_) => match atom_syndication::Feed::read_from(&content[..]) {
             Ok(atom) => {
                 for entry in atom.entries {
-                    let item: Item = entry.into();
-                    let item_id = if let Some(v) = item_links_tree.get(&item.link)? {
+                    let source_item: SourceItem = entry.into();
+                    let item_id = if let Some(v) = item_links_tree.get(&source_item.link)? {
                         ivec_to_u32(&v)
                     } else {
                         incr_id(db, "items_count")?
+                    };
+                    let item = Item {
+                        link: source_item.link,
+                        title: source_item.title,
+                        feed_title: atom.title.to_string(),
+                        updated: source_item.updated,
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     let item_encode = bincode::encode_to_vec(&item, standard())?;
