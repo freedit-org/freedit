@@ -279,7 +279,7 @@ use axum::{
     async_trait,
     body::{self, BoxBody, Empty, Full},
     extract::{rejection::FormRejection, Form, FromRequest, Multipart, Query, State},
-    headers::{Cookie, HeaderName},
+    headers::{Cookie, HeaderName, Referer},
     http::{HeaderMap, HeaderValue, Request, StatusCode},
     response::{IntoResponse, Redirect, Response},
     routing::{get_service, MethodRouter},
@@ -996,6 +996,18 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
     };
 
     Some(number.to_be_bytes().to_vec())
+}
+
+fn get_referer(header: Option<TypedHeader<Referer>>) -> Option<String> {
+    if let Some(TypedHeader(r)) = header {
+        let referer = format!("{:?}", r);
+        let trimed = referer
+            .trim_start_matches("Referer(\"")
+            .trim_end_matches("\")");
+        Some(trimed.to_owned())
+    } else {
+        None
+    }
 }
 
 /// convert a `i64` timestamp to a date [`String`]

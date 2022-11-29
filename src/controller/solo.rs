@@ -1,14 +1,14 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
-    get_site_config, has_unread, incr_id, into_response, ivec_to_u32, mark_read, timestamp_to_date,
-    u32_to_ivec, u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType, PageData,
-    ParamsPage, Solo, User, ValidatedForm,
+    get_referer, get_site_config, has_unread, incr_id, into_response, ivec_to_u32, mark_read,
+    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType,
+    PageData, ParamsPage, Solo, User, ValidatedForm,
 };
 use crate::error::AppError;
 use askama::Template;
 use axum::{
     extract::{Path, Query, State, TypedHeader},
-    headers::Cookie,
+    headers::{Cookie, Referer},
     response::{IntoResponse, Redirect},
 };
 use bincode::config::standard;
@@ -437,6 +437,7 @@ pub(crate) async fn solo_post(
 /// `GET /solo/:sid/like` solo like
 pub(crate) async fn solo_like(
     State(db): State<Db>,
+    referer: Option<TypedHeader<Referer>>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -461,8 +462,12 @@ pub(crate) async fn solo_like(
             solo_users_like_tree.remove(&solo_users_like_k)?;
         }
     }
+    let target = if let Some(referer) = get_referer(referer) {
+        referer
+    } else {
+        format!("/solo/user/{}", solo.uid)
+    };
 
-    let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))
 }
 

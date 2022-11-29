@@ -1,6 +1,6 @@
 use super::{
-    get_ids_by_prefix, get_one, get_range, get_site_config, into_response, timestamp_to_date,
-    u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, SourceItem, User,
+    get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, into_response,
+    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, SourceItem, User,
 };
 use crate::{
     controller::{incr_id, ivec_to_u32, Feed, Item},
@@ -9,7 +9,7 @@ use crate::{
 use askama::Template;
 use axum::{
     extract::{Path, Query, State},
-    headers::Cookie,
+    headers::{Cookie, Referer},
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
 };
@@ -605,6 +605,7 @@ pub(crate) async fn cron_feed(db: &Db) -> Result<(), AppError> {
 /// `GET /feed/star`
 pub(crate) async fn feed_star(
     State(db): State<Db>,
+    referer: Option<TypedHeader<Referer>>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(item_id): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -624,7 +625,12 @@ pub(crate) async fn feed_star(
         }
     }
 
-    Ok(Redirect::to(&format!("/feed/{}?filter=star", claim.uid)))
+    let target = if let Some(referer) = get_referer(referer) {
+        referer
+    } else {
+        format!("/feed/{}?filter=star", claim.uid)
+    };
+    Ok(Redirect::to(&target))
 }
 
 /// `GET /feed/subscribe`
