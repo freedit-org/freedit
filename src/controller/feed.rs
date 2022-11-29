@@ -329,12 +329,20 @@ struct OutItemRead {
 struct PageFeedRead<'a> {
     page_data: PageData<'a>,
     item: OutItemRead,
+    allow_img: bool,
+}
+
+/// url params: `feed_read.html`
+#[derive(Deserialize)]
+pub(crate) struct ParamsFeedRead {
+    allow_img: Option<bool>,
 }
 
 /// `GET /feed/read/:item_id`
 pub(crate) async fn feed_read(
     State(db): State<Db>,
     Path(item_id): Path<u32>,
+    Query(params): Query<ParamsFeedRead>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = get_site_config(&db)?;
@@ -362,10 +370,12 @@ pub(crate) async fn feed_read(
         db.open_tree("read")?.insert(k, &[])?;
     }
 
+    let allow_img = params.allow_img.unwrap_or_default();
     let page_data = PageData::new("Feed", &site_config, claim, false);
     let page_feed_read = PageFeedRead {
         page_data,
         item: out_item_read,
+        allow_img,
     };
 
     Ok(into_response(&page_feed_read, "html"))

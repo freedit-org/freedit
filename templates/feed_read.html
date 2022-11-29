@@ -2,8 +2,11 @@
 
 {% block csp %}
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
-  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
-  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+    {% if allow_img %}
+        img-src 'self' data: https:; 
+    {% endif %}
+    script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
 {% endblock %}
 
 {% block tabs %}
@@ -17,7 +20,11 @@
     <div class="media-content">
         <div class="content">
             <p class="title">{{item.title}}</p>
-            <p>📅 {{item.updated}} &nbsp;&nbsp;  ⚓ {{item.feed_title}} &nbsp;&nbsp; <a href="{{item.link}}">🌐 Origin</a></p>
+            <p>📅 {{item.updated}} &nbsp;&nbsp; 
+                ⚓ {{item.feed_title}} &nbsp;&nbsp;
+                <a href="{{item.link}}">🌐 Origin</a> &nbsp;&nbsp;
+                <a href="/feed/read/{{item.item_id}}?allow_img=true">🖼️ Load image</a>
+            </p>
         </div>
     </div>
     <div class="media-right">
