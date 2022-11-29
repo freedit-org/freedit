@@ -187,12 +187,14 @@ struct Item {
     title: String,
     feed_title: String,
     updated: i64,
+    content: String,
 }
 
 struct SourceItem {
     link: String,
     title: String,
     updated: i64,
+    content: String,
 }
 
 impl TryFrom<rss::Item> for SourceItem {
@@ -216,6 +218,7 @@ impl TryFrom<rss::Item> for SourceItem {
             link,
             title: rss.title.unwrap_or_else(|| "No Title".to_owned()),
             updated,
+            content: rss.description.unwrap_or_default(),
         })
     }
 }
@@ -226,6 +229,7 @@ impl From<atom_syndication::Entry> for SourceItem {
             link: atom.links[0].href.clone(),
             title: atom.title.to_string(),
             updated: atom.updated.timestamp(),
+            content: atom.content.unwrap_or_default().value.unwrap_or_default(),
         }
     }
 }

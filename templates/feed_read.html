@@ -1,0 +1,41 @@
+{% extends "layout.html" %} 
+
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+{% endblock %}
+
+{% block tabs %}
+    <li><a href="/inn/0">Inn</a></li>
+    <li><a href="/solo/user/0">Solo</a></li>
+    <li><a href="/inn/list">Explore</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="media box">
+    <div class="media-content">
+        <div class="content">
+            <p class="title">{{item.title}}</p>
+            <p>📅 {{item.updated}} &nbsp;&nbsp;  ⚓ {{item.feed_title}} &nbsp;&nbsp; <a href="{{item.link}}">🌐 Origin</a></p>
+        </div>
+    </div>
+    <div class="media-right">
+        <a href="/feed/star/{{item.item_id}}">
+            <svg width="24" height="24" stroke-width="0.5" viewBox="0 0 24 24" 
+            {% if item.is_starred  %}
+                fill="hsl(48, 100%, 67%)"
+            {% else %}
+                fill="none"
+            {% endif %}
+            xmlns="http://www.w3.org/2000/svg">
+                <path d="M8.587 8.236l2.598-5.232a.911.911 0 011.63 0l2.598 5.232 5.808.844a.902.902 0 01.503 1.542l-4.202 4.07.992 5.75c.127.738-.653 1.3-1.32.952L12 18.678l-5.195 2.716c-.666.349-1.446-.214-1.319-.953l.992-5.75-4.202-4.07a.902.902 0 01.503-1.54l5.808-.845z" stroke="#363636" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </a>
+    </div>
+</div>
+<div class="box content">
+    {{item.content}}
+</div>
+
+{% endblock %}

@@ -313,6 +313,24 @@ fn get_item_ids_and_ts(db: &Db, tree: &str, id: u32) -> Result<Vec<(u32, i64)>, 
     Ok(res)
 }
 
+struct OutItemRead {
+    item_id: u32,
+    title: String,
+    link: String,
+    feed_title: String,
+    updated: String,
+    content: String,
+    is_starred: bool,
+}
+
+/// Page data: `feed.html`
+#[derive(Template)]
+#[template(path = "feed_read.html", escape = "none")]
+struct PageFeedRead<'a> {
+    page_data: PageData<'a>,
+    item: OutItemRead,
+}
+
 /// `GET /feed/read/:item_id`
 pub(crate) async fn feed_read(
     State(db): State<Db>,
@@ -323,12 +341,34 @@ pub(crate) async fn feed_read(
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let item: Item = get_one(&db, "items", item_id)?;
+    let is_starred = if let Some(ref claim) = claim {
+        let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(item_id)].concat();
+        db.open_tree("star")?.contains_key(k)?
+    } else {
+        false
+    };
+
+    let out_item_read = OutItemRead {
+        item_id,
+        title: item.title,
+        link: item.link,
+        feed_title: item.feed_title,
+        updated: timestamp_to_date(item.updated),
+        content: item.content,
+        is_starred,
+    };
     if let Some(ref claim) = claim {
         let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(item_id)].concat();
         db.open_tree("read")?.insert(k, &[])?;
     }
 
-    Ok(Redirect::to(&item.link))
+    let page_data = PageData::new("Feed", &site_config, claim, false);
+    let page_feed_read = PageFeedRead {
+        page_data,
+        item: out_item_read,
+    };
+
+    Ok(into_response(&page_feed_read, "html"))
 }
 
 /// Page data: `feed_add.html`
@@ -491,6 +531,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
                     title: source_item.title,
                     feed_title: rss.title.clone(),
                     updated: source_item.updated,
+                    content: source_item.content,
                 };
 
                 item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
@@ -519,6 +560,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
                         title: source_item.title,
                         feed_title: atom.title.to_string(),
                         updated: source_item.updated,
+                        content: source_item.content,
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     let item_encode = bincode::encode_to_vec(&item, standard())?;
