@@ -506,6 +506,7 @@ pub(crate) async fn feed_update(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
+    let feed_items_tree = db.open_tree("feed_items")?;
     for i in db
         .open_tree("user_folders")?
         .scan_prefix(u32_to_ivec(claim.uid))
@@ -514,7 +515,15 @@ pub(crate) async fn feed_update(
         let i = i?;
         let feed_id = u8_slice_to_u32(&i[i.len() - 4..]);
         let feed: Feed = get_one(&db, "feeds", feed_id)?;
-        update(feed.link, &db).await?;
+        match update(feed.link, &db).await {
+            Ok((_, item_ids)) => {
+                for (item_id, ts) in item_ids {
+                    let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
+                    feed_items_tree.insert(k, i64_to_ivec(ts))?;
+                }
+            }
+            Err(e) => error!("update {} failed, error: {e}", feed.title),
+        };
     }
 
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
@@ -601,11 +610,18 @@ pub(crate) async fn cron_feed(db: &Db) -> Result<(), AppError> {
         set.insert(feed_id);
     }
 
+    let feed_items_tree = db.open_tree("feed_items")?;
     for id in set {
         if let Ok(feed) = get_one::<Feed>(db, "feeds", id) {
-            if let Err(e) = update(feed.link, db).await {
-                error!("update {} failed, error: {e}", feed.title);
-            }
+            match update(feed.link, db).await {
+                Ok((_, item_ids)) => {
+                    for (item_id, ts) in item_ids {
+                        let k = [&u32_to_ivec(id), &u32_to_ivec(item_id)].concat();
+                        feed_items_tree.insert(k, i64_to_ivec(ts))?;
+                    }
+                }
+                Err(e) => error!("update {} failed, error: {e}", feed.title),
+            };
         };
     }
 

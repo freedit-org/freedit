@@ -225,10 +225,16 @@ impl TryFrom<rss::Item> for SourceItem {
 
 impl From<atom_syndication::Entry> for SourceItem {
     fn from(atom: atom_syndication::Entry) -> Self {
+        let updated = if let Some(published) = atom.published {
+            published.timestamp()
+        } else {
+            atom.updated.timestamp()
+        };
+
         Self {
             link: atom.links[0].href.clone(),
             title: atom.title.to_string(),
-            updated: atom.updated.timestamp(),
+            updated,
             content: atom.content.unwrap_or_default().value.unwrap_or_default(),
         }
     }
