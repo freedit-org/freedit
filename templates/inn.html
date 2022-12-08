@@ -145,45 +145,37 @@
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Members</p>
-                <span class="icon">
-                    <p class="title">
-                        <a href="/user/list?filter=inn&id={{iid}}">
-                            <span class="icon">
-                                {{inn_users_count}}
-                            </span>
-                        </a>
-                    </p>
-                </span>
+                <div class="title">
+                    <a href="/user/list?filter=inn&id={{iid}}">
+                        {{inn_users_count}}
+                    </a>
+                </div>
             </div>
         </div>
         {% if is_mod %}
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Mod</p>
-                <span class="icon">
-                    <p class="title">
-                        <a href="/mod/{{iid}}">
-                            <span class="icon">
-                                {% include "icons/setting.svg" %}
-                            </span>
-                        </a>
-                    </p>
-                </span>
+                <p class="title">
+                    <a href="/mod/{{iid}}">
+                        <span class="icon">
+                            {% include "icons/setting.svg" %}
+                        </span>
+                    </a>
+                </p>
             </div>
         </div>
         {% endif %}
         <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Rss</p>
-                <span class="icon">
-                    <p class="title">
-                        <a href="/inn/{{iid}}/feed">
-                            <span class="icon">
-                                {% include "icons/rss.svg" %}
-                            </span>
-                        </a>
-                    </p>
-                </span>
+                <p class="title">
+                    <a href="/inn/{{iid}}/feed">
+                        <span class="icon">
+                            {% include "icons/rss.svg" %}
+                        </span>
+                    </a>
+                </p>
             </div>
         </div>
     </nav>
