@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed svgs to independent files
 - Update crates
+- Add rss reader feature in readme
 
 ### Fixed
 
