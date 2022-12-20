@@ -429,7 +429,7 @@ pub(crate) async fn upload_pic_post(
                 if inn_role <= 8 {
                     return Err(AppError::Unauthorized);
                 }
-                target = format!("/mod/{}", iid);
+                target = format!("/mod/{iid}");
                 format!("{}/{}.png", &CONFIG.inn_icons_path, iid)
             } else {
                 return Err(AppError::NotFound);
@@ -642,7 +642,7 @@ pub(super) async fn serve_dir(path: &str) -> MethodRouter {
     srv.handle_error(|error: std::io::Error| async move {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Unhandled internal error: {}", error),
+            format!("Unhandled internal error: {error}"),
         )
     })
 }
@@ -954,7 +954,7 @@ impl<'a> PageData<'a> {
 fn generate_nanoid_expire(seconds: i64) -> String {
     let nanoid = nanoid!();
     let exp = Utc::now().timestamp() + seconds;
-    format!("{:x}_{}", exp, nanoid)
+    format!("{exp:x}_{nanoid}")
 }
 
 /// Update the counter and return the new id. It is contiguous if every id is used.
@@ -980,7 +980,7 @@ fn user_stats(db: &Db, uid: u32, stat_type: &str) -> Result<(), AppError> {
         .and_hms_opt(0, 0, 0)
         .unwrap()
         .timestamp();
-    let key = format!("{:x}_{}_{}", expire, uid, stat_type);
+    let key = format!("{expire:x}_{uid}_{stat_type}");
     incr_id(&db.open_tree("user_stats")?, key)?;
     Ok(())
 }
@@ -1006,7 +1006,7 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
 
 fn get_referer(header: Option<TypedHeader<Referer>>) -> Option<String> {
     if let Some(TypedHeader(r)) = header {
-        let referer = format!("{:?}", r);
+        let referer = format!("{r:?}");
         let trimed = referer
             .trim_start_matches("Referer(\"")
             .trim_end_matches("\")");

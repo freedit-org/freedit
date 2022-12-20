@@ -9,7 +9,7 @@ const URL: &str = "https://localhost:3001";
 
 static COOKIE: Lazy<String> = Lazy::new(|| {
     let cookie = std::env::var("COOKIE").expect("env var COOKIE not set");
-    format!("__Host-id={}", cookie)
+    format!("__Host-id={cookie}")
 });
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -31,23 +31,23 @@ async fn main() {
             let inn_name = format!("inn_{}_{}", i, rand::random::<u16>());
             match create_inn(&inn_name).await {
                 Ok(StatusCode::OK) => {}
-                Ok(s) => println!("{}", s),
-                Err(e) => println!("error creating {}: {}", inn_name, e),
+                Ok(s) => println!("{s}"),
+                Err(e) => println!("error creating {inn_name}: {e}"),
             };
             for _ in 0..10 {
                 match create_post(i).await {
-                    Err(e) => println!("{}", e),
+                    Err(e) => println!("{e}"),
                     Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
                     Ok(StatusCode::OK) => (),
-                    Ok(s) => println!("{}", s),
+                    Ok(s) => println!("{s}"),
                 };
             }
             for j in 0..1000 {
                 match create_comment(i, j).await {
-                    Err(e) => println!("{}", e),
+                    Err(e) => println!("{e}"),
                     Ok(StatusCode::UNAUTHORIZED) => join_inn(i).await,
                     Ok(StatusCode::OK) => (),
-                    Ok(s) => println!("{}", s),
+                    Ok(s) => println!("{s}"),
                 };
             }
         });
@@ -60,9 +60,9 @@ async fn main() {
 }
 
 async fn create_inn(inn_name: &str) -> Result<StatusCode, reqwest::Error> {
-    let url = format!("{}/mod/0", URL);
-    let about = format!("about_{}", inn_name);
-    let description = format!("description_{}", inn_name);
+    let url = format!("{URL}/mod/0");
+    let about = format!("about_{inn_name}");
+    let description = format!("description_{inn_name}");
     let params = [
         ("inn_name", inn_name.to_owned()),
         ("about", about),
@@ -75,17 +75,17 @@ async fn create_inn(inn_name: &str) -> Result<StatusCode, reqwest::Error> {
 }
 
 async fn join_inn(iid: u32) {
-    let url = format!("{}/inn/{}/join", URL, iid);
+    let url = format!("{URL}/inn/{iid}/join");
     match CLIENT.get(&url).send().await {
         Ok(_) => {}
-        Err(e) => eprintln!("{}", e),
+        Err(e) => eprintln!("{e}"),
     };
 }
 
 async fn create_post(iid: u32) -> Result<StatusCode, reqwest::Error> {
-    let url = format!("{}/post/{}/edit/0", URL, iid);
-    let title = format!("inn_{}, auto generate post", iid);
-    let description = format!("description_{}", title);
+    let url = format!("{URL}/post/{iid}/edit/0");
+    let title = format!("inn_{iid}, auto generate post");
+    let description = format!("description_{title}");
     let params = [
         ("title", title),
         ("tags", "auto".to_owned()),
@@ -95,8 +95,8 @@ async fn create_post(iid: u32) -> Result<StatusCode, reqwest::Error> {
 }
 
 async fn create_comment(iid: u32, pid: u32) -> Result<StatusCode, reqwest::Error> {
-    let url = format!("{}/post/{}/{}", URL, iid, pid);
-    let comment = format!("pid_{}, auto generate post", pid);
+    let url = format!("{URL}/post/{iid}/{pid}");
+    let comment = format!("pid_{pid}, auto generate post");
     let params = [("content", comment)];
     send_post(&url, &params).await
 }

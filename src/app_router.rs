@@ -109,7 +109,7 @@ pub(super) async fn router(db: Db) -> Router {
         .nest_service("/static/upload", serve_dir(&CONFIG.upload_path).await);
 
     for (path, dir, _) in &CONFIG.serve_dir {
-        let path = format!("/{}", path);
+        let path = format!("/{path}");
         info!("serve dir: {} -> {}", path, dir);
         router_static = router_static.nest_service(&path, serve_dir(dir).await);
     }

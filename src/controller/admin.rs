@@ -90,10 +90,10 @@ pub(crate) async fn admin_view(
                     if key == "site_config" {
                         let (site_config, _): (SiteConfig, usize) =
                             bincode::decode_from_slice(&v, standard()).unwrap_or_default();
-                        ones.push(format!("{}: {:?}", key, site_config));
+                        ones.push(format!("{key}: {site_config:?}"));
                     } else {
                         let v = ivec_to_u32(&v);
-                        ones.push(format!("{}: {}", key, v));
+                        ones.push(format!("{key}: {v}"));
                     };
                 }
                 "users" => {
@@ -101,46 +101,46 @@ pub(crate) async fn admin_view(
                     let (mut one, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                     one.password_hash = String::from("******");
                     one.recovery_hash = None;
-                    ones.push(format!("{}: {:?}", key, one));
+                    ones.push(format!("{key}: {one:?}"));
                 }
                 "solos" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{}: {:?}", key, one));
+                    ones.push(format!("{key}: {one:?}"));
                 }
                 "inns" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Inn, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{}: {:?}", key, one));
+                    ones.push(format!("{key}: {one:?}"));
                 }
                 "posts" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{}: {:?}", key, one));
+                    ones.push(format!("{key}: {one:?}"));
                 }
                 "post_comments" => {
                     let pid = u8_slice_to_u32(&k[0..4]);
                     let cid = u8_slice_to_u32(&k[4..8]);
                     let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("pid: {}, cid: {}, comment: {:?}", pid, cid, one));
+                    ones.push(format!("pid: {pid}, cid: {cid}, comment: {one:?}"));
                 }
                 "user_comments" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let pid = u8_slice_to_u32(&k[4..8]);
                     let cid = u8_slice_to_u32(&k[8..12]);
-                    ones.push(format!("uid: {}, pid: {}, cid: {}", uid, pid, cid));
+                    ones.push(format!("uid: {uid}, pid: {pid}, cid: {cid}"));
                 }
                 "comment_upvotes" | "comment_downvotes" => {
                     let pid = u8_slice_to_u32(&k[0..4]);
                     let cid = u8_slice_to_u32(&k[4..8]);
                     let uid = u8_slice_to_u32(&k[8..12]);
-                    ones.push(format!("pid: {}, cid: {}, uid: {}", pid, cid, uid));
+                    ones.push(format!("pid: {pid}, cid: {cid}, uid: {uid}"));
                 }
                 "post_timeline_idx" => {
                     let id = u8_slice_to_u32(&k[0..4]);
                     let idx = u8_slice_to_u32(&k[4..8]);
                     let v = ivec_to_u32(&v);
-                    ones.push(format!("id: {}, idx: {}, target: {}", id, idx, v));
+                    ones.push(format!("id: {id}, idx: {idx}, target: {v}"));
                 }
                 "user_posts" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
@@ -148,27 +148,26 @@ pub(crate) async fn admin_view(
                     let iid = u8_slice_to_u32(&v[0..4]);
                     let visibility = u8_slice_to_u32(&v[4..8]);
                     ones.push(format!(
-                        "uid: {},  iid: {}, pid: {}, visibility: {}",
-                        uid, iid, pid, visibility
+                        "uid: {uid},  iid: {iid}, pid: {pid}, visibility: {visibility}"
                     ));
                 }
                 "post_comments_count" | "post_pageviews" => {
                     let id = u8_slice_to_u32(&k);
                     let count = ivec_to_u32(&v);
-                    ones.push(format!("id: {}, count: {}", id, count));
+                    ones.push(format!("id: {id}, count: {count}"));
                 }
                 "hashtags" | "topics" | "tags" => {
                     let len = k.len();
                     let str = String::from_utf8_lossy(&k[0..len - 4]);
                     let id = u8_slice_to_u32(&k[len - 4..]);
-                    ones.push(format!("{}#{}", str, id));
+                    ones.push(format!("{str}#{id}"));
                 }
                 "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
                 | "inn_apply" | "post_upvotes" | "post_downvotes" | "user_solos_like"
                 | "inn_posts" | "solo_users_like" | "feed_items" | "read" | "star" => {
                     let id1 = u8_slice_to_u32(&k[0..4]);
                     let id2 = u8_slice_to_u32(&k[4..8]);
-                    ones.push(format!("k: {}#{}, v: {:?}", id1, id2, v));
+                    ones.push(format!("k: {id1}#{id2}, v: {v:?}"));
                 }
                 "user_stats" => {
                     let mut k_str = std::str::from_utf8(&k)?.split('_');
@@ -177,34 +176,28 @@ pub(crate) async fn admin_view(
                     let uid = k_str.next().unwrap();
                     let stat_type = k_str.next().unwrap().to_owned();
                     let count = ivec_to_u32(&v);
-                    ones.push(format!("{} - {} - {} - {}", uid, date, stat_type, count));
+                    ones.push(format!("{uid} - {date} - {stat_type} - {count}"));
                 }
                 "inn_names" | "usernames" | "feed_links" | "item_links" => {
                     let name = std::str::from_utf8(&k)?;
                     let id = u8_slice_to_u32(&v);
-                    ones.push(format!("name: {}, id: {}", name, id));
+                    ones.push(format!("name: {name}, id: {id}"));
                 }
                 "inns_private" => {
                     let id = u8_slice_to_u32(&k);
-                    ones.push(format!("id: {}", id));
+                    ones.push(format!("id: {id}"));
                 }
                 "user_solos" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let sid = u8_slice_to_u32(&k[4..8]);
                     let visibility = u8_slice_to_u32(&v);
-                    ones.push(format!(
-                        "uid: {}, sid: {}, visibility: {}",
-                        uid, sid, visibility
-                    ));
+                    ones.push(format!("uid: {uid}, sid: {sid}, visibility: {visibility}"));
                 }
                 "solo_timeline" => {
                     let sid = u8_slice_to_u32(&k[0..4]);
                     let uid = u8_slice_to_u32(&v[0..4]);
                     let visibility = u8_slice_to_u32(&v[4..8]);
-                    ones.push(format!(
-                        "sid: {}, uid: {}, visibility: {}",
-                        sid, uid, visibility
-                    ));
+                    ones.push(format!("sid: {sid}, uid: {uid}, visibility: {visibility}"));
                 }
                 "notifications" => {
                     let pid = u8_slice_to_u32(&k[0..4]);
@@ -221,7 +214,7 @@ pub(crate) async fn admin_view(
                         .split_once('_')
                         .and_then(|s| i64::from_str_radix(s.0, 16).ok())
                         .unwrap();
-                    ones.push(format!("timestamp: {}", time_stamp));
+                    ones.push(format!("timestamp: {time_stamp}"));
                 }
                 "post_timeline" => {
                     let timestamp = i64::from(u8_slice_to_u32(&k[0..4]));
@@ -229,34 +222,31 @@ pub(crate) async fn admin_view(
                     let iid = u8_slice_to_u32(&k[4..8]);
                     let pid = u8_slice_to_u32(&k[8..12]);
                     let visibility = u8_slice_to_u32(&v);
-                    ones.push(format!("{} - {} - {} - {}", date, iid, pid, visibility));
+                    ones.push(format!("{date} - {iid} - {pid} - {visibility}"));
                 }
                 "user_uploads" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let img = String::from_utf8_lossy(&k[4..]);
-                    ones.push(format!("{} - {}", uid, img));
+                    ones.push(format!("{uid} - {img}"));
                 }
                 "user_folders" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
                     let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
                     let is_public = v[0] == 1;
-                    ones.push(format!(
-                        "{} - {} - {} - {}",
-                        uid, folder, feed_id, is_public
-                    ));
+                    ones.push(format!("{uid} - {folder} - {feed_id} - {is_public}"));
                 }
                 "feeds" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{}: {:?}", key, one));
+                    ones.push(format!("{key}: {one:?}"));
                 }
                 "items" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Item, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{}: {:?}", key, one));
+                    ones.push(format!("{key}: {one:?}"));
                 }
-                _ => ones.push(format!("{} has not been supported yet", tree_name)),
+                _ => ones.push(format!("{tree_name} has not been supported yet")),
             }
         }
     }

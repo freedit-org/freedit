@@ -223,7 +223,7 @@ pub(crate) async fn mod_inn_post(
     db.open_tree("inns")?.insert(&iid_ivec, inn_encoded)?;
     inn_names_tree.insert(inn.inn_name, iid_ivec)?;
 
-    let target = format!("/inn/{}", iid);
+    let target = format!("/inn/{iid}");
     Ok(Redirect::to(&target))
 }
 
@@ -537,7 +537,7 @@ pub(crate) async fn edit_post_post(
     user_stats(&db, claim.uid, "post")?;
     claim.update_last_write(&db)?;
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1005,7 +1005,7 @@ pub(crate) async fn inn_join(
         }
     }
 
-    let target = format!("/inn/{}", iid);
+    let target = format!("/inn/{iid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1311,9 +1311,9 @@ pub(crate) async fn comment_post(
                 }
             }
         };
-        let notification_link = format!("[{}](/user/{})", username, uid);
-        let from = format!("@{}", notification);
-        let to = format!("@{}", notification_link);
+        let notification_link = format!("[{username}](/user/{uid})");
+        let from = format!("@{notification}");
+        let to = format!("@{notification_link}");
         content = content.replace(&from, &to);
 
         // notify user to be mentioned in comment
@@ -1327,8 +1327,8 @@ pub(crate) async fn comment_post(
         if let Ok(reply_cid) = reply_to[0].parse::<u32>() {
             if reply_cid < cid {
                 let reply_link = format!("[{}](/post/{}/{}#{})", reply_to[0], iid, pid, reply_cid);
-                let from = format!("#{}", reply_cid);
-                let to = format!("#{}", reply_link);
+                let from = format!("#{reply_cid}");
+                let to = format!("#{reply_link}");
                 content = content.replace(&from, &to);
                 reply_to_cid = Some(reply_cid);
             }
@@ -1385,7 +1385,7 @@ pub(crate) async fn comment_post(
     user_stats(&db, claim.uid, "comment")?;
     claim.update_last_write(&db)?;
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1437,7 +1437,7 @@ pub(crate) async fn comment_delete(
     let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.remove(k)?;
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1468,7 +1468,7 @@ pub(crate) async fn comment_hide(
     let comment_encode = bincode::encode_to_vec(&comment, standard())?;
     db.open_tree("post_comments")?.insert(&k, comment_encode)?;
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1491,7 +1491,7 @@ pub(crate) async fn post_upvote(
         post_upvotes_tree.insert(&k, &[])?;
     }
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1519,7 +1519,7 @@ pub(crate) async fn comment_upvote(
         comment_upvotes_tree.insert(&k, &[])?;
     }
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1542,7 +1542,7 @@ pub(crate) async fn post_downvote(
         post_downvotes_tree.insert(&k, &[])?;
     }
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1570,7 +1570,7 @@ pub(crate) async fn comment_downvote(
         comment_downvotes_tree.insert(&k, &[])?;
     }
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1597,7 +1597,7 @@ pub(crate) async fn post_lock(
     db.open_tree("posts")?
         .insert(u32_to_ivec(pid), post_encoded)?;
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
@@ -1624,6 +1624,6 @@ pub(crate) async fn post_hide(
     db.open_tree("posts")?
         .insert(u32_to_ivec(pid), post_encoded)?;
 
-    let target = format!("/post/{}/{}", iid, pid);
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }

@@ -130,7 +130,7 @@ pub(crate) async fn user_follow(
         user_followers_tree.insert(&followers_k, &[])?;
     }
 
-    let target = format!("/user/{}", uid);
+    let target = format!("/user/{uid}");
     Ok(Redirect::to(&target))
 }
 
@@ -407,7 +407,7 @@ pub(crate) async fn role_post(
                 db.open_tree("mod_inns")?.remove(&user_inns_k)?;
             }
 
-            target = format!("/user/list?filter=inn&id={}", id);
+            target = format!("/user/list?filter=inn&id={id}");
         }
         Ordering::Equal => {
             if !claim.role == u8::MAX {
@@ -847,8 +847,7 @@ pub(crate) async fn signout(
     }
 
     let cookie = format!(
-        "{}=deleted; SameSite=Strict; Path=/; Secure; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT",
-        COOKIE_NAME
+        "{COOKIE_NAME}=deleted; SameSite=Strict; Path=/; Secure; HttpOnly; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     );
     let mut headers = HeaderMap::new();
     headers.insert(SET_COOKIE, cookie.parse().unwrap());
@@ -1042,8 +1041,7 @@ impl Claim {
             .insert(&session_id, claim_encode)?;
 
         let cookie = format!(
-            "{}={}; SameSite=Strict; Path=/; Secure; HttpOnly; Max-Age={}",
-            COOKIE_NAME, session_id, seconds
+            "{COOKIE_NAME}={session_id}; SameSite=Strict; Path=/; Secure; HttpOnly; Max-Age={seconds}"
         );
         Ok(cookie)
     }
