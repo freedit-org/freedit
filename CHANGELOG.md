@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update crates
 - Cargo clippy beta
 - Refresh feeds asynchronously
+- Stop browser requesting favicon
 
 ## [0.2.5] - 2022-12-09
 
