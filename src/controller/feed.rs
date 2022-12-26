@@ -507,6 +507,7 @@ pub(crate) async fn feed_update(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let feed_items_tree = db.open_tree("feed_items")?;
+    let mut handers = vec![];
     for i in db
         .open_tree("user_folders")?
         .scan_prefix(u32_to_ivec(claim.uid))
@@ -514,16 +515,31 @@ pub(crate) async fn feed_update(
     {
         let i = i?;
         let feed_id = u8_slice_to_u32(&i[i.len() - 4..]);
+        let db = db.clone();
         let feed: Feed = get_one(&db, "feeds", feed_id)?;
-        match update(feed.link, &db).await {
-            Ok((_, item_ids)) => {
-                for (item_id, ts) in item_ids {
-                    let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
-                    feed_items_tree.insert(k, i64_to_ivec(ts))?;
+        let feed_items_tree = feed_items_tree.clone();
+
+        let h = tokio::spawn(async move {
+            match update(feed.link, &db).await {
+                Ok((_, item_ids)) => {
+                    for (item_id, ts) in item_ids {
+                        let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
+                        if let Err(e) = feed_items_tree.insert(k, i64_to_ivec(ts)) {
+                            error!(?e);
+                        };
+                    }
                 }
-            }
-            Err(e) => error!("update {} failed, error: {e}", feed.title),
-        };
+                Err(e) => error!("update {} failed, error: {e}", feed.title),
+            };
+        });
+
+        handers.push(h);
+    }
+
+    for i in handers {
+        if let Err(e) = i.await {
+            error!(?e);
+        }
     }
 
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
