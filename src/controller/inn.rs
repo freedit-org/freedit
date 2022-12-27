@@ -32,7 +32,7 @@ use bincode::config::standard;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use sled::{Batch, Db};
-use std::path::PathBuf;
+use std::{collections::BTreeSet, path::PathBuf};
 use validator::Validate;
 
 /// Page data: `inn_create.html`
@@ -129,18 +129,21 @@ pub(crate) async fn mod_inn_post(
     }
 
     // get inn topics
-    let mut topics: Vec<String> = input
+    let mut topics: BTreeSet<String> = input
         .topics
         .split('#')
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
         .collect();
-    topics.truncate(5);
+
     if input.inn_type.as_str() == "Private" {
-        topics.push("private".into())
+        topics.insert("private".into());
     } else {
         topics.retain(|t| t != "private")
     }
+
+    let mut topics: Vec<_> = topics.into_iter().collect();
+    topics.truncate(5);
 
     let inn_names_tree = db.open_tree("inn_names")?;
 
@@ -463,12 +466,14 @@ pub(crate) async fn edit_post_post(
     if inn.inn_type.as_str() == "Private" {
         visibility = 10;
     } else {
-        tags = input
+        let tags_set: BTreeSet<String> = input
             .tags
             .split('#')
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
+
+        tags = tags_set.into_iter().collect();
         tags.truncate(5);
 
         let mut batch = Batch::default();

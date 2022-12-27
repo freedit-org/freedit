@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - panic bug fixed: get inn list by topic
+- bug fixed: remove duplicated tags and topics
 
 ### Added
 
