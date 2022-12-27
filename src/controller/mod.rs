@@ -92,12 +92,12 @@
 //! | default               | "items_count"        | N           |
 //! | "user_folders"        | `uid#folder#feed_id` | `&[0/1]`    |
 //! | "feeds"               | `feed_id`            | [`Feed`]    |
-//! | "feed_items"          | `feed_id#item_id`    | `i64`       |
+//! | "feed_items"          | `feed_id#item_id`    | `timestamp` |
 //! | "feed_links"          | `feed_link`          | `feed_id`   |
 //! | "item_links"          | `item_link`          | `item_id`   |
 //! | "items"               | `item_id`            | [`Item`]    |
 //! | "read"                | `uid#item_id`        | `&[]`       |
-//! | "star"                | `uid#item_id`        | `i64`       |
+//! | "star"                | `uid#item_id`        | `timestamp` |
 
 /// user
 ///
@@ -108,6 +108,7 @@
 /// | Standard | 10   | ✅        |           |            |
 /// | Senior   | 100  | ✅        | ✅        |            |
 /// | Admin    | 255  | ✅        | ✅        | ✅         |
+
 #[derive(Default, Encode, Decode, Serialize, Debug)]
 struct User {
     uid: u32,
