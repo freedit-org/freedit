@@ -24,7 +24,7 @@
             <a href="/user/{{post.uid}}">
             👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% if post.can_edit %}
-                <a href="/post/{{post.iid}}/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
+                <a href="/post/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
             {% endif %}
 
             {% if is_mod %}

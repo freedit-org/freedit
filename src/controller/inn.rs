@@ -335,7 +335,7 @@ pub(crate) async fn inn_list(
 #[template(path = "post_create.html")]
 struct PagePostCreate<'a> {
     page_data: PageData<'a>,
-    iid: u32,
+    joined: Vec<(String, u32, bool)>,
 }
 
 /// Page data: `post_edit.html`
@@ -346,30 +346,45 @@ struct PagePostEdit<'a> {
     post: Post,
 }
 
+/// url params: `post_create.html`
+#[derive(Deserialize)]
+pub(crate) struct ParamsPostCreate {
+    iid: Option<u32>,
+}
+
 /// `GET /post/:iid/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, pid)): Path<(u32, u32)>,
+    Path(pid): Path<u32>,
+    Query(params): Query<ParamsPostCreate>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
-    if inn_role <= 3 {
-        return Err(AppError::Unauthorized);
-    }
-
-    if !db.open_tree("inns")?.contains_key(u32_to_ivec(iid))? {
-        return Err(AppError::NotFound);
+    let joined_ids = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None)?;
+    let mut joined = Vec::with_capacity(joined_ids.len());
+    for id in joined_ids {
+        let inn: Inn = get_one(&db, "inns", id)?;
+        let inn_role = get_inn_role(&db, inn.iid, claim.uid)?;
+        if let Some(role) = inn_role {
+            if role >= 4 {
+                let selected_iid = if let Some(iid) = params.iid {
+                    iid == inn.iid
+                } else {
+                    false
+                };
+                joined.push((inn.inn_name, inn.iid, selected_iid));
+            }
+        }
     }
 
     if pid == 0 {
         let page_data = PageData::new("new post", &site_config, Some(claim), false);
-        let page_post_create = PagePostCreate { page_data, iid };
+        let page_post_create = PagePostCreate { page_data, joined };
 
         Ok(into_response(&page_post_create, "html"))
     } else {
@@ -391,10 +406,6 @@ pub(crate) async fn edit_post(
             return Err(AppError::Unauthorized);
         }
 
-        if post.iid != iid {
-            return Err(AppError::NotFound);
-        }
-
         let page_data = PageData::new("edit post", &site_config, Some(claim), false);
         let page_post_edit = PagePostEdit { page_data, post };
 
@@ -405,6 +416,7 @@ pub(crate) async fn edit_post(
 /// Form data: `/inn/:iid/post/:pid` post create/edit page
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormPost {
+    iid: u32,
     #[validate(length(min = 1, max = 256))]
     title: String,
     #[validate(length(min = 1, max = 128))]
@@ -419,13 +431,14 @@ pub(crate) struct FormPost {
 pub(crate) async fn edit_post_post(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path((iid, old_pid)): Path<(u32, u32)>,
+    Path(old_pid): Path<u32>,
     ValidatedForm(input): ValidatedForm<FormPost>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
+    let iid = input.iid;
     let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
     if inn_role <= 3 {
         return Err(AppError::Unauthorized);

@@ -79,7 +79,7 @@ pub(super) async fn router(db: Db) -> Router {
         .route("/post/:iid/:pid", get(post).post(comment_post))
         .route("/post/:iid/:pid/:cid/delete", get(comment_delete))
         .route("/post/:iid/:pid/:cid/hide", get(comment_hide))
-        .route("/post/:iid/edit/:pid", get(edit_post).post(edit_post_post))
+        .route("/post/edit/:pid", get(edit_post).post(edit_post_post))
         .route("/post/:iid/:pid/upvote", get(post_upvote))
         .route("/post/:iid/:pid/downvote", get(post_downvote))
         .route("/post/:iid/:pid/:cid/upvote", get(comment_upvote))
