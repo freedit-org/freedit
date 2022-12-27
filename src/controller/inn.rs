@@ -273,7 +273,7 @@ pub(crate) async fn inn_list(
     let mut inns: Vec<Inn> = Vec::with_capacity(n);
 
     if let Some(topic) = &params.topic {
-        for i in get_ids_by_prefix(&db, "topics", topic, Some(&page_params))? {
+        for i in get_ids_by_tag(&db, "topics", topic, Some(&page_params))? {
             if let Ok(inn) = get_one(&db, "inns", i) {
                 inns.push(inn);
             }
