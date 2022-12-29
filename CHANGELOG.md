@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - panic bug fixed: get inn list by topic
 - bug fixed: remove duplicated tags and topics
+- fixed: don't update timestamp when edit post
 
 ### Added
 

@@ -447,7 +447,7 @@ pub(crate) async fn edit_post_post(
         return Err(AppError::Unauthorized);
     }
 
-    let created_at = Utc::now().timestamp();
+    let mut created_at = Utc::now().timestamp();
     if created_at - claim.last_write < site_config.post_interval {
         return Err(AppError::WriteInterval);
     }
@@ -495,6 +495,7 @@ pub(crate) async fn edit_post_post(
                 return Err(AppError::NotFound);
             }
 
+            created_at = post.created_at;
             for old_tag in &post.tags {
                 let k = [old_tag.as_bytes(), &u32_to_ivec(old_pid)].concat();
                 batch.remove(k);
