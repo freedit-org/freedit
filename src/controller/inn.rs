@@ -385,6 +385,10 @@ pub(crate) async fn edit_post(
         }
     }
 
+    if joined.is_empty() {
+        return Err(AppError::NoJoinedInn);
+    }
+
     if pid == 0 {
         let page_data = PageData::new("new post", &site_config, Some(claim), false);
         let page_post_create = PagePostCreate { page_data, joined };

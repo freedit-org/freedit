@@ -13,6 +13,8 @@ pub(super) enum AppError {
     Utf8Error(#[from] std::str::Utf8Error),
     #[error(transparent)]
     IoError(#[from] std::io::Error),
+    #[error("You must join inn first")]
+    NoJoinedInn,
 
     // 4XX
     #[error("Captcha Error")]

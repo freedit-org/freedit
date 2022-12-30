@@ -356,6 +356,7 @@ impl IntoResponse for AppError {
             | AppError::Hidden
             | AppError::ReadOnly
             | AppError::ValidationError(_)
+            | AppError::NoJoinedInn
             | AppError::AxumFormRejection(_) => StatusCode::BAD_REQUEST,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,

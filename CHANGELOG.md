@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
 ## [0.2.6] - 2022-12-30
 
 Happy new year! 🎉🎉🎉
@@ -16,6 +18,7 @@ Happy new year! 🎉🎉🎉
 - panic bug fixed: get inn list by topic
 - bug fixed: remove duplicated tags and topics
 - fixed: don't update timestamp when edit post
+- No joined inn found, return err
 
 ### Added
 
