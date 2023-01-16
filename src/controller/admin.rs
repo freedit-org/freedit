@@ -241,6 +241,11 @@ pub(crate) async fn admin_view(
                     let (one, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
                     ones.push(format!("{key}: {one:?}"));
                 }
+                "feed_errs" => {
+                    let feed_id = ivec_to_u32(&k);
+                    let err = String::from_utf8_lossy(&v);
+                    ones.push(format!("{feed_id}: {err}"));
+                }
                 "items" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Item, usize) = bincode::decode_from_slice(&v, standard())?;
