@@ -7,7 +7,7 @@ license = "MIT"
 [dependencies]
 askama = { version = "0.11", default-features = false } # templates engine 
 atom_syndication = { version = "0.12.0", default-features = false }
-axum = { version = "0.6.1", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
+axum = { version = "0.6.2", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
 axum-server = { version = "0.4", features = ["tls-rustls"] }
 bincode = "2.0.0-rc.2"
 captcha = { version = "0.0.9", default-features = false }
