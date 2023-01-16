@@ -45,16 +45,24 @@ struct OutFeed {
     title: String,
     is_active: bool,
     is_public: bool,
+    err: Option<String>,
 }
 
 impl OutFeed {
-    fn new(feed_id: u32, title: String, is_active: bool, is_public: bool) -> Self {
-        OutFeed {
+    fn new(db: &Db, feed_id: u32, is_active: bool, is_public: bool) -> Result<Self, AppError> {
+        let feed: Feed = get_one(&db, "feeds", feed_id)?;
+        let err = if let Some(v) = db.open_tree("feed_errs")?.get(u32_to_ivec(feed_id))? {
+            Some(String::from_utf8_lossy(&v).into_owned())
+        } else {
+            None
+        };
+        Ok(OutFeed {
             feed_id,
-            title,
+            title: feed.title,
             is_active,
             is_public,
-        }
+            err,
+        })
     }
 }
 
@@ -132,8 +140,7 @@ pub(crate) async fn feed(
                         feed_ids.push(i.feed_id);
                     }
                     let e: &mut Vec<OutFeed> = map.entry(i.folder).or_default();
-                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
-                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -150,8 +157,7 @@ pub(crate) async fn feed(
                     feed_ids.push(i.feed_id);
                 }
                 let e = map.entry(i.folder).or_default();
-                let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
-                let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
                 e.push(out_feed);
             }
         }
@@ -174,8 +180,7 @@ pub(crate) async fn feed(
                         }
                     }
                     let e = map.entry(i.folder).or_default();
-                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
-                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -204,8 +209,7 @@ pub(crate) async fn feed(
                         }
                     }
                     let e = map.entry(i.folder).or_default();
-                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
-                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -220,8 +224,7 @@ pub(crate) async fn feed(
                     item_ids.append(&mut ids_in_feed);
 
                     let e = map.entry(i.folder).or_default();
-                    let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
-                    let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -237,8 +240,7 @@ pub(crate) async fn feed(
 
                 let is_active = false;
                 let e = map.entry(i.folder).or_default();
-                let feed: Feed = get_one(&db, "feeds", i.feed_id)?;
-                let out_feed = OutFeed::new(i.feed_id, feed.title, is_active, i.is_public);
+                let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
                 e.push(out_feed);
             }
         }
@@ -447,7 +449,7 @@ pub(crate) async fn feed_add_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let (feed, item_ids) = update(form.url, &db).await?;
+    let (feed, item_ids) = update(&form.url, &db).await?;
     let feed_links_tree = db.open_tree("feed_links")?;
     let user_folders_tree = db.open_tree("user_folders")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
@@ -520,16 +522,27 @@ pub(crate) async fn feed_update(
         let feed_items_tree = feed_items_tree.clone();
 
         let h = tokio::spawn(async move {
-            match update(feed.link, &db).await {
+            match update(&feed.link, &db).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
                         if let Err(e) = feed_items_tree.insert(k, i64_to_ivec(ts)) {
                             error!(?e);
                         };
+                        if let Ok(tree) = db.open_tree("feed_errs") {
+                            let _ = tree.remove(u32_to_ivec(feed_id));
+                        }
                     }
                 }
-                Err(e) => error!("update {} failed, error: {e}", feed.title),
+                Err(e) => {
+                    error!("update {} failed, error: {e}", feed.title);
+                    if let Err(e) = db
+                        .open_tree("feed_errs")
+                        .and_then(|t| t.insert(u32_to_ivec(feed_id), &*e.to_string()))
+                    {
+                        error!(?e);
+                    };
+                }
             };
         });
 
@@ -545,8 +558,8 @@ pub(crate) async fn feed_update(
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
 }
 
-async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError> {
-    let content = CLIENT.get(&url).send().await?.bytes().await?;
+async fn update(url: &str, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError> {
+    let content = CLIENT.get(url).send().await?.bytes().await?;
 
     let item_links_tree = db.open_tree("item_links")?;
     let items_tree = db.open_tree("items")?;
@@ -577,7 +590,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
             }
 
             Feed {
-                link: url,
+                link: url.to_owned(),
                 title: rss.title,
             }
         }
@@ -605,7 +618,7 @@ async fn update(url: String, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppErro
                 }
 
                 Feed {
-                    link: url,
+                    link: url.to_owned(),
                     title: atom.title.to_string(),
                 }
             }
@@ -627,16 +640,21 @@ pub(crate) async fn cron_feed(db: &Db) -> Result<(), AppError> {
     }
 
     let feed_items_tree = db.open_tree("feed_items")?;
+    let feed_errs_tree = db.open_tree("feed_errs")?;
     for id in set {
         if let Ok(feed) = get_one::<Feed>(db, "feeds", id) {
-            match update(feed.link, db).await {
+            match update(&feed.link, db).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(id), &u32_to_ivec(item_id)].concat();
                         feed_items_tree.insert(k, i64_to_ivec(ts))?;
                     }
+                    let _ = feed_errs_tree.remove(u32_to_ivec(id));
                 }
-                Err(e) => error!("update {} failed, error: {e}", feed.title),
+                Err(e) => {
+                    error!("update {} failed, error: {e}", feed.title);
+                    feed_errs_tree.insert(u32_to_ivec(id), &*e.to_string())?;
+                }
             };
         };
     }
@@ -708,6 +726,7 @@ pub(crate) async fn feed_subscribe(
 }
 
 /// convert `i64` to [IVec]
+#[inline]
 fn i64_to_ivec(number: i64) -> IVec {
     IVec::from(number.to_be_bytes().to_vec())
 }

@@ -144,25 +144,23 @@
         {% else %}
         <a href="/feed/{{uid}}?filter=feed&filter_value={{feed.feed_id}}">
         {% endmatch %}
+
+        {% match feed.err %}{% when Some(e) %}
+            <span class="tag is-danger" title="{{e}}">
+        {% else %}
             {% if feed.is_active %}
-            <span class="tag is-success">
-                {% if !feed.is_public %}
-                <span class="icon">
-                    {% include "icons/lock.svg" %}
-                </span>&nbsp
-                {% endif %}
-                {{feed.title}}
-            </span>
+            <span class="tag is-success">  
             {% else %}
             <span class="tag is-info">
-                {% if !feed.is_public %}
-                <span class="icon">
-                    {% include "icons/lock.svg" %}
-                </span>&nbsp
-                {% endif %}
-                {{feed.title}}
-            </span>
             {% endif %}
+        {% endmatch %}
+
+        {% if !feed.is_public %}
+            <span class="icon">{% include "icons/lock.svg" %}</span>&nbsp
+        {% endif %}
+
+        {{feed.title}}
+        </span>
         </a>
     </div>
     {% endfor %}
