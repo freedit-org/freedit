@@ -1,9 +1,10 @@
 use axum_server::tls_rustls::RustlsConfig;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::fs::{read_to_string, File};
+use std::fs::{self, read_to_string, File};
 use std::io::Write;
-use tracing::{error, warn};
+use std::path::Path;
+use tracing::{error, info, warn};
 
 pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
 
@@ -24,7 +25,7 @@ impl Config {
         let cfg_file = std::env::args()
             .nth(1)
             .unwrap_or_else(|| "config.toml".to_owned());
-        if let Ok(config_toml_content) = read_to_string(cfg_file) {
+        let config = if let Ok(config_toml_content) = read_to_string(cfg_file) {
             let config: Config = toml::from_str(&config_toml_content).unwrap();
             config
         } else {
@@ -34,7 +35,13 @@ impl Config {
             let mut cfg_file = File::create("config.toml").unwrap();
             cfg_file.write_all(toml.as_bytes()).unwrap();
             config
-        }
+        };
+
+        check_path(&config.avatars_path);
+        check_path(&config.inn_icons_path);
+        check_path(&config.upload_path);
+
+        config
     }
 
     pub(crate) async fn tls_config(&self) -> Option<RustlsConfig> {
@@ -60,4 +67,13 @@ impl Default for Config {
             key: "".into(),
         }
     }
+}
+
+/// Create new dir if the path doesn't exist.
+fn check_path(path_str: &str) {
+    let path = Path::new(path_str);
+    if !path.exists() {
+        fs::create_dir_all(path).unwrap();
+    }
+    info!("static path {path_str}");
 }

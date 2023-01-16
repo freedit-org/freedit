@@ -17,10 +17,7 @@ use chrono::Utc;
 use config::CONFIG;
 use error::AppError;
 use once_cell::sync::Lazy;
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -46,10 +43,6 @@ async fn main() -> Result<(), AppError> {
     if !*IS_DEBUG {
         create_snapshot(&db);
     }
-
-    check_path(&CONFIG.avatars_path);
-    check_path(&CONFIG.inn_icons_path);
-    check_path(&CONFIG.upload_path);
 
     let db2 = db.clone();
     tokio::spawn(async move {
@@ -120,14 +113,6 @@ fn create_snapshot(db: &sled::Db) {
     snapshot.import(db.export());
     info!("create snapshot: {}", snapshot_path.display());
     drop(snapshot);
-}
-
-fn check_path(path_str: &str) {
-    let path = Path::new(path_str);
-    if !path.exists() {
-        fs::create_dir_all(path).unwrap();
-    }
-    info!("static path {path_str}");
 }
 
 async fn sleep_seconds(seconds: u64) {
