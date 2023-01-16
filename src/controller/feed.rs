@@ -50,12 +50,11 @@ struct OutFeed {
 
 impl OutFeed {
     fn new(db: &Db, feed_id: u32, is_active: bool, is_public: bool) -> Result<Self, AppError> {
-        let feed: Feed = get_one(&db, "feeds", feed_id)?;
-        let err = if let Some(v) = db.open_tree("feed_errs")?.get(u32_to_ivec(feed_id))? {
-            Some(String::from_utf8_lossy(&v).into_owned())
-        } else {
-            None
-        };
+        let feed: Feed = get_one(db, "feeds", feed_id)?;
+        let err = db
+            .open_tree("feed_errs")?
+            .get(u32_to_ivec(feed_id))?
+            .map(|v| String::from_utf8_lossy(&v).into_owned());
         Ok(OutFeed {
             feed_id,
             title: feed.title,
