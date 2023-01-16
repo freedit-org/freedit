@@ -92,6 +92,7 @@
 //! | default               | "items_count"        | N           |
 //! | "user_folders"        | `uid#folder#feed_id` | `&[0/1]`    |
 //! | "feeds"               | `feed_id`            | [`Feed`]    |
+//! | "feed_errs"           | `feed_id`            | "error msg" |
 //! | "feed_items"          | `feed_id#item_id`    | `timestamp` |
 //! | "feed_links"          | `feed_link`          | `feed_id`   |
 //! | "item_links"          | `item_link`          | `item_id`   |
