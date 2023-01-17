@@ -15,7 +15,7 @@ use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag,
     get_inn_role, get_one, get_range, get_site_config, get_uid_by_name, has_unread, incr_id,
     into_response, is_mod, ivec_to_u32, mark_read, timestamp_to_date, u32_to_ivec, u8_slice_to_u32,
-    user_stats, utils::md2html, Claim, Comment, Inn, PageData, ParamsPage, Post, User,
+    user_stats, utils::md2html, Claim, Comment, FormPost, Inn, PageData, ParamsPage, Post, User,
     ValidatedForm,
 };
 use crate::{
@@ -338,7 +338,10 @@ pub(crate) async fn inn_list(
 #[template(path = "post_create.html")]
 struct PagePostCreate<'a> {
     page_data: PageData<'a>,
-    joined: Vec<(String, u32, bool)>,
+    joined: Vec<(String, u32)>,
+    selected_iid: u32,
+    draft: FormPost,
+    draft_titles: Vec<String>,
 }
 
 /// Page data: `post_edit.html`
@@ -353,9 +356,10 @@ struct PagePostEdit<'a> {
 #[derive(Deserialize)]
 pub(crate) struct ParamsPostCreate {
     iid: Option<u32>,
+    from_draft: Option<String>,
 }
 
-/// `GET /post/:iid/edit/:pid` post create/edit page
+/// `GET /post/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post(
@@ -375,12 +379,7 @@ pub(crate) async fn edit_post(
         let inn_role = get_inn_role(&db, inn.iid, claim.uid)?;
         if let Some(role) = inn_role {
             if role >= 4 {
-                let selected_iid = if let Some(iid) = params.iid {
-                    iid == inn.iid
-                } else {
-                    false
-                };
-                joined.push((inn.inn_name, inn.iid, selected_iid));
+                joined.push((inn.inn_name, inn.iid));
             }
         }
     }
@@ -389,9 +388,33 @@ pub(crate) async fn edit_post(
         return Err(AppError::NoJoinedInn);
     }
 
+    let mut selected_iid = params.iid.unwrap_or_default();
+
     if pid == 0 {
+        let mut draft = FormPost::default();
+        let mut draft_titles = vec![];
+        for i in db.open_tree("drafts")?.scan_prefix(u32_to_ivec(claim.uid)) {
+            let (k, _) = i?;
+            let draft_title = String::from_utf8_lossy(&k[4..]).to_string();
+            draft_titles.push(draft_title);
+        }
+
+        if let Some(from_draft) = params.from_draft {
+            let k: Vec<u8> = [&u32_to_ivec(claim.uid), from_draft.as_bytes()].concat();
+            if let Some(v) = db.open_tree("drafts")?.get(k)? {
+                (draft, _) = bincode::decode_from_slice(&v, standard())?;
+            };
+            selected_iid = draft.iid;
+        };
+
         let page_data = PageData::new("new post", &site_config, Some(claim), false);
-        let page_post_create = PagePostCreate { page_data, joined };
+        let page_post_create = PagePostCreate {
+            page_data,
+            joined,
+            draft,
+            selected_iid,
+            draft_titles,
+        };
 
         Ok(into_response(&page_post_create, "html"))
     } else {
@@ -420,18 +443,6 @@ pub(crate) async fn edit_post(
     }
 }
 
-/// Form data: `/inn/:iid/post/:pid` post create/edit page
-#[derive(Deserialize, Validate)]
-pub(crate) struct FormPost {
-    iid: u32,
-    #[validate(length(min = 1, max = 256))]
-    title: String,
-    #[validate(length(min = 1, max = 128))]
-    tags: String,
-    #[validate(length(min = 1, max = 65535))]
-    content: String,
-}
-
 /// `POST /post/:iid/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
@@ -444,6 +455,17 @@ pub(crate) async fn edit_post_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let is_draft = input.is_draft.unwrap_or_default();
+
+    if is_draft {
+        let k: Vec<u8> = [&u32_to_ivec(claim.uid), input.title.as_bytes()].concat();
+        let post_encoded = bincode::encode_to_vec(&input, standard())?;
+        db.open_tree("drafts")?.insert(k, post_encoded)?;
+        return Ok(Redirect::to(&format!("/inn/{}", claim.uid)));
+    }
+
+    // TODO: delete draft
 
     let iid = input.iid;
     let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;

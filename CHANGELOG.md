@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Save as draft
+
 ## [0.2.7] - 2023-01-17
 
 ### Added

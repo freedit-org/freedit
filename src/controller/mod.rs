@@ -61,6 +61,7 @@
 //! | "inn_apply"     | `iid#uid`     | `&[]`               |
 //! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5/8/10]` |
 //! | "inns_private"  | `iid`         | `&[]`               |
+//! | "drafts"        | `uid`         | [`FormPost`]        |
 //!
 //! ### post
 //! | tree                | key                 | value                |
@@ -164,6 +165,19 @@ struct Post {
     created_at: i64,
     is_locked: bool,
     is_hidden: bool,
+}
+
+/// Form data: `/inn/:iid/post/:pid` post create/edit page
+#[derive(Debug, Default, Deserialize, Validate, Encode, Decode)]
+pub(crate) struct FormPost {
+    iid: u32,
+    #[validate(length(min = 1, max = 256))]
+    title: String,
+    #[validate(length(min = 1, max = 128))]
+    tags: String,
+    #[validate(length(min = 1, max = 65535))]
+    content: String,
+    is_draft: Option<bool>,
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]

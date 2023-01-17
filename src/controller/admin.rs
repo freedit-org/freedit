@@ -1,6 +1,6 @@
 use super::{
-    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, Claim, Feed, Item,
-    IterType, PageData, SiteConfig, ValidatedForm,
+    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, Claim, Feed, FormPost,
+    Item, IterType, PageData, SiteConfig, ValidatedForm,
 };
 use crate::{
     controller::{ivec_to_u32, Comment, Inn, Post, Solo, User},
@@ -245,6 +245,11 @@ pub(crate) async fn admin_view(
                     let feed_id = ivec_to_u32(&k);
                     let err = String::from_utf8_lossy(&v);
                     ones.push(format!("{feed_id}: {err}"));
+                }
+                "drafts" => {
+                    let uid = u8_slice_to_u32(&k[0..4]);
+                    let (draft, _): (FormPost, usize) = bincode::decode_from_slice(&v, standard())?;
+                    ones.push(format!("{uid}: {draft:?}"));
                 }
                 "items" => {
                     let key = ivec_to_u32(&k);
