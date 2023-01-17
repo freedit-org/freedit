@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2023-01-17
+
 ### Added
 
 - Show errors if updating feed unsuccessfully
@@ -52,7 +54,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.2.6...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.2.7...HEAD
+[0.2.7]: https://github.com/freedit-org/freedit/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/freedit-org/freedit/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/freedit-org/freedit/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/freedit-org/freedit/compare/v0.2.3...v0.2.4
