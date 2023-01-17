@@ -67,11 +67,11 @@
 {% block aside %}
 
 <div class="box">
-    <span class="title">Drafts</span>
     <div class="content">
-    {% for draft_title in draft_titles %}
-        <p><a href="/post/edit/0?from_draft={{draft_title}}">{{draft_title}}</a></p>
-    {% endfor %}
+        <div class="title">Drafts</div>
+        {% for draft_title in draft_titles %}
+            <p><a href="/post/edit/0?from_draft={{draft_title}}">{{draft_title}}</a></p>
+        {% endfor %}
     </div>
 </div>
 
