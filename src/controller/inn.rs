@@ -443,7 +443,7 @@ pub(crate) async fn edit_post(
     }
 }
 
-/// `POST /post/:iid/edit/:pid` post create/edit page
+/// `POST /post/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
 pub(crate) async fn edit_post_post(
@@ -457,15 +457,19 @@ pub(crate) async fn edit_post_post(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let is_draft = input.is_draft.unwrap_or_default();
+    let delete_draft = input.delete_draft.unwrap_or_default();
 
+    let k: Vec<u8> = [&u32_to_ivec(claim.uid), input.title.as_bytes()].concat();
+
+    if delete_draft {
+        db.open_tree("drafts")?.remove(&k)?;
+        return Ok(Redirect::to("/post/edit/0"));
+    }
     if is_draft {
-        let k: Vec<u8> = [&u32_to_ivec(claim.uid), input.title.as_bytes()].concat();
         let post_encoded = bincode::encode_to_vec(&input, standard())?;
         db.open_tree("drafts")?.insert(k, post_encoded)?;
-        return Ok(Redirect::to(&format!("/inn/{}", claim.uid)));
+        return Ok(Redirect::to("/post/edit/0"));
     }
-
-    // TODO: delete draft
 
     let iid = input.iid;
     let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;

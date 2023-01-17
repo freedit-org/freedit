@@ -178,6 +178,7 @@ pub(crate) struct FormPost {
     #[validate(length(min = 1, max = 65535))]
     content: String,
     is_draft: Option<bool>,
+    delete_draft: Option<bool>,
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
