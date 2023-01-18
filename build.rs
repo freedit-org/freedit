@@ -6,13 +6,13 @@ fn main() {
         _ => {}
     }
 
-    let mut git_hash = match Command::new("git").args(["rev-parse", "HEAD"]).output() {
+    let mut git_commit = match Command::new("git").args(["rev-parse", "HEAD"]).output() {
         Ok(output) if !output.stdout.is_empty() => {
             String::from_utf8_lossy(&output.stdout).to_string()
         }
         _ => "not found".into(),
     };
 
-    git_hash.truncate(7);
-    println!("cargo:rustc-env=GIT_HASH={git_hash}");
+    git_commit.truncate(7);
+    println!("cargo:rustc-env=GIT_COMMIT={git_commit}");
 }

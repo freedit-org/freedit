@@ -22,7 +22,7 @@ use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-const GIT_HASH: &str = env!("GIT_HASH");
+const GIT_COMMIT: &str = env!("GIT_COMMIT");
 static IS_DEBUG: Lazy<bool> =
     Lazy::new(|| matches!(std::env::var("PROFILE"), Ok(key) if key.as_str() == "debug"));
 
@@ -35,7 +35,7 @@ async fn main() -> Result<(), AppError> {
 
     info!("sha256: {}", *CURRENT_SHA256);
     info!(VERSION);
-    info!(GIT_HASH);
+    info!(GIT_COMMIT);
 
     let db_url = &CONFIG.db;
     let config = sled::Config::default().path(db_url).use_compression(true);

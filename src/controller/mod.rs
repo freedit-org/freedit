@@ -296,7 +296,7 @@ struct Claim {
     session_id: String,
 }
 
-use crate::{config::CONFIG, error::AppError, GIT_HASH, VERSION};
+use crate::{config::CONFIG, error::AppError, GIT_COMMIT, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
@@ -955,7 +955,7 @@ impl<'a> PageData<'a> {
             has_unread,
             sha256: &CURRENT_SHA256,
             version: VERSION,
-            git_commit: GIT_HASH,
+            git_commit: GIT_COMMIT,
             footer_links,
         }
     }

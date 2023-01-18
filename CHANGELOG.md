@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add git hash info
+- Add git commit hash
 
 ## [0.2.8] - 2023-01-17
 
