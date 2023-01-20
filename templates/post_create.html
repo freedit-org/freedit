@@ -32,7 +32,11 @@
                 </div>
 
                 <div class="field">
-                    <input type="checkbox" name="is_draft" value="true"/>
+                    <input type="checkbox"
+                    {% match draft.is_draft %}{% when Some(true) %}
+                        checked
+                    {% else %}{% endmatch %}
+                    name="is_draft" value="true"/>
                     Save as draft
                 </div>
 
