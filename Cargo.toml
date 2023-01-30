@@ -31,7 +31,7 @@ sled = { version = "0.34.7", features = ["compression"] }
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
-toml = "0.5"
+toml = "0.7"
 tower = { version = "0.4", features = ["timeout"] }
 tower-http = { version = "0.3", features = ["fs", "compression-gzip", "trace"] } # serve dir
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
