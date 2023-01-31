@@ -539,7 +539,7 @@ dependencies = [
 
 [[package]]
 name = "freedit"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "askama",
  "atom_syndication",

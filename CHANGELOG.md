@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2023-01-31
+
 ### Added
 
 - Add git commit hash
+- default checked for draft
 
 ## [0.2.8] - 2023-01-17
 
@@ -64,7 +67,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.2.8...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.2.9...HEAD
+[0.2.9]: https://github.com/freedit-org/freedit/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/freedit-org/freedit/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/freedit-org/freedit/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/freedit-org/freedit/compare/v0.2.5...v0.2.6
