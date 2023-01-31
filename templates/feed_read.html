@@ -2,8 +2,9 @@
 
 {% block csp %}
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+    img-src 'self' *.freedit.eu
     {% if allow_img %}
-        img-src 'self' data: https:; 
+         data: https:; 
     {% endif %}
     script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
     font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
