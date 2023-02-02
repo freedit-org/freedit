@@ -28,7 +28,10 @@ nav {
 }
 
 .section {
-    padding: 1.5rem 0 0
+    padding: 1.5rem 0 0;
+    min-height: calc(100vh - 48px - 240px - 1.5em);
+    /*                       ^ header       ^ divider
+                                    ^ footer          */
 }
 
 .tabs.is-toggle a {
