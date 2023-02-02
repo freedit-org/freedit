@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- fullscreen background (by [thomas992](https://github.com/thomas992) [#61](https://github.com/freedit-org/freedit/pull/61))
+- push footer to the bottom of the page (by [pleshevskiy](https://github.com/pleshevskiy) [#66](https://github.com/freedit-org/freedit/pull/66)) 
+
+- csp: allow imgs from subdomain
+
 ## [0.2.9] - 2023-01-31
 
 ### Added
@@ -67,7 +74,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.2.9...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.2.10...HEAD
+[0.2.10]: https://github.com/freedit-org/freedit/compare/v0.2.9...v0.2.10
 [0.2.9]: https://github.com/freedit-org/freedit/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/freedit-org/freedit/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/freedit-org/freedit/compare/v0.2.6...v0.2.7
