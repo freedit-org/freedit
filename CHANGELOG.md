@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10] - 2023-02-02
+
 ### Fixed
 
 - fullscreen background (by [thomas992](https://github.com/thomas992) [#61](https://github.com/freedit-org/freedit/pull/61))
