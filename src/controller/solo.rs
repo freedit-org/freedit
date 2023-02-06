@@ -1,6 +1,6 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
-    get_referer, get_site_config, has_unread, incr_id, into_response, ivec_to_u32,
+    get_referer, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, ivec_to_u32,
     notification::{mark_read, NtType},
     timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
     utils::md2html,
@@ -369,26 +369,14 @@ pub(crate) async fn solo_post(
     let mut content = input.content;
     let mut hashtags = Vec::new();
 
-    if visibility == 0 {
-        hashtags = extract_element(&content, 5, '#');
-        if !hashtags.is_empty() {
-            let hashtags_tree = db.open_tree("hashtags")?;
-            for hashtag in &hashtags {
-                let k = [hashtag.as_bytes(), &sid_ivec].concat();
-                hashtags_tree.insert(k, &[])?;
-            }
-        }
-        for tag in &hashtags {
-            let tag_link = format!("#[{tag}](/solo/user/0?hashtag={tag})");
-            content = content.replace(&format!("#{tag}"), &tag_link);
-        }
-    }
-
+    let replied_uesr;
     let reply_to = if input.reply_to == 0 {
+        replied_uesr = None;
         None
     } else {
         let mut solo_replied: Solo = get_one(&db, "solos", input.reply_to)?;
         solo_replied.replies.push(sid);
+        replied_uesr = Some(solo_replied.uid);
         let solo_replied_encode = bincode::encode_to_vec(&solo_replied, standard())?;
         db.open_tree("solos")?
             .insert(&u32_to_ivec(input.reply_to), solo_replied_encode)?;
@@ -412,6 +400,60 @@ pub(crate) async fn solo_post(
 
         Some(input.reply_to)
     };
+
+    if visibility == 0 {
+        hashtags = extract_element(&content, 5, '#');
+        if !hashtags.is_empty() {
+            let hashtags_tree = db.open_tree("hashtags")?;
+            for hashtag in &hashtags {
+                let k = [hashtag.as_bytes(), &sid_ivec].concat();
+                hashtags_tree.insert(k, &[])?;
+            }
+        }
+        for tag in &hashtags {
+            let tag_link = format!("#[{tag}](/solo/user/0?hashtag={tag})");
+            content = content.replace(&format!("#{tag}"), &tag_link);
+        }
+
+        // extract @username or @uid notificaiton
+        let notifications = extract_element(&content, 5, '@');
+        let notification_tree = db.open_tree("notifications")?;
+        for notification in &notifications {
+            let (uid, username) = match notification.parse::<u32>() {
+                Ok(uid) => {
+                    if let Ok(user) = get_one::<User>(&db, "users", uid) {
+                        (uid, user.username)
+                    } else {
+                        continue;
+                    }
+                }
+                Err(_) => {
+                    if let Some(uid) = get_uid_by_name(&db, notification)? {
+                        (uid, notification.to_string())
+                    } else {
+                        continue;
+                    }
+                }
+            };
+            let notification_link = format!("[{username}](/user/{uid})");
+            let from = format!("@{notification}");
+            let to = format!("@{notification_link}");
+            content = content.replace(&from, &to);
+
+            // notify user to be mentioned in comment
+            if uid != claim.uid && replied_uesr != Some(uid) {
+                let nid = incr_id(&db, "notifications_count")?;
+                let k = [
+                    &u32_to_ivec(uid),
+                    &u32_to_ivec(nid),
+                    &IVec::from(&[NtType::SoloMention as u8]),
+                ]
+                .concat();
+                let v = [&sid_ivec, &u32_to_ivec(0), &IVec::from(&[0])].concat();
+                notification_tree.insert(k, v)?;
+            }
+        }
+    }
 
     let solo = Solo {
         sid,

@@ -38,6 +38,7 @@ pub(super) enum NtType {
     PostComment = 1,
     PostMention = 2,
     SoloComment = 3,
+    SoloMention = 4,
     InnNotification = 5,
     SiteNotification = 6,
 }
@@ -48,6 +49,7 @@ impl From<u8> for NtType {
             1 => Self::PostComment,
             2 => Self::PostMention,
             3 => Self::SoloComment,
+            4 => Self::SoloMention,
             5 => Self::InnNotification,
             6 => Self::SiteNotification,
             _ => unreachable!(),
@@ -61,6 +63,7 @@ impl Display for NtType {
             Self::PostComment => write!(f, "PostComment"),
             Self::PostMention => write!(f, "PostMention"),
             Self::SoloComment => write!(f, "SoloComment"),
+            Self::SoloMention => write!(f, "SoloMention"),
             Self::InnNotification => write!(f, "InnNotification"),
             Self::SiteNotification => write!(f, "SiteNotification"),
         }
@@ -189,6 +192,24 @@ pub(crate) async fn notification(
                     username: user.username,
                     id1: sid1,
                     id2: sid2,
+                    id3: 0,
+                    content1: "".into(),
+                    content2: solo.content,
+                    is_read: value[8] == 1,
+                };
+                notifications.push(notification);
+            }
+            NtType::SoloMention => {
+                let sid1 = u8_slice_to_u32(&value[0..4]);
+                let solo: Solo = get_one(&db, "solos", sid1)?;
+                let user: User = get_one(&db, "users", solo.uid)?;
+                let notification = Notification {
+                    nid,
+                    nt_type: nt_type.to_string(),
+                    uid: solo.uid,
+                    username: user.username,
+                    id1: sid1,
+                    id2: 0,
                     id3: 0,
                     content1: "".into(),
                     content2: solo.content,

@@ -70,13 +70,17 @@
                 <div class="list-item-description">
                     {{nt.username}} commented your <small><a href="/solo/{{nt.id1}}?nid={{nt.nid}}">Solo</a></small>
                 </div>
+            {% when "SoloMention" %}
+                <div class="list-item-description">
+                    {{nt.username}} mentioned you in <small><a href="/solo/{{nt.id1}}?nid={{nt.nid}}">Solo</a></small>
+                </div>
             {% else %}{% endmatch %}
 
             <div class="list-item-description">
                 {% if nt.is_read %}
-                    {{nt.content2}}
+                    {{nt.content2|truncate(100)}}
                 {% else %}
-                    <strong>{{nt.content2}}</strong>
+                    <strong>{{nt.content2|truncate(100)}}</strong>
                 {% endif %}
             </div>
         </div>
