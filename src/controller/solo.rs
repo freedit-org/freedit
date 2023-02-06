@@ -1,8 +1,10 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
-    get_referer, get_site_config, has_unread, incr_id, into_response, ivec_to_u32, mark_read,
-    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats, utils::md2html, Claim, IterType,
-    PageData, ParamsPage, Solo, User, ValidatedForm,
+    get_referer, get_site_config, has_unread, incr_id, into_response, ivec_to_u32,
+    notification::{mark_read, NtType},
+    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
+    utils::md2html,
+    Claim, IterType, PageData, ParamsPage, Solo, User, ValidatedForm,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -14,7 +16,7 @@ use axum::{
 use bincode::config::standard;
 use chrono::Utc;
 use serde::Deserialize;
-use sled::Db;
+use sled::{Db, IVec};
 use validator::Validate;
 
 /// Form data: `/solo/user/:uid` solo create.
@@ -118,7 +120,7 @@ pub(crate) struct ParamsSolo {
     is_desc: Option<bool>,
     filter: Option<String>,
     hashtag: Option<String>,
-    notification_sid: Option<u32>,
+    nid: Option<u32>,
 }
 
 /// `GET /solo/user/:uid` solo page
@@ -251,16 +253,14 @@ pub(crate) async fn solo(
         }
     }
 
-    if let Some(notification_sid) = params.notification_sid {
+    if let Some(nid) = params.nid {
         if let Some(ref claim) = claim {
-            let k = [
-                &u32_to_ivec(claim.uid),
-                &u32_to_ivec(0),
-                &u32_to_ivec(notification_sid),
-            ]
-            .concat();
-            db.open_tree("notifications")?
-                .update_and_fetch(k, mark_read)?;
+            let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
+            let tree = db.open_tree("notifications")?;
+            for i in tree.scan_prefix(prefix) {
+                let (k, _) = i?;
+                tree.update_and_fetch(k, mark_read)?;
+            }
         }
     }
 
@@ -394,8 +394,20 @@ pub(crate) async fn solo_post(
             .insert(&u32_to_ivec(input.reply_to), solo_replied_encode)?;
 
         if solo_replied.uid != uid {
-            let k = [&u32_to_ivec(solo_replied.uid), &u32_to_ivec(0), &sid_ivec].concat();
-            db.open_tree("notifications")?.insert(k, &[2])?;
+            let nid = incr_id(&db, "notifications_count")?;
+            let k = [
+                &u32_to_ivec(solo_replied.uid),
+                &u32_to_ivec(nid),
+                &IVec::from(&[NtType::SoloComment as u8]),
+            ]
+            .concat();
+            let v = [
+                &u32_to_ivec(input.reply_to),
+                &u32_to_ivec(sid),
+                &IVec::from(&[0]),
+            ]
+            .concat();
+            db.open_tree("notifications")?.insert(k, v)?;
         }
 
         Some(input.reply_to)

@@ -9,7 +9,8 @@ use crate::{
             edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_inn, mod_inn_post,
             post, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
         },
-        notification, serve_dir,
+        notification::notification,
+        serve_dir,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         style, upload, upload_pic_post, upload_post,
         user::{

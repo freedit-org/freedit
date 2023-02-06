@@ -15,9 +15,10 @@
 //! | "user_uploads"   | `uid#image_hash.ext` | `&[]`      |           |                       |
 //!
 //! ### notification
-//! | tree            | key           | value                             |
-//! |-----------------|---------------|-----------------------------------|
-//! | "notifications" | `uid#pid#cid` | [notification_code][Notification] |
+//! | tree            | key                   | value             |
+//! |-----------------|-----------------------|-------------------|
+//! | default         | "notifications_count" | N                 |
+//! | "notifications" | `uid#nid#nt_type`     | `id1#id2#is_read` |
 //!
 //! ### captcha
 //! About key `timestamp_nanoid`, see [generate_nanoid_expire].
@@ -321,7 +322,7 @@ use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use sled::{Batch, Db, IVec, Iter, Tree};
-use std::{cmp::Ordering, iter::Rev};
+use std::iter::Rev;
 use tokio::{fs, signal};
 use tower_http::services::ServeDir;
 use tracing::error;
@@ -333,6 +334,7 @@ use self::utils::md2html;
 pub(super) mod admin;
 pub(super) mod feed;
 pub(super) mod inn;
+pub(super) mod notification;
 pub(super) mod solo;
 pub(super) mod user;
 pub(super) mod utils;
@@ -713,214 +715,6 @@ pub(super) async fn shutdown_signal() {
     println!("signal received, starting graceful shutdown");
 }
 
-/// # notification
-///
-/// - Someone comments on your article
-/// - Someone mentions you in a comment
-///
-/// ## notification_code
-///
-/// unread_code + 100 = read_code
-///
-/// |         | unread | read |
-/// |---------|--------|------|
-/// | comment | 0      | 100  |
-/// | post    | 1      | 101  |
-/// | solo    | 2      | 102  |
-struct Notification {
-    uid: u32,
-    username: String,
-    iid: u32,
-    pid: u32,
-    post_title: String,
-    cid: u32,
-    comment_content: String,
-    notification_code: u8,
-}
-
-struct InnNotification {
-    iid: u32,
-    uid: u32,
-}
-
-/// notification.html
-#[derive(Template)]
-#[template(path = "notification.html", escape = "none")]
-struct NotificationPage<'a> {
-    page_data: PageData<'a>,
-    notifications: Vec<Notification>,
-    inn_notifications: Vec<InnNotification>,
-}
-
-#[derive(Deserialize)]
-pub(crate) struct NotifyParams {
-    op_type: Option<String>,
-    pid: Option<u32>,
-    cid: Option<u32>,
-}
-
-/// work for [set_merge_operator](https://docs.rs/sled/latest/sled/struct.Db.html#method.set_merge_operator):
-/// update notification code to read.
-fn mark_read(old: Option<&[u8]>) -> Option<Vec<u8>> {
-    match old {
-        Some(bytes) => {
-            if bytes[0] < 100 {
-                Some([bytes[0] + 100].to_vec())
-            } else {
-                Some(bytes.to_vec())
-            }
-        }
-        None => None,
-    }
-}
-
-/// `GET /notification`
-///
-/// Batch mode:
-///
-/// 30 notifications in a batch and batch delete only if they has been marked read
-pub(super) async fn notification(
-    State(db): State<Db>,
-    cookie: Option<TypedHeader<Cookie>>,
-    Query(params): Query<NotifyParams>,
-) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
-    let claim = cookie
-        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
-        .ok_or(AppError::NonLogin)?;
-
-    let prefix = u32_to_ivec(claim.uid);
-    let tree = db.open_tree("notifications")?;
-
-    // kv_paire: uid#pid#cid = notification_code
-    if let Some(op_type) = params.op_type {
-        match op_type.as_str() {
-            "mark_batch" => {
-                for (n, i) in tree.scan_prefix(&prefix).enumerate() {
-                    let (key, _) = i?;
-                    tree.update_and_fetch(key, mark_read)?;
-                    if n >= 30 {
-                        break;
-                    }
-                }
-            }
-            "delete_batch" => {
-                for (n, i) in tree.scan_prefix(&prefix).enumerate() {
-                    let (key, value) = i?;
-                    // Delete notification if it is read
-                    if value[0] >= 100 {
-                        tree.remove(key)?;
-                    }
-                    if n >= 30 {
-                        break;
-                    }
-                }
-            }
-            "mark" => {
-                if let (Some(pid), Some(cid)) = (params.pid, params.cid) {
-                    let k = [
-                        &u32_to_ivec(claim.uid),
-                        &u32_to_ivec(pid),
-                        &u32_to_ivec(cid),
-                    ]
-                    .concat();
-                    tree.update_and_fetch(k, mark_read)?;
-                }
-            }
-            "delete" => {
-                if let (Some(pid), Some(cid)) = (params.pid, params.cid) {
-                    let k = [
-                        &u32_to_ivec(claim.uid),
-                        &u32_to_ivec(pid),
-                        &u32_to_ivec(cid),
-                    ]
-                    .concat();
-                    tree.remove(k)?;
-                }
-            }
-            _ => {}
-        }
-    }
-
-    let mut notifications = Vec::with_capacity(30);
-    for (n, i) in tree.scan_prefix(&prefix).enumerate() {
-        let (key, value) = i?;
-        let pid = u8_slice_to_u32(&key[4..8]);
-
-        match pid.cmp(&0) {
-            Ordering::Greater => {
-                let cid = u8_slice_to_u32(&key[8..12]);
-                if let Some(v) = &db.open_tree("post_comments")?.get(&key[4..12])? {
-                    let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
-                    let post: Post = get_one(&db, "posts", pid)?;
-                    let user: User = get_one(&db, "users", comment.uid)?;
-                    let notification = Notification {
-                        uid: comment.uid,
-                        username: user.username,
-                        pid,
-                        iid: post.iid,
-                        post_title: post.title,
-                        cid,
-                        comment_content: comment.content,
-                        notification_code: value[0],
-                    };
-                    notifications.push(notification);
-                }
-            }
-            Ordering::Equal => {
-                let sid = u8_slice_to_u32(&key[8..12]);
-                if let Ok(solo) = get_one::<Solo>(&db, "solos", sid) {
-                    let user: User = get_one(&db, "users", solo.uid)?;
-                    let notification = Notification {
-                        uid: solo.uid,
-                        username: user.username,
-                        pid,
-                        iid: solo.sid,
-                        post_title: "".into(),
-                        cid: sid,
-                        comment_content: solo.content,
-                        notification_code: value[0],
-                    };
-                    notifications.push(notification);
-                }
-            }
-            Ordering::Less => unreachable!(),
-        }
-
-        if n >= 30 {
-            break;
-        }
-    }
-    notifications.reverse();
-
-    let mut inn_notifications = Vec::new();
-    let mod_inns = get_ids_by_prefix(&db, "mod_inns", prefix, None)?;
-    for i in mod_inns {
-        for i in db.open_tree("inn_apply")?.scan_prefix(u32_to_ivec(i)) {
-            let (k, _) = i?;
-            let inn_notification = InnNotification {
-                iid: u8_slice_to_u32(&k[0..4]),
-                uid: u8_slice_to_u32(&k[4..]),
-            };
-            inn_notifications.push(inn_notification);
-        }
-
-        if inn_notifications.len() >= 30 {
-            break;
-        }
-    }
-
-    let has_unread = has_unread(&db, claim.uid)?;
-    let page_data = PageData::new("notification", &site_config, Some(claim), has_unread);
-    let notification_page = NotificationPage {
-        page_data,
-        notifications,
-        inn_notifications,
-    };
-
-    Ok(into_response(&notification_page, "html"))
-}
-
 struct PageData<'a> {
     title: &'a str,
     site_name: &'a str,
@@ -1094,7 +888,7 @@ fn has_unread(db: &Db, uid: u32) -> Result<bool, AppError> {
     let iter = db.open_tree("notifications")?.scan_prefix(&prefix);
     for i in iter {
         let (_, v) = i?;
-        if v[0] < 100 {
+        if v[8] == 0 {
             return Ok(true);
         }
     }

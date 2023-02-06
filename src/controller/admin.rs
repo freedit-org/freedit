@@ -200,12 +200,16 @@ pub(crate) async fn admin_view(
                     ones.push(format!("sid: {sid}, uid: {uid}, visibility: {visibility}"));
                 }
                 "notifications" => {
-                    let pid = u8_slice_to_u32(&k[0..4]);
-                    let cid = u8_slice_to_u32(&k[4..8]);
-                    let uid = u8_slice_to_u32(&k[8..12]);
+                    let uid = u8_slice_to_u32(&k[0..4]);
+                    let nid = u8_slice_to_u32(&k[4..8]);
+                    let nt_type = &k[8];
+
+                    let id1 = u8_slice_to_u32(&v[0..4]);
+                    let id2 = u8_slice_to_u32(&v[4..8]);
+                    let is_read = v[8] == 1;
+
                     ones.push(format!(
-                        "uid: {}, pid: {}, cid: {}, notification_code:{}",
-                        pid, cid, uid, v[0]
+                        "uid: {uid}, nid: {nid}, nt_type: {nt_type}, id1:{id1}, id2:{id2}, is_read:{is_read}"
                     ));
                 }
                 "captcha" | "sessions" => {

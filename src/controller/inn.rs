@@ -14,9 +14,11 @@
 use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag,
     get_inn_role, get_one, get_range, get_site_config, get_uid_by_name, has_unread, incr_id,
-    into_response, is_mod, ivec_to_u32, mark_read, timestamp_to_date, u32_to_ivec, u8_slice_to_u32,
-    user_stats, utils::md2html, Claim, Comment, FormPost, Inn, PageData, ParamsPage, Post, User,
-    ValidatedForm,
+    into_response, is_mod, ivec_to_u32,
+    notification::{mark_read, NtType},
+    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
+    utils::md2html,
+    Claim, Comment, FormPost, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
 };
 use crate::{
     controller::{get_count, IterType},
@@ -31,7 +33,7 @@ use axum::{
 use bincode::config::standard;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
-use sled::{Batch, Db};
+use sled::{Batch, Db, IVec};
 use std::{collections::BTreeSet, path::PathBuf};
 use validator::Validate;
 
@@ -1112,7 +1114,7 @@ struct OutComment {
 pub(crate) struct ParamsPost {
     anchor: Option<usize>,
     is_desc: Option<bool>,
-    notification_cid: Option<u32>,
+    nid: Option<u32>,
 }
 
 /// `GET /inn/:iid/:pid` post page
@@ -1175,15 +1177,13 @@ pub(crate) async fn post(
             is_mod = true;
         }
 
-        if let Some(notification_cid) = params.notification_cid {
-            let k = [
-                &u32_to_ivec(claim.uid),
-                &u32_to_ivec(pid),
-                &u32_to_ivec(notification_cid),
-            ]
-            .concat();
-            db.open_tree("notifications")?
-                .update_and_fetch(k, mark_read)?;
+        if let Some(nid) = params.nid {
+            let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
+            let tree = db.open_tree("notifications")?;
+            for i in tree.scan_prefix(prefix) {
+                let (k, _) = i?;
+                tree.update_and_fetch(k, mark_read)?;
+            }
         }
     }
 
@@ -1366,8 +1366,19 @@ pub(crate) async fn comment_post(
         content = content.replace(&from, &to);
 
         // notify user to be mentioned in comment
-        let notify_key = [&u32_to_ivec(uid), &pid_ivec, &u32_to_ivec(cid)].concat();
-        notification_tree.insert(notify_key, vec![0])?;
+
+        // prevent duplicate notifications
+        if uid != post.uid {
+            let nid = incr_id(&db, "notifications_count")?;
+            let k = [
+                &u32_to_ivec(uid),
+                &u32_to_ivec(nid),
+                &IVec::from(&[NtType::PostMention as u8]),
+            ]
+            .concat();
+            let v = [&pid_ivec, &u32_to_ivec(cid), &IVec::from(&[0])].concat();
+            notification_tree.insert(k, v)?;
+        }
     }
 
     let reply_to = extract_element(&content, 1, '#');
@@ -1427,8 +1438,15 @@ pub(crate) async fn comment_post(
 
     // notify post author
     if post.uid != claim.uid {
-        let notify_key = [&u32_to_ivec(post.uid), &pid_ivec, &u32_to_ivec(cid)].concat();
-        notification_tree.insert(notify_key, vec![1])?;
+        let nid = incr_id(&db, "notifications_count")?;
+        let k = [
+            &u32_to_ivec(post.uid),
+            &u32_to_ivec(nid),
+            &IVec::from(&[NtType::PostComment as u8]),
+        ]
+        .concat();
+        let v = [&pid_ivec, &u32_to_ivec(cid), &IVec::from(&[0])].concat();
+        notification_tree.insert(k, v)?;
     }
 
     user_stats(&db, claim.uid, "comment")?;

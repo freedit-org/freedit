@@ -57,38 +57,36 @@
             </figure>
         </div>
         <div class="list-item-content">
+            {% match nt.nt_type.as_ref() %}
+            {% when "PostComment" %}
+                <div class="list-item-description">
+                    {{nt.username}} commented your post <small><a href="/post/{{nt.id1}}/{{nt.id2}}?nid={{nt.nid}}#{{nt.id3}}">{{nt.content1}}</a></small>
+                </div>
+            {% when "PostMention" %}
+                <div class="list-item-description">
+                    {{nt.username}} mentioned you in post <small><a href="/post/{{nt.id1}}/{{nt.id2}}?nid={{nt.nid}}#{{nt.id3}}">{{nt.content1}}</a></small>
+                </div>
+            {% when "SoloComment" %}
+                <div class="list-item-description">
+                    {{nt.username}} commented your <small><a href="/solo/{{nt.id1}}?nid={{nt.nid}}">Solo</a></small>
+                </div>
+            {% else %}{% endmatch %}
+
             <div class="list-item-description">
-                {% match nt.notification_code %}
-                {% when 0 %}
-                    {{nt.username}} mentioned you in <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
-                {% when 100 %}
-                    {{nt.username}} mentioned you in <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
-                {% when 1 %}
-                    {{nt.username}} commented your post <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
-                {% when 101 %}
-                    {{nt.username}} commented your post <small><a href="/post/{{nt.iid}}/{{nt.pid}}?notification_cid={{nt.cid}}#{{nt.cid}}">{{nt.post_title}}</a></small>
-                {% when 2 %}
-                    {{nt.username}} mentioned you in solo <small><a href="/solo/{{nt.iid}}?notification_sid={{nt.iid}}">{{nt.iid}}</a></small>
-                {% when 102 %}
-                    {{nt.username}} mentioned you in solo <small><a href="/solo/{{nt.iid}}?notification_sid={{nt.iid}}">{{nt.iid}}</a></small>
-                {% else %}{% endmatch %}
-            </div>
-            <div class="list-item-description">
-                {% if nt.notification_code >= 100 %}
-                    {{nt.comment_content}}
+                {% if nt.is_read %}
+                    {{nt.content2}}
                 {% else %}
-                    <strong>{{nt.comment_content}}</strong>
+                    <strong>{{nt.content2}}</strong>
                 {% endif %}
             </div>
         </div>
-        
+
         <div class="list-item-controls">
-            {% if nt.notification_code < 100 %}
-            <a href="/notification?iid={{nt.iid}}&pid={{nt.pid}}&cid={{nt.cid}}&notification_code={{nt.notification_code}}&op_type=mark"><span class="tag is-info" title="Mark as read">✔️</span></a>
+            {% if !nt.is_read %}
+            <a href="/notification?nid={{nt.nid}}&op_type=mark"><span class="tag is-info" title="Mark as read">✔️</span></a>
             {% endif %}
-            <a href="/notification?iid={{nt.iid}}&pid={{nt.pid}}&cid={{nt.cid}}&notification_code={{nt.notification_code}}&op_type=delete"><span class="tag is-danger" title="Delete notification">❌</span></a>
+            <a href="/notification?iid={{nt.nid}}&op_type=delete"><span class="tag is-danger" title="Delete notification">❌</span></a>
         </div>
-        
     </div>
     {% endfor %}
 </div>
