@@ -16,7 +16,9 @@ use tokio::fs;
 
 use crate::{config::CONFIG, error::AppError};
 
-use super::{get_inn_role, get_site_config, into_response, u32_to_ivec, Claim, PageData};
+use super::{
+    get_inn_role, get_site_config, has_unread, into_response, u32_to_ivec, Claim, PageData,
+};
 
 #[derive(Deserialize)]
 pub(crate) struct UploadPicParams {
@@ -82,7 +84,8 @@ pub(crate) async fn upload(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = get_site_config(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    let page_data = PageData::new("upload images", &site_config, Some(claim), false);
+    let has_unread = has_unread(&db, claim.uid)?;
+    let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
     let page_upload = PageUpload {
         page_data,
         imgs: vec![],
@@ -188,7 +191,8 @@ pub(crate) async fn upload_post(
     }
     db.open_tree("user_uploads")?.apply_batch(batch)?;
 
-    let page_data = PageData::new("upload images", &site_config, Some(claim), false);
+    let has_unread = has_unread(&db, claim.uid)?;
+    let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
     let page_upload = PageUpload { page_data, imgs };
 
     Ok(into_response(&page_upload, "html"))

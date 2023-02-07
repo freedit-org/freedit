@@ -2,7 +2,7 @@
 
 use super::{
     generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
-    get_range, get_site_config, get_uid_by_name, incr_id, into_response, is_mod,
+    get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
     notification::{add_notification, NtType},
     timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats, Claim, Inn, IterType, PageData,
     ParamsPage, SiteConfig, User, ValidatedForm,
@@ -92,7 +92,13 @@ pub(crate) async fn user(
     };
 
     let title = format!("{}-{}", out_user.username, out_user.uid);
-    let page_data = PageData::new(&title, &site_config, claim, false);
+
+    let has_unread = if let Some(ref claim) = claim {
+        has_unread(&db, claim.uid)?
+    } else {
+        false
+    };
+    let page_data = PageData::new(&title, &site_config, claim, has_unread);
     let page_user = PageUser {
         page_data,
         user: out_user,
@@ -389,7 +395,12 @@ pub(crate) async fn user_list(
         }
     }
 
-    let page_data = PageData::new("User list", &site_config, claim, false);
+    let has_unread = if let Some(ref claim) = claim {
+        has_unread(&db, claim.uid)?
+    } else {
+        false
+    };
+    let page_data = PageData::new("User list", &site_config, claim, has_unread);
     let page_user_list = PageUserList {
         page_data,
         users,
@@ -559,9 +570,10 @@ pub(crate) async fn user_setting(
         }
     }
 
+    let has_unread = has_unread(&db, claim.uid)?;
     let page_user_setting = PageUserSetting {
         uid: claim.uid,
-        page_data: PageData::new("setting", &site_config, Some(claim), false),
+        page_data: PageData::new("setting", &site_config, Some(claim), has_unread),
         username: user.username,
         about: user.about,
         url: user.url,
@@ -967,8 +979,8 @@ pub(crate) async fn user_recovery_code(
         let user_encode = bincode::encode_to_vec(&user, standard())?;
         db.open_tree("users")?
             .insert(u32_to_ivec(claim.uid), &*user_encode)?;
-
-        let page_data = PageData::new("Recovery code", &site_config, Some(claim), false);
+        let has_unread = has_unread(&db, claim.uid)?;
+        let page_data = PageData::new("Recovery code", &site_config, Some(claim), has_unread);
         let page_show_recovery = PageShowRecovery {
             page_data,
             recovery_code,

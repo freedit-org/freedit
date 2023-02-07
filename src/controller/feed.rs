@@ -1,5 +1,5 @@
 use super::{
-    get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, into_response,
+    get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, has_unread, into_response,
     timestamp_to_date, u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, User,
 };
 use crate::{
@@ -336,7 +336,12 @@ pub(crate) async fn feed(
         items.push(out_item);
     }
 
-    let page_data = PageData::new("Feed", &site_config, claim, false);
+    let has_unread = if let Some(ref claim) = claim {
+        has_unread(&db, claim.uid)?
+    } else {
+        false
+    };
+    let page_data = PageData::new("Feed", &site_config, claim, has_unread);
     let page_feed = PageFeed {
         page_data,
         folders: map,
@@ -422,7 +427,12 @@ pub(crate) async fn feed_read(
     }
 
     let allow_img = params.allow_img.unwrap_or_default();
-    let page_data = PageData::new("Feed", &site_config, claim, false);
+    let has_unread = if let Some(ref claim) = claim {
+        has_unread(&db, claim.uid)?
+    } else {
+        false
+    };
+    let page_data = PageData::new("Feed", &site_config, claim, has_unread);
     let page_feed_read = PageFeedRead {
         page_data,
         item: out_item_read,
@@ -463,7 +473,8 @@ pub(crate) async fn feed_add(
     if folders.is_empty() {
         folders.insert("Default".to_owned());
     }
-    let page_data = PageData::new("Feed add", &site_config, Some(claim), false);
+    let has_unread = has_unread(&db, claim.uid)?;
+    let page_data = PageData::new("Feed add", &site_config, Some(claim), has_unread);
     let page_feed_add = PageFeedAdd { page_data, folders };
 
     Ok(into_response(&page_feed_add, "html"))

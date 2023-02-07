@@ -1,6 +1,6 @@
 use super::{
-    get_site_config, into_response, timestamp_to_date, u8_slice_to_u32, Claim, Feed, FormPost,
-    Item, IterType, PageData, SiteConfig, ValidatedForm,
+    get_site_config, has_unread, into_response, timestamp_to_date, u8_slice_to_u32, Claim, Feed,
+    FormPost, Item, IterType, PageData, SiteConfig, ValidatedForm,
 };
 use crate::{
     controller::{ivec_to_u32, Comment, Inn, Post, Solo, User},
@@ -265,7 +265,8 @@ pub(crate) async fn admin_view(
         }
     }
 
-    let page_data = PageData::new("Admin view", &site_config, Some(claim), false);
+    let has_unread = has_unread(&db, claim.uid)?;
+    let page_data = PageData::new("Admin view", &site_config, Some(claim), has_unread);
     let page_admin_view = PageAdminView {
         page_data,
         tree_names,
@@ -298,7 +299,8 @@ pub(crate) async fn admin(
         return Err(AppError::Unauthorized);
     }
 
-    let page_data = PageData::new("Admin", &site_config, Some(claim), false);
+    let has_unread = has_unread(&db, claim.uid)?;
+    let page_data = PageData::new("Admin", &site_config, Some(claim), has_unread);
     let page_admin = PageAdmin {
         site_config: &site_config,
         page_data,
@@ -381,7 +383,8 @@ pub(crate) async fn admin_stats(
         stats.truncate(100);
     }
 
-    let page_data = PageData::new("Admin-pageview", &site_config, Some(claim), false);
+    let has_unread = has_unread(&db, claim.uid)?;
+    let page_data = PageData::new("Admin-pageview", &site_config, Some(claim), has_unread);
     let page_admin_pageview = PageAdminStats { page_data, stats };
     Ok(into_response(&page_admin_pageview, "html"))
 }

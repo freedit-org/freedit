@@ -75,9 +75,10 @@ pub(crate) async fn mod_inn(
         }
     }
 
+    let has_unread = has_unread(&db, claim.uid)?;
     // create new inn
     if iid == 0 {
-        let page_data = PageData::new("create new inn", &site_config, Some(claim), false);
+        let page_data = PageData::new("create new inn", &site_config, Some(claim), has_unread);
         let page_inn_create = PageInnCreate { page_data };
         Ok(into_response(&page_inn_create, "html"))
     } else {
@@ -85,7 +86,7 @@ pub(crate) async fn mod_inn(
             return Err(AppError::Unauthorized);
         }
 
-        let page_data = PageData::new("edit inn", &site_config, Some(claim), false);
+        let page_data = PageData::new("edit inn", &site_config, Some(claim), has_unread);
         let inn: Inn = get_one(&db, "inns", iid)?;
         let page_inn_edit = PageInnEdit { page_data, inn };
         Ok(into_response(&page_inn_edit, "html"))
@@ -391,7 +392,7 @@ pub(crate) async fn edit_post(
     }
 
     let mut selected_iid = params.iid.unwrap_or_default();
-
+    let has_unread = has_unread(&db, claim.uid)?;
     if pid == 0 {
         let mut draft = FormPost::default();
         let mut draft_titles = vec![];
@@ -409,7 +410,7 @@ pub(crate) async fn edit_post(
             selected_iid = draft.iid;
         };
 
-        let page_data = PageData::new("new post", &site_config, Some(claim), false);
+        let page_data = PageData::new("new post", &site_config, Some(claim), has_unread);
         let page_post_create = PagePostCreate {
             page_data,
             joined,
@@ -438,7 +439,7 @@ pub(crate) async fn edit_post(
             return Err(AppError::Unauthorized);
         }
 
-        let page_data = PageData::new("edit post", &site_config, Some(claim), false);
+        let page_data = PageData::new("edit post", &site_config, Some(claim), has_unread);
         let page_post_edit = PagePostEdit { page_data, post };
 
         Ok(into_response(&page_post_edit, "html"))
@@ -642,7 +643,12 @@ pub(crate) async fn tag(
     let index = get_ids_by_tag(&db, "tags", &tag, Some(&page_params))?;
     let out_post_list = get_out_post_list(&db, &index)?;
 
-    let page_data = PageData::new("inn", &site_config, claim, false);
+    let has_unread = if let Some(ref claim) = claim {
+        has_unread(&db, claim.uid)?
+    } else {
+        false
+    };
+    let page_data = PageData::new("inn", &site_config, claim, has_unread);
     let page_tag = PageTag {
         page_data,
         posts: out_post_list,

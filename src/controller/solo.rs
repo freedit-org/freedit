@@ -264,7 +264,12 @@ pub(crate) async fn solo(
         }
     }
 
-    let page_data = PageData::new("Solo", &site_config, claim, false);
+    let has_unread = if let Some(ref claim) = claim {
+        has_unread(&db, claim.uid)?
+    } else {
+        false
+    };
+    let page_data = PageData::new("Solo", &site_config, claim, has_unread);
     let page_solo = PageSolo {
         page_data,
         solo: out_solo,
