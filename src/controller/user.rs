@@ -28,7 +28,7 @@ use ring::{
 };
 use serde::Deserialize;
 use sled::Db;
-use std::{cmp::Ordering, num::NonZeroU32, time::Duration};
+use std::{cmp::Ordering, fmt::Display, num::NonZeroU32, time::Duration};
 use tokio::time::sleep;
 use validator::Validate;
 
@@ -51,7 +51,7 @@ struct OutUser {
     uid: u32,
     username: String,
     about: String,
-    role: u8,
+    role: String,
     url: String,
     created_at: String,
 }
@@ -69,7 +69,7 @@ pub(crate) async fn user(
         uid: user.uid,
         username: user.username,
         about: user.about,
-        role: user.role,
+        role: UserRole::from(user.role).to_string(),
         url: user.url,
         created_at: timestamp_to_date(user.created_at),
     };
@@ -156,6 +156,77 @@ struct OutUserList {
     username: String,
     about: String,
     role: u8,
+}
+
+#[repr(u8)]
+pub(super) enum UserRole {
+    Banned = 0,
+    Standard = 10,
+    Senior = 100,
+    Admin = 255,
+}
+
+impl From<u8> for UserRole {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => UserRole::Banned,
+            10 => UserRole::Standard,
+            100 => UserRole::Senior,
+            255 => UserRole::Admin,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UserRole::Banned => write!(f, "Banned"),
+            UserRole::Standard => write!(f, "Standard"),
+            UserRole::Senior => write!(f, "Senior"),
+            UserRole::Admin => write!(f, "Admin"),
+        }
+    }
+}
+
+#[repr(u8)]
+pub(super) enum InnRole {
+    Pending = 1,
+    Deny = 2,
+    Limited = 3,
+    Intern = 4,
+    Fellow = 5,
+    Mod = 7,
+    Super = 10,
+}
+
+impl From<u8> for InnRole {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => InnRole::Pending,
+            2 => InnRole::Deny,
+            3 => InnRole::Limited,
+            4 => InnRole::Intern,
+            5 => InnRole::Fellow,
+            7 => InnRole::Mod,
+            10 => InnRole::Super,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Display for InnRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InnRole::Pending => write!(f, "Pending"),
+            InnRole::Deny => write!(f, "Deny"),
+            InnRole::Limited => write!(f, "Limited"),
+            InnRole::Intern => write!(f, "Intern"),
+            InnRole::Fellow => write!(f, "Fellow"),
+            InnRole::Mod => write!(f, "Mod"),
+            InnRole::Super => write!(f, "Super"),
+        }
+    }
 }
 
 impl OutUserList {

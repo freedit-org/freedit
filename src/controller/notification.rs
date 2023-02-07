@@ -15,7 +15,9 @@ use crate::error::AppError;
 
 use super::{
     get_ids_by_prefix, get_one, get_site_config, has_unread, incr_id, into_response, u32_to_ivec,
-    u8_slice_to_u32, Claim, Comment, Inn, PageData, Post, Solo, User,
+    u8_slice_to_u32,
+    user::{InnRole, UserRole},
+    Claim, Comment, Inn, PageData, Post, Solo, User,
 };
 
 /// notification.html
@@ -219,6 +221,7 @@ pub(crate) async fn notification(
             }
             NtType::InnNotification => {
                 let role = u8_slice_to_u32(&value[0..4]);
+                let role_desc = InnRole::from(role as u8).to_string();
                 let iid = u8_slice_to_u32(&value[4..8]);
                 let inn: Inn = get_one(&db, "inns", iid)?;
                 let notification = Notification {
@@ -231,7 +234,7 @@ pub(crate) async fn notification(
                     id3: 0,
                     content1: "".into(),
                     content2: format!(
-                        "Your role in {} (id:{}) has been changed to {role}",
+                        "Your role in {} (id:{}) has been changed to {role_desc}",
                         inn.inn_name, iid
                     ),
                     is_read: value[8] == 1,
@@ -240,6 +243,7 @@ pub(crate) async fn notification(
             }
             NtType::SiteNotification => {
                 let role = u8_slice_to_u32(&value[0..4]);
+                let role_desc = UserRole::from(role as u8).to_string();
                 let notification = Notification {
                     nid,
                     nt_type: nt_type.to_string(),
@@ -249,7 +253,7 @@ pub(crate) async fn notification(
                     id2: 0,
                     id3: 0,
                     content1: "".into(),
-                    content2: format!("Your site role has been changed to {role}"),
+                    content2: format!("Your site role has been changed to {role_desc}"),
                     is_read: value[8] == 1,
                 };
                 notifications.push(notification);
