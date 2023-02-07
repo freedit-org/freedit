@@ -229,11 +229,11 @@ impl Factor {
 
     fn get(file_size: usize) -> Factor {
         match file_size {
-            file_size if file_size > 5000000 => Factor::new(60., 0.7),
-            file_size if file_size > 1000000 => Factor::new(65., 0.75),
-            file_size if file_size > 500000 => Factor::new(70., 0.8),
-            file_size if file_size > 300000 => Factor::new(75., 0.85),
-            file_size if file_size > 100000 => Factor::new(80., 0.9),
+            file_size if file_size > 5000000 => Factor::new(70., 0.75),
+            file_size if file_size > 1000000 => Factor::new(75., 0.8),
+            file_size if file_size > 600000 => Factor::new(80., 0.85),
+            file_size if file_size > 400000 => Factor::new(85., 0.9),
+            file_size if file_size > 200000 => Factor::new(90., 0.95),
             _ => Factor::new(85., 1.0),
         }
     }
