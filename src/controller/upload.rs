@@ -238,7 +238,7 @@ impl Factor {
             file_size if file_size > 600000 => Factor::new(80., 0.85),
             file_size if file_size > 400000 => Factor::new(85., 0.9),
             file_size if file_size > 200000 => Factor::new(90., 0.95),
-            _ => Factor::new(85., 1.0),
+            _ => Factor::new(100., 1.0),
         }
     }
 }
