@@ -1,7 +1,7 @@
 use super::{
     extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
     get_referer, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, ivec_to_u32,
-    notification::{mark_read, NtType},
+    notification::{add_notification, mark_read, NtType},
     timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
     utils::md2html,
     Claim, IterType, PageData, ParamsPage, Solo, User, ValidatedForm,
@@ -16,7 +16,7 @@ use axum::{
 use bincode::config::standard;
 use chrono::Utc;
 use serde::Deserialize;
-use sled::{Db, IVec};
+use sled::Db;
 use validator::Validate;
 
 /// Form data: `/solo/user/:uid` solo create.
@@ -370,9 +370,10 @@ pub(crate) async fn solo_post(
     let mut hashtags = Vec::new();
 
     let replied_uesr;
-    let reply_to = if input.reply_to == 0 {
+    let reply_to;
+    if input.reply_to == 0 {
         replied_uesr = None;
-        None
+        reply_to = None;
     } else {
         let mut solo_replied: Solo = get_one(&db, "solos", input.reply_to)?;
         solo_replied.replies.push(sid);
@@ -382,23 +383,16 @@ pub(crate) async fn solo_post(
             .insert(&u32_to_ivec(input.reply_to), solo_replied_encode)?;
 
         if solo_replied.uid != uid {
-            let nid = incr_id(&db, "notifications_count")?;
-            let k = [
-                &u32_to_ivec(solo_replied.uid),
-                &u32_to_ivec(nid),
-                &IVec::from(&[NtType::SoloComment as u8]),
-            ]
-            .concat();
-            let v = [
-                &u32_to_ivec(input.reply_to),
-                &u32_to_ivec(sid),
-                &IVec::from(&[0]),
-            ]
-            .concat();
-            db.open_tree("notifications")?.insert(k, v)?;
+            add_notification(
+                &db,
+                solo_replied.uid,
+                NtType::SoloComment,
+                input.reply_to,
+                sid,
+            )?;
         }
 
-        Some(input.reply_to)
+        reply_to = Some(input.reply_to)
     };
 
     if visibility == 0 {
@@ -417,7 +411,6 @@ pub(crate) async fn solo_post(
 
         // extract @username or @uid notificaiton
         let notifications = extract_element(&content, 5, '@');
-        let notification_tree = db.open_tree("notifications")?;
         for notification in &notifications {
             let (uid, username) = match notification.parse::<u32>() {
                 Ok(uid) => {
@@ -442,15 +435,7 @@ pub(crate) async fn solo_post(
 
             // notify user to be mentioned in comment
             if uid != claim.uid && replied_uesr != Some(uid) {
-                let nid = incr_id(&db, "notifications_count")?;
-                let k = [
-                    &u32_to_ivec(uid),
-                    &u32_to_ivec(nid),
-                    &IVec::from(&[NtType::SoloMention as u8]),
-                ]
-                .concat();
-                let v = [&sid_ivec, &u32_to_ivec(0), &IVec::from(&[0])].concat();
-                notification_tree.insert(k, v)?;
+                add_notification(&db, uid, NtType::SoloMention, sid, 0)?;
             }
         }
     }

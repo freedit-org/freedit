@@ -89,7 +89,7 @@
             {% if !nt.is_read %}
             <a href="/notification?nid={{nt.nid}}&op_type=mark"><span class="tag is-info" title="Mark as read">✔️</span></a>
             {% endif %}
-            <a href="/notification?iid={{nt.nid}}&op_type=delete"><span class="tag is-danger" title="Delete notification">❌</span></a>
+            <a href="/notification?nid={{nt.nid}}&op_type=delete"><span class="tag is-danger" title="Delete notification">❌</span></a>
         </div>
     </div>
     {% endfor %}

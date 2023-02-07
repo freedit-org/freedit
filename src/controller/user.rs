@@ -2,9 +2,10 @@
 
 use super::{
     generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
-    get_range, get_site_config, get_uid_by_name, incr_id, into_response, is_mod, timestamp_to_date,
-    u32_to_ivec, u8_slice_to_u32, user_stats, Claim, Inn, IterType, PageData, ParamsPage,
-    SiteConfig, User, ValidatedForm,
+    get_range, get_site_config, get_uid_by_name, incr_id, into_response, is_mod,
+    notification::{add_notification, NtType},
+    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats, Claim, Inn, IterType, PageData,
+    ParamsPage, SiteConfig, User, ValidatedForm,
 };
 use crate::{config::CONFIG, controller::get_count, error::AppError};
 use ::rand::{thread_rng, Rng};
@@ -360,15 +361,15 @@ pub(crate) async fn role_post(
 
             let inn_users_k = [&u32_to_ivec(id), &u32_to_ivec(uid)].concat();
 
-            // protect super
-            if let Some(user_inn_role) = get_inn_role(&db, id, uid)? {
-                if user_inn_role > inn_role {
-                    return Err(AppError::Unauthorized);
-                }
+            let old_inn_role = get_inn_role(&db, id, uid)?.unwrap_or_default();
 
-                if user_inn_role == 1 && form.role != "Pending" {
-                    db.open_tree("inn_apply")?.remove(&inn_users_k)?;
-                }
+            // protect super
+            if old_inn_role > inn_role {
+                return Err(AppError::Unauthorized);
+            }
+
+            if old_inn_role == 1 && form.role != "Pending" {
+                db.open_tree("inn_apply")?.remove(&inn_users_k)?;
             }
 
             let inn_role: u8 = match form.role.as_str() {
@@ -391,20 +392,24 @@ pub(crate) async fn role_post(
                 _ => unreachable!(),
             };
 
-            db.open_tree("inn_users")?
-                .insert(&inn_users_k, &[inn_role])?;
+            if old_inn_role != inn_role {
+                db.open_tree("inn_users")?
+                    .insert(&inn_users_k, &[inn_role])?;
 
-            let user_inns_k = [&u32_to_ivec(uid), &u32_to_ivec(id)].concat();
-            if inn_role >= 3 {
-                db.open_tree("user_inns")?.insert(&user_inns_k, &[])?;
-            } else {
-                db.open_tree("user_inns")?.remove(&user_inns_k)?;
-            }
+                let user_inns_k = [&u32_to_ivec(uid), &u32_to_ivec(id)].concat();
+                if inn_role >= 3 {
+                    db.open_tree("user_inns")?.insert(&user_inns_k, &[])?;
+                } else {
+                    db.open_tree("user_inns")?.remove(&user_inns_k)?;
+                }
 
-            if inn_role >= 8 {
-                db.open_tree("mod_inns")?.insert(&user_inns_k, &[])?;
-            } else {
-                db.open_tree("mod_inns")?.remove(&user_inns_k)?;
+                if inn_role >= 8 {
+                    db.open_tree("mod_inns")?.insert(&user_inns_k, &[])?;
+                } else {
+                    db.open_tree("mod_inns")?.remove(&user_inns_k)?;
+                }
+
+                add_notification(&db, uid, NtType::InnNotification, inn_role as u32, id)?;
             }
 
             target = format!("/user/list?filter=inn&id={id}");
@@ -415,18 +420,24 @@ pub(crate) async fn role_post(
             }
 
             let mut user: User = get_one(&db, "users", uid)?;
-            user.role = match form.role.as_str() {
+            let role = match form.role.as_str() {
                 "Admin" => 255,
                 "Senior" => 100,
                 "Standard" => 10,
                 "Banned" => 0,
                 _ => unreachable!(),
             };
-            let user_encode = bincode::encode_to_vec(&user, standard())?;
-            db.open_tree("users")?
-                .insert(&u32_to_ivec(uid), user_encode)?;
 
-            Claim::update_role(&db, uid)?;
+            if user.role != role {
+                user.role = role;
+                let user_encode = bincode::encode_to_vec(&user, standard())?;
+                db.open_tree("users")?
+                    .insert(&u32_to_ivec(uid), user_encode)?;
+
+                Claim::update_role(&db, uid)?;
+
+                add_notification(&db, uid, NtType::SiteNotification, role as u32, 0)?;
+            }
             target = "/user/list".to_string();
         }
         Ordering::Less => unreachable!(),

@@ -9,13 +9,13 @@ use axum::{
 };
 use bincode::config::standard;
 use serde::Deserialize;
-use sled::Db;
+use sled::{Db, IVec};
 
 use crate::error::AppError;
 
 use super::{
-    get_ids_by_prefix, get_one, get_site_config, has_unread, into_response, u32_to_ivec,
-    u8_slice_to_u32, Claim, Comment, PageData, Post, Solo, User,
+    get_ids_by_prefix, get_one, get_site_config, has_unread, incr_id, into_response, u32_to_ivec,
+    u8_slice_to_u32, Claim, Comment, Inn, PageData, Post, Solo, User,
 };
 
 /// notification.html
@@ -217,7 +217,43 @@ pub(crate) async fn notification(
                 };
                 notifications.push(notification);
             }
-            _ => todo!(),
+            NtType::InnNotification => {
+                let role = u8_slice_to_u32(&value[0..4]);
+                let iid = u8_slice_to_u32(&value[4..8]);
+                let inn: Inn = get_one(&db, "inns", iid)?;
+                let notification = Notification {
+                    nid,
+                    nt_type: nt_type.to_string(),
+                    uid: claim.uid,
+                    username: claim.username.clone(),
+                    id1: 0,
+                    id2: 0,
+                    id3: 0,
+                    content1: "".into(),
+                    content2: format!(
+                        "Your role in {} (id:{}) has been changed to {role}",
+                        inn.inn_name, iid
+                    ),
+                    is_read: value[8] == 1,
+                };
+                notifications.push(notification);
+            }
+            NtType::SiteNotification => {
+                let role = u8_slice_to_u32(&value[0..4]);
+                let notification = Notification {
+                    nid,
+                    nt_type: nt_type.to_string(),
+                    uid: claim.uid,
+                    username: claim.username.clone(),
+                    id1: 0,
+                    id2: 0,
+                    id3: 0,
+                    content1: "".into(),
+                    content2: format!("Your site role has been changed to {role}"),
+                    is_read: value[8] == 1,
+                };
+                notifications.push(notification);
+            }
         }
 
         if n >= 30 {
@@ -257,4 +293,24 @@ pub(crate) async fn notification(
 struct InnNotification {
     iid: u32,
     uid: u32,
+}
+
+pub(super) fn add_notification(
+    db: &Db,
+    uid: u32,
+    nt_type: NtType,
+    id1: u32,
+    id2: u32,
+) -> Result<(), AppError> {
+    let nid = incr_id(db, "notifications_count")?;
+    let k = [
+        &u32_to_ivec(uid),
+        &u32_to_ivec(nid),
+        &IVec::from(&[nt_type as u8]),
+    ]
+    .concat();
+    let v = [&u32_to_ivec(id1), &u32_to_ivec(id2), &IVec::from(&[0])].concat();
+    db.open_tree("notifications")?.insert(k, v)?;
+
+    Ok(())
 }

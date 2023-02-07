@@ -15,7 +15,7 @@ use super::{
     extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag,
     get_inn_role, get_one, get_range, get_site_config, get_uid_by_name, has_unread, incr_id,
     into_response, is_mod, ivec_to_u32,
-    notification::{mark_read, NtType},
+    notification::{add_notification, mark_read, NtType},
     timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
     utils::md2html,
     Claim, Comment, FormPost, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
@@ -33,7 +33,7 @@ use axum::{
 use bincode::config::standard;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
-use sled::{Batch, Db, IVec};
+use sled::{Batch, Db};
 use std::{collections::BTreeSet, path::PathBuf};
 use validator::Validate;
 
@@ -1342,7 +1342,6 @@ pub(crate) async fn comment_post(
 
     // extract @username or @uid notificaiton
     let notifications = extract_element(&content, 5, '@');
-    let notification_tree = db.open_tree("notifications")?;
     for notification in &notifications {
         let (uid, username) = match notification.parse::<u32>() {
             Ok(uid) => {
@@ -1366,18 +1365,9 @@ pub(crate) async fn comment_post(
         content = content.replace(&from, &to);
 
         // notify user to be mentioned in comment
-
         // prevent duplicate notifications
         if uid != post.uid {
-            let nid = incr_id(&db, "notifications_count")?;
-            let k = [
-                &u32_to_ivec(uid),
-                &u32_to_ivec(nid),
-                &IVec::from(&[NtType::PostMention as u8]),
-            ]
-            .concat();
-            let v = [&pid_ivec, &u32_to_ivec(cid), &IVec::from(&[0])].concat();
-            notification_tree.insert(k, v)?;
+            add_notification(&db, uid, NtType::PostMention, pid, cid)?;
         }
     }
 
@@ -1438,15 +1428,7 @@ pub(crate) async fn comment_post(
 
     // notify post author
     if post.uid != claim.uid {
-        let nid = incr_id(&db, "notifications_count")?;
-        let k = [
-            &u32_to_ivec(post.uid),
-            &u32_to_ivec(nid),
-            &IVec::from(&[NtType::PostComment as u8]),
-        ]
-        .concat();
-        let v = [&pid_ivec, &u32_to_ivec(cid), &IVec::from(&[0])].concat();
-        notification_tree.insert(k, v)?;
+        add_notification(&db, post.uid, NtType::PostComment, pid, cid)?;
     }
 
     user_stats(&db, claim.uid, "comment")?;
