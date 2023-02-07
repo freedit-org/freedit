@@ -1,6 +1,6 @@
 use super::{
     get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, into_response,
-    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, SourceItem, User,
+    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, User,
 };
 use crate::{
     controller::{incr_id, ivec_to_u32, Feed, Item},
@@ -14,7 +14,7 @@ use axum::{
     Form, TypedHeader,
 };
 use bincode::config::standard;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -23,6 +23,56 @@ use sled::{Db, IVec};
 use std::{collections::HashSet, time::Duration};
 use tracing::error;
 use validator::Validate;
+
+struct SourceItem {
+    link: String,
+    title: String,
+    updated: i64,
+    content: String,
+}
+
+impl TryFrom<rss::Item> for SourceItem {
+    type Error = AppError;
+    fn try_from(rss: rss::Item) -> Result<Self, Self::Error> {
+        let updated = if let Some(ref pub_date) = rss.pub_date {
+            if let Ok(ts) = DateTime::parse_from_rfc2822(pub_date) {
+                ts.timestamp()
+            } else {
+                Utc::now().timestamp()
+            }
+        } else {
+            Utc::now().timestamp()
+        };
+
+        let Some(link) = rss.link else {
+            return Err(AppError::InvalidFeedLink);
+        };
+
+        Ok(Self {
+            link,
+            title: rss.title.unwrap_or_else(|| "No Title".to_owned()),
+            updated,
+            content: rss.description.unwrap_or_default(),
+        })
+    }
+}
+
+impl From<atom_syndication::Entry> for SourceItem {
+    fn from(atom: atom_syndication::Entry) -> Self {
+        let updated = if let Some(published) = atom.published {
+            published.timestamp()
+        } else {
+            atom.updated.timestamp()
+        };
+
+        Self {
+            link: atom.links[0].href.clone(),
+            title: atom.title.to_string(),
+            updated,
+            content: atom.content.unwrap_or_default().value.unwrap_or_default(),
+        }
+    }
+}
 
 /// Page data: `feed.html`
 #[derive(Template)]
