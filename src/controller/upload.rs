@@ -17,7 +17,8 @@ use tokio::fs;
 use crate::{config::CONFIG, error::AppError};
 
 use super::{
-    get_inn_role, get_site_config, has_unread, incr_id, into_response, u32_to_ivec, Claim, PageData,
+    get_inn_role, get_site_config, has_unread, incr_id, inn::ParamsTag, into_response, u32_to_ivec,
+    Claim, PageData,
 };
 
 #[derive(Deserialize)]
@@ -66,6 +67,67 @@ pub(crate) async fn upload_pic_post(
     }
 
     Ok(Redirect::to(&target))
+}
+
+/// Page data: `gallery.html`
+#[derive(Template)]
+#[template(path = "gallery.html")]
+struct PageGallery<'a> {
+    page_data: PageData<'a>,
+    imgs: Vec<String>,
+    anchor: usize,
+    is_desc: bool,
+}
+
+/// `GET /gallery`
+pub(crate) async fn gallery(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Query(params): Query<ParamsTag>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = get_site_config(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let has_unread = has_unread(&db, claim.uid)?;
+
+    let anchor = params.anchor.unwrap_or(0);
+    let is_desc = params.is_desc.unwrap_or(true);
+
+    let mut imgs = Vec::new();
+    for (idx, i) in db
+        .open_tree("user_uploads")?
+        .scan_prefix(u32_to_ivec(claim.uid))
+        .enumerate()
+    {
+        if idx < anchor {
+            continue;
+        }
+
+        let (_, v) = i?;
+        let img = String::from_utf8_lossy(&v).to_string();
+
+        if !imgs.contains(&img) {
+            imgs.push(img);
+        }
+
+        if imgs.len() >= 10 {
+            break;
+        }
+    }
+
+    if is_desc {
+        imgs.reverse();
+    }
+
+    let page_data = PageData::new("gallery", &site_config, Some(claim), has_unread);
+    let page_gallery = PageGallery {
+        page_data,
+        imgs,
+        anchor,
+        is_desc,
+    };
+
+    Ok(into_response(&page_gallery, "html"))
 }
 
 /// Page data: `upload.html`

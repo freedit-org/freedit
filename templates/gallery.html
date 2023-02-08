@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="content">
+    {% for img in imgs %}
+    <figure>
+        <img src="/static/upload/{{img}}">
+        <figcaption>
+            <code>![](/static/upload/{{img}})</code>
+        </figcaption>
+    </figure>
+    {% endfor %}
+</div>
+
+<div class="divider"></div>
+
+<nav class="pagination">
+    {% if anchor < 10 %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+        <a class="pagination-previous" href="/gallery?anchor={{anchor - 10}}&is_desc={{is_desc}}">Prev</a>
+    {% endif %}
+
+    {% if imgs.len() < 10 %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        <a class="pagination-next" href="/gallery?anchor={{anchor + 10}}&is_desc={{is_desc}}">Next</a>
+    {% endif %}
+</nav>
+{% endblock %}

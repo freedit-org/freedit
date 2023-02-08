@@ -621,8 +621,8 @@ struct PageTag<'a> {
 /// url params: `tag.html`
 #[derive(Deserialize)]
 pub(crate) struct ParamsTag {
-    anchor: Option<usize>,
-    is_desc: Option<bool>,
+    pub(crate) anchor: Option<usize>,
+    pub(crate) is_desc: Option<bool>,
 }
 
 /// `GET /inn/tag/:tag` tag page

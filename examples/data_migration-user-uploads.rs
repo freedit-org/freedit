@@ -13,8 +13,11 @@ fn main() {
     for i in tree.iter() {
         let img_id = incr_id(&db, "imgs_count").unwrap();
         let (k, _) = i.unwrap();
+        println!("{:?}", &k);
 
         let new_k = [&k[0..4], &u32_to_ivec(img_id)].concat();
+        println!("{:?}", &new_k[0..4]);
+        println!("{:?}", String::from_utf8_lossy(&k[4..]));
         tree.insert(new_k, &k[4..]).unwrap();
     }
 }

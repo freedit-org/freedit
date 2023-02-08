@@ -13,7 +13,7 @@ use crate::{
         serve_dir,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         style,
-        upload::{upload, upload_pic_post, upload_post},
+        upload::{gallery, upload, upload_pic_post, upload_post},
         user::{
             remove_session, reset, reset_post, role_post, signin, signin_post, signout, signup,
             signup_post, user, user_follow, user_list, user_password_post, user_recovery_code,
@@ -95,6 +95,7 @@ pub(super) async fn router(db: Db) -> Router {
             "/upload",
             get(upload).post(upload_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),
         )
+        .route("/gallery", get(gallery))
         .route("/feed/:uid", get(feed))
         .route("/feed/add", get(feed_add).post(feed_add_post))
         .route("/feed/update", get(feed_update))
