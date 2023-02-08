@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-rc.2] - 2023-02-08
+
+### Fixed
+
+- remove notification if the msg is deleted #67 
+- Solo like should be descending fix #68
+- /user/list filter is broken #69
+
 ## [0.3.0-rc.1] - 2023-02-07
 
 ### Changed
@@ -85,7 +93,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.1...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.2...HEAD
+[0.3.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.1...v0.3.0-rc.2
 [0.3.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.2.10...v0.3.0-rc.1
 [0.2.10]: https://github.com/freedit-org/freedit/compare/v0.2.9...v0.2.10
 [0.2.9]: https://github.com/freedit-org/freedit/compare/v0.2.8...v0.2.9
