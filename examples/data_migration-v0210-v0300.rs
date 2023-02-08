@@ -21,6 +21,8 @@ fn main() {
         } else {
             add_notification(&db, uid, NtType::SoloComment, cid, pid).unwrap();
         }
+
+        tree.remove(k).unwrap();
     }
 }
 

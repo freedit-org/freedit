@@ -19,6 +19,7 @@ fn main() {
         println!("{:?}", &new_k[0..4]);
         println!("{:?}", String::from_utf8_lossy(&k[4..]));
         tree.insert(new_k, &k[4..]).unwrap();
+        tree.remove(k).unwrap();
     }
 }
 
