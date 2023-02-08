@@ -172,6 +172,9 @@ pub(crate) async fn solo_list(
                 {
                     let (start, end) = get_range(sids.len(), &page_params);
                     index = sids[start - 1..end].to_vec();
+                    if is_desc {
+                        index.reverse();
+                    }
                 };
             }
         }
