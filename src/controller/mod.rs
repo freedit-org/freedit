@@ -4,15 +4,16 @@
 //! to record the total number (we use **N** to refer this kind of value, and their type is [u32]).
 //!
 //! ### user
-//! | tree             | key                  | value      | set       | get                   |
-//! |------------------|----------------------|------------|-----------|-----------------------|
-//! | default          | "users_count"        | N          | [incr_id] | [get_count]           |
-//! | "users"          | `uid`                | [`User`]   |           | [get_one]/[get_batch] |
-//! | "usernames"      | `username`           | `uid`      |           | [get_uid_by_name]     |
-//! | "user_following" | `uid#uid`            | `&[]`      |           | [get_ids_by_prefix]   |
-//! | "user_followers" | `uid#uid`            | `&[]`      |           | [get_ids_by_prefix]   |
-//! | "user_stats"     | `timestamp_uid_type` | N          |           |                       |
-//! | "user_uploads"   | `uid#image_hash.ext` | `&[]`      |           |                       |
+//! | tree             | key                  | value            | set       | get                   |
+//! |------------------|----------------------|------------------|-----------|-----------------------|
+//! | default          | "users_count"        | N                | [incr_id] | [get_count]           |
+//! | "users"          | `uid`                | [`User`]         |           | [get_one]/[get_batch] |
+//! | "usernames"      | `username`           | `uid`            |           | [get_uid_by_name]     |
+//! | "user_following" | `uid#uid`            | `&[]`            |           | [get_ids_by_prefix]   |
+//! | "user_followers" | `uid#uid`            | `&[]`            |           | [get_ids_by_prefix]   |
+//! | "user_stats"     | `timestamp_uid_type` | N                |           |                       |
+//! | "user_uploads"   | `uid#img_id#`        | `image_hash.ext` |           |                       |
+//! | default          | "imgs_count"         | N                |           |                       |
 //!
 //! ### notification
 //! | tree            | key                   | value             |
@@ -578,6 +579,18 @@ fn ivec_to_u32(iv: &IVec) -> u32 {
 /// convert `&[u8]` to `u32`
 fn u8_slice_to_u32(bytes: &[u8]) -> u32 {
     u32::from_be_bytes(bytes.try_into().unwrap())
+}
+
+/// convert `i64` to [IVec]
+#[inline]
+fn i64_to_ivec(number: i64) -> IVec {
+    IVec::from(number.to_be_bytes().to_vec())
+}
+
+/// convert `&[u8]` to `i64`
+#[inline]
+fn u8_slice_to_i64(bytes: &[u8]) -> i64 {
+    i64::from_be_bytes(bytes.try_into().unwrap())
 }
 
 /// get uid by username

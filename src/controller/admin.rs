@@ -230,8 +230,9 @@ pub(crate) async fn admin_view(
                 }
                 "user_uploads" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
-                    let img = String::from_utf8_lossy(&k[4..]);
-                    ones.push(format!("{uid} - {img}"));
+                    let img_id = u8_slice_to_u32(&k[4..8]);
+                    let img = String::from_utf8_lossy(&v);
+                    ones.push(format!("{uid} - {img_id} - {img}"));
                 }
                 "user_folders" => {
                     let uid = u8_slice_to_u32(&k[0..4]);

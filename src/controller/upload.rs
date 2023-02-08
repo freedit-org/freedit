@@ -17,7 +17,7 @@ use tokio::fs;
 use crate::{config::CONFIG, error::AppError};
 
 use super::{
-    get_inn_role, get_site_config, has_unread, into_response, u32_to_ivec, Claim, PageData,
+    get_inn_role, get_site_config, has_unread, incr_id, into_response, u32_to_ivec, Claim, PageData,
 };
 
 #[derive(Deserialize)]
@@ -184,8 +184,9 @@ pub(crate) async fn upload_post(
         let location = format!("{}/{}", &CONFIG.upload_path, fname);
 
         fs::write(location, &img_data).await.unwrap();
-        let k = [&u32_to_ivec(claim.uid), fname.as_bytes()].concat();
-        batch.insert(k, &[]);
+        let img_id = incr_id(&db, "imgs_count")?;
+        let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(img_id)].concat();
+        batch.insert(k, &*fname);
 
         imgs.push(fname);
     }

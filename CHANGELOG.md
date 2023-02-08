@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**breaking changes**
+
+### Changed
+
+* tree `user_uploads`: changed from `uid#image_hash.ext => &[]` to `uid#img_id => image_hash.ext`
+
 ## [0.3.0-rc.2] - 2023-02-08
 
 ### Fixed
@@ -22,7 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **breaking changes**
 
 * rewrite notifications: tree "notifications" changed from old kv: `uid#pid#cid => notification_code` to new kv: `uid#nid#nt_type => id1#id2#is_read`
-
 
 ## [0.2.10] - 2023-02-02
 

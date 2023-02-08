@@ -1,6 +1,7 @@
 use super::{
-    get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, has_unread, into_response,
-    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, Claim, PageData, ParamsPage, User,
+    get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, has_unread, i64_to_ivec,
+    into_response, timestamp_to_date, u32_to_ivec, u8_slice_to_i64, u8_slice_to_u32, Claim,
+    PageData, ParamsPage, User,
 };
 use crate::{
     controller::{incr_id, ivec_to_u32, Feed, Item},
@@ -19,7 +20,7 @@ use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
-use sled::{Db, IVec};
+use sled::Db;
 use std::{collections::HashSet, time::Duration};
 use tracing::error;
 use validator::Validate;
@@ -363,7 +364,7 @@ fn get_item_ids_and_ts(db: &Db, tree: &str, id: u32) -> Result<Vec<(u32, i64)>, 
     for i in db.open_tree(tree)?.scan_prefix(u32_to_ivec(id)) {
         let (k, v) = i?;
         let item_id = u8_slice_to_u32(&k[4..8]);
-        let ts = i64::from_be_bytes(v.to_vec().try_into().unwrap());
+        let ts = u8_slice_to_i64(&v);
         res.push((item_id, ts))
     }
     Ok(res)
@@ -783,10 +784,4 @@ pub(crate) async fn feed_subscribe(
     }
 
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
-}
-
-/// convert `i64` to [IVec]
-#[inline]
-fn i64_to_ivec(number: i64) -> IVec {
-    IVec::from(number.to_be_bytes().to_vec())
 }
