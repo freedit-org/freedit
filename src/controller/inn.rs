@@ -911,7 +911,8 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
             let user: User = get_one(db, "users", post.uid)?;
             let date = timestamp_to_date(post.created_at);
             let inn: Inn = get_one(db, "inns", post.iid)?;
-            let comment_count = get_count(db, "post_comments_count", u32_to_ivec(*pid))? as u32;
+            let comment_count =
+                get_count_by_prefix(db, "post_comments", &u32_to_ivec(*pid))? as u32;
 
             let post_list = OutPostList {
                 pid: post.pid,
