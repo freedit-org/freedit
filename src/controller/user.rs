@@ -273,9 +273,7 @@ impl OutUserList {
             if idx < page_params.anchor {
                 continue;
             }
-            if idx >= page_params.anchor + page_params.n {
-                break;
-            }
+
             let (k, v) = i?;
             if let Some(role) = role {
                 if v[0] == role {
@@ -289,6 +287,10 @@ impl OutUserList {
                 let user: User = get_one(db, "users", uid)?;
                 let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
                 users.push(out_user_list);
+            }
+
+            if users.len() >= page_params.n {
+                break;
             }
         }
         Ok(users)
@@ -374,14 +376,16 @@ pub(crate) async fn user_list(
                 if idx < page_params.anchor {
                     continue;
                 }
-                if idx >= page_params.anchor + page_params.n {
-                    break;
-                }
+
                 let (_, v) = i?;
                 let (user, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                 if user.role == role {
                     let out_user_list = OutUserList::new(user.uid, user.username, user.about, role);
                     users.push(out_user_list);
+                }
+
+                if users.len() >= page_params.n {
+                    break;
                 }
             }
         } else {
