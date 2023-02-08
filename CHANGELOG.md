@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-rc.3] - 2023-02-08
+
 **breaking changes**
 
 ### Changed
 
 * tree `user_uploads`: changed from `uid#image_hash.ext => &[]` to `uid#img_id => image_hash.ext`
+
+### Added
+
+- `/gallery` Fix #64
 
 ## [0.3.0-rc.2] - 2023-02-08
 
