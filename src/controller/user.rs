@@ -1101,7 +1101,6 @@ impl Claim {
         if claim.role == 0 {
             return None;
         }
-        User::update_stats(db, claim.uid, "view").ok()?;
         Some(claim)
     }
 

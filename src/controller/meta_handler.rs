@@ -220,7 +220,7 @@ pub(super) fn get_referer(header: Option<TypedHeader<Referer>>) -> Option<String
     }
 }
 
-pub struct ParamsPage {
+pub(super) struct ParamsPage {
     pub(super) anchor: usize,
     pub(super) n: usize,
     pub(super) is_desc: bool,
