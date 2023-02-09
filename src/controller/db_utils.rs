@@ -33,7 +33,7 @@ pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// // get the user whose uid is 3.
 /// let user:User = get_one(&db, "users", 3)?;
 /// ```
@@ -54,7 +54,7 @@ where
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// // get the inns which iid is between 101-110.
 /// let page_params = ParamsPage { anchor: 100, n: 10, is_desc: false };
 /// let inns: Vec<Inn> = get_batch(&db, "default", "inns_count", "inns", &page_params)?;
@@ -117,7 +117,7 @@ pub(super) fn get_range(count: usize, page_params: &ParamsPage) -> (usize, usize
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// // get the comments count of the post 3.
 /// let comment_count = get_count(db, "post_comments_count", u32_to_ivec(pid))?
 /// ```
@@ -141,7 +141,7 @@ where
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// // get the third comment's upvotes of the post 1.
 /// // key: pid#cid#uid
 /// let prefix = [&u32_to_ivec(1), &u32_to_ivec(3)].concat();
@@ -155,7 +155,7 @@ pub(super) fn get_count_by_prefix(db: &Db, tree: &str, prefix: &[u8]) -> Result<
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// // get the id of inns that someone has joined.
 /// user_iins = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None).unwrap();
 /// ```
@@ -260,7 +260,7 @@ impl Iterator for IterType {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// let new_user_id = incr_id(db, "users_count")?;
 /// ```
 pub fn incr_id<K>(tree: &Tree, key: K) -> Result<u32, AppError>
@@ -299,7 +299,7 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// let input = "hi, @cc this is a test. If no space at last, @notag";
 /// let out = extract_element(input, 3, '@');
 /// assert_eq!(out, vec!["cc"]);
@@ -327,7 +327,7 @@ pub(super) fn extract_element(input: &str, max_len: usize, char: char) -> Vec<St
 ///
 /// # Examples
 ///
-/// ```no_run
+/// ```ignore
 /// // format like: "624e97ca_sSUl_K03nbUmPQLFe2CWk"
 /// let nanoid = generate_nanoid_expire();
 /// ```
