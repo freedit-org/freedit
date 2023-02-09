@@ -129,15 +129,15 @@ use self::db_utils::{
 /// user
 ///
 /// ### Permissions
-/// | role     | code | post/solo | creat inn | site admin |
-/// |----------|------|:---------:|:---------:|:----------:|
-/// | Banned   | 0    |           |           |            |
-/// | Standard | 10   | ✅        |           |            |
-/// | Senior   | 100  | ✅        | ✅        |            |
-/// | Admin    | 255  | ✅        | ✅        | ✅         |
+/// | role     | post/solo | creat inn | site admin |
+/// |----------|:---------:|:---------:|:----------:|
+/// | Banned   |           |           |            |
+/// | Standard | ✅        |           |            |
+/// | Senior   | ✅        | ✅        |            |
+/// | Admin    | ✅        | ✅        | ✅         |
 
 #[derive(Default, Encode, Decode, Serialize, Debug)]
-pub struct User {
+struct User {
     uid: u32,
     username: String,
     password_hash: String,
@@ -208,7 +208,7 @@ impl User {
 /// * 0: Everyone
 ///
 #[derive(Encode, Decode, Serialize, Debug)]
-pub struct Solo {
+struct Solo {
     sid: u32,
     uid: u32,
     visibility: u32,
@@ -220,7 +220,7 @@ pub struct Solo {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
-pub struct Inn {
+struct Inn {
     iid: u32,
     inn_name: String,
     about: String,
@@ -232,7 +232,7 @@ pub struct Inn {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
-pub struct Post {
+struct Post {
     pid: u32,
     uid: u32,
     iid: u32,
@@ -246,7 +246,7 @@ pub struct Post {
 
 /// Form data: `/inn/:iid/post/:pid` post create/edit page
 #[derive(Debug, Default, Deserialize, Validate, Encode, Decode)]
-pub struct FormPost {
+pub(super) struct FormPost {
     iid: u32,
     #[validate(length(min = 1, max = 256))]
     title: String,
@@ -259,7 +259,7 @@ pub struct FormPost {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
-pub struct Comment {
+struct Comment {
     cid: u32,
     pid: u32,
     uid: u32,
@@ -270,13 +270,13 @@ pub struct Comment {
 }
 
 #[derive(Encode, Decode, Debug)]
-pub struct Feed {
+struct Feed {
     link: String,
     title: String,
 }
 
 #[derive(Encode, Decode, Debug)]
-pub struct Item {
+struct Item {
     link: String,
     title: String,
     feed_title: String,
@@ -286,7 +286,7 @@ pub struct Item {
 
 /// Go to source code to see default value: [SiteConfig::default()]
 #[derive(Serialize, Deserialize, Encode, Decode, Validate, Debug)]
-pub struct SiteConfig {
+pub(super) struct SiteConfig {
     #[validate(length(max = 64))]
     site_name: String,
     // domain only used for inn feed

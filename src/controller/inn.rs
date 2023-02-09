@@ -1,15 +1,15 @@
 //! ## Inn
 //!
 //! ### Permissions
-//! | role    | code | comment | post | update timeline | lock post | inn admin | protected | Note             |
-//! |---------|------|:-------:|:----:|:---------------:|:---------:|:---------:|:---------:|------------------|
-//! | Pending | 1    |         |      |                 |           |           |           | Apply or Private |
-//! | Deny    | 2    |         |      |                 |           |           |           | Apply or Private |
-//! | Limited | 3    | ✅      |      |                 |           |           |           |                  |
-//! | Intern  | 4    | ✅      | ✅   |                 |           |           |           |                  |
-//! | Fellow  | 5    | ✅      | ✅   | ✅              |           |           |           |                  |
-//! | Mod     | 7    | ✅      | ✅   | ✅              | ✅        | ✅        |           |                  |
-//! | Super   | 10   | ✅      | ✅   | ✅              | ✅        | ✅        | ✅        |                  |
+//! | role    | comment | post | update timeline | lock post | inn admin | protected | Note             |
+//! |---------|:-------:|:----:|:---------------:|:---------:|:---------:|:---------:|------------------|
+//! | Pending |         |      |                 |           |           |           | Apply or Private |
+//! | Deny    |         |      |                 |           |           |           | Apply or Private |
+//! | Limited | ✅      |      |                 |           |           |           |                  |
+//! | Intern  | ✅      | ✅   |                 |           |           |           |                  |
+//! | Fellow  | ✅      | ✅   | ✅              |           |           |           |                  |
+//! | Mod     | ✅      | ✅   | ✅              | ✅        | ✅        |           |                  |
+//! | Super   | ✅      | ✅   | ✅              | ✅        | ✅        | ✅        |                  |
 
 use super::{
     db_utils::{
