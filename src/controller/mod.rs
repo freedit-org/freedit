@@ -1,7 +1,7 @@
 //! ## model
 //!
-//! In order to generate auto increment id, we need to get the max id, so we have **x_count** key
-//! to record the total number (we use **N** to refer this kind of value, and their type is [u32]).
+//! Any changes in these tables should be handled with care and usually
+//! involve data migration, otherwise data might be lost.
 //!
 //! ### user
 //! | tree             | key                  | value            |
@@ -105,26 +105,24 @@ pub mod feed;
 pub mod meta_handler;
 pub mod notification;
 
-mod fmt;
-
 pub(super) mod admin;
 pub(super) mod inn;
 pub(super) mod solo;
 pub(super) mod upload;
 pub(super) mod user;
 
+mod fmt;
+
+use self::db_utils::{
+    get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
+};
 use crate::{controller::meta_handler::into_response, error::AppError};
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use chrono::{Days, Utc};
 use serde::{Deserialize, Serialize};
 use sled::Db;
-
 use validator::Validate;
-
-use self::db_utils::{
-    get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
-};
 
 /// user
 ///

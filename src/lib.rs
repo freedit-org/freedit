@@ -5,15 +5,14 @@ pub mod config;
 pub mod controller;
 pub mod error;
 
+use data_encoding::HEXLOWER;
+use once_cell::sync::Lazy;
+use ring::digest::{Context, Digest, SHA256};
 use std::{
     env,
     fs::File,
     io::{BufReader, Read},
 };
-
-use data_encoding::HEXLOWER;
-use once_cell::sync::Lazy;
-use ring::digest::{Context, Digest, SHA256};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GIT_COMMIT: &str = env!("GIT_COMMIT");

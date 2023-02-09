@@ -1,3 +1,5 @@
+use super::{fmt::md2html, Claim, SiteConfig};
+use crate::{config::CONFIG, error::AppError, CURRENT_SHA256, GIT_COMMIT, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
@@ -16,10 +18,6 @@ use tokio::signal;
 use tower_http::services::ServeDir;
 use tracing::error;
 use validator::Validate;
-
-use crate::{config::CONFIG, error::AppError, CURRENT_SHA256, GIT_COMMIT, VERSION};
-
-use super::{fmt::md2html, Claim, SiteConfig};
 
 pub(super) fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
     match t.render() {

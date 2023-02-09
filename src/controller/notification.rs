@@ -1,5 +1,11 @@
-use std::fmt::Display;
-
+use super::{
+    get_ids_by_prefix, get_one, incr_id, into_response,
+    meta_handler::PageData,
+    u32_to_ivec, u8_slice_to_u32,
+    user::{InnRole, UserRole},
+    Claim, Comment, Inn, Post, SiteConfig, Solo, User,
+};
+use crate::error::AppError;
 use askama::Template;
 use axum::{
     extract::{Query, State},
@@ -10,16 +16,7 @@ use axum::{
 use bincode::config::standard;
 use serde::Deserialize;
 use sled::{Db, IVec};
-
-use crate::error::AppError;
-
-use super::{
-    get_ids_by_prefix, get_one, incr_id, into_response,
-    meta_handler::PageData,
-    u32_to_ivec, u8_slice_to_u32,
-    user::{InnRole, UserRole},
-    Claim, Comment, Inn, Post, SiteConfig, Solo, User,
-};
+use std::fmt::Display;
 
 /// notification.html
 #[derive(Template)]
