@@ -6,12 +6,12 @@ use std::io::Write;
 use std::path::Path;
 use tracing::{error, info, warn};
 
-pub(crate) static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
+pub static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct Config {
-    pub(crate) db: String,
-    pub(crate) addr: String,
+pub struct Config {
+    pub db: String,
+    pub addr: String,
     pub(crate) avatars_path: String,
     pub(crate) inn_icons_path: String,
     pub(crate) upload_path: String,
@@ -44,7 +44,7 @@ impl Config {
         config
     }
 
-    pub(crate) async fn tls_config(&self) -> Option<RustlsConfig> {
+    pub async fn tls_config(&self) -> Option<RustlsConfig> {
         if let Ok(rustls_config) = RustlsConfig::from_pem_file(&CONFIG.cert, &CONFIG.key).await {
             Some(rustls_config)
         } else {

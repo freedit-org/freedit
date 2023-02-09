@@ -53,7 +53,7 @@ jobs:
       - name: Cargo doc
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          cargo doc --no-deps
+          cargo doc --no-deps --document-private-items
           echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
 
       - name: Upload artifact

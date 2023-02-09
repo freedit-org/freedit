@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub(super) enum AppError {
+pub enum AppError {
     // 5XX
     #[error("Sled db error: {}", .0)]
     SledError(#[from] sled::Error),

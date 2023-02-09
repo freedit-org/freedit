@@ -14,10 +14,11 @@ use sled::{Db, IVec};
 use crate::error::AppError;
 
 use super::{
-    get_ids_by_prefix, get_one, get_site_config, has_unread, incr_id, into_response, u32_to_ivec,
-    u8_slice_to_u32,
+    get_ids_by_prefix, get_one, incr_id, into_response,
+    meta_handler::PageData,
+    u32_to_ivec, u8_slice_to_u32,
     user::{InnRole, UserRole},
-    Claim, Comment, Inn, PageData, Post, Solo, User,
+    Claim, Comment, Inn, Post, SiteConfig, Solo, User,
 };
 
 /// notification.html
@@ -36,7 +37,7 @@ pub(crate) struct NotifyParams {
 }
 
 #[repr(u8)]
-pub(super) enum NtType {
+pub enum NtType {
     PostComment = 1,
     PostMention = 2,
     SoloComment = 3,
@@ -101,7 +102,7 @@ pub(crate) async fn notification(
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<NotifyParams>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -289,7 +290,7 @@ pub(crate) async fn notification(
         }
     }
 
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     let page_data = PageData::new("notification", &site_config, Some(claim), has_unread);
     let notification_page = NotificationPage {
         page_data,
@@ -305,7 +306,7 @@ struct InnNotification {
     uid: u32,
 }
 
-pub(super) fn add_notification(
+pub fn add_notification(
     db: &Db,
     uid: u32,
     nt_type: NtType,

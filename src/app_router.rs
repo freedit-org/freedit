@@ -3,16 +3,14 @@ use crate::{
     controller::{
         admin::{admin, admin_post, admin_stats, admin_view},
         feed::{feed, feed_add, feed_add_post, feed_read, feed_star, feed_subscribe, feed_update},
-        handler_404, health_check, home,
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
             edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_inn, mod_inn_post,
             post, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
         },
+        meta_handler::{handler_404, home, serve_dir, style},
         notification::notification,
-        serve_dir,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
-        style,
         upload::{gallery, upload, upload_pic_post, upload_post},
         user::{
             remove_session, reset, reset_post, role_post, signin, signin_post, signout, signup,
@@ -36,7 +34,7 @@ use tracing::{info, Level};
 
 const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
 
-pub(super) async fn router(db: Db) -> Router {
+pub async fn router(db: Db) -> Router {
     let middleware_stack = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: BoxError| async {
             StatusCode::REQUEST_TIMEOUT
@@ -105,7 +103,6 @@ pub(super) async fn router(db: Db) -> Router {
         .with_state(db);
 
     let mut router_static = Router::new()
-        .route("/health_check", get(health_check))
         .route("/static/style.css", get(style))
         .nest_service("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
         .nest_service("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)

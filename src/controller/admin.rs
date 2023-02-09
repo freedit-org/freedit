@@ -1,9 +1,11 @@
 use super::{
-    get_site_config, has_unread, into_response, timestamp_to_date, u8_slice_to_u32, Claim, Feed,
-    FormPost, Item, IterType, PageData, SiteConfig, ValidatedForm,
+    db_utils::{ivec_to_u32, u8_slice_to_u32, IterType},
+    fmt::ts_to_date,
+    meta_handler::{into_response, PageData, ValidatedForm},
+    Claim, Feed, FormPost, Item, SiteConfig,
 };
 use crate::{
-    controller::{ivec_to_u32, Comment, Inn, Post, Solo, User},
+    controller::{Comment, Inn, Post, Solo, User},
     error::AppError,
 };
 use askama::Template;
@@ -44,7 +46,7 @@ pub(crate) async fn admin_view(
     Query(params): Query<ParamsAdminView>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if claim.role != u8::MAX {
         return Err(AppError::Unauthorized);
@@ -172,7 +174,7 @@ pub(crate) async fn admin_view(
                 "user_stats" => {
                     let mut k_str = std::str::from_utf8(&k)?.split('_');
                     let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
-                    let date = timestamp_to_date(timestamp);
+                    let date = ts_to_date(timestamp);
                     let uid = k_str.next().unwrap();
                     let stat_type = k_str.next().unwrap().to_owned();
                     let count = ivec_to_u32(&v);
@@ -222,7 +224,7 @@ pub(crate) async fn admin_view(
                 }
                 "post_timeline" => {
                     let timestamp = i64::from(u8_slice_to_u32(&k[0..4]));
-                    let date = timestamp_to_date(timestamp);
+                    let date = ts_to_date(timestamp);
                     let iid = u8_slice_to_u32(&k[4..8]);
                     let pid = u8_slice_to_u32(&k[8..12]);
                     let visibility = u8_slice_to_u32(&v);
@@ -266,7 +268,7 @@ pub(crate) async fn admin_view(
         }
     }
 
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     let page_data = PageData::new("Admin view", &site_config, Some(claim), has_unread);
     let page_admin_view = PageAdminView {
         page_data,
@@ -294,13 +296,13 @@ pub(crate) async fn admin(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if claim.role != u8::MAX {
         return Err(AppError::Unauthorized);
     }
 
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     let page_data = PageData::new("Admin", &site_config, Some(claim), has_unread);
     let page_admin = PageAdmin {
         site_config: &site_config,
@@ -361,7 +363,7 @@ pub(crate) async fn admin_stats(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if claim.role != u8::MAX {
         return Err(AppError::Unauthorized);
@@ -372,7 +374,7 @@ pub(crate) async fn admin_stats(
         let (k, v) = i?;
         let mut k_str = std::str::from_utf8(&k)?.split('_');
         let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
-        let date = timestamp_to_date(timestamp);
+        let date = ts_to_date(timestamp);
         let uid = k_str.next().unwrap().to_owned();
         let stat_type = k_str.next().unwrap().to_owned();
         let count = ivec_to_u32(&v);
@@ -384,7 +386,7 @@ pub(crate) async fn admin_stats(
         stats.truncate(100);
     }
 
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     let page_data = PageData::new("Admin-pageview", &site_config, Some(claim), has_unread);
     let page_admin_pageview = PageAdminStats { page_data, stats };
     Ok(into_response(&page_admin_pageview, "html"))

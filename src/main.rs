@@ -1,28 +1,18 @@
 #![doc = include_str!("../README.md")]
 
-mod app_router;
-mod config;
-mod controller;
-mod error;
-
-use crate::{
-    app_router::router,
-    controller::{
-        feed::cron_feed,
-        shutdown_signal,
-        utils::{clear_invalid, CURRENT_SHA256},
-    },
-};
 use chrono::Utc;
-use config::CONFIG;
-use error::AppError;
+use freedit::{
+    app_router::router,
+    config::CONFIG,
+    controller::{db_utils::clear_invalid, feed::cron_feed, meta_handler::shutdown_signal},
+    error::AppError,
+    CURRENT_SHA256, GIT_COMMIT, VERSION,
+};
 use once_cell::sync::Lazy;
 use std::{fs, path::PathBuf};
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
-const GIT_COMMIT: &str = env!("GIT_COMMIT");
 static IS_DEBUG: Lazy<bool> =
     Lazy::new(|| matches!(std::env::var("PROFILE"), Ok(key) if key.as_str() == "debug"));
 

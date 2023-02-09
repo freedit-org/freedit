@@ -1,10 +1,14 @@
 use super::{
-    get_ids_by_prefix, get_one, get_range, get_referer, get_site_config, has_unread, i64_to_ivec,
-    into_response, timestamp_to_date, u32_to_ivec, u8_slice_to_i64, u8_slice_to_u32, Claim,
-    PageData, ParamsPage, User,
+    db_utils::{
+        get_ids_by_prefix, get_one, get_range, i64_to_ivec, ivec_to_u32, u32_to_ivec,
+        u8_slice_to_i64, u8_slice_to_u32,
+    },
+    fmt::ts_to_date,
+    meta_handler::{get_referer, into_response, PageData, ParamsPage},
+    Claim, SiteConfig, User,
 };
 use crate::{
-    controller::{incr_id, ivec_to_u32, Feed, Item},
+    controller::{incr_id, Feed, Item},
     error::AppError,
 };
 use askama::Template;
@@ -147,7 +151,7 @@ pub(crate) async fn feed(
     Path(uid): Path<u32>,
     Query(params): Query<ParamsFeed>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
     let mut read = false;
     let username = match claim {
@@ -330,7 +334,7 @@ pub(crate) async fn feed(
             item_id: i,
             title: item.title,
             feed_title: item.feed_title,
-            updated: timestamp_to_date(item.updated),
+            updated: ts_to_date(item.updated),
             is_starred,
             is_read,
         };
@@ -338,7 +342,7 @@ pub(crate) async fn feed(
     }
 
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -402,7 +406,7 @@ pub(crate) async fn feed_read(
     Query(params): Query<ParamsFeedRead>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let item: Item = get_one(&db, "items", item_id)?;
@@ -418,7 +422,7 @@ pub(crate) async fn feed_read(
         title: item.title,
         link: item.link,
         feed_title: item.feed_title,
-        updated: timestamp_to_date(item.updated),
+        updated: ts_to_date(item.updated),
         content: item.content,
         is_starred,
     };
@@ -429,7 +433,7 @@ pub(crate) async fn feed_read(
 
     let allow_img = params.allow_img.unwrap_or_default();
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -456,7 +460,7 @@ pub(crate) async fn feed_add(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
@@ -474,7 +478,7 @@ pub(crate) async fn feed_add(
     if folders.is_empty() {
         folders.insert("Default".to_owned());
     }
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     let page_data = PageData::new("Feed add", &site_config, Some(claim), has_unread);
     let page_feed_add = PageFeedAdd { page_data, folders };
 
@@ -506,7 +510,7 @@ pub(crate) async fn feed_add_post(
     cookie: Option<TypedHeader<Cookie>>,
     Form(form): Form<FormFeedAdd>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
@@ -565,7 +569,7 @@ pub(crate) async fn feed_update(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
@@ -692,7 +696,7 @@ async fn update(url: &str, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError>
     Ok((feed, item_ids))
 }
 
-pub(crate) async fn cron_feed(db: &Db) -> Result<(), AppError> {
+pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
     let mut set = HashSet::new();
     for i in &db.open_tree("user_folders")? {
         let (k, _) = i?;
@@ -730,7 +734,7 @@ pub(crate) async fn feed_star(
     cookie: Option<TypedHeader<Cookie>>,
     Path(item_id): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
@@ -760,7 +764,7 @@ pub(crate) async fn feed_subscribe(
     cookie: Option<TypedHeader<Cookie>>,
     Path((uid, feed_id)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 

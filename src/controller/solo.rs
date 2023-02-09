@@ -1,10 +1,10 @@
 use super::{
-    extract_element, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag, get_one, get_range,
-    get_referer, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, ivec_to_u32,
+    db_utils::{extract_element, get_count_by_prefix, get_ids_by_tag, get_range, IterType},
+    fmt::{md2html, ts_to_date},
+    get_ids_by_prefix, get_one, incr_id, into_response, ivec_to_u32,
+    meta_handler::{get_referer, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
-    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
-    utils::md2html,
-    Claim, IterType, PageData, ParamsPage, Solo, User, ValidatedForm,
+    u32_to_ivec, u8_slice_to_u32, Claim, SiteConfig, Solo, User,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -62,7 +62,7 @@ impl OutSolo {
     fn get(db: &Db, sid: u32, current_uid: Option<u32>) -> Result<Option<Self>, AppError> {
         let solo: Solo = get_one(db, "solos", sid)?;
         let user: User = get_one(db, "users", solo.uid)?;
-        let date = timestamp_to_date(solo.created_at);
+        let date = ts_to_date(solo.created_at);
 
         if let Some(uid) = current_uid {
             if solo.visibility == 20 {
@@ -130,7 +130,7 @@ pub(crate) async fn solo_list(
     Path(uid): Path<u32>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let n = site_config.per_page;
@@ -199,7 +199,7 @@ pub(crate) async fn solo_list(
     let filter = if claim.is_none() { None } else { params.filter };
 
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -243,7 +243,7 @@ pub(crate) async fn solo(
     Path(sid): Path<u32>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let out_solo =
@@ -268,7 +268,7 @@ pub(crate) async fn solo(
     }
 
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -353,7 +353,7 @@ pub(crate) async fn solo_post(
     cookie: Option<TypedHeader<Cookie>>,
     ValidatedForm(input): ValidatedForm<FormSolo>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -429,7 +429,7 @@ pub(crate) async fn solo_post(
                     }
                 }
                 Err(_) => {
-                    if let Some(uid) = get_uid_by_name(&db, notification)? {
+                    if let Some(uid) = User::get_uid_by_name(&db, notification)? {
                         (uid, notification.to_string())
                     } else {
                         continue;
@@ -470,7 +470,7 @@ pub(crate) async fn solo_post(
     let v = [&u32_to_ivec(claim.uid), &u32_to_ivec(visibility)].concat();
     db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
 
-    user_stats(&db, claim.uid, "solo")?;
+    User::update_stats(&db, claim.uid, "solo")?;
     claim.update_last_write(&db)?;
 
     let target = if input.reply_to > 0 {
@@ -489,7 +489,7 @@ pub(crate) async fn solo_like(
     Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let solo: Solo = get_one(&db, "solos", sid)?;
@@ -525,7 +525,7 @@ pub(crate) async fn solo_delete(
     Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let solo: Solo = get_one(&db, "solos", sid)?;

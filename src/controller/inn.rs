@@ -8,22 +8,22 @@
 //! | Limited | 3    | ✅      |      |                 |           |           |           |                  |
 //! | Intern  | 4    | ✅      | ✅   |                 |           |           |           |                  |
 //! | Fellow  | 5    | ✅      | ✅   | ✅              |           |           |           |                  |
-//! | Mod     | 8    | ✅      | ✅   | ✅              | ✅        | ✅        |           |                  |
+//! | Mod     | 7    | ✅      | ✅   | ✅              | ✅        | ✅        |           |                  |
 //! | Super   | 10   | ✅      | ✅   | ✅              | ✅        | ✅        | ✅        |                  |
 
 use super::{
-    extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix, get_ids_by_tag,
-    get_inn_role, get_one, get_range, get_site_config, get_uid_by_name, has_unread, incr_id,
-    into_response, is_mod, ivec_to_u32,
+    db_utils::{
+        extract_element, get_batch, get_count, get_count_by_prefix, get_ids_by_prefix,
+        get_ids_by_tag, get_one, get_range, ivec_to_u32, u32_to_ivec, u8_slice_to_u32, IterType,
+    },
+    fmt::{md2html, ts_to_date},
+    incr_id,
+    meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
-    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats,
-    utils::md2html,
-    Claim, Comment, FormPost, Inn, PageData, ParamsPage, Post, User, ValidatedForm,
+    user::InnRole,
+    Claim, Comment, FormPost, Inn, Post, SiteConfig, User,
 };
-use crate::{
-    controller::{get_count, IterType},
-    error::AppError,
-};
+use crate::error::AppError;
 use askama::Template;
 use axum::{
     extract::{Path, Query, State, TypedHeader},
@@ -61,7 +61,7 @@ pub(crate) async fn mod_inn(
     Path(iid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     if claim.role < 100 {
@@ -75,14 +75,14 @@ pub(crate) async fn mod_inn(
         }
     }
 
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     // create new inn
     if iid == 0 {
         let page_data = PageData::new("create new inn", &site_config, Some(claim), has_unread);
         let page_inn_create = PageInnCreate { page_data };
         Ok(into_response(&page_inn_create, "html"))
     } else {
-        if !is_mod(&db, claim.uid, iid)? {
+        if !User::is_mod(&db, claim.uid, iid)? {
             return Err(AppError::Unauthorized);
         }
 
@@ -118,7 +118,7 @@ pub(crate) async fn mod_inn_post(
     ValidatedForm(input): ValidatedForm<FormInn>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if claim.role < 100 {
         return Err(AppError::Unauthorized);
@@ -167,7 +167,7 @@ pub(crate) async fn mod_inn_post(
             return Err(AppError::NameExists);
         }
 
-        if !is_mod(&db, claim.uid, iid)? {
+        if !User::is_mod(&db, claim.uid, iid)? {
             return Err(AppError::Unauthorized);
         }
 
@@ -269,7 +269,7 @@ pub(crate) async fn inn_list(
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsInnList>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
     let n = site_config.per_page;
     let anchor = params.anchor.unwrap_or(0);
@@ -318,7 +318,7 @@ pub(crate) async fn inn_list(
 
     let filter = if claim.is_none() { None } else { params.filter };
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -372,16 +372,16 @@ pub(crate) async fn edit_post(
     Query(params): Query<ParamsPostCreate>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let joined_ids = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None)?;
     let mut joined = Vec::with_capacity(joined_ids.len());
     for id in joined_ids {
         let inn: Inn = get_one(&db, "inns", id)?;
-        let inn_role = get_inn_role(&db, inn.iid, claim.uid)?;
+        let inn_role = InnRole::get(&db, inn.iid, claim.uid)?;
         if let Some(role) = inn_role {
-            if role >= 4 {
+            if role >= InnRole::Intern {
                 joined.push((inn.inn_name, inn.iid));
             }
         }
@@ -392,7 +392,7 @@ pub(crate) async fn edit_post(
     }
 
     let mut selected_iid = params.iid.unwrap_or_default();
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     if pid == 0 {
         let mut draft = FormPost::default();
         let mut draft_titles = vec![];
@@ -456,7 +456,7 @@ pub(crate) async fn edit_post_post(
     ValidatedForm(input): ValidatedForm<FormPost>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let is_draft = input.is_draft.unwrap_or_default();
@@ -475,8 +475,8 @@ pub(crate) async fn edit_post_post(
     }
 
     let iid = input.iid;
-    let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
-    if inn_role <= 3 {
+    let inn_role = InnRole::get(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+    if inn_role <= InnRole::Limited {
         return Err(AppError::Unauthorized);
     }
 
@@ -586,7 +586,7 @@ pub(crate) async fn edit_post_post(
     // kv_pair: timestamp#iid#pid = visibility
     db.open_tree("post_timeline")?.insert(k, visibility_ivec)?;
 
-    user_stats(&db, claim.uid, "post")?;
+    User::update_stats(&db, claim.uid, "post")?;
     claim.update_last_write(&db)?;
 
     let target = format!("/post/{iid}/{pid}");
@@ -632,7 +632,7 @@ pub(crate) async fn tag(
     Path(tag): Path<String>,
     Query(params): Query<ParamsTag>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let n = site_config.per_page;
@@ -644,7 +644,7 @@ pub(crate) async fn tag(
     let out_post_list = get_out_post_list(&db, &index)?;
 
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -696,7 +696,7 @@ pub(crate) async fn inn(
     Path(iid): Path<u32>,
     Query(params): Query<ParamsInn>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let n = site_config.per_page;
@@ -710,7 +710,7 @@ pub(crate) async fn inn(
     let mut username: Option<String> = None;
     let mut is_mod = false;
     if let Some(ref claim) = claim {
-        is_mod = super::is_mod(&db, claim.uid, iid)?;
+        is_mod = User::is_mod(&db, claim.uid, iid)?;
 
         user_iins = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None);
         if let Ok(ref user_iins) = user_iins {
@@ -759,8 +759,8 @@ pub(crate) async fn inn(
     let mut inn_role = 0;
     if let Some(ref claim) = claim {
         if iid > 0 {
-            if let Ok(Some(role)) = get_inn_role(&db, iid, claim.uid) {
-                inn_role = role;
+            if let Ok(Some(role)) = InnRole::get(&db, iid, claim.uid) {
+                inn_role = role as u8;
             }
         }
     }
@@ -773,7 +773,7 @@ pub(crate) async fn inn(
 
     let filter = if claim.is_none() { None } else { params.filter };
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -845,7 +845,7 @@ pub(crate) async fn inn_feed(
         is_desc: true,
     };
 
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
 
     let mut index = Vec::with_capacity(page_params.n);
     let title;
@@ -875,7 +875,7 @@ pub(crate) async fn inn_feed(
     for (idx, i) in index.into_iter().enumerate() {
         let post: Post = get_one(&db, "posts", i)?;
         let user: User = get_one(&db, "users", post.uid)?;
-        let date = timestamp_to_date(post.created_at);
+        let date = ts_to_date(post.created_at);
         if idx == 0 {
             let naivedatetime = NaiveDateTime::from_timestamp_opt(post.created_at, 0).unwrap();
             updated = DateTime::<Utc>::from_utc(naivedatetime, Utc).to_rfc3339();
@@ -909,7 +909,7 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
         for pid in index {
             let post: Post = get_one(db, "posts", *pid)?;
             let user: User = get_one(db, "users", post.uid)?;
-            let date = timestamp_to_date(post.created_at);
+            let date = ts_to_date(post.created_at);
             let inn: Inn = get_one(db, "inns", post.iid)?;
             let comment_count =
                 get_count_by_prefix(db, "post_comments", &u32_to_ivec(*pid))? as u32;
@@ -1029,7 +1029,7 @@ pub(crate) async fn inn_join(
     Path(iid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let inn: Inn = get_one(&db, "inns", iid)?;
@@ -1131,12 +1131,12 @@ pub(crate) async fn post(
     Path((iid, pid)): Path<(u32, u32)>,
     Query(params): Query<ParamsPost>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let post: Post = get_one(&db, "posts", pid)?;
     let user: User = get_one(&db, "users", post.uid)?;
-    let date = timestamp_to_date(post.created_at);
+    let date = ts_to_date(post.created_at);
     let inn: Inn = get_one(&db, "inns", post.iid)?;
 
     if inn.inn_type.as_str() == "Private" {
@@ -1237,7 +1237,7 @@ pub(crate) async fn post(
             if let Some(v) = v {
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                 let user: User = get_one(&db, "users", comment.uid)?;
-                let date = timestamp_to_date(comment.created_at);
+                let date = ts_to_date(comment.created_at);
 
                 let mut is_upvoted = false;
                 let mut is_downvoted = false;
@@ -1281,7 +1281,7 @@ pub(crate) async fn post(
 
     let pageview = incr_id(&db.open_tree("post_pageviews")?, u32_to_ivec(pid))?;
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -1315,13 +1315,13 @@ pub(crate) async fn comment_post(
     Path((iid, pid)): Path<(u32, u32)>,
     ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    let inn_role = get_inn_role(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
-    if inn_role < 3 {
+    let inn_role = InnRole::get(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+    if inn_role < InnRole::Limited {
         return Err(AppError::Unauthorized);
     }
 
@@ -1359,7 +1359,7 @@ pub(crate) async fn comment_post(
                 }
             }
             Err(_) => {
-                if let Some(uid) = get_uid_by_name(&db, notification)? {
+                if let Some(uid) = User::get_uid_by_name(&db, notification)? {
                     (uid, notification.to_string())
                 } else {
                     continue;
@@ -1422,7 +1422,7 @@ pub(crate) async fn comment_post(
     }
 
     // only the fellow could update the timeline by adding comment
-    if inn_role >= 5 {
+    if inn_role >= InnRole::Fellow {
         // kv_pair: iid#pid = timestamp
         db.open_tree("post_timeline_idx")?
             .insert(k, &created_at_ivec)?;
@@ -1438,7 +1438,7 @@ pub(crate) async fn comment_post(
         add_notification(&db, post.uid, NtType::PostComment, pid, cid)?;
     }
 
-    user_stats(&db, claim.uid, "comment")?;
+    User::update_stats(&db, claim.uid, "comment")?;
     claim.update_last_write(&db)?;
 
     let target = format!("/post/{iid}/{pid}");
@@ -1458,7 +1458,7 @@ pub(crate) async fn preview(
     State(db): State<Db>,
     ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let page_data = PageData::new("inn", &site_config, None, false);
 
     let page_preview = PagePreview {
@@ -1475,7 +1475,7 @@ pub(crate) async fn comment_delete(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -1503,7 +1503,7 @@ pub(crate) async fn comment_hide(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -1534,7 +1534,7 @@ pub(crate) async fn post_upvote(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -1557,7 +1557,7 @@ pub(crate) async fn comment_upvote(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -1585,7 +1585,7 @@ pub(crate) async fn post_downvote(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -1608,7 +1608,7 @@ pub(crate) async fn comment_downvote(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid, cid)): Path<(u32, u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
@@ -1636,13 +1636,13 @@ pub(crate) async fn post_lock(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
     // only mod can lock post
-    if !is_mod(&db, claim.uid, iid)? {
+    if !User::is_mod(&db, claim.uid, iid)? {
         return Err(AppError::Unauthorized);
     }
 
@@ -1663,13 +1663,13 @@ pub(crate) async fn post_hide(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
     // only mod can hide post
-    if !is_mod(&db, claim.uid, iid)? {
+    if !User::is_mod(&db, claim.uid, iid)? {
         return Err(AppError::Unauthorized);
     }
 

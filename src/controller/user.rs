@@ -1,13 +1,14 @@
 //! ## [User] sign up/in/out, user profile/list controller
 
 use super::{
-    generate_nanoid_expire, get_count_by_prefix, get_ids_by_prefix, get_inn_role, get_one,
-    get_range, get_site_config, get_uid_by_name, has_unread, incr_id, into_response, is_mod,
+    db_utils::{generate_nanoid_ttl, get_count, get_count_by_prefix, get_range, IterType},
+    fmt::ts_to_date,
+    get_ids_by_prefix, get_one, incr_id, into_response,
+    meta_handler::{PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, NtType},
-    timestamp_to_date, u32_to_ivec, u8_slice_to_u32, user_stats, Claim, Inn, IterType, PageData,
-    ParamsPage, SiteConfig, User, ValidatedForm,
+    u32_to_ivec, u8_slice_to_u32, Claim, Inn, SiteConfig, User,
 };
-use crate::{config::CONFIG, controller::get_count, error::AppError};
+use crate::{config::CONFIG, error::AppError};
 use ::rand::{thread_rng, Rng};
 use askama::Template;
 use axum::{
@@ -62,7 +63,7 @@ pub(crate) async fn user(
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
     let user: User = get_one(&db, "users", uid)?;
     let out_user = OutUser {
@@ -71,7 +72,7 @@ pub(crate) async fn user(
         about: user.about,
         role: UserRole::from(user.role).to_string(),
         url: user.url,
-        created_at: timestamp_to_date(user.created_at),
+        created_at: ts_to_date(user.created_at),
     };
     let uid_ivec = u32_to_ivec(uid);
     let user_solos_count = get_count_by_prefix(&db, "user_solos", &uid_ivec)?;
@@ -94,7 +95,7 @@ pub(crate) async fn user(
     let title = format!("{}-{}", out_user.username, out_user.uid);
 
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -120,7 +121,7 @@ pub(crate) async fn user_follow(
     Path(uid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
@@ -195,6 +196,7 @@ impl Display for UserRole {
     }
 }
 
+#[derive(PartialEq, PartialOrd)]
 #[repr(u8)]
 pub(super) enum InnRole {
     Pending = 1,
@@ -204,6 +206,16 @@ pub(super) enum InnRole {
     Fellow = 5,
     Mod = 7,
     Super = 10,
+}
+
+impl InnRole {
+    pub(super) fn get(db: &Db, iid: u32, uid: u32) -> Result<Option<Self>, AppError> {
+        let inn_users_k = [&u32_to_ivec(iid), &u32_to_ivec(uid)].concat();
+        Ok(db
+            .open_tree("inn_users")?
+            .get(inn_users_k)?
+            .map(|role| role.to_vec()[0].into()))
+    }
 }
 
 impl From<u8> for InnRole {
@@ -313,7 +325,7 @@ pub(crate) async fn user_list(
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsUserList>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
     let n = site_config.per_page;
@@ -353,7 +365,7 @@ pub(crate) async fn user_list(
                 info = (inn.iid, inn.inn_name, need_apply);
                 is_admin = false;
                 if let Some(ref claim) = claim {
-                    is_admin = is_mod(&db, claim.uid, inn.iid)?;
+                    is_admin = User::is_mod(&db, claim.uid, inn.iid)?;
                 }
 
                 if inn.inn_type == "Private" && !is_admin {
@@ -400,7 +412,7 @@ pub(crate) async fn user_list(
     }
 
     let has_unread = if let Some(ref claim) = claim {
-        has_unread(&db, claim.uid)?
+        User::has_unread(&db, claim.uid)?
     } else {
         false
     };
@@ -434,28 +446,30 @@ pub(crate) async fn role_post(
     Form(form): Form<FormRole>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let target;
     match id.cmp(&0) {
         Ordering::Greater => {
-            let inn_role = get_inn_role(&db, id, claim.uid)?.ok_or(AppError::Unauthorized)?;
-            if inn_role < 8 {
+            let inn_role = InnRole::get(&db, id, claim.uid)?.ok_or(AppError::Unauthorized)?;
+            if inn_role < InnRole::Mod {
                 return Err(AppError::Unauthorized);
             }
 
             let inn_users_k = [&u32_to_ivec(id), &u32_to_ivec(uid)].concat();
 
-            let old_inn_role = get_inn_role(&db, id, uid)?.unwrap_or_default();
+            let old_inn_role = InnRole::get(&db, id, uid)?;
 
             // protect super
-            if old_inn_role > inn_role {
-                return Err(AppError::Unauthorized);
-            }
+            if let Some(ref old) = old_inn_role {
+                if old > &inn_role {
+                    return Err(AppError::Unauthorized);
+                }
 
-            if old_inn_role == 1 && form.role != "Pending" {
-                db.open_tree("inn_apply")?.remove(&inn_users_k)?;
+                if old == &InnRole::Pending && form.role != "Pending" {
+                    db.open_tree("inn_apply")?.remove(&inn_users_k)?;
+                }
             }
 
             let inn_role: u8 = match form.role.as_str() {
@@ -470,7 +484,7 @@ pub(crate) async fn role_post(
                 "Mod" => 8,
                 "Super" => {
                     // only super can lift others to super
-                    if inn_role != 10 {
+                    if inn_role != InnRole::Super {
                         return Err(AppError::Unauthorized);
                     }
                     10
@@ -478,7 +492,7 @@ pub(crate) async fn role_post(
                 _ => unreachable!(),
             };
 
-            if old_inn_role != inn_role {
+            if old_inn_role != Some(inn_role.into()) {
                 db.open_tree("inn_users")?
                     .insert(&inn_users_k, &[inn_role])?;
 
@@ -561,7 +575,7 @@ pub(crate) async fn user_setting(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let user: User = get_one(&db, "users", claim.uid)?;
 
@@ -574,7 +588,7 @@ pub(crate) async fn user_setting(
         }
     }
 
-    let has_unread = has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&db, claim.uid)?;
     let page_user_setting = PageUserSetting {
         uid: claim.uid,
         page_data: PageData::new("setting", &site_config, Some(claim), has_unread),
@@ -599,7 +613,7 @@ pub(crate) async fn reset(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
 
     if let Some(cookie) = cookie {
         let claim = Claim::get(&db, &cookie, &site_config);
@@ -630,7 +644,7 @@ pub(crate) async fn reset_post(
     cookie: Option<TypedHeader<Cookie>>,
     Form(input): Form<FormReset>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
 
     if let Some(cookie) = cookie {
         let claim = Claim::get(&db, &cookie, &site_config);
@@ -641,7 +655,7 @@ pub(crate) async fn reset_post(
 
     let uid = match input.username.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => get_uid_by_name(&db, &input.username)?.ok_or(AppError::NotFound)?,
+        Err(_) => User::get_uid_by_name(&db, &input.username)?.ok_or(AppError::NotFound)?,
     };
 
     let mut user: User = get_one(&db, "users", uid)?;
@@ -666,7 +680,7 @@ pub(crate) async fn remove_session(
     Path(session_id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     db.open_tree("sessions")?.remove(session_id)?;
@@ -680,7 +694,7 @@ pub(crate) async fn user_setting_post(
     ValidatedForm(input): ValidatedForm<FormUser>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&db, "users", claim.uid)?;
 
@@ -728,7 +742,7 @@ pub(crate) async fn user_password_post(
     ValidatedForm(input): ValidatedForm<FormPassword>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&db, "users", claim.uid)?;
 
@@ -767,7 +781,7 @@ pub(crate) async fn signin(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
     if claim.is_some() {
         let redirect = Redirect::to("/");
@@ -786,11 +800,11 @@ pub(crate) async fn signin_post(
 ) -> impl IntoResponse {
     let uid = match input.username.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => get_uid_by_name(&db, &input.username)?.ok_or(AppError::WrongPassword)?,
+        Err(_) => User::get_uid_by_name(&db, &input.username)?.ok_or(AppError::WrongPassword)?,
     };
     let user: User = get_one(&db, "users", uid)?;
     if check_password(&input.password, &user.password_hash) {
-        let site_config = get_site_config(&db)?;
+        let site_config = SiteConfig::get(&db)?;
         if site_config.read_only && user.role != u8::MAX {
             return Err(AppError::ReadOnly);
         }
@@ -834,7 +848,7 @@ struct PageSignup<'a> {
 
 /// `GET /signup`
 pub(crate) async fn signup(State(db): State<Db>) -> Result<impl IntoResponse, AppError> {
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     if site_config.read_only {
         return Err(AppError::ReadOnly);
     }
@@ -855,7 +869,7 @@ pub(crate) async fn signup(State(db): State<Db>) -> Result<impl IntoResponse, Ap
     };
 
     let captcha = captcha::by_name(captcha_difficulty, captcha_name);
-    let captcha_id = generate_nanoid_expire(60);
+    let captcha_id = generate_nanoid_ttl(60);
     db.open_tree("captcha")?
         .insert(&captcha_id, &*captcha.chars_as_string())?;
 
@@ -973,7 +987,7 @@ pub(crate) async fn user_recovery_code(
     ValidatedForm(input): ValidatedForm<FormRecoverySet>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = get_site_config(&db)?;
+    let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&db, "users", claim.uid)?;
 
@@ -983,7 +997,7 @@ pub(crate) async fn user_recovery_code(
         let user_encode = bincode::encode_to_vec(&user, standard())?;
         db.open_tree("users")?
             .insert(u32_to_ivec(claim.uid), &*user_encode)?;
-        let has_unread = has_unread(&db, claim.uid)?;
+        let has_unread = User::has_unread(&db, claim.uid)?;
         let page_data = PageData::new("Recovery code", &site_config, Some(claim), has_unread);
         let page_show_recovery = PageShowRecovery {
             page_data,
@@ -1087,7 +1101,7 @@ impl Claim {
         if claim.role == 0 {
             return None;
         }
-        user_stats(db, claim.uid, "view").ok()?;
+        User::update_stats(db, claim.uid, "view").ok()?;
         Some(claim)
     }
 
@@ -1123,7 +1137,7 @@ impl Claim {
         }
         let seconds = expire_seconds(expiry);
         let now = Utc::now().timestamp();
-        let session_id = generate_nanoid_expire(seconds);
+        let session_id = generate_nanoid_ttl(seconds);
 
         let claim = Claim {
             uid: user.uid,
