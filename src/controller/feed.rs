@@ -499,7 +499,8 @@ pub(crate) struct FormFeedAdd {
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     reqwest::Client::builder()
-        .timeout(Duration::from_secs(20))
+        // timeout shoule be less than global timeout
+        .timeout(Duration::from_secs(6))
         .build()
         .unwrap()
 });

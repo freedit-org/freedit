@@ -326,7 +326,7 @@ pub(super) fn extract_element(input: &str, max_len: usize, char: char) -> Vec<St
 ///
 /// ```ignore
 /// // format like: "624e97ca_sSUl_K03nbUmPQLFe2CWk"
-/// let nanoid = generate_nanoid_expire();
+/// let nanoid = generate_nanoid_ttl();
 /// ```
 pub(super) fn generate_nanoid_ttl(seconds: i64) -> String {
     let nanoid = nanoid!();
