@@ -1,8 +1,7 @@
 /target
 /freedit.db
 /certs
-/static
-!/static/css
+/static/imgs
 .rustc_info.json
 .rustdoc_fingerprint.json
 config.toml

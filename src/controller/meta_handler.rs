@@ -119,7 +119,10 @@ pub(crate) async fn serve_dir(path: &str) -> MethodRouter {
 }
 
 static CSS: Lazy<String> = Lazy::new(|| {
-    let mut css = include_str!("../../static/css/bulma.min.css").to_string();
+    // TODO: CSS minification
+    let mut css = include_str!("../../static/css/bulma.css").to_string();
+    css.push('\n');
+    css.push_str(include_str!("../../static/css/bulma-list.css"));
     css.push('\n');
     css.push_str(include_str!("../../static/css/main.css"));
     css
