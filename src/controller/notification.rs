@@ -178,7 +178,9 @@ pub(crate) async fn notification(
                         is_read: value[8] == 1,
                     };
                     notifications.push(notification);
-                }
+                } else {
+                    tree.remove(&key)?;
+                };
             }
             NtType::SoloComment => {
                 let sid1 = u8_slice_to_u32(&value[0..4]);
