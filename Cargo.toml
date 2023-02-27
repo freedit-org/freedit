@@ -7,7 +7,7 @@ license = "MIT"
 [dependencies]
 askama = { version = "0.11", default-features = false } # templates engine 
 atom_syndication = { version = "0.12.0", default-features = false }
-axum = { version = "0.6.7", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
+axum = { version = "0.6.9", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
 axum-server = { version = "0.4", features = ["tls-rustls"] }
 bincode = "2.0.0-rc.2"
 captcha = { version = "0.0.9", default-features = false }
@@ -33,7 +33,7 @@ thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 toml = "0.7.1"
 tower = { version = "0.4", features = ["timeout"] }
-tower-http = { version = "0.3", features = ["fs", "compression-gzip", "trace"] } # serve dir
+tower-http = { version = "0.4.0", features = ["fs", "compression-gzip", "trace"] } # serve dir
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 validator = { version = "0.16", features = ["derive"] }

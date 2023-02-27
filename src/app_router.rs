@@ -8,7 +8,7 @@ use crate::{
             edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_inn, mod_inn_post,
             post, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
         },
-        meta_handler::{handler_404, home, serve_dir, style},
+        meta_handler::{handler_404, home, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         upload::{gallery, upload, upload_pic_post, upload_post},
@@ -28,6 +28,7 @@ use std::time::Duration;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{
     compression::CompressionLayer,
+    services::ServeDir,
     trace::{DefaultMakeSpan, TraceLayer},
 };
 use tracing::{info, Level};
@@ -104,14 +105,14 @@ pub async fn router(db: Db) -> Router {
 
     let mut router_static = Router::new()
         .route("/static/style.css", get(style))
-        .nest_service("/static/avatars", serve_dir(&CONFIG.avatars_path).await)
-        .nest_service("/static/inn_icons", serve_dir(&CONFIG.inn_icons_path).await)
-        .nest_service("/static/upload", serve_dir(&CONFIG.upload_path).await);
+        .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
+        .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
+        .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path));
 
     for (path, dir, _) in &CONFIG.serve_dir {
         let path = format!("/{path}");
         info!("serve dir: {} -> {}", path, dir);
-        router_static = router_static.nest_service(&path, serve_dir(dir).await);
+        router_static = router_static.nest_service(&path, ServeDir::new(dir));
     }
 
     let app = router_static.merge(router_db);

@@ -8,14 +8,12 @@ use axum::{
     headers::{HeaderName, Referer},
     http::{HeaderMap, HeaderValue, Request},
     response::{IntoResponse, Redirect, Response},
-    routing::{get_service, MethodRouter},
     Form, TypedHeader,
 };
 use once_cell::sync::Lazy;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use tokio::signal;
-use tower_http::services::ServeDir;
 use tracing::error;
 use validator::Validate;
 
@@ -102,20 +100,6 @@ where
 
 pub(crate) async fn home() -> impl IntoResponse {
     Redirect::to("/inn/0")
-}
-
-/// serve static directory
-pub(crate) async fn serve_dir(path: &str) -> MethodRouter {
-    let fallback = tower::service_fn(|_| async {
-        Ok::<_, std::io::Error>(Redirect::to("/signin").into_response())
-    });
-    let srv = get_service(ServeDir::new(path).precompressed_gzip().fallback(fallback));
-    srv.handle_error(|error: std::io::Error| async move {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Unhandled internal error: {error}"),
-        )
-    })
 }
 
 static CSS: Lazy<String> = Lazy::new(|| {
