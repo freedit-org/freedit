@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - if the comment has been deleted, just remove it 
 - Table style missing #42
 
+### Added
+
+- author can delete post if no one comments it
+
 ## [0.3.0-rc.5] - 2023-02-21
 
 ### Fixed

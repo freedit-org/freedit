@@ -6,7 +6,7 @@ use crate::{
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
             edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_inn, mod_inn_post,
-            post, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
+            post, post_delete, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
         },
         meta_handler::{handler_404, home, style},
         notification::notification,
@@ -83,6 +83,7 @@ pub async fn router(db: Db) -> Router {
         .route("/post/edit/:pid", get(edit_post).post(edit_post_post))
         .route("/post/:iid/:pid/upvote", get(post_upvote))
         .route("/post/:iid/:pid/downvote", get(post_downvote))
+        .route("/post/:iid/:pid/delete", get(post_delete))
         .route("/post/:iid/:pid/:cid/upvote", get(comment_upvote))
         .route("/post/:iid/:pid/:cid/downvote", get(comment_downvote))
         .route("/preview", get(post).post(preview))

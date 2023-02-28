@@ -1089,6 +1089,7 @@ struct PagePost<'a> {
     has_joined: bool,
     is_mod: bool,
     is_author: bool,
+    can_delete: bool,
 }
 
 /// Vec data: Comment
@@ -1150,6 +1151,7 @@ pub(crate) async fn post(
     let mut is_mod = false;
     let mut is_author = false;
     let mut can_edit = false;
+    let mut can_delete = false;
     let upvotes = get_count_by_prefix(&db, "post_upvotes", &u32_to_ivec(pid)).unwrap_or_default();
     let downvotes =
         get_count_by_prefix(&db, "post_downvotes", &u32_to_ivec(pid)).unwrap_or_default();
@@ -1274,6 +1276,8 @@ pub(crate) async fn post(
         if is_desc {
             out_comments.reverse();
         }
+    } else if is_author {
+        can_delete = true;
     }
 
     let pageview = incr_id(&db.open_tree("post_pageviews")?, u32_to_ivec(pid))?;
@@ -1294,6 +1298,7 @@ pub(crate) async fn post(
         has_joined,
         is_mod,
         is_author,
+        can_delete,
     };
 
     Ok(into_response(&page_post, "html"))
@@ -1594,6 +1599,30 @@ pub(crate) async fn post_downvote(
         post_downvotes_tree.remove(&k)?;
     } else {
         post_downvotes_tree.insert(&k, &[])?;
+    }
+
+    let target = format!("/post/{iid}/{pid}");
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /inn/:iid/:pid/delete` post delete
+pub(crate) async fn post_delete(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid)): Path<(u32, u32)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = SiteConfig::get(&db)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+    let mut post: Post = get_one(&db, "posts", pid)?;
+    let count = get_count(&db, "post_comments_count", u32_to_ivec(pid))?;
+
+    if count == 0 && post.uid == claim.uid {
+        post.content = "*Post deleted by author.*".into();
+        let post_encoded = bincode::encode_to_vec(&post, standard())?;
+        db.open_tree("posts")?
+            .insert(u32_to_ivec(pid), post_encoded)?;
     }
 
     let target = format!("/post/{iid}/{pid}");

@@ -55,6 +55,18 @@
                     {% else %}{% endmatch %}
                 </a>
             {% endif %}
+            &nbsp;&nbsp;
+            {% if can_delete %}
+                <a href="#delete_post">Delete</a>
+                <div id="delete_post" class="overlay">
+                    <div class="popup content">
+                        <h3>Delete permanently?</h3>
+                        <a class="close" href="#">&times;</a>
+                        <p>Are you sure you want to delete this post?</p>
+                        <a href="/post/{{post.iid}}/{{post.pid}}/delete" class="button is-danger">Delete</a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
     <div class="media-right">
