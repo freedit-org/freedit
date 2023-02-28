@@ -232,7 +232,7 @@ struct Inn {
 
 #[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug)]
 #[repr(u8)]
-enum PostStatus {
+pub enum PostStatus {
     Normal = 0,
     LockedByUser = 4,
     HiddenByUser = 8,
@@ -247,15 +247,15 @@ impl Display for PostStatus {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
-struct Post {
-    pid: u32,
-    uid: u32,
-    iid: u32,
-    title: String,
-    tags: Vec<String>,
-    content: String,
-    created_at: i64,
-    status: PostStatus,
+pub struct Post {
+    pub pid: u32,
+    pub uid: u32,
+    pub iid: u32,
+    pub title: String,
+    pub tags: Vec<String>,
+    pub content: String,
+    pub created_at: i64,
+    pub status: PostStatus,
 }
 
 /// Form data: `/inn/:iid/post/:pid` post create/edit page
