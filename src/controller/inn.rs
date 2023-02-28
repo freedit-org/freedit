@@ -1224,9 +1224,9 @@ pub(crate) async fn post(
     let page_params = ParamsPage { anchor, n, is_desc };
 
     let mut out_comments = Vec::with_capacity(n);
-    let count = get_count(&db, "post_comments_count", u32_to_ivec(pid))?;
-    if count > 0 {
-        let (start, end) = get_range(count, &page_params);
+    let max_id = get_count(&db, "post_comments_count", u32_to_ivec(pid))?;
+    if max_id > 0 {
+        let (start, end) = get_range(max_id, &page_params);
         let post_comments_tree = db.open_tree("post_comments")?;
         let comment_upvotes_tree = db.open_tree("comment_upvotes")?;
         let comment_downvotes_tree = db.open_tree("comment_downvotes")?;
@@ -1276,7 +1276,10 @@ pub(crate) async fn post(
         if is_desc {
             out_comments.reverse();
         }
-    } else if is_author {
+    }
+
+    let count = get_count_by_prefix(&db, "post_comments", &u32_to_ivec(pid))?;
+    if count == 0 && is_author {
         can_delete = true;
     }
 
