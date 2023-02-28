@@ -169,6 +169,7 @@
 {% if post.status.as_str() == "LockedByMod" || post.status.as_str() == "LockedByUser" %}
 <div class="content">
     {% include "icons/lock.svg" %}
+    {{post.status}}
 </div>
 {% else %}
 <form class="box" action="/post/{{post.iid}}/{{post.pid}}" method="POST">

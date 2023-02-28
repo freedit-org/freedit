@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**breaking changes**
+
+### Changed
+
+- post add field status, data migration [dm_v0210-v0300_posts](https://github.com/freedit-org/freedit/blob/main/examples/dm_v0210-v0300_posts.rs)
+
+### Fixed
+
+- if the comment has been deleted, just remove it 
+- Table style missing #42
+
 ## [0.3.0-rc.5] - 2023-02-21
 
 ### Fixed
