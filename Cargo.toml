@@ -9,6 +9,7 @@ askama = { version = "0.11", default-features = false } # templates engine
 atom_syndication = { version = "0.12.0", default-features = false }
 axum = { version = "0.6.9", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
 axum-server = { version = "0.4", features = ["tls-rustls"] }
+basic-toml = "*"
 bincode = "2.0.0-rc.2"
 captcha = { version = "0.0.9", default-features = false }
 chrono = { version = "0.4.23", default-features = false, features = ["clock"] }
@@ -31,7 +32,6 @@ sled = { version = "0.34.7", features = ["compression"] }
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
-toml = "0.7.1"
 tower = { version = "0.4", features = ["timeout"] }
 tower-http = { version = "0.4.0", features = ["fs", "compression-gzip", "trace"] } # serve dir
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }

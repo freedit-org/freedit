@@ -26,12 +26,12 @@ impl Config {
             .nth(1)
             .unwrap_or_else(|| "config.toml".to_owned());
         let config = if let Ok(config_toml_content) = read_to_string(cfg_file) {
-            let config: Config = toml::from_str(&config_toml_content).unwrap();
+            let config: Config = basic_toml::from_str(&config_toml_content).unwrap();
             config
         } else {
             warn!("Config file not found, using default config.toml");
             let config = Config::default();
-            let toml = toml::to_string_pretty(&config).unwrap();
+            let toml = basic_toml::to_string(&config).unwrap();
             let mut cfg_file = File::create("config.toml").unwrap();
             cfg_file.write_all(toml.as_bytes()).unwrap();
             config
