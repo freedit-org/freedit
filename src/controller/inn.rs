@@ -1168,7 +1168,7 @@ pub(crate) async fn post(
             is_downvoted = true;
         }
 
-        if post.created_at + 30 * 60 >= Utc::now().timestamp() {
+        if post.created_at + 30 * 60 >= Utc::now().timestamp() && is_author {
             can_edit = true;
         }
 
