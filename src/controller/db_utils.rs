@@ -111,13 +111,6 @@ pub(super) fn get_range(count: usize, page_params: &ParamsPage) -> (usize, usize
 }
 
 /// get the count `N`
-///
-/// # Examples
-///
-/// ```ignore
-/// // get the comments count of the post 3.
-/// let comment_count = get_count(db, "post_comments_count", u32_to_ivec(pid))?
-/// ```
 pub(super) fn get_count<K>(db: &Db, count_tree: &str, key: K) -> Result<usize, AppError>
 where
     K: AsRef<[u8]>,

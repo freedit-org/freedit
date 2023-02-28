@@ -1616,7 +1616,7 @@ pub(crate) async fn post_delete(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
     let mut post: Post = get_one(&db, "posts", pid)?;
-    let count = get_count(&db, "post_comments_count", u32_to_ivec(pid))?;
+    let count = get_count_by_prefix(&db, "post_comments", &u32_to_ivec(pid))?;
 
     if count == 0 && post.uid == claim.uid {
         post.content = "*Post deleted by author.*".into();
