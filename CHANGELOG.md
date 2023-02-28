@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0-rc.6] - 2023-02-28
+
 **breaking changes**
 
 ### Changed
@@ -132,7 +134,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.5...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.6...HEAD
+[0.3.0-rc.6]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.5...v0.3.0-rc.6
 [0.3.0-rc.5]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.4...v0.3.0-rc.5
 [0.3.0-rc.4]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.3...v0.3.0-rc.4
 [0.3.0-rc.3]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.2...v0.3.0-rc.3
