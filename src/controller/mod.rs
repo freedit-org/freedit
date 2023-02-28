@@ -122,6 +122,7 @@ use bincode::{Decode, Encode};
 use chrono::{Days, Utc};
 use serde::{Deserialize, Serialize};
 use sled::Db;
+use std::fmt::Display;
 use validator::Validate;
 
 /// user
@@ -229,6 +230,22 @@ struct Inn {
     created_at: i64,
 }
 
+#[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug)]
+#[repr(u8)]
+enum PostStatus {
+    Normal = 0,
+    LockedByUser = 4,
+    HiddenByUser = 8,
+    LockedByMod = 12,
+    HiddenByMod = 16,
+}
+
+impl Display for PostStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Post {
     pid: u32,
@@ -238,8 +255,7 @@ struct Post {
     tags: Vec<String>,
     content: String,
     created_at: i64,
-    is_locked: bool,
-    is_hidden: bool,
+    status: PostStatus,
 }
 
 /// Form data: `/inn/:iid/post/:pid` post create/edit page

@@ -48,8 +48,7 @@ impl IntoResponse for AppError {
             | AppError::UsernameInvalid
             | AppError::WrongPassword
             | AppError::ImageError(_)
-            | AppError::Locked
-            | AppError::Hidden
+            | AppError::LockedOrHidden
             | AppError::ReadOnly
             | AppError::ValidationError(_)
             | AppError::NoJoinedInn

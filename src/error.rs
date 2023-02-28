@@ -37,10 +37,8 @@ pub enum AppError {
     NonLogin,
     #[error("You have been banned")]
     Banned,
-    #[error("The post has been locked by mod")]
-    Locked,
-    #[error("The post has been hidden by mod")]
-    Hidden,
+    #[error("The post has been locked or hidden")]
+    LockedOrHidden,
     #[error(transparent)]
     ImageError(#[from] image::ImageError),
     #[error("The site is under maintenance. It is read only at the moment")]

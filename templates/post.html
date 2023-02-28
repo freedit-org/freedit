@@ -29,10 +29,30 @@
 
             {% if is_mod %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
-                    {% if post.is_locked %} Unlock {% else %} Lock {% endif %}
+                    {% match post.status.as_str() %} 
+                        {% when "LockedByMod" %} Unlock
+                        {% else %} lock
+                    {% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
-                    {% if post.is_hidden %} Open {% else %} Hide {% endif %}
+                    {% match post.status.as_str() %} 
+                        {% when "HiddenByMod" %} Open
+                        {% else %} Hide
+                    {% endmatch %}
+                </a>
+            {% else if is_author %}
+                <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
+                    {% match post.status.as_str() %} 
+                        {% when "LockedByUser" %} Unlock
+                        {% when "Normal" %} lock
+                    {% else %}{% endmatch %}
+                </a> &nbsp;&nbsp;
+                <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
+                    {% match post.status.as_str() %} 
+                        {% when "HiddenByUser" %} Open
+                        {% when "Normal" %} Hide
+                        {% when "LockedByUser" %} Hide
+                    {% else %}{% endmatch %}
                 </a>
             {% endif %}
         </div>
@@ -146,7 +166,7 @@
     {% endfor %}
 </div>
 
-{% if post.is_locked %}
+{% if post.status.as_str() == "LockedByMod" || post.status.as_str() == "LockedByUser" %}
 <div class="content">
     {% include "icons/lock.svg" %}
 </div>

@@ -21,7 +21,7 @@ use super::{
     meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
     user::InnRole,
-    Claim, Comment, FormPost, Inn, Post, SiteConfig, User,
+    Claim, Comment, FormPost, Inn, Post, PostStatus, SiteConfig, User,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -423,20 +423,16 @@ pub(crate) async fn edit_post(
     } else {
         let post: Post = get_one(&db, "posts", pid)?;
 
-        if post.is_locked {
-            return Err(AppError::Locked);
-        }
-
-        if post.is_hidden {
-            return Err(AppError::Hidden);
-        }
-
         if post.created_at + 30 * 60 < Utc::now().timestamp() {
             return Err(AppError::Unauthorized);
         }
 
         if post.uid != claim.uid {
             return Err(AppError::Unauthorized);
+        }
+
+        if post.status != PostStatus::Normal {
+            return Err(AppError::LockedOrHidden);
         }
 
         let page_data = PageData::new("edit post", &site_config, Some(claim), has_unread);
@@ -516,12 +512,8 @@ pub(crate) async fn edit_post_post(
                 return Err(AppError::Unauthorized);
             }
 
-            if post.is_locked {
-                return Err(AppError::Locked);
-            }
-
-            if post.is_hidden {
-                return Err(AppError::Hidden);
+            if post.status != PostStatus::Normal {
+                return Err(AppError::LockedOrHidden);
             }
 
             if post.iid != iid {
@@ -550,8 +542,7 @@ pub(crate) async fn edit_post_post(
         tags,
         content: input.content,
         created_at,
-        is_locked: false,
-        is_hidden: false,
+        status: PostStatus::Normal,
     };
 
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
@@ -603,7 +594,6 @@ struct OutPostList {
     title: String,
     created_at: String,
     comment_count: u32,
-    is_hidden: bool,
 }
 
 /// Page data: `tag.html`
@@ -923,7 +913,6 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
                 title: post.title,
                 created_at: date,
                 comment_count,
-                is_hidden: post.is_hidden,
             };
             post_lists.push(post_list);
         }
@@ -1080,8 +1069,7 @@ struct OutPost {
     created_at: String,
     upvotes: usize,
     downvotes: usize,
-    is_locked: bool,
-    is_hidden: bool,
+    status: String,
     is_upvoted: bool,
     is_downvoted: bool,
     can_edit: bool,
@@ -1100,6 +1088,7 @@ struct PagePost<'a> {
     is_desc: bool,
     has_joined: bool,
     is_mod: bool,
+    is_author: bool,
 }
 
 /// Vec data: Comment
@@ -1159,11 +1148,16 @@ pub(crate) async fn post(
     let mut is_upvoted = false;
     let mut is_downvoted = false;
     let mut is_mod = false;
+    let mut is_author = false;
     let mut can_edit = false;
     let upvotes = get_count_by_prefix(&db, "post_upvotes", &u32_to_ivec(pid)).unwrap_or_default();
     let downvotes =
         get_count_by_prefix(&db, "post_downvotes", &u32_to_ivec(pid)).unwrap_or_default();
     if let Some(ref claim) = claim {
+        if post.uid == claim.uid {
+            is_author = true;
+        }
+
         let k = [&u32_to_ivec(pid), &u32_to_ivec(claim.uid)].concat();
         if db.open_tree("post_upvotes")?.contains_key(&k)? {
             is_upvoted = true;
@@ -1174,6 +1168,10 @@ pub(crate) async fn post(
 
         if post.created_at + 30 * 60 >= Utc::now().timestamp() {
             can_edit = true;
+        }
+
+        if post.status != PostStatus::Normal {
+            can_edit = false;
         }
 
         let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
@@ -1194,10 +1192,10 @@ pub(crate) async fn post(
         }
     }
 
-    let content = if post.is_hidden && !is_mod {
-        "<p><i>Hidden by mod.</i></p>".into()
-    } else {
-        md2html(&post.content)
+    let content = match post.status {
+        PostStatus::HiddenByMod => "<p><i>Hidden by mod.</i></p>".into(),
+        PostStatus::HiddenByUser => "<p><i>Hidden by user.</i></p>".into(),
+        _ => md2html(&post.content),
     };
 
     let out_post = OutPost {
@@ -1208,8 +1206,7 @@ pub(crate) async fn post(
         inn_name: inn.inn_name,
         title: post.title,
         tags: post.tags,
-        is_locked: post.is_locked,
-        is_hidden: post.is_hidden,
+        status: post.status.to_string(),
         content_html: content,
         created_at: date,
         upvotes,
@@ -1296,6 +1293,7 @@ pub(crate) async fn post(
         is_desc,
         has_joined,
         is_mod,
+        is_author,
     };
 
     Ok(into_response(&page_post, "html"))
@@ -1338,8 +1336,8 @@ pub(crate) async fn comment_post(
     if post.iid != iid {
         return Err(AppError::NotFound);
     }
-    if post.is_locked {
-        return Err(AppError::Locked);
+    if post.status == PostStatus::LockedByMod || post.status == PostStatus::LockedByUser {
+        return Err(AppError::LockedOrHidden);
     }
 
     let pid_ivec = u32_to_ivec(pid);
@@ -1641,13 +1639,21 @@ pub(crate) async fn post_lock(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    // only mod can lock post
-    if !User::is_mod(&db, claim.uid, iid)? {
-        return Err(AppError::Unauthorized);
-    }
-
     let mut post: Post = get_one(&db, "posts", pid)?;
-    post.is_locked = !post.is_locked;
+
+    if User::is_mod(&db, claim.uid, iid)? {
+        if post.status != PostStatus::LockedByMod {
+            post.status = PostStatus::LockedByMod
+        } else if post.status == PostStatus::LockedByMod {
+            post.status = PostStatus::Normal
+        }
+    } else if post.uid == claim.uid {
+        if post.status == PostStatus::Normal {
+            post.status = PostStatus::LockedByUser
+        } else if post.status == PostStatus::LockedByUser {
+            post.status = PostStatus::Normal
+        }
+    }
 
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
     db.open_tree("posts")?
@@ -1668,13 +1674,21 @@ pub(crate) async fn post_hide(
         .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    // only mod can hide post
-    if !User::is_mod(&db, claim.uid, iid)? {
-        return Err(AppError::Unauthorized);
-    }
-
     let mut post: Post = get_one(&db, "posts", pid)?;
-    post.is_hidden = !post.is_hidden;
+
+    if User::is_mod(&db, claim.uid, iid)? {
+        if post.status != PostStatus::HiddenByMod {
+            post.status = PostStatus::HiddenByMod
+        } else if post.status == PostStatus::HiddenByMod {
+            post.status = PostStatus::Normal
+        }
+    } else if post.uid == claim.uid {
+        if post.status < PostStatus::HiddenByUser {
+            post.status = PostStatus::HiddenByUser
+        } else if post.status == PostStatus::HiddenByUser {
+            post.status = PostStatus::Normal
+        }
+    }
 
     let post_encoded = bincode::encode_to_vec(&post, standard())?;
     db.open_tree("posts")?
