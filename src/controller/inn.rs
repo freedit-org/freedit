@@ -267,6 +267,10 @@ pub(crate) async fn mod_feed_post(
         return Err(AppError::Unauthorized);
     }
 
+    if input.url.contains(&format!("inn/{iid}/feed")) {
+        return Err(AppError::Custom("You can not feed yourself".into()));
+    }
+
     let (feed, item_ids) = update(&input.url, &db, 5).await?;
 
     let feed_links_tree = db.open_tree("feed_links")?;

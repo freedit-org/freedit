@@ -52,6 +52,7 @@ impl IntoResponse for AppError {
             | AppError::ReadOnly
             | AppError::ValidationError(_)
             | AppError::NoJoinedInn
+            | AppError::Custom(_)
             | AppError::AxumFormRejection(_) => StatusCode::BAD_REQUEST,
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::WriteInterval => StatusCode::TOO_MANY_REQUESTS,

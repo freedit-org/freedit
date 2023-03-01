@@ -51,4 +51,6 @@ pub enum AppError {
     InvalidFeedLink,
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
+    #[error("{0}")]
+    Custom(String),
 }
