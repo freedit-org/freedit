@@ -1,5 +1,5 @@
 use bincode::{config::standard, Decode, Encode};
-use freedit::controller::{Post, PostStatus};
+use freedit::controller::{Post, PostContent, PostStatus};
 use serde::Serialize;
 
 fn main() {
@@ -28,7 +28,7 @@ fn main() {
             iid: old.iid,
             title: old.title,
             tags: old.tags,
-            content: old.content,
+            content: PostContent::Markdown(old.content),
             created_at: old.created_at,
             status,
         };
