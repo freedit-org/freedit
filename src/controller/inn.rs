@@ -16,12 +16,13 @@ use super::{
         extract_element, get_batch, get_count, get_count_by_prefix, get_ids_by_prefix,
         get_ids_by_tag, get_one, get_range, ivec_to_u32, u32_to_ivec, u8_slice_to_u32, IterType,
     },
+    feed::{inn_feed_to_post, update},
     fmt::{md2html, ts_to_date},
     incr_id,
     meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
     user::InnRole,
-    Claim, Comment, FormPost, Inn, Post, PostStatus, SiteConfig, User,
+    Claim, Comment, Feed, FormPost, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::error::AppError;
 use askama::Template;
@@ -29,6 +30,7 @@ use axum::{
     extract::{Path, Query, State, TypedHeader},
     headers::Cookie,
     response::{IntoResponse, Redirect},
+    Form,
 };
 use bincode::config::standard;
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -50,6 +52,7 @@ struct PageInnCreate<'a> {
 struct PageInnEdit<'a> {
     page_data: PageData<'a>,
     inn: Inn,
+    inn_feeds: Vec<Feed>,
 }
 
 /// `GET /mod/:iid` inn create/edit page
@@ -88,7 +91,18 @@ pub(crate) async fn mod_inn(
 
         let page_data = PageData::new("edit inn", &site_config, Some(claim), has_unread);
         let inn: Inn = get_one(&db, "inns", iid)?;
-        let page_inn_edit = PageInnEdit { page_data, inn };
+        let mut inn_feeds = Vec::new();
+        for i in db.open_tree("inn_feeds")?.scan_prefix(u32_to_ivec(iid)) {
+            let (k, _) = i?;
+            let feed_id = u8_slice_to_u32(&k[4..8]);
+            let feed: Feed = get_one(&db, "feeds", feed_id)?;
+            inn_feeds.push(feed);
+        }
+        let page_inn_edit = PageInnEdit {
+            page_data,
+            inn,
+            inn_feeds,
+        };
         Ok(into_response(&page_inn_edit, "html"))
     }
 }
@@ -230,6 +244,55 @@ pub(crate) async fn mod_inn_post(
     inn_names_tree.insert(inn.inn_name, iid_ivec)?;
 
     let target = format!("/inn/{iid}");
+    Ok(Redirect::to(&target))
+}
+
+/// Form data: `/mod/feed/:iid` inn feed page
+#[derive(Deserialize)]
+pub(crate) struct FormInnFeed {
+    url: String,
+}
+
+/// `POST /mod/feed/:iid` inn feed page
+pub(crate) async fn mod_feed_post(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(iid): Path<u32>,
+    Form(input): Form<FormInnFeed>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&db)?;
+    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    if claim.role < 100 {
+        return Err(AppError::Unauthorized);
+    }
+
+    let (feed, item_ids) = update(&input.url, &db, 5).await?;
+
+    let feed_links_tree = db.open_tree("feed_links")?;
+    let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
+        ivec_to_u32(&v)
+    } else {
+        incr_id(&db, "feeds_count")?
+    };
+    feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
+
+    let feed_encode = bincode::encode_to_vec(&feed, standard())?;
+    db.open_tree("feeds")?
+        .insert(u32_to_ivec(feed_id), feed_encode)?;
+
+    let k = &[u32_to_ivec(iid), u32_to_ivec(feed_id)].concat();
+    let inn_feeds_tree = db.open_tree("inn_feeds")?;
+    if inn_feeds_tree.contains_key(k)? {
+        inn_feeds_tree.remove(k)?;
+    } else {
+        inn_feeds_tree.insert(k, u32_to_ivec(claim.uid))?;
+        for (item_id, ts) in item_ids.into_iter().take(5) {
+            inn_feed_to_post(&db, iid, item_id, claim.uid, ts)?;
+        }
+    }
+
+    let target = format!("/mod/{iid}");
     Ok(Redirect::to(&target))
 }
 
@@ -540,7 +603,7 @@ pub(crate) async fn edit_post_post(
         iid,
         title: input.title,
         tags,
-        content: input.content,
+        content: PostContent::Markdown(input.content),
         created_at,
         status: PostStatus::Normal,
     };
@@ -877,7 +940,7 @@ pub(crate) async fn inn_feed(
             username: user.username,
             title: post.title,
             created_at: date,
-            content: md2html(&post.content),
+            content: post.content.to_html(&db)?,
         };
         feed_posts.push(feed_post);
     }
@@ -1197,7 +1260,7 @@ pub(crate) async fn post(
     let content = match post.status {
         PostStatus::HiddenByMod => "<p><i>Hidden by mod.</i></p>".into(),
         PostStatus::HiddenByUser => "<p><i>Hidden by user.</i></p>".into(),
-        _ => md2html(&post.content),
+        _ => post.content.to_html(&db)?,
     };
 
     let out_post = OutPost {
@@ -1622,7 +1685,7 @@ pub(crate) async fn post_delete(
     let count = get_count_by_prefix(&db, "post_comments", &u32_to_ivec(pid))?;
 
     if count == 0 && post.uid == claim.uid {
-        post.content = "*Post deleted by author.*".into();
+        post.content = PostContent::Markdown("*Post deleted by author.*".into());
         let post_encoded = bincode::encode_to_vec(&post, standard())?;
         db.open_tree("posts")?
             .insert(u32_to_ivec(pid), post_encoded)?;

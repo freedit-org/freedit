@@ -12,7 +12,7 @@
 //! | "user_following" | `uid#uid`            | `&[]`            |
 //! | "user_followers" | `uid#uid`            | `&[]`            |
 //! | "user_stats"     | `timestamp_uid_type` | N                |
-//! | "user_uploads"   | `uid#img_id#`        | `image_hash.ext` |
+//! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
 //!
 //! ### notification
@@ -61,6 +61,8 @@
 //! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5/8/10]` |
 //! | "inns_private"  | `iid`         | `&[]`               |
 //! | "drafts"        | `uid`         | [`FormPost`]        |
+//! | "inn_feeds"     | `iid#feed_id` | `uid`               |
+//! | "inn_items"     | `iid#item_id` | `&[]`               |
 //!
 //! ### post
 //! | tree                | key                 | value                |
@@ -116,6 +118,7 @@ mod fmt;
 use self::db_utils::{
     get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
 };
+use self::fmt::md2html;
 use crate::{controller::meta_handler::into_response, error::AppError};
 use bincode::config::standard;
 use bincode::{Decode, Encode};
@@ -247,13 +250,40 @@ impl Display for PostStatus {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
+pub enum PostContent {
+    Markdown(String),
+    FeedItemId(u32),
+}
+
+impl PostContent {
+    fn to_html(&self, db: &Db) -> Result<String, AppError> {
+        match self {
+            PostContent::Markdown(md) => Ok(md2html(md)),
+            PostContent::FeedItemId(id) => {
+                let item: Item = get_one(db, "items", *id)?;
+                Ok(item.content)
+            }
+        }
+    }
+}
+
+impl Display for PostContent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PostContent::Markdown(c) => write!(f, "({c})"),
+            PostContent::FeedItemId(id) => write!(f, "(From item_id: {id})"),
+        }
+    }
+}
+
+#[derive(Encode, Decode, Serialize, Debug)]
 pub struct Post {
     pub pid: u32,
     pub uid: u32,
     pub iid: u32,
     pub title: String,
     pub tags: Vec<String>,
-    pub content: String,
+    pub content: PostContent,
     pub created_at: i64,
     pub status: PostStatus,
 }

@@ -5,8 +5,9 @@ use crate::{
         feed::{feed, feed_add, feed_add_post, feed_read, feed_star, feed_subscribe, feed_update},
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
-            edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_inn, mod_inn_post,
-            post, post_delete, post_downvote, post_hide, post_lock, post_upvote, preview, tag,
+            edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_feed_post, mod_inn,
+            mod_inn_post, post, post_delete, post_downvote, post_hide, post_lock, post_upvote,
+            preview, tag,
         },
         meta_handler::{handler_404, home, style},
         notification::notification,
@@ -66,6 +67,7 @@ pub async fn router(db: Db) -> Router {
         .route("/admin/view", get(admin_view))
         .route("/admin/stats", get(admin_stats))
         .route("/mod/:iid", get(mod_inn).post(mod_inn_post))
+        .route("/mod/feed/:iid", get(mod_inn).post(mod_feed_post))
         .route(
             "/mod/inn_icon",
             get(mod_inn).post(upload_pic_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),

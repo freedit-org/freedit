@@ -5,7 +5,7 @@ use super::{
     },
     fmt::ts_to_date,
     meta_handler::{get_referer, into_response, PageData, ParamsPage},
-    Claim, SiteConfig, User,
+    Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{
     controller::{incr_id, Feed, Item},
@@ -515,7 +515,7 @@ pub(crate) async fn feed_add_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let (feed, item_ids) = update(&form.url, &db).await?;
+    let (feed, item_ids) = update(&form.url, &db, 20).await?;
     let feed_links_tree = db.open_tree("feed_links")?;
     let user_folders_tree = db.open_tree("user_folders")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
@@ -527,7 +527,7 @@ pub(crate) async fn feed_add_post(
                 user_folders_tree.remove(k)?;
             }
         }
-        ivec_to_u32(&v)
+        id
     } else {
         incr_id(&db, "feeds_count")?
     };
@@ -588,7 +588,7 @@ pub(crate) async fn feed_update(
         let feed_items_tree = feed_items_tree.clone();
 
         let h = tokio::spawn(async move {
-            match update(&feed.link, &db).await {
+            match update(&feed.link, &db, 20).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
@@ -624,7 +624,11 @@ pub(crate) async fn feed_update(
     Ok(Redirect::to(&format!("/feed/{}", claim.uid)))
 }
 
-async fn update(url: &str, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError> {
+pub(super) async fn update(
+    url: &str,
+    db: &Db,
+    n: usize,
+) -> Result<(Feed, Vec<(u32, i64)>), AppError> {
     let content = CLIENT.get(url).send().await?.bytes().await?;
 
     let item_links_tree = db.open_tree("item_links")?;
@@ -632,7 +636,7 @@ async fn update(url: &str, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError>
     let mut item_ids = vec![];
     let feed = match rss::Channel::read_from(&content[..]) {
         Ok(rss) => {
-            for item in rss.items {
+            for item in rss.items.into_iter().take(n) {
                 let source_item: SourceItem = item.try_into()?;
                 let item_id = if let Some(v) = item_links_tree.get(&source_item.link)? {
                     ivec_to_u32(&v)
@@ -662,7 +666,7 @@ async fn update(url: &str, db: &Db) -> Result<(Feed, Vec<(u32, i64)>), AppError>
         }
         Err(_) => match atom_syndication::Feed::read_from(&content[..]) {
             Ok(atom) => {
-                for entry in atom.entries {
+                for entry in atom.entries.into_iter().take(n) {
                     let source_item: SourceItem = entry.into();
                     let item_id = if let Some(v) = item_links_tree.get(&source_item.link)? {
                         ivec_to_u32(&v)
@@ -705,15 +709,30 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
         set.insert(feed_id);
     }
 
+    let mut inn_feeds = Vec::new();
+    for i in &db.open_tree("inn_feeds")? {
+        let (k, v) = i?;
+        let iid = u8_slice_to_u32(&k[0..4]);
+        let feed_id = u8_slice_to_u32(&k[4..8]);
+        let uid = u8_slice_to_u32(&v);
+        set.insert(feed_id);
+        inn_feeds.push((iid, feed_id, uid));
+    }
+
     let feed_items_tree = db.open_tree("feed_items")?;
     let feed_errs_tree = db.open_tree("feed_errs")?;
     for id in set {
         if let Ok(feed) = get_one::<Feed>(db, "feeds", id) {
-            match update(&feed.link, db).await {
+            match update(&feed.link, db, 10).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(id), &u32_to_ivec(item_id)].concat();
                         feed_items_tree.insert(k, i64_to_ivec(ts))?;
+                        for (iid, feed_id, uid) in &inn_feeds {
+                            if *feed_id == id {
+                                inn_feed_to_post(db, *iid, item_id, *uid, ts)?;
+                            }
+                        }
                     }
                     let _ = feed_errs_tree.remove(u32_to_ivec(id));
                 }
@@ -723,6 +742,60 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
                 }
             };
         };
+    }
+
+    Ok(())
+}
+
+/// convert inn feed items to post
+pub(super) fn inn_feed_to_post(
+    db: &Db,
+    iid: u32,
+    item_id: u32,
+    uid: u32,
+    ts: i64,
+) -> Result<(), AppError> {
+    let inn_item_k = &[u32_to_ivec(iid), u32_to_ivec(item_id)].concat();
+    let inn_items_tree = db.open_tree("inn_items")?;
+    if !inn_items_tree.contains_key(inn_item_k)? {
+        let inn: Inn = get_one(db, "inns", iid)?;
+        let tag = format!("{}_feed", inn.inn_name);
+        let visibility = if inn.inn_type.as_str() == "Private" {
+            10
+        } else {
+            0
+        };
+        let pid = incr_id(db, "posts_count")?;
+        let item: Item = get_one(db, "items", item_id)?;
+        let post = Post {
+            pid,
+            uid,
+            iid,
+            title: item.title,
+            tags: vec![tag.clone()],
+            content: PostContent::FeedItemId(item_id),
+            created_at: ts,
+            status: PostStatus::Normal,
+        };
+        let post_encoded = bincode::encode_to_vec(&post, standard())?;
+        db.open_tree("posts")?
+            .insert(u32_to_ivec(pid), post_encoded)?;
+
+        let tag_k = [tag.as_bytes(), &u32_to_ivec(pid)].concat();
+        db.open_tree("tags")?.insert(tag_k, &[])?;
+
+        let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+        db.open_tree("inn_posts")?.insert(&k, &[])?;
+
+        let created_at_ivec = u32_to_ivec(ts as u32);
+        db.open_tree("post_timeline_idx")?
+            .insert(&k, &created_at_ivec)?;
+
+        let k = [&created_at_ivec, &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+        db.open_tree("post_timeline")?
+            .insert(k, u32_to_ivec(visibility))?;
+
+        inn_items_tree.insert(inn_item_k, &[])?;
     }
 
     Ok(())

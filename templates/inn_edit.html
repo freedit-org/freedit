@@ -125,5 +125,45 @@
     </fieldset>
 </form>
 
+<form id="inn_feed" class="box" action="/mod/feed/{{inn.iid}}" method="POST">
+    <fieldset>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="url">url</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="url" required maxlength="500" placeholder="rss or atom link" />
+                    </div>
+                    <p class="help">Submit url again to unsubscribe.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="inn_feed" class="button is-link">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="content">
+                    {% for feed in inn_feeds %}
+                    <p>{{feed.title}} &nbsp;&nbsp;&nbsp;&nbsp; {{feed.link}}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
 <div class="divider"></div>
 {% endblock %}
