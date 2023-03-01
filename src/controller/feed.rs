@@ -723,7 +723,7 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
     let feed_errs_tree = db.open_tree("feed_errs")?;
     for id in set {
         if let Ok(feed) = get_one::<Feed>(db, "feeds", id) {
-            match update(&feed.link, db, 10).await {
+            match update(&feed.link, db, 5).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(id), &u32_to_ivec(item_id)].concat();
