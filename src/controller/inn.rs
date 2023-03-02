@@ -21,7 +21,7 @@ use super::{
     incr_id,
     meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
-    user::InnRole,
+    user::{InnRole, Role},
     Claim, Comment, Feed, FormPost, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::error::AppError;
@@ -67,7 +67,7 @@ pub(crate) async fn mod_inn(
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    if claim.role < 100 {
+    if Role::from(claim.role) < Role::Senior {
         return Err(AppError::Unauthorized);
     }
 
@@ -134,7 +134,7 @@ pub(crate) async fn mod_inn_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if claim.role < 100 {
+    if Role::from(claim.role) < Role::Senior {
         return Err(AppError::Unauthorized);
     }
 
@@ -263,7 +263,7 @@ pub(crate) async fn mod_feed_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if claim.role < 100 {
+    if Role::from(claim.role) < Role::Senior {
         return Err(AppError::Unauthorized);
     }
 

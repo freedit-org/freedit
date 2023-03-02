@@ -2,7 +2,7 @@ use super::{
     get_ids_by_prefix, get_one, incr_id, into_response,
     meta_handler::PageData,
     u32_to_ivec, u8_slice_to_u32,
-    user::{InnRole, UserRole},
+    user::{InnRole, Role},
     Claim, Comment, Inn, Post, SiteConfig, Solo, User,
 };
 use crate::error::AppError;
@@ -249,7 +249,7 @@ pub(crate) async fn notification(
             }
             NtType::SiteNotification => {
                 let role = u8_slice_to_u32(&value[0..4]);
-                let role_desc = UserRole::from(role as u8).to_string();
+                let role_desc = Role::from(role as u8).to_string();
                 let notification = Notification {
                     nid,
                     nt_type: nt_type.to_string(),

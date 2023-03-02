@@ -52,7 +52,7 @@ struct OutUser {
     uid: u32,
     username: String,
     about: String,
-    role: String,
+    role_desc: String,
     url: String,
     created_at: String,
 }
@@ -70,7 +70,7 @@ pub(crate) async fn user(
         uid: user.uid,
         username: user.username,
         about: user.about,
-        role: UserRole::from(user.role).to_string(),
+        role_desc: Role::from(user.role).to_string(),
         url: user.url,
         created_at: ts_to_date(user.created_at),
     };
@@ -163,40 +163,37 @@ struct OutUserList {
     username: String,
     about: String,
     role: u8,
+    role_desc: String,
 }
 
 #[repr(u8)]
-pub(super) enum UserRole {
+#[derive(Debug, PartialEq, PartialOrd)]
+pub(super) enum Role {
     Banned = 0,
     Standard = 10,
     Senior = 100,
     Admin = 255,
 }
 
-impl From<u8> for UserRole {
+impl From<u8> for Role {
     fn from(value: u8) -> Self {
         match value {
-            0 => UserRole::Banned,
-            10 => UserRole::Standard,
-            100 => UserRole::Senior,
-            255 => UserRole::Admin,
+            0 => Role::Banned,
+            10 => Role::Standard,
+            100 => Role::Senior,
+            255 => Role::Admin,
             _ => unreachable!(),
         }
     }
 }
 
-impl Display for UserRole {
+impl Display for Role {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            UserRole::Banned => write!(f, "Banned"),
-            UserRole::Standard => write!(f, "Standard"),
-            UserRole::Senior => write!(f, "Senior"),
-            UserRole::Admin => write!(f, "Admin"),
-        }
+        write!(f, "{:?}", self)
     }
 }
 
-#[derive(PartialEq, PartialOrd)]
+#[derive(PartialEq, PartialOrd, Debug)]
 #[repr(u8)]
 pub(super) enum InnRole {
     Pending = 1,
@@ -235,25 +232,18 @@ impl From<u8> for InnRole {
 
 impl Display for InnRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            InnRole::Pending => write!(f, "Pending"),
-            InnRole::Deny => write!(f, "Deny"),
-            InnRole::Limited => write!(f, "Limited"),
-            InnRole::Intern => write!(f, "Intern"),
-            InnRole::Fellow => write!(f, "Fellow"),
-            InnRole::Mod => write!(f, "Mod"),
-            InnRole::Super => write!(f, "Super"),
-        }
+        write!(f, "{:?}", self)
     }
 }
 
 impl OutUserList {
-    const fn new(uid: u32, username: String, about: String, role: u8) -> Self {
+    const fn new(uid: u32, username: String, about: String, role: u8, role_desc: String) -> Self {
         OutUserList {
             uid,
             username,
             about,
             role,
+            role_desc,
         }
     }
 
@@ -261,7 +251,9 @@ impl OutUserList {
         let mut users = Vec::with_capacity(n);
         for i in index {
             let user: User = get_one(db, "users", i)?;
-            let out_user_list = OutUserList::new(user.uid, user.username, user.about, user.role);
+            let user_desc = Role::from(user.role).to_string();
+            let out_user_list =
+                OutUserList::new(user.uid, user.username, user.about, user.role, user_desc);
             users.push(out_user_list);
         }
         Ok(users)
@@ -291,13 +283,17 @@ impl OutUserList {
                 if v[0] == role {
                     let uid = u8_slice_to_u32(&k[4..]);
                     let user: User = get_one(db, "users", uid)?;
-                    let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
+                    let inn_role = InnRole::from(v[0]).to_string();
+                    let out_user_list =
+                        OutUserList::new(user.uid, user.username, user.about, v[0], inn_role);
                     users.push(out_user_list);
                 }
             } else {
                 let uid = u8_slice_to_u32(&k[4..]);
                 let user: User = get_one(db, "users", uid)?;
-                let out_user_list = OutUserList::new(user.uid, user.username, user.about, v[0]);
+                let inn_role = InnRole::from(v[0]).to_string();
+                let out_user_list =
+                    OutUserList::new(user.uid, user.username, user.about, v[0], inn_role);
                 users.push(out_user_list);
             }
 
@@ -339,7 +335,7 @@ pub(crate) async fn user_list(
 
     let mut is_admin = false;
     if let Some(ref claim) = claim {
-        is_admin = claim.role == u8::MAX;
+        is_admin = Role::from(claim.role) == Role::Admin;
     }
 
     let mut users = Vec::with_capacity(n);
@@ -392,7 +388,9 @@ pub(crate) async fn user_list(
                 let (_, v) = i?;
                 let (user, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                 if user.role == role {
-                    let out_user_list = OutUserList::new(user.uid, user.username, user.about, role);
+                    let user_desc = Role::from(user.role).to_string();
+                    let out_user_list =
+                        OutUserList::new(user.uid, user.username, user.about, role, user_desc);
                     users.push(out_user_list);
                 }
 
@@ -515,7 +513,7 @@ pub(crate) async fn role_post(
             target = format!("/user/list?filter=inn&id={id}");
         }
         Ordering::Equal => {
-            if !claim.role == u8::MAX {
+            if Role::from(claim.role) != Role::Admin {
                 return Err(AppError::Unauthorized);
             }
 
@@ -805,7 +803,7 @@ pub(crate) async fn signin_post(
     let user: User = get_one(&db, "users", uid)?;
     if check_password(&input.password, &user.password_hash) {
         let site_config = SiteConfig::get(&db)?;
-        if site_config.read_only && user.role != u8::MAX {
+        if site_config.read_only && Role::from(user.role) != Role::Admin {
             return Err(AppError::ReadOnly);
         }
 
@@ -919,18 +917,18 @@ pub(crate) async fn signup_post(
 
     let created_at = Utc::now().timestamp();
     let role = if uid == 1 {
-        u8::MAX
+        Role::Admin
     } else if uid <= 500 {
-        100
+        Role::Senior
     } else {
-        10
+        Role::Standard
     };
     let user = User {
         uid,
         username: input.username,
         password_hash,
         created_at,
-        role,
+        role: role as u8,
         ..Default::default()
     };
 
@@ -1094,11 +1092,11 @@ impl Claim {
         let v = tree.get(session).ok()??;
         let (claim, _): (Claim, usize) = bincode::decode_from_slice(&v, standard()).ok()?;
 
-        if site_config.read_only && claim.role != u8::MAX {
+        if site_config.read_only && Role::from(claim.role) != Role::Admin {
             return None;
         }
 
-        if claim.role == 0 {
+        if Role::from(claim.role) == Role::Banned {
             return None;
         }
         Some(claim)

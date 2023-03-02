@@ -2,6 +2,7 @@ use super::{
     db_utils::{ivec_to_u32, u8_slice_to_u32, IterType},
     fmt::ts_to_date,
     meta_handler::{into_response, PageData, ValidatedForm},
+    user::Role,
     Claim, Feed, FormPost, Item, SiteConfig,
 };
 use crate::{
@@ -48,7 +49,7 @@ pub(crate) async fn admin_view(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if claim.role != u8::MAX {
+    if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -299,7 +300,7 @@ pub(crate) async fn admin(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if claim.role != u8::MAX {
+    if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -320,7 +321,7 @@ pub(crate) async fn admin_post(
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&db, &cookie, &input).ok_or(AppError::NonLogin)?;
-    if claim.role != u8::MAX {
+    if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -366,7 +367,7 @@ pub(crate) async fn admin_stats(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if claim.role != u8::MAX {
+    if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
