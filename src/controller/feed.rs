@@ -1,6 +1,6 @@
 use super::{
     db_utils::{
-        get_ids_by_prefix, get_one, get_range, i64_to_ivec, ivec_to_u32, u32_to_ivec,
+        get_ids_by_prefix, get_one, get_range, i64_to_ivec, ivec_to_u32, set_one, u32_to_ivec,
         u8_slice_to_i64, u8_slice_to_u32,
     },
     fmt::ts_to_date,
@@ -18,7 +18,6 @@ use axum::{
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
 };
-use bincode::config::standard;
 use chrono::{DateTime, Utc};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
@@ -541,9 +540,7 @@ pub(crate) async fn feed_add_post(
 
     feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
 
-    let feeds_tree = db.open_tree("feeds")?;
-    let feed_encode = bincode::encode_to_vec(&feed, standard())?;
-    feeds_tree.insert(u32_to_ivec(feed_id), feed_encode)?;
+    set_one(&db, "feeds", feed_id, &feed)?;
 
     let folder = if form.folder.as_str() != "New" {
         form.folder
@@ -632,7 +629,6 @@ pub(super) async fn update(
     let content = CLIENT.get(url).send().await?.bytes().await?;
 
     let item_links_tree = db.open_tree("item_links")?;
-    let items_tree = db.open_tree("items")?;
     let mut item_ids = vec![];
     let feed = match rss::Channel::read_from(&content[..]) {
         Ok(rss) => {
@@ -653,8 +649,7 @@ pub(super) async fn update(
                 };
 
                 item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
-                let item_encode = bincode::encode_to_vec(&item, standard())?;
-                items_tree.insert(u32_to_ivec(item_id), item_encode)?;
+                set_one(db, "items", item_id, &item)?;
 
                 item_ids.push((item_id, item.updated));
             }
@@ -681,8 +676,7 @@ pub(super) async fn update(
                         content: source_item.content,
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
-                    let item_encode = bincode::encode_to_vec(&item, standard())?;
-                    items_tree.insert(u32_to_ivec(item_id), item_encode)?;
+                    set_one(db, "items", item_id, &item)?;
 
                     item_ids.push((item_id, item.updated));
                 }
@@ -777,9 +771,8 @@ pub(super) fn inn_feed_to_post(
             created_at: ts,
             status: PostStatus::Normal,
         };
-        let post_encoded = bincode::encode_to_vec(&post, standard())?;
-        db.open_tree("posts")?
-            .insert(u32_to_ivec(pid), post_encoded)?;
+
+        set_one(db, "posts", pid, &post)?;
 
         let tag_k = [tag.as_bytes(), &u32_to_ivec(pid)].concat();
         db.open_tree("tags")?.insert(tag_k, &[])?;

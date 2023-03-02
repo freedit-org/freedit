@@ -1,5 +1,5 @@
 use super::{
-    db_utils::{ivec_to_u32, u8_slice_to_u32, IterType},
+    db_utils::{ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
     fmt::ts_to_date,
     meta_handler::{into_response, PageData, ValidatedForm},
     user::Role,
@@ -325,8 +325,7 @@ pub(crate) async fn admin_post(
         return Err(AppError::Unauthorized);
     }
 
-    let site_config = bincode::encode_to_vec(&input, standard())?;
-    db.insert("site_config", site_config)?;
+    set_one_with_key(&db, "__sled__default", "site_config", &input)?;
     Ok(Redirect::to("/admin"))
 }
 

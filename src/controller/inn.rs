@@ -14,7 +14,8 @@
 use super::{
     db_utils::{
         extract_element, get_batch, get_count, get_count_by_prefix, get_ids_by_prefix,
-        get_ids_by_tag, get_one, get_range, ivec_to_u32, u32_to_ivec, u8_slice_to_u32, IterType,
+        get_ids_by_tag, get_one, get_range, ivec_to_u32, set_one, set_one_with_key, u32_to_ivec,
+        u8_slice_to_u32, IterType,
     },
     feed::{inn_feed_to_post, update},
     fmt::{md2html, ts_to_date},
@@ -238,9 +239,7 @@ pub(crate) async fn mod_inn_post(
         db.open_tree("inns_private")?.insert(&iid_ivec, &[])?;
     }
 
-    let inn_encoded = bincode::encode_to_vec(&inn, standard())?;
-
-    db.open_tree("inns")?.insert(&iid_ivec, inn_encoded)?;
+    set_one(&db, "inns", iid, &inn)?;
     inn_names_tree.insert(inn.inn_name, iid_ivec)?;
 
     let target = format!("/inn/{iid}");
@@ -281,9 +280,7 @@ pub(crate) async fn mod_feed_post(
     };
     feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
 
-    let feed_encode = bincode::encode_to_vec(&feed, standard())?;
-    db.open_tree("feeds")?
-        .insert(u32_to_ivec(feed_id), feed_encode)?;
+    set_one(&db, "feeds", feed_id, &feed)?;
 
     let k = &[u32_to_ivec(iid), u32_to_ivec(feed_id)].concat();
     let inn_feeds_tree = db.open_tree("inn_feeds")?;
@@ -532,8 +529,7 @@ pub(crate) async fn edit_post_post(
         return Ok(Redirect::to("/post/edit/0"));
     }
     if is_draft {
-        let post_encoded = bincode::encode_to_vec(&input, standard())?;
-        db.open_tree("drafts")?.insert(k, post_encoded)?;
+        set_one_with_key(&db, "drafts", k, &input)?;
         return Ok(Redirect::to("/post/edit/0"));
     }
 
@@ -612,8 +608,7 @@ pub(crate) async fn edit_post_post(
         status: PostStatus::Normal,
     };
 
-    let post_encoded = bincode::encode_to_vec(&post, standard())?;
-    db.open_tree("posts")?.insert(&pid_ivec, post_encoded)?;
+    set_one(&db, "posts", pid, &post)?;
 
     let iid_ivec = u32_to_ivec(iid);
     let visibility_ivec = u32_to_ivec(visibility);
@@ -1474,9 +1469,8 @@ pub(crate) async fn comment_post(
         created_at,
         is_hidden: false,
     };
-    let comment_encoded = bincode::encode_to_vec(&comment, standard())?;
     let k = [&pid_ivec, &u32_to_ivec(cid)].concat();
-    db.open_tree("post_comments")?.insert(k, comment_encoded)?;
+    set_one_with_key(&db, "post_comments", k, &comment)?;
 
     let k = [&u32_to_ivec(claim.uid), &pid_ivec, &u32_to_ivec(cid)].concat();
     db.open_tree("user_comments")?.insert(k, &[])?;
@@ -1594,8 +1588,7 @@ pub(crate) async fn comment_hide(
     let (mut comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
     comment.is_hidden = !comment.is_hidden;
 
-    let comment_encode = bincode::encode_to_vec(&comment, standard())?;
-    db.open_tree("post_comments")?.insert(&k, comment_encode)?;
+    set_one_with_key(&db, "post_comments", k, &comment)?;
 
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
@@ -1690,9 +1683,7 @@ pub(crate) async fn post_delete(
 
     if count == 0 && post.uid == claim.uid {
         post.content = PostContent::Markdown("*Post deleted by author.*".into());
-        let post_encoded = bincode::encode_to_vec(&post, standard())?;
-        db.open_tree("posts")?
-            .insert(u32_to_ivec(pid), post_encoded)?;
+        set_one(&db, "posts", pid, &post)?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -1754,9 +1745,7 @@ pub(crate) async fn post_lock(
         }
     }
 
-    let post_encoded = bincode::encode_to_vec(&post, standard())?;
-    db.open_tree("posts")?
-        .insert(u32_to_ivec(pid), post_encoded)?;
+    set_one(&db, "posts", pid, &post)?;
 
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
@@ -1789,9 +1778,7 @@ pub(crate) async fn post_hide(
         }
     }
 
-    let post_encoded = bincode::encode_to_vec(&post, standard())?;
-    db.open_tree("posts")?
-        .insert(u32_to_ivec(pid), post_encoded)?;
+    set_one(&db, "posts", pid, &post)?;
 
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))

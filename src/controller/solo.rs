@@ -1,5 +1,7 @@
 use super::{
-    db_utils::{extract_element, get_count_by_prefix, get_ids_by_tag, get_range, IterType},
+    db_utils::{
+        extract_element, get_count_by_prefix, get_ids_by_tag, get_range, set_one, IterType,
+    },
     fmt::{md2html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, into_response, ivec_to_u32,
     meta_handler::{get_referer, PageData, ParamsPage, ValidatedForm},
@@ -13,7 +15,6 @@ use axum::{
     headers::{Cookie, Referer},
     response::{IntoResponse, Redirect},
 };
-use bincode::config::standard;
 use chrono::Utc;
 use serde::Deserialize;
 use sled::Db;
@@ -386,9 +387,7 @@ pub(crate) async fn solo_post(
         let mut solo_replied: Solo = get_one(&db, "solos", input.reply_to)?;
         solo_replied.replies.push(sid);
         replied_uesr = Some(solo_replied.uid);
-        let solo_replied_encode = bincode::encode_to_vec(&solo_replied, standard())?;
-        db.open_tree("solos")?
-            .insert(&u32_to_ivec(input.reply_to), solo_replied_encode)?;
+        set_one(&db, "solos", input.reply_to, &solo_replied)?;
 
         if solo_replied.uid != uid {
             add_notification(
@@ -459,9 +458,7 @@ pub(crate) async fn solo_post(
         replies: vec![],
     };
 
-    let solo_encode = bincode::encode_to_vec(&solo, standard())?;
-
-    db.open_tree("solos")?.insert(&sid_ivec, solo_encode)?;
+    set_one(&db, "solos", sid, &solo)?;
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
     db.open_tree("user_solos")?
         .insert(k, &u32_to_ivec(visibility))?;

@@ -1,5 +1,5 @@
 use bincode::{config::standard, Decode, Encode};
-use freedit::controller::{Post, PostContent, PostStatus};
+use freedit::controller::{db_utils::set_one, Post, PostContent, PostStatus};
 use serde::Serialize;
 
 fn main() {
@@ -11,7 +11,7 @@ fn main() {
 
     let tree = db.open_tree("posts").unwrap();
     for i in tree.iter() {
-        let (k, v) = i.unwrap();
+        let (_, v) = i.unwrap();
         let (old, _): (OldPost, usize) = bincode::decode_from_slice(&v, standard()).unwrap();
 
         let status = if old.is_locked {
@@ -33,8 +33,7 @@ fn main() {
             status,
         };
 
-        let post_encoded = bincode::encode_to_vec(&new, standard()).unwrap();
-        tree.insert(k, post_encoded).unwrap();
+        set_one(&db, "posts", new.pid, &new).unwrap();
     }
 }
 

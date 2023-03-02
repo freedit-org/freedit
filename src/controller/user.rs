@@ -1,7 +1,10 @@
 //! ## [User] sign up/in/out, user profile/list controller
 
 use super::{
-    db_utils::{generate_nanoid_ttl, get_count, get_count_by_prefix, get_range, IterType},
+    db_utils::{
+        generate_nanoid_ttl, get_count, get_count_by_prefix, get_range, set_one, set_one_with_key,
+        IterType,
+    },
     fmt::ts_to_date,
     get_ids_by_prefix, get_one, incr_id, into_response,
     meta_handler::{PageData, ParamsPage, ValidatedForm},
@@ -528,10 +531,7 @@ pub(crate) async fn role_post(
 
             if user.role != role {
                 user.role = role;
-                let user_encode = bincode::encode_to_vec(&user, standard())?;
-                db.open_tree("users")?
-                    .insert(&u32_to_ivec(uid), user_encode)?;
-
+                set_one(&db, "users", uid, &user)?;
                 Claim::update_role(&db, uid)?;
 
                 add_notification(&db, uid, NtType::SiteNotification, role as u32, 0)?;
@@ -660,9 +660,7 @@ pub(crate) async fn reset_post(
     if let Some(ref recovery_hash) = user.recovery_hash {
         if check_password(&input.recovery_code, recovery_hash) {
             user.password_hash = generate_password_hash(&input.password);
-            let user_encode = bincode::encode_to_vec(&user, standard())?;
-            db.open_tree("users")?
-                .insert(u32_to_ivec(uid), user_encode)?;
+            set_one(&db, "users", uid, &user)?;
 
             return Ok(Redirect::to("/signin").into_response());
         };
@@ -715,9 +713,7 @@ pub(crate) async fn user_setting_post(
     user.username = input.username;
     user.about = input.about;
     user.url = input.url;
-    let user_encode = bincode::encode_to_vec(&user, standard())?;
-    db.open_tree("users")?
-        .insert(u32_to_ivec(claim.uid), &*user_encode)?;
+    set_one(&db, "users", claim.uid, &user)?;
 
     let target = format!("/user/{}", claim.uid);
     Ok(Redirect::to(&target))
@@ -747,9 +743,7 @@ pub(crate) async fn user_password_post(
     if check_password(&input.old_password, &user.password_hash) {
         let password_hash = generate_password_hash(&input.password);
         user.password_hash = password_hash;
-        let user_encode = bincode::encode_to_vec(&user, standard())?;
-        db.open_tree("users")?
-            .insert(u32_to_ivec(claim.uid), &*user_encode)?;
+        set_one(&db, "users", claim.uid, &user)?;
         Ok(Redirect::to("/signout"))
     } else {
         sleep(Duration::from_secs(1)).await;
@@ -932,11 +926,9 @@ pub(crate) async fn signup_post(
         ..Default::default()
     };
 
-    let user_encode = bincode::encode_to_vec(&user, standard())?;
-    let uid_ivec = u32_to_ivec(uid);
-    db.open_tree("users")?.insert(&uid_ivec, user_encode)?;
+    set_one(&db, "users", uid, &user)?;
     db.open_tree("usernames")?
-        .insert(&user.username, &uid_ivec)?;
+        .insert(&user.username, u32_to_ivec(uid))?;
 
     let cookie = Claim::generate_cookie(&db, user, "4h")?;
     let mut headers = HeaderMap::new();
@@ -992,9 +984,7 @@ pub(crate) async fn user_recovery_code(
     if check_password(&input.password, &user.password_hash) {
         let recovery_code = gen_password();
         user.recovery_hash = Some(generate_password_hash(&recovery_code));
-        let user_encode = bincode::encode_to_vec(&user, standard())?;
-        db.open_tree("users")?
-            .insert(u32_to_ivec(claim.uid), &*user_encode)?;
+        set_one(&db, "users", claim.uid, &user)?;
         let has_unread = User::has_unread(&db, claim.uid)?;
         let page_data = PageData::new("Recovery code", &site_config, Some(claim), has_unread);
         let page_show_recovery = PageShowRecovery {
@@ -1104,9 +1094,8 @@ impl Claim {
 
     pub(super) fn update_last_write(mut self, db: &Db) -> Result<(), AppError> {
         self.last_write = Utc::now().timestamp();
-        let claim_encode = bincode::encode_to_vec(&self, standard())?;
-        db.open_tree("sessions")?
-            .insert(&self.session_id, claim_encode)?;
+        set_one_with_key(db, "sessions", &self.session_id, &self)?;
+
         Ok(())
     }
 
@@ -1119,8 +1108,7 @@ impl Claim {
             let (mut claim, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
             if claim.uid == uid {
                 claim.role = user.role;
-                let claim_encode = bincode::encode_to_vec(&claim, standard())?;
-                session_tree.insert(&k, claim_encode)?;
+                set_one_with_key(db, "sessions", k, &claim)?;
             }
         }
 
@@ -1144,10 +1132,7 @@ impl Claim {
             session_id: session_id.clone(),
         };
 
-        let claim_encode = bincode::encode_to_vec(&claim, standard())?;
-
-        db.open_tree("sessions")?
-            .insert(&session_id, claim_encode)?;
+        set_one_with_key(db, "sessions", &session_id, &claim)?;
 
         let cookie = format!(
             "{COOKIE_NAME}={session_id}; SameSite=Strict; Path=/; Secure; HttpOnly; Max-Age={seconds}"

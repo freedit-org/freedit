@@ -1,6 +1,6 @@
 use super::meta_handler::ParamsPage;
 use crate::error::AppError;
-use bincode::{config::standard, Decode};
+use bincode::{config::standard, Decode, Encode};
 use chrono::Utc;
 use nanoid::nanoid;
 use sled::{Db, IVec, Iter, Tree};
@@ -45,6 +45,25 @@ where
     } else {
         Err(AppError::NotFound)
     }
+}
+
+pub fn set_one<T>(db: &Db, tree_name: &str, id: u32, one: &T) -> Result<(), AppError>
+where
+    T: Encode,
+{
+    let encoded = bincode::encode_to_vec(one, standard())?;
+    db.open_tree(tree_name)?.insert(u32_to_ivec(id), encoded)?;
+    Ok(())
+}
+
+pub fn set_one_with_key<T, K>(db: &Db, tree_name: &str, key: K, one: &T) -> Result<(), AppError>
+where
+    T: Encode,
+    K: AsRef<[u8]>,
+{
+    let encoded = bincode::encode_to_vec(one, standard())?;
+    db.open_tree(tree_name)?.insert(key, encoded)?;
+    Ok(())
 }
 
 /// get objects in batch that has been encoded by bincode
