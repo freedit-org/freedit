@@ -7,71 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0-rc.7] - 2023-03-01
+## [0.3.0] - 2023-03-02
 
 **breaking changes**
 
-### Changed
+- `Post` add field `status`, remove field `is_locked` and `is_hidden`
+- `Post` field `content` changed to `PostContent`
+- tree `user_uploads`: changed from `uid#image_hash.ext => &[]` to `uid#img_id => image_hash.ext`
+- rewrite notifications: tree "notifications" changed from old kv: `uid#pid#cid => notification_code` to new kv: `uid#nid#nt_type => id1#id2#is_read`
 
+### Added
+
+- author can delete post if no one comments it
+- `/gallery` Fix #64
 - Auto post from inn feed.
-
-## [0.3.0-rc.6] - 2023-02-28
-
-**breaking changes**
-
-### Changed
-
-- post add field status, data migration [dm_v0210-v0300_posts](https://github.com/freedit-org/freedit/blob/main/examples/dm_v0210-v0300_posts.rs)
 
 ### Fixed
 
 - if the comment has been deleted, just remove it 
 - Table style missing #42
-
-### Added
-
-- author can delete post if no one comments it
-
-## [0.3.0-rc.5] - 2023-02-21
-
-### Fixed
-
 - username could not contain special characters (#77 reported by @Yakumo-Yukari)
 - Feed update timeouts should be less than global timeouts
-
-## [0.3.0-rc.4] - 2023-02-09
-
-### changed
-
-- changed to bin + lib
-
-## [0.3.0-rc.3] - 2023-02-08
-
-**breaking changes**
-
-### Changed
-
-* tree `user_uploads`: changed from `uid#image_hash.ext => &[]` to `uid#img_id => image_hash.ext`
-
-### Added
-
-- `/gallery` Fix #64
-
-## [0.3.0-rc.2] - 2023-02-08
-
-### Fixed
-
 - remove notification if the msg is deleted #67 
 - Solo like should be descending fix #68
 - /user/list filter is broken #69
-
-## [0.3.0-rc.1] - 2023-02-07
-
-### Changed
-
-**breaking changes**
-
-* rewrite notifications: tree "notifications" changed from old kv: `uid#pid#cid => notification_code` to new kv: `uid#nid#nt_type => id1#id2#is_read`
 
 ## [0.2.10] - 2023-02-02
 
@@ -142,14 +101,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.7...HEAD
-[0.3.0-rc.7]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.6...v0.3.0-rc.7
-[0.3.0-rc.6]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.5...v0.3.0-rc.6
-[0.3.0-rc.5]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.4...v0.3.0-rc.5
-[0.3.0-rc.4]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.3...v0.3.0-rc.4
-[0.3.0-rc.3]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.2...v0.3.0-rc.3
-[0.3.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.3.0-rc.1...v0.3.0-rc.2
-[0.3.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.2.10...v0.3.0-rc.1
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/freedit-org/freedit/compare/v0.2.10...v0.3.0
 [0.2.10]: https://github.com/freedit-org/freedit/compare/v0.2.9...v0.2.10
 [0.2.9]: https://github.com/freedit-org/freedit/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/freedit-org/freedit/compare/v0.2.7...v0.2.8
