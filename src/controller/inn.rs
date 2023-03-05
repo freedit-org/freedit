@@ -72,7 +72,7 @@ pub(crate) async fn mod_inn(
         return Err(AppError::Unauthorized);
     }
 
-    if site_config.inn_mod_max > 0 {
+    if iid == 0 && site_config.inn_mod_max > 0 {
         let mod_counts = get_count_by_prefix(&db, "mod_inns", &u32_to_ivec(claim.uid))?;
         if mod_counts >= site_config.inn_mod_max {
             return Err(AppError::InnCreateLimit);
@@ -139,7 +139,7 @@ pub(crate) async fn mod_inn_post(
         return Err(AppError::Unauthorized);
     }
 
-    if site_config.inn_mod_max > 0 {
+    if iid == 0 && site_config.inn_mod_max > 0 {
         let mod_counts = get_count_by_prefix(&db, "mod_inns", &u32_to_ivec(claim.uid))?;
         if mod_counts >= site_config.inn_mod_max {
             return Err(AppError::InnCreateLimit);
