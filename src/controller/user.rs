@@ -751,7 +751,7 @@ pub(crate) async fn user_password_post(
     }
 }
 
-pub(crate) const COOKIE_NAME: &str = "__Host-id";
+pub(crate) const COOKIE_NAME: &str = "id";
 
 /// Form data: `/signin`
 #[derive(Deserialize)]
