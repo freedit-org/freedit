@@ -39,6 +39,17 @@ cd freedit && cargo build -r
 ./target/release/freedit
 ```
 
+## Enable https (Optional)
+
+Contents of certificate file and private key file must be in PEM format.
+
+In config.toml file
+
+```toml
+cert = 'cert-path'
+key = 'key-path'
+```
+
 ## Documentation
 
 * online doc: <https://freedit-org.github.io/freedit/freedit/index.html>
