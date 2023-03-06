@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2023-03-06
+
+### Fixed
+
+- Changed cookie name from `__Host-id` to `id`, fix #86 (Reported by @dominikdalek )
+- Fixed #85 (Reported by @dominikdalek )
+
 ## [0.3.0] - 2023-03-02
 
 **breaking changes**
