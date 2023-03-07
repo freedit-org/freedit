@@ -297,7 +297,7 @@ pub(crate) async fn notification(
         inn_notifications,
     };
 
-    Ok(into_response(&notification_page, "html"))
+    Ok(into_response(&notification_page))
 }
 
 struct InnNotification {

@@ -281,7 +281,7 @@ pub(crate) async fn admin_view(
         is_desc,
         n,
     };
-    Ok(into_response(&page_admin_view, "html"))
+    Ok(into_response(&page_admin_view))
 }
 
 /// Page data: `admin.html`
@@ -310,7 +310,7 @@ pub(crate) async fn admin(
         site_config: &site_config,
         page_data,
     };
-    Ok(into_response(&page_admin, "html"))
+    Ok(into_response(&page_admin))
 }
 
 /// `POST /admin`
@@ -390,5 +390,5 @@ pub(crate) async fn admin_stats(
     let has_unread = User::has_unread(&db, claim.uid)?;
     let page_data = PageData::new("Admin-pageview", &site_config, Some(claim), has_unread);
     let page_admin_pageview = PageAdminStats { page_data, stats };
-    Ok(into_response(&page_admin_pageview, "html"))
+    Ok(into_response(&page_admin_pageview))
 }

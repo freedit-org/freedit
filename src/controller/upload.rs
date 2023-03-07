@@ -125,7 +125,7 @@ pub(crate) async fn gallery(
         is_desc,
     };
 
-    Ok(into_response(&page_gallery, "html"))
+    Ok(into_response(&page_gallery))
 }
 
 /// Page data: `upload.html`
@@ -151,7 +151,7 @@ pub(crate) async fn upload(
         imgs: vec![],
     };
 
-    Ok(into_response(&page_upload, "html"))
+    Ok(into_response(&page_upload))
 }
 
 /// `POST /upload`
@@ -256,7 +256,7 @@ pub(crate) async fn upload_post(
     let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
     let page_upload = PageUpload { page_data, imgs };
 
-    Ok(into_response(&page_upload, "html"))
+    Ok(into_response(&page_upload))
 }
 
 #[derive(Copy, Clone)]

@@ -3,10 +3,10 @@ use crate::{config::CONFIG, error::AppError, CURRENT_SHA256, GIT_COMMIT, VERSION
 use askama::Template;
 use axum::{
     async_trait,
-    body::{self, BoxBody, Full},
+    body::BoxBody,
     extract::{rejection::FormRejection, FromRequest},
     headers::{HeaderName, Referer},
-    http::{HeaderMap, HeaderValue, Request},
+    http::{self, HeaderMap, HeaderValue, Request},
     response::{IntoResponse, Redirect, Response},
     Form, TypedHeader,
 };
@@ -17,17 +17,17 @@ use tokio::signal;
 use tracing::error;
 use validator::Validate;
 
-pub(super) fn into_response<T: Template>(t: &T, ext: &str) -> Response<BoxBody> {
+pub(super) fn into_response<T: Template>(t: &T) -> Response<BoxBody> {
     match t.render() {
-        Ok(body) => Response::builder()
-            .status(StatusCode::OK)
-            .header("content-type", ext)
-            .body(body::boxed(Full::from(body)))
-            .unwrap(),
-        Err(err) => Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(body::boxed(Full::from(format!("{err}"))))
-            .unwrap(),
+        Ok(body) => {
+            let headers = [(
+                http::header::CONTENT_TYPE,
+                http::HeaderValue::from_static(T::MIME_TYPE),
+            )];
+
+            (headers, body).into_response()
+        }
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
     }
 }
 
@@ -71,7 +71,7 @@ impl IntoResponse for AppError {
             error: self.to_string(),
         };
 
-        into_response(&page_error, "html")
+        into_response(&page_error)
     }
 }
 

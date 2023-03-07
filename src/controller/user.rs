@@ -114,7 +114,7 @@ pub(crate) async fn user(
         has_followed,
     };
 
-    Ok(into_response(&page_user, "html"))
+    Ok(into_response(&page_user))
 }
 
 /// `GET /user/:uid/follow` follow user
@@ -430,7 +430,7 @@ pub(crate) async fn user_list(
         is_admin,
     };
 
-    Ok(into_response(&page_user_list, "html"))
+    Ok(into_response(&page_user_list))
 }
 
 /// Form data: `/role/:id/:uid`
@@ -596,7 +596,7 @@ pub(crate) async fn user_setting(
         sessions,
     };
 
-    Ok(into_response(&page_user_setting, "html"))
+    Ok(into_response(&page_user_setting))
 }
 
 /// Page data: `reset.html`
@@ -622,7 +622,7 @@ pub(crate) async fn reset(
 
     let page_data = PageData::new("Forgot password", &site_config, None, false);
     let page_reset = PageReset { page_data };
-    Ok(into_response(&page_reset, "html"))
+    Ok(into_response(&page_reset))
 }
 
 /// Form data: `/user/setting`
@@ -782,7 +782,7 @@ pub(crate) async fn signin(
     let page_data = PageData::new("Sign in", &site_config, claim, false);
 
     let page_signin = PageSignin { page_data };
-    Ok(into_response(&page_signin, "html"))
+    Ok(into_response(&page_signin))
 }
 
 /// `POST /signin`
@@ -870,7 +870,7 @@ pub(crate) async fn signup(State(db): State<Db>) -> Result<impl IntoResponse, Ap
         captcha_id,
         captcha_image: captcha.as_base64().unwrap(),
     };
-    Ok(into_response(&page_signup, "html"))
+    Ok(into_response(&page_signup))
 }
 
 /// `POST /signup`
@@ -992,7 +992,7 @@ pub(crate) async fn user_recovery_code(
             recovery_code,
         };
 
-        Ok(into_response(&page_show_recovery, "html"))
+        Ok(into_response(&page_show_recovery))
     } else {
         sleep(Duration::from_secs(1)).await;
         Err(AppError::WrongPassword)

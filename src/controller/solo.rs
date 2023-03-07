@@ -225,7 +225,7 @@ pub(crate) async fn solo_list(
         filter,
         hashtag: params.hashtag,
     };
-    Ok(into_response(&page_solo_list, "html"))
+    Ok(into_response(&page_solo_list))
 }
 
 /// Page data: `solo.html`
@@ -280,7 +280,7 @@ pub(crate) async fn solo(
         reply_solos,
     };
 
-    Ok(into_response(&page_solo, "html"))
+    Ok(into_response(&page_solo))
 }
 
 fn get_all_solos(

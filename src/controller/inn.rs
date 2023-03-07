@@ -84,7 +84,7 @@ pub(crate) async fn mod_inn(
     if iid == 0 {
         let page_data = PageData::new("create new inn", &site_config, Some(claim), has_unread);
         let page_inn_create = PageInnCreate { page_data };
-        Ok(into_response(&page_inn_create, "html"))
+        Ok(into_response(&page_inn_create))
     } else {
         if !User::is_mod(&db, claim.uid, iid)? {
             return Err(AppError::Unauthorized);
@@ -104,7 +104,7 @@ pub(crate) async fn mod_inn(
             inn,
             inn_feeds,
         };
-        Ok(into_response(&page_inn_edit, "html"))
+        Ok(into_response(&page_inn_edit))
     }
 }
 
@@ -397,7 +397,7 @@ pub(crate) async fn inn_list(
         filter,
     };
 
-    Ok(into_response(&page_inn_list, "html"))
+    Ok(into_response(&page_inn_list))
 }
 
 /// Page data: `post_create.html`
@@ -483,7 +483,7 @@ pub(crate) async fn edit_post(
             draft_titles,
         };
 
-        Ok(into_response(&page_post_create, "html"))
+        Ok(into_response(&page_post_create))
     } else {
         let post: Post = get_one(&db, "posts", pid)?;
 
@@ -502,7 +502,7 @@ pub(crate) async fn edit_post(
         let page_data = PageData::new("edit post", &site_config, Some(claim), has_unread);
         let page_post_edit = PagePostEdit { page_data, post };
 
-        Ok(into_response(&page_post_edit, "html"))
+        Ok(into_response(&page_post_edit))
     }
 }
 
@@ -710,7 +710,7 @@ pub(crate) async fn tag(
         tag,
     };
 
-    Ok(into_response(&page_tag, "html"))
+    Ok(into_response(&page_tag))
 }
 
 /// Page data: `inn.html`
@@ -863,7 +863,7 @@ pub(crate) async fn inn(
         is_mod,
     };
 
-    Ok(into_response(&page_inn, "html"))
+    Ok(into_response(&page_inn))
 }
 
 /// Page data: `inn_feed.html`
@@ -951,7 +951,7 @@ pub(crate) async fn inn_feed(
         updated,
         posts: feed_posts,
     };
-    Ok(into_response(&page_inn_feed, "html"))
+    Ok(into_response(&page_inn_feed))
 }
 
 /// get [OutPostList] from pids
@@ -1366,7 +1366,7 @@ pub(crate) async fn post(
         can_delete,
     };
 
-    Ok(into_response(&page_post, "html"))
+    Ok(into_response(&page_post))
 }
 
 /// Form data: `/inn/:iid/:pid/` comment create
@@ -1533,7 +1533,7 @@ pub(crate) async fn preview(
         content: md2html(&input.content),
     };
 
-    Ok(into_response(&page_preview, "html"))
+    Ok(into_response(&page_preview))
 }
 
 /// `GET /post/:iid/:pid/:cid/delete` comment delete

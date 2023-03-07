@@ -359,7 +359,7 @@ pub(crate) async fn feed(
         username,
     };
 
-    Ok(into_response(&page_feed, "html"))
+    Ok(into_response(&page_feed))
 }
 
 fn get_item_ids_and_ts(db: &Db, tree: &str, id: u32) -> Result<Vec<(u32, i64)>, AppError> {
@@ -443,7 +443,7 @@ pub(crate) async fn feed_read(
         allow_img,
     };
 
-    Ok(into_response(&page_feed_read, "html"))
+    Ok(into_response(&page_feed_read))
 }
 
 /// Page data: `feed_add.html`
@@ -481,7 +481,7 @@ pub(crate) async fn feed_add(
     let page_data = PageData::new("Feed add", &site_config, Some(claim), has_unread);
     let page_feed_add = PageFeedAdd { page_data, folders };
 
-    Ok(into_response(&page_feed_add, "html"))
+    Ok(into_response(&page_feed_add))
 }
 
 /// Form data: `/feed/add`

@@ -85,7 +85,7 @@
         <div class="media-right">
             {% if solo.visibility == 20 %}
                 {% include "icons/lock_square.svg" %}
-            {% elseif solo.visibility == 10 %}
+            {% else if solo.visibility == 10 %}
                 {% include "icons/lock.svg" %}
             {% else %}{% endif %}
         </div>
@@ -140,7 +140,7 @@
     <div class="media-right">
         {% if solo.visibility == 20 %}
             {% include "icons/lock_square.svg" %}
-        {% elseif solo.visibility == 10 %}
+        {% else if solo.visibility == 10 %}
             {% include "icons/lock.svg" %}
         {% else %}{% endif %}
     </div>
