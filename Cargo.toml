@@ -12,7 +12,7 @@ axum-server = { version = "0.4", features = ["tls-rustls"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.2"
 captcha = { version = "0.0.9", default-features = false }
-chrono = { version = "0.4.23", default-features = false, features = ["clock"] }
+chrono = { version = "0.4.24", default-features = false, features = ["clock"] }
 data-encoding = "*"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
