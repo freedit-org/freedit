@@ -1789,8 +1789,8 @@ pub(crate) async fn post_hide(
 
     set_one(&db, "posts", pid, &post)?;
 
-    if (old_status < PostStatus::HiddenByUser && post.status == PostStatus::HiddenByUser)
-        || (old_status < PostStatus::HiddenByMod && post.status == PostStatus::HiddenByMod)
+    if (old_status <= PostStatus::HiddenByUser && post.status == PostStatus::HiddenByUser)
+        || (old_status <= PostStatus::HiddenByMod && post.status == PostStatus::HiddenByMod)
     {
         //remove from inn timeline
         let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
