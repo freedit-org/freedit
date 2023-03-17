@@ -788,6 +788,10 @@ pub(super) fn inn_feed_to_post(
         db.open_tree("post_timeline")?
             .insert(k, u32_to_ivec(visibility))?;
 
+        let k = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
+        let v = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
+        db.open_tree("user_posts")?.insert(k, v)?;
+
         inn_items_tree.insert(inn_item_k, &[])?;
     }
 
