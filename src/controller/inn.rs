@@ -1803,9 +1803,10 @@ pub(crate) async fn post_hide(
         || (old_status == PostStatus::HiddenByMod && post.status < PostStatus::HiddenByMod)
     {
         let k0 = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
-        if let Some(visibility) = db.open_tree("user_posts")?.get(k0)? {
+        if let Some(v) = db.open_tree("user_posts")?.get(k0)? {
             let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
             let timestamp = u32_to_ivec(post.created_at as u32);
+            let visibility = &v[4..8];
 
             // kv_pair: iid#pid = timestamp
             db.open_tree("post_timeline_idx")?.insert(&k1, &timestamp)?;

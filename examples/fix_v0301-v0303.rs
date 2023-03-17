@@ -19,7 +19,7 @@ fn main() {
         let post: Post = get_one(&db, "posts", pid).unwrap();
 
         let k1 = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
-        let v = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
-        db.open_tree("user_posts").unwrap().insert(k1, v).unwrap();
+        let v1 = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
+        db.open_tree("user_posts").unwrap().insert(k1, v1).unwrap();
     }
 }
