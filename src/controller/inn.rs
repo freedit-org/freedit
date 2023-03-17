@@ -1684,6 +1684,14 @@ pub(crate) async fn post_delete(
     if count == 0 && post.uid == claim.uid {
         post.content = PostContent::Markdown("*Post deleted by author.*".into());
         set_one(&db, "posts", pid, &post)?;
+
+        // remove this post from inn timeline
+        let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+        let ts = db.open_tree("post_timeline_idx")?.remove(&k1)?;
+        if let Some(ts) = ts {
+            let k2 = [ts.as_ref(), &k1].concat();
+            db.open_tree("post_timeline")?.remove(k2)?;
+        }
     }
 
     let target = format!("/post/{iid}/{pid}");
