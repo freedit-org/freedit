@@ -34,7 +34,7 @@ pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
 /// // get the user whose uid is 3.
 /// let user:User = get_one(&db, "users", 3)?;
 /// ```
-pub(super) fn get_one<T>(db: &Db, tree_name: &str, id: u32) -> Result<T, AppError>
+pub fn get_one<T>(db: &Db, tree_name: &str, id: u32) -> Result<T, AppError>
 where
     T: Decode,
 {
