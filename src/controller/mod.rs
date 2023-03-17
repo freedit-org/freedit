@@ -233,7 +233,7 @@ struct Inn {
     created_at: i64,
 }
 
-#[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug)]
+#[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug, Clone)]
 #[repr(u8)]
 pub enum PostStatus {
     Normal = 0,

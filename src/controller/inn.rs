@@ -1771,6 +1771,7 @@ pub(crate) async fn post_hide(
         .ok_or(AppError::NonLogin)?;
 
     let mut post: Post = get_one(&db, "posts", pid)?;
+    let old_status = post.status.clone();
 
     if User::is_mod(&db, claim.uid, iid)? {
         if post.status != PostStatus::HiddenByMod {
@@ -1787,6 +1788,33 @@ pub(crate) async fn post_hide(
     }
 
     set_one(&db, "posts", pid, &post)?;
+
+    if (old_status < PostStatus::HiddenByUser && post.status == PostStatus::HiddenByUser)
+        || (old_status < PostStatus::HiddenByMod && post.status == PostStatus::HiddenByMod)
+    {
+        //remove from inn timeline
+        let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+        let ts = db.open_tree("post_timeline_idx")?.remove(&k1)?;
+        if let Some(ts) = ts {
+            let k2 = [ts.as_ref(), &k1].concat();
+            db.open_tree("post_timeline")?.remove(k2)?;
+        }
+    } else if (old_status == PostStatus::HiddenByUser && post.status < PostStatus::HiddenByUser)
+        || (old_status == PostStatus::HiddenByMod && post.status < PostStatus::HiddenByMod)
+    {
+        let k0 = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
+        if let Some(visibility) = db.open_tree("user_posts")?.get(k0)? {
+            let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+            let timestamp = u32_to_ivec(post.created_at as u32);
+
+            // kv_pair: iid#pid = timestamp
+            db.open_tree("post_timeline_idx")?.insert(&k1, &timestamp)?;
+
+            let k = [timestamp.as_ref(), &k1].concat();
+            // kv_pair: timestamp#iid#pid = visibility
+            db.open_tree("post_timeline")?.insert(k, visibility)?;
+        }
+    }
 
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
