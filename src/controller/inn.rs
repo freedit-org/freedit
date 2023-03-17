@@ -1026,7 +1026,7 @@ fn get_pids_by_iids(db: &Db, iids: &[u32], page_params: &ParamsPage) -> Result<V
     let mut pairs = Vec::new();
     for iid in iids {
         let prefix = u32_to_ivec(*iid);
-        // kv_pair: iid#pid = timestamp#visibility
+        // kv_pair: iid#pid = timestamp
         for i in db.open_tree("post_timeline_idx")?.scan_prefix(prefix) {
             let (k, v) = i?;
             let pid = u8_slice_to_u32(&k[4..8]);
@@ -1406,7 +1406,7 @@ pub(crate) async fn comment_post(
     if post.iid != iid {
         return Err(AppError::NotFound);
     }
-    if post.status == PostStatus::LockedByMod || post.status == PostStatus::LockedByUser {
+    if post.status != PostStatus::Normal {
         return Err(AppError::LockedOrHidden);
     }
 

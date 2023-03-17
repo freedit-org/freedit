@@ -178,7 +178,7 @@
     {% endfor %}
 </div>
 
-{% if post.status.as_str() == "LockedByMod" || post.status.as_str() == "LockedByUser" %}
+{% if post.status.as_str() != "Normal" %}
 <div class="content">
     {% include "icons/lock.svg" %}
     {{post.status}}
