@@ -270,8 +270,8 @@ impl PostContent {
 impl Display for PostContent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PostContent::Markdown(c) => write!(f, "({c})"),
-            PostContent::FeedItemId(id) => write!(f, "(From item_id: {id})"),
+            PostContent::Markdown(c) => write!(f, "{c}"),
+            PostContent::FeedItemId(id) => write!(f, "From item_id: {id}"),
         }
     }
 }
