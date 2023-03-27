@@ -17,7 +17,7 @@ data-encoding = "*"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
-indexmap = "1.9.2"
+indexmap = "1.9.3"
 latex2mathml = "0.2.3"
 mozjpeg = "0.9.4"
 nanoid = "0.4.0"
