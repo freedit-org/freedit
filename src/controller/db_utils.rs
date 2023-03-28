@@ -38,7 +38,15 @@ pub fn get_one<T>(db: &Db, tree_name: &str, id: u32) -> Result<T, AppError>
 where
     T: Decode,
 {
-    let v = db.open_tree(tree_name)?.get(u32_to_ivec(id))?;
+    get_one_by_key(db, tree_name, u32_to_ivec(id))
+}
+
+pub fn get_one_by_key<T, K>(db: &Db, tree_name: &str, key: K) -> Result<T, AppError>
+where
+    T: Decode,
+    K: AsRef<[u8]>,
+{
+    let v = db.open_tree(tree_name)?.get(key)?;
     if let Some(v) = v {
         let (one, _): (T, usize) = bincode::decode_from_slice(&v, standard())?;
         Ok(one)
@@ -51,9 +59,7 @@ pub fn set_one<T>(db: &Db, tree_name: &str, id: u32, one: &T) -> Result<(), AppE
 where
     T: Encode,
 {
-    let encoded = bincode::encode_to_vec(one, standard())?;
-    db.open_tree(tree_name)?.insert(u32_to_ivec(id), encoded)?;
-    Ok(())
+    set_one_with_key(db, tree_name, u32_to_ivec(id), one)
 }
 
 pub fn set_one_with_key<T, K>(db: &Db, tree_name: &str, key: K, one: &T) -> Result<(), AppError>
