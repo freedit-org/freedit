@@ -36,6 +36,7 @@ use axum::{
 use bincode::config::standard;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
+use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
 use std::{collections::BTreeSet, path::PathBuf};
 use validator::Validate;
@@ -506,6 +507,51 @@ pub(crate) async fn edit_post(
     }
 }
 
+pub(super) fn inn_add_index(
+    db: &Db,
+    iid: u32,
+    pid: u32,
+    timestamp: u32,
+    visibility: u32,
+) -> Result<(), AppError> {
+    let tl_idx_tree = db.open_tree("post_timeline_idx")?;
+    let tl_tree = db.open_tree("post_timeline")?;
+
+    (&tl_idx_tree, &tl_tree)
+        .transaction(|(tl_idx, tl)| {
+            let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+            let created_at_ivec = u32_to_ivec(timestamp);
+            tl_idx.insert(&*k, &created_at_ivec)?;
+
+            let k = [&created_at_ivec, &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+            tl.insert(k, u32_to_ivec(visibility))?;
+
+            Ok::<(), ConflictableTransactionError<AppError>>(())
+        })
+        .map_err(|e| AppError::Custom(format!("transaction error: {e}")))
+}
+
+fn inn_rm_index(db: &Db, iid: u32, pid: u32) -> Result<u32, AppError> {
+    let tl_idx_tree = db.open_tree("post_timeline_idx")?;
+    let tl_tree = db.open_tree("post_timeline")?;
+
+    (&tl_idx_tree, &tl_tree)
+        .transaction(|(tl_idx, tl)| {
+            let mut visibility = 0;
+
+            let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+            if let Some(v) = tl_idx.remove(&*k)? {
+                let k = [&v, &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+                if let Some(v) = tl.remove(k)? {
+                    visibility = u8_slice_to_u32(&v);
+                }
+            }
+
+            Ok::<u32, ConflictableTransactionError<AppError>>(visibility)
+        })
+        .map_err(|e| AppError::Custom(format!("transaction error: {e}")))
+}
+
 /// `POST /post/edit/:pid` post create/edit page
 ///
 /// if pid is 0, then create a new post
@@ -621,24 +667,11 @@ pub(crate) async fn edit_post_post(
         db.open_tree("user_posts")?.insert(k, v)?;
     }
 
-    let created_at_ivec = u32_to_ivec(created_at as u32);
-    let k = [&iid_ivec, &pid_ivec].concat();
-
     if old_pid > 0 {
-        let old_timestamp = db.open_tree("post_timeline_idx")?.get(&k)?;
-        if let Some(v) = old_timestamp {
-            let k = [&v, &iid_ivec, &pid_ivec].concat();
-            db.open_tree("post_timeline")?.remove(k)?;
-        }
+        inn_rm_index(&db, iid, pid)?;
     }
-    // kv_pair: iid#pid = timestamp
-    db.open_tree("post_timeline_idx")?
-        .insert(k, &created_at_ivec)?;
 
-    let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
-    // kv_pair: timestamp#iid#pid = visibility
-    db.open_tree("post_timeline")?.insert(k, visibility_ivec)?;
-
+    inn_add_index(&db, iid, pid, created_at as u32, visibility)?;
     User::update_stats(&db, claim.uid, "post")?;
     claim.update_last_write(&db)?;
 
@@ -1475,29 +1508,10 @@ pub(crate) async fn comment_post(
     let k = [&u32_to_ivec(claim.uid), &pid_ivec, &u32_to_ivec(cid)].concat();
     db.open_tree("user_comments")?.insert(k, &[])?;
 
-    let created_at_ivec = u32_to_ivec(created_at as u32);
-    let iid_ivec = u32_to_ivec(iid);
-    let k = [&iid_ivec, &pid_ivec].concat();
-
-    let old_timestamp = db.open_tree("post_timeline_idx")?.get(&k)?;
-    let mut visibility = 0;
-    if let Some(v) = old_timestamp {
-        let k = [&v, &iid_ivec, &pid_ivec].concat();
-        if let Some(v) = db.open_tree("post_timeline")?.remove(k)? {
-            visibility = ivec_to_u32(&v);
-        };
-    }
-
     // only the fellow could update the timeline by adding comment
     if inn_role >= InnRole::Fellow {
-        // kv_pair: iid#pid = timestamp
-        db.open_tree("post_timeline_idx")?
-            .insert(k, &created_at_ivec)?;
-
-        let k = [&created_at_ivec, &iid_ivec, &pid_ivec].concat();
-        // kv_pair: timestamp#iid#pid = visibility
-        db.open_tree("post_timeline")?
-            .insert(k, u32_to_ivec(visibility))?;
+        let visibility = inn_rm_index(&db, iid, pid)?;
+        inn_add_index(&db, iid, pid, created_at as u32, visibility)?;
     }
 
     // notify post author
@@ -1686,12 +1700,7 @@ pub(crate) async fn post_delete(
         set_one(&db, "posts", pid, &post)?;
 
         // remove this post from inn timeline
-        let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-        let ts = db.open_tree("post_timeline_idx")?.remove(&k1)?;
-        if let Some(ts) = ts {
-            let k2 = [ts.as_ref(), &k1].concat();
-            db.open_tree("post_timeline")?.remove(k2)?;
-        }
+        inn_rm_index(&db, iid, pid)?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -1793,27 +1802,19 @@ pub(crate) async fn post_hide(
         || (old_status <= PostStatus::HiddenByMod && post.status == PostStatus::HiddenByMod)
     {
         //remove from inn timeline
-        let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-        let ts = db.open_tree("post_timeline_idx")?.remove(&k1)?;
-        if let Some(ts) = ts {
-            let k2 = [ts.as_ref(), &k1].concat();
-            db.open_tree("post_timeline")?.remove(k2)?;
-        }
+        inn_rm_index(&db, iid, pid)?;
     } else if (old_status == PostStatus::HiddenByUser && post.status < PostStatus::HiddenByUser)
         || (old_status == PostStatus::HiddenByMod && post.status < PostStatus::HiddenByMod)
     {
         let k0 = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
         if let Some(v) = db.open_tree("user_posts")?.get(k0)? {
-            let k1 = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-            let timestamp = u32_to_ivec(post.created_at as u32);
-            let visibility = &v[4..8];
-
-            // kv_pair: iid#pid = timestamp
-            db.open_tree("post_timeline_idx")?.insert(&k1, &timestamp)?;
-
-            let k = [timestamp.as_ref(), &k1].concat();
-            // kv_pair: timestamp#iid#pid = visibility
-            db.open_tree("post_timeline")?.insert(k, visibility)?;
+            inn_add_index(
+                &db,
+                iid,
+                pid,
+                post.created_at as u32,
+                u8_slice_to_u32(&v[4..8]),
+            )?;
         }
     }
 

@@ -4,6 +4,7 @@ use super::{
         u8_slice_to_i64, u8_slice_to_u32,
     },
     fmt::ts_to_date,
+    inn::inn_add_index,
     meta_handler::{get_referer, into_response, PageData, ParamsPage},
     Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
@@ -780,13 +781,7 @@ pub(super) fn inn_feed_to_post(
         let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
         db.open_tree("inn_posts")?.insert(&k, &[])?;
 
-        let created_at_ivec = u32_to_ivec(ts as u32);
-        db.open_tree("post_timeline_idx")?
-            .insert(&k, &created_at_ivec)?;
-
-        let k = [&created_at_ivec, &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-        db.open_tree("post_timeline")?
-            .insert(k, u32_to_ivec(visibility))?;
+        inn_add_index(db, iid, pid, ts as u32, visibility)?;
 
         let k = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
         let v = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
