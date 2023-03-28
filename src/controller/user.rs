@@ -2,8 +2,8 @@
 
 use super::{
     db_utils::{
-        generate_nanoid_ttl, get_count, get_count_by_prefix, get_range, set_one, set_one_with_key,
-        IterType,
+        generate_nanoid_ttl, get_count, get_count_by_prefix, get_range, ivec_to_u32, set_one,
+        set_one_with_key, IterType,
     },
     fmt::ts_to_date,
     get_ids_by_prefix, get_one, incr_id, into_response,
@@ -705,6 +705,12 @@ pub(crate) async fn user_setting_post(
     }
 
     let tree = db.open_tree("usernames")?;
+    if let Some(v) = tree.get(&input.username)? {
+        if ivec_to_u32(&v) != claim.uid {
+            return Err(AppError::NameExists);
+        }
+    }
+
     if user.username != input.username {
         tree.remove(&user.username)?;
         tree.insert(&input.username, u32_to_ivec(user.uid))?;
