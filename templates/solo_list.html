@@ -1,128 +1,124 @@
-{% extends "layout.html" %}
+{% extends "layout.html" %} 
 
 {% block csp %}
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
   img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
-  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
 {% endblock %}
 
 {% block tabs %}
-<li><a href="/inn/0">Inn</a></li>
-<li class="is-active"><a href="/solo/user/0">Solo</a></li>
-<li><a href="/inn/list">Explore</a></li>
+    <li><a href="/inn/0">Inn</a></li>
+    <li class="is-active"><a href="/solo/user/0">Solo</a></li>
+    <li><a href="/inn/list">Explore</a></li>
 {% endblock %}
 
 {% block content %}
-<div class="level is-mobile px-3">
-    <div class="level-left">
-        <div class="tabs is-small is-toggle is-toggle-rounded">
-            <ul>
+    <div class="level is-mobile px-3">
+        <div class="level-left">
+            <div class="tabs is-small is-toggle is-toggle-rounded">
+                <ul>
                 {% match hashtag %} {% when Some with (val) %}
-                <li><a href="/solo/user/0">All</a></li>
-                {% if page_data.claim.is_some() %}
-                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                <li><a href="/solo/user/0?filter=Like">Like</a></li>
-                {% endif %}
-                <li class="is-active"><a href="/solo/user/0?hashtag={{val}}">🏷️ {{val}}</a></li>
+                    <li><a href="/solo/user/0">All</a></li>
+                    {% if page_data.claim.is_some() %}
+                    <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                    <li><a href="/solo/user/0?filter=Like">Like</a></li>
+                    {% endif %}
+                    <li class="is-active"><a href="/solo/user/0?hashtag={{val}}">🏷️ {{val}}</a></li>
                 {% else %}
-                {% if page_data.claim.is_some() %}
-                {% match filter.as_deref() %} {% when Some with ("Following") %}
-                <li><a href="/solo/user/0">All</a></li>
-                <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
-                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                {% when Some with ("Like") %}
-                <li><a href="/solo/user/0">All</a></li>
-                <li><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
-                <li class="is-active"><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                {% else %}
-                {% if uid > 0 %}
-                <li><a href="/solo/user/0">All</a></li>
-                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
-                {% else %}
-                <li class="is-active"><a href="/solo/user/0">All</a></li>
-                <li><a href="/solo/user/0?filter=Following">Following</a></li>
-                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
-                {% endif %}
+                    {% if page_data.claim.is_some() %}
+                        {% match filter.as_deref() %} {% when Some with ("Following") %}
+                            <li><a href="/solo/user/0">All</a></li>
+                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
+                            <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
+                        {% when Some with ("Like") %}
+                            <li><a href="/solo/user/0">All</a></li>
+                            <li><a href="/solo/user/{{uid}}?filter=Following">Following</a></li>
+                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
+                        {% else %}
+                            {% if uid > 0 %}
+                                <li><a href="/solo/user/0">All</a></li>
+                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
+                                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                            {% else %}
+                                <li class="is-active"><a href="/solo/user/0">All</a></li>
+                                <li><a href="/solo/user/0?filter=Following">Following</a></li>
+                                <li><a href="/solo/user/{{uid}}?filter=Like">Like</a></li>
+                            {% endif %}
+                        {% endmatch %}
+                    {% else %}
+                        {% if uid > 0 %}
+                            <li><a href="/solo/user/0">All</a></li>
+                            <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                        {% else %}
+                            <li class="is-active"><a href="/solo/user/0">All</a></li>
+                        {% endif %}
+                    {% endif %}
                 {% endmatch %}
+                </ul>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="buttons">
+                {% if is_following %}
+                    <a href="/user/{{uid}}/follow"><button class="button is-danger is-small is-rounded">Unfollow</button></a>
                 {% else %}
-                {% if uid > 0 %}
-                <li><a href="/solo/user/0">All</a></li>
-                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
-                {% else %}
-                <li class="is-active"><a href="/solo/user/0">All</a></li>
+                    {% match page_data.claim %} {% when Some with (val) %}
+                        {% if uid > 0 && uid != val.uid %}
+                            <a href="/user/{{uid}}/follow"><button class="button is-success is-small is-rounded">Follow</button></a>
+                        {% endif %}
+                    {% else %}{% endmatch %}
                 {% endif %}
-                {% endif %}
-                {% endmatch %}
-            </ul>
+            </div>
         </div>
     </div>
-    <div class="level-right">
-        <div class="buttons">
-            {% if is_following %}
-            <a href="/user/{{uid}}/follow"><button class="button is-danger is-small is-rounded">Unfollow</button></a>
-            {% else %}
-            {% match page_data.claim %} {% when Some with (val) %}
-            {% if uid > 0 && uid != val.uid %}
-            <a href="/user/{{uid}}/follow"><button class="button is-success is-small is-rounded">Follow</button></a>
-            {% endif %}
-            {% else %}{% endmatch %}
-            {% endif %}
-        </div>
-    </div>
-</div>
 
 {% match page_data.claim %} {% when Some with (claim) %}
-<article class="media box">
-    <figure class="media-left is-hidden-mobile">
-        <p class="image is-48x48">
-            <img src="/static/avatars/{{claim.uid}}.png">
-        </p>
-    </figure>
-    <div class="media-content">
-        <form id="solo" action="/solo/user/0" method="post">
-            <fieldset>
-                <div class="field">
-                    <p class="control">
-                        <textarea name="content" class="textarea" required minlength="1" maxlength="1000"
-                            placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
-                    </p>
-                    <div class="select is-small">
-                        <select name="visibility" title="Who can see">
-                            <option selected>Everyone</option>
-                            <option>Following</option>
-                            <option>Just me</option>
-                        </select>
-                    </div>
-                </div>
-                <input type="hidden" name="reply_to" value="0">
-                <nav class="level is-mobile">
-                    <div class="level-left">
-                        <div class="level-item">
-                            <a href="/upload" class="button is-success is-small is-responsive"
-                                target="_blank">upload</a>
+    <article class="media box">
+        <figure class="media-left is-hidden-mobile">
+            <p class="image is-48x48">
+                <img src="/static/avatars/{{claim.uid}}.png">
+            </p>
+        </figure>
+        <div class="media-content">
+            <form id="solo" action="/solo/user/0" method="post">
+                <fieldset>
+                    <div class="field">
+                        <p class="control">
+                            <textarea name="content" class="textarea" required minlength="1" maxlength="1000" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
+                        </p>
+                        <div class="select is-small">
+                            <select name="visibility" title="Who can see">
+                                <option selected>Everyone</option>
+                                <option>Following</option>
+                                <option>Just me</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="level-right">
-                        <div class="level-item">
-                            <div class="field is-grouped">
-                                <div class="control">
-                                    <div class="buttons">
-                                        <button type="submit" form="solo"
-                                            class="button is-info is-small is-responsive">Submit</button>
-                                        <button type="submit" class="button is-info is-small is-responsive"
-                                            formaction="/preview" formtarget="_blank">Preview</button>
-                                    </div>
+                    <input type="hidden" name="reply_to" value="0">
+                    <nav class="level is-mobile">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <a href="/upload" class="button is-success is-small is-responsive" target="_blank">upload</a>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <div class="field is-grouped">
+                                    <div class="control">
+                                        <div class="buttons">
+                                            <button type="submit" form="solo" class="button is-info is-small is-responsive">Submit</button>
+                                            <button type="submit" class="button is-info is-small is-responsive" formaction="/preview" formtarget="_blank">Preview</button>
+                                        </div>
+                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </nav>
-            </fieldset>
-        </form>
-    </div>
-</article>
+                    </nav>
+                </fieldset>
+            </form>
+        </div>
+    </article>
 {% else %} {% endmatch %}
 
 {% for solo in solos %}
@@ -136,7 +132,7 @@
         <div class="content">
             <p>
                 {% match solo.reply_to %}{% when Some with (val) %}
-                <small> Replying to <a href="/solo/{{val}}">{{val}}</a></small><br>
+                    <small> Replying to <a href="/solo/{{val}}">{{val}}</a></small><br>
                 {% else %}{% endmatch %}
                 <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
                 <small>{{solo.created_at}}</small>
@@ -168,7 +164,7 @@
                 {% else %}{% endmatch %}
                 <a href="/solo/{{solo.sid}}">💬
                     {% if solo.replies.len() >0 %}
-                    {{solo.replies.len()}}
+                        {{solo.replies.len()}}
                     {% endif %}
                 </a>
             </div>
@@ -176,44 +172,42 @@
     </div>
     <div class="media-right">
         {% if solo.visibility == 20 %}
-        {% include "icons/lock_square.svg" %}
+            {% include "icons/lock_square.svg" %}
         {% else if solo.visibility == 10 %}
-        {% include "icons/lock.svg" %}
+            {% include "icons/lock.svg" %}
         {% else %}{% endif %}
     </div>
 </article>
 {% endfor %}
 
 <nav class="pagination">
-    {% if anchor < n %} <a class="pagination-previous" disabled>Prev</a>
-        {% else %}
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
         {% match filter.as_deref() %} {% when Some with (val) %}
-        <a class="pagination-previous"
-            href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
         {% else %}
-        {% match hashtag.as_deref() %} {% when Some with (val) %}
-        <a class="pagination-previous"
-            href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&hashtag={{val}}">Prev</a>
-        {% else %}
-        <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
-        {% endmatch %}
-        {% endmatch %}
-        {% endif %}
-
-        {% if solos.len() < n %} <a class="pagination-next" disabled>Next</a>
-            {% else %}
-            {% match filter.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-next"
-                href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
-            {% else %}
             {% match hashtag.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-next"
-                href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&tag={{val}}">Next</a>
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&hashtag={{val}}">Prev</a>
+            {% else %}
+            <a class="pagination-previous" href="/solo/user/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            {% endmatch %}
+        {% endmatch %}
+    {% endif %}
+
+    {% if solos.len() < n %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        {% match filter.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
+        {% else %}
+            {% match hashtag.as_deref() %} {% when Some with (val) %}
+            <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&tag={{val}}">Next</a>
             {% else %}
             <a class="pagination-next" href="/solo/user/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
             {% endmatch %}
-            {% endmatch %}
-            {% endif %}
+        {% endmatch %}
+    {% endif %}
 </nav>
 {% endblock %}
 
