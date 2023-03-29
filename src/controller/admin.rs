@@ -388,7 +388,7 @@ pub(crate) async fn admin_stats(
     }
 
     let has_unread = User::has_unread(&db, claim.uid)?;
-    let page_data = PageData::new("Admin-pageview", &site_config, Some(claim), has_unread);
+    let page_data = PageData::new("Admin pageview", &site_config, Some(claim), has_unread);
     let page_admin_pageview = PageAdminStats { page_data, stats };
     Ok(into_response(&page_admin_pageview))
 }

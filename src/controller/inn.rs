@@ -387,7 +387,7 @@ pub(crate) async fn inn_list(
     } else {
         false
     };
-    let page_data = PageData::new("inns", &site_config, claim, has_unread);
+    let page_data = PageData::new("inn list", &site_config, claim, has_unread);
     let page_inn_list = PageInnList {
         page_data,
         inns: out_inns,
@@ -1384,7 +1384,9 @@ pub(crate) async fn post(
     } else {
         false
     };
-    let page_data = PageData::new("post", &site_config, claim, has_unread);
+
+    let title = out_post.title.clone();
+    let page_data = PageData::new(&title, &site_config, claim, has_unread);
     let page_post = PagePost {
         page_data,
         post: out_post,
@@ -1540,7 +1542,7 @@ pub(crate) async fn preview(
     ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&db)?;
-    let page_data = PageData::new("inn", &site_config, None, false);
+    let page_data = PageData::new("preview", &site_config, None, false);
 
     let page_preview = PagePreview {
         page_data,

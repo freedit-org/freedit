@@ -437,7 +437,9 @@ pub(crate) async fn feed_read(
     } else {
         false
     };
-    let page_data = PageData::new("Feed", &site_config, claim, has_unread);
+
+    let title = out_item_read.title.clone();
+    let page_data = PageData::new(&title, &site_config, claim, has_unread);
     let page_feed_read = PageFeedRead {
         page_data,
         item: out_item_read,
