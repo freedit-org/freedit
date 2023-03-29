@@ -781,7 +781,7 @@ pub(super) fn inn_feed_to_post(
         db.open_tree("tags")?.insert(tag_k, &[])?;
 
         let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-        db.open_tree("inn_posts")?.insert(&k, &[])?;
+        db.open_tree("inn_posts")?.insert(k, &[])?;
 
         inn_add_index(db, iid, pid, ts as u32, visibility)?;
 
