@@ -5,11 +5,11 @@
 use once_cell::sync::Lazy;
 use reqwest::{header, Client, StatusCode};
 
-const URL: &str = "https://localhost:3001";
+const URL: &str = "http://localhost:3001";
 
 static COOKIE: Lazy<String> = Lazy::new(|| {
     let cookie = std::env::var("COOKIE").expect("env var COOKIE not set");
-    format!("__Host-id={cookie}")
+    format!("id={cookie}")
 });
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
