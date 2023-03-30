@@ -170,7 +170,7 @@ pub(crate) async fn mod_inn_post(
     // create new inn
     if iid == 0 {
         // check if inn name exists
-        if inn_names_tree.contains_key(&input.inn_name)? {
+        if inn_names_tree.contains_key(&input.inn_name.to_lowercase())? {
             return Err(AppError::NameExists);
         }
         iid = incr_id(&db, "inns_count")?;
@@ -178,7 +178,7 @@ pub(crate) async fn mod_inn_post(
         // edit inn
 
         // check if this name is used by other inn
-        let search_iid = inn_names_tree.get(&input.inn_name)?;
+        let search_iid = inn_names_tree.get(&input.inn_name.to_lowercase())?;
         if search_iid.is_some() && search_iid != Some(u32_to_ivec(iid)) {
             return Err(AppError::NameExists);
         }

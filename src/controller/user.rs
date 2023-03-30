@@ -705,7 +705,7 @@ pub(crate) async fn user_setting_post(
     }
 
     let tree = db.open_tree("usernames")?;
-    if let Some(v) = tree.get(&input.username)? {
+    if let Some(v) = tree.get(&input.username.to_lowercase())? {
         if ivec_to_u32(&v) != claim.uid {
             return Err(AppError::NameExists);
         }
@@ -905,7 +905,7 @@ pub(crate) async fn signup_post(
     }
 
     let tree = db.open_tree("usernames")?;
-    if tree.contains_key(&input.username)? {
+    if tree.contains_key(&input.username.to_lowercase())? {
         return Err(AppError::NameExists);
     }
 
@@ -934,7 +934,7 @@ pub(crate) async fn signup_post(
 
     set_one(&db, "users", uid, &user)?;
     db.open_tree("usernames")?
-        .insert(&user.username, u32_to_ivec(uid))?;
+        .insert(&user.username.to_lowercase(), u32_to_ivec(uid))?;
 
     let cookie = Claim::generate_cookie(&db, user, "4h")?;
     let mut headers = HeaderMap::new();
