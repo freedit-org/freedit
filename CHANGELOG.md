@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2023-03-31
+
+**breaking changes**
+
+- upgrade crate [bincode](https://github.com/bincode-org/bincode/releases/tag/v2.0.0-rc.3) to rc.3, which breaks enum with value. Make sure backup first and run [examples/post](./examples/post.rs) for data migration.
+
 ## [0.3.7] - 2023-03-30
 
 ### Fixed
@@ -142,7 +148,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.3.7...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/freedit-org/freedit/compare/v0.3.7...v0.4.0
 [0.3.7]: https://github.com/freedit-org/freedit/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/freedit-org/freedit/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/freedit-org/freedit/compare/v0.3.4...v0.3.5

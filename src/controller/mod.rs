@@ -234,13 +234,12 @@ struct Inn {
 }
 
 #[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug, Clone)]
-#[repr(u8)]
 pub enum PostStatus {
-    Normal = 0,
-    LockedByUser = 4,
-    HiddenByUser = 8,
-    LockedByMod = 12,
-    HiddenByMod = 16,
+    Normal,
+    LockedByUser,
+    HiddenByUser,
+    LockedByMod,
+    HiddenByMod,
 }
 
 impl Display for PostStatus {
