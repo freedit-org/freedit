@@ -1576,6 +1576,22 @@ pub(crate) async fn comment_delete(
     let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
     db.open_tree("post_comments")?.remove(k)?;
 
+    let visibility = inn_rm_index(&db, iid, pid)?;
+    let latest_id = db
+        .open_tree("post_comments")?
+        .scan_prefix(u32_to_ivec(pid))
+        .last();
+
+    let timestamp = if let Some(Ok((_, v))) = latest_id {
+        let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
+        comment.created_at
+    } else {
+        let post: Post = get_one(&db, "posts", pid)?;
+        post.created_at
+    };
+
+    inn_add_index(&db, iid, pid, timestamp as u32, visibility)?;
+
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
