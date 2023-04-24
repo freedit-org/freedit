@@ -13,7 +13,7 @@
 
 use super::{
     db_utils::{
-        extract_element, get_batch, get_count, get_count_by_prefix, get_ids_by_prefix,
+        extract_element, get_batch, get_count_by_prefix, get_ids_by_prefix,
         get_ids_by_tag, get_one, get_range, ivec_to_u32, set_one, set_one_with_key, u32_to_ivec,
         u8_slice_to_u32, IterType,
     },
@@ -38,7 +38,10 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
-use std::{collections::BTreeSet, path::PathBuf};
+use std::{
+    borrow::BorrowMut, cell::RefCell, collections::BTreeSet, fmt::Display, ops::Deref,
+    path::PathBuf, rc::Rc,
+};
 use validator::Validate;
 
 /// Page data: `inn_create.html`
@@ -1176,7 +1179,7 @@ struct OutPost {
 struct PagePost<'a> {
     page_data: PageData<'a>,
     post: OutPost,
-    comments: Vec<OutComment>,
+    comments: String,
     pageview: u32,
     anchor: usize,
     n: usize,
@@ -1188,12 +1191,14 @@ struct PagePost<'a> {
 }
 
 /// Vec data: Comment
+#[derive(Debug, Default)]
 struct OutComment {
     cid: u32,
     uid: u32,
     username: String,
     content: String,
     created_at: String,
+    reply_to: Option<u32>,
     upvotes: usize,
     downvotes: usize,
     is_upvoted: bool,
@@ -1207,6 +1212,89 @@ pub(crate) struct ParamsPost {
     anchor: Option<usize>,
     is_desc: Option<bool>,
     nid: Option<u32>,
+}
+
+#[derive(Clone, Debug)]
+struct CommentTree {
+    root: Rc<OutComment>,
+    leaves: Rc<RefCell<Vec<CommentTree>>>,
+}
+
+impl CommentTree {
+    fn new() -> Self {
+        Self {
+            root: Rc::new(OutComment::default()),
+            leaves: Rc::new(RefCell::new(Vec::new())),
+        }
+    }
+
+    fn find(&self, cid: u32) -> Option<CommentTree> {
+        if self.root.cid == cid {
+            return Some(self.clone());
+        }
+        for leaf in self.leaves.borrow().deref() {
+            if let Some(found) = leaf.find(cid) {
+                return Some(found);
+            }
+        }
+        None
+    }
+
+    fn add(&mut self, comment: OutComment, reply_to: u32) {
+        // if `reply_to` comment is not found, add to root
+        let mut found = self.find(reply_to).unwrap_or_else(|| self.clone());
+
+        let leaves = found.borrow_mut().leaves.clone();
+        leaves.deref().borrow_mut().push(CommentTree {
+            root: Rc::new(comment),
+            leaves: Rc::new(RefCell::new(Vec::new())),
+        });
+    }
+}
+
+impl Display for CommentTree {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for leaf in self.leaves.clone().borrow().deref() {
+            let comment = &leaf.root;
+            let leaf = leaf.to_string();
+            write!(
+                f,
+                "
+        <article class='media'>
+            <figure class='media-left'>
+                <p class='image is-48x48'>
+                    <a href='/user/{}'><img src='/static/avatars/{}.png'></a>
+                </p>
+            </figure>
+            <div class='media-content'>
+                <div class='content'>
+                    <p>
+                    <small>
+                        <a href='/user/{}'>{}</a> &nbsp;&nbsp;
+                        {}
+                    </small>
+                    </p>
+                    {}
+                    {} 
+                </div>
+            </div>
+            <div class='media-right'>
+                <a href='#{}'><span class='tag is-info'>{}</span></a>
+            </div>
+        </article>",
+                comment.uid,
+                comment.uid,
+                comment.uid,
+                comment.username,
+                comment.created_at,
+                comment.content,
+                leaf,
+                comment.cid,
+                comment.cid
+            )?;
+        }
+        Ok(())
+    }
 }
 
 /// `GET /inn/:iid/:pid` post page
@@ -1316,61 +1404,35 @@ pub(crate) async fn post(
     let n = site_config.per_page;
     let anchor = params.anchor.unwrap_or(0);
     let is_desc = params.is_desc.unwrap_or(false);
-    let page_params = ParamsPage { anchor, n, is_desc };
 
+    let post_comments_tree = db.open_tree("post_comments")?;
     let mut out_comments = Vec::with_capacity(n);
-    let max_id = get_count(&db, "post_comments_count", u32_to_ivec(pid))?;
-    if max_id > 0 {
-        let (start, end) = get_range(max_id, &page_params);
-        let post_comments_tree = db.open_tree("post_comments")?;
-        let comment_upvotes_tree = db.open_tree("comment_upvotes")?;
-        let comment_downvotes_tree = db.open_tree("comment_downvotes")?;
-        for i in start..=end {
-            let k = [&u32_to_ivec(pid), &u32_to_ivec(i as u32)].concat();
-            let v = &post_comments_tree.get(k)?;
-            if let Some(v) = v {
-                let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
-                let user: User = get_one(&db, "users", comment.uid)?;
-                let date = ts_to_date(comment.created_at);
+    for i in post_comments_tree.scan_prefix(u32_to_ivec(pid)) {
+        let (_, v) = i?;
+        let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
+        let user: User = get_one(&db, "users", comment.uid)?;
+        let date = ts_to_date(comment.created_at);
 
-                let mut is_upvoted = false;
-                let mut is_downvoted = false;
+        let out_comment = OutComment {
+            cid: comment.cid,
+            uid: comment.uid,
+            username: user.username,
+            content: comment.content,
+            created_at: date,
+            upvotes,
+            downvotes,
+            is_upvoted,
+            is_downvoted,
+            reply_to: comment.reply_to,
+            is_hidden: comment.is_hidden,
+        };
+        out_comments.push(out_comment);
+    }
 
-                if let Some(ref claim) = claim {
-                    let k = [
-                        &u32_to_ivec(pid),
-                        &u32_to_ivec(comment.cid),
-                        &u32_to_ivec(claim.uid),
-                    ]
-                    .concat();
-                    is_upvoted = comment_upvotes_tree.contains_key(&k)?;
-                    is_downvoted = comment_downvotes_tree.contains_key(&k)?;
-                }
-
-                let prefix = [&u32_to_ivec(pid), &u32_to_ivec(comment.cid)].concat();
-                let upvotes =
-                    get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
-                let downvotes =
-                    get_count_by_prefix(&db, "comment_downvotes", &prefix).unwrap_or_default();
-
-                let out_comment = OutComment {
-                    cid: comment.cid,
-                    uid: comment.uid,
-                    username: user.username,
-                    content: comment.content,
-                    created_at: date,
-                    upvotes,
-                    downvotes,
-                    is_upvoted,
-                    is_downvoted,
-                    is_hidden: comment.is_hidden,
-                };
-                out_comments.push(out_comment);
-            }
-        }
-        if is_desc {
-            out_comments.reverse();
-        }
+    let mut tree = CommentTree::new();
+    for c in out_comments {
+        let reply_to = c.reply_to.unwrap_or(0);
+        tree.add(c, reply_to);
     }
 
     let count = get_count_by_prefix(&db, "post_comments", &u32_to_ivec(pid))?;
@@ -1390,7 +1452,7 @@ pub(crate) async fn post(
     let page_post = PagePost {
         page_data,
         post: out_post,
-        comments: out_comments,
+        comments: tree.to_string(),
         pageview,
         anchor,
         n,
