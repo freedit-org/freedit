@@ -1163,7 +1163,7 @@ fn expire_seconds(expiry: &str) -> i64 {
         "5days" => 5 * 24 * 3600,
         "1week" => 7 * 24 * 3600,
         "2weeks" => 2 * 7 * 24 * 3600,
-        _ => unreachable!(),
+        _ => 4 * 3600,
     }
 }
 
