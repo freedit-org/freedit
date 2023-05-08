@@ -482,7 +482,7 @@ pub(crate) async fn role_post(
                 "Limited" => 3,
                 "Intern" => 4,
                 "Fellow" => 5,
-                "Mod" => 8,
+                "Mod" => 7,
                 "Super" => {
                     // only super can lift others to super
                     if inn_role != InnRole::Super {
