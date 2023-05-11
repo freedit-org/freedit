@@ -18,6 +18,7 @@ use axum::{
 use bincode::config::standard;
 use serde::Deserialize;
 use sled::Db;
+use snailquote::unescape;
 
 /// Page data: `admin_view.html`
 #[derive(Template)]
@@ -104,28 +105,33 @@ pub(crate) async fn admin_view(
                     let (mut one, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                     one.password_hash = String::from("******");
                     one.recovery_hash = None;
-                    ones.push(format!("{key}: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("{key}: {one_fmt}"));
                 }
                 "solos" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{key}: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("{key}: {one_fmt}"));
                 }
                 "inns" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Inn, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{key}: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("{key}: {one_fmt}"));
                 }
                 "posts" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{key}: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("{key}: {one_fmt}"));
                 }
                 "post_comments" => {
                     let pid = u8_slice_to_u32(&k[0..4]);
                     let cid = u8_slice_to_u32(&k[4..8]);
                     let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("pid: {pid}, cid: {cid}, comment: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("pid: {pid}, cid: {cid}, comment: {one_fmt}",));
                 }
                 "user_comments" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
@@ -248,7 +254,8 @@ pub(crate) async fn admin_view(
                 "feeds" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{key}: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("{key}: {one_fmt}"));
                 }
                 "feed_errs" => {
                     let feed_id = ivec_to_u32(&k);
@@ -263,7 +270,8 @@ pub(crate) async fn admin_view(
                 "items" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Item, usize) = bincode::decode_from_slice(&v, standard())?;
-                    ones.push(format!("{key}: {one:?}"));
+                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    ones.push(format!("{key}: {one_fmt}"));
                 }
                 _ => ones.push(format!("{tree_name} has not been supported yet")),
             }
