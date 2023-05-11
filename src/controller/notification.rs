@@ -16,6 +16,7 @@ use axum::{
 use bincode::config::standard;
 use serde::Deserialize;
 use sled::{Db, IVec};
+use snailquote::unescape;
 use std::fmt::Display;
 
 /// notification.html
@@ -174,7 +175,7 @@ pub(crate) async fn notification(
                         id2: comment.pid,
                         id3: comment.cid,
                         content1: post.title,
-                        content2: comment.content,
+                        content2: unescape(&comment.content).unwrap(),
                         is_read: value[8] == 1,
                     };
                     notifications.push(notification);
@@ -196,7 +197,7 @@ pub(crate) async fn notification(
                         id2: sid2,
                         id3: 0,
                         content1: "".into(),
-                        content2: solo.content,
+                        content2: unescape(&solo.content).unwrap(),
                         is_read: value[8] == 1,
                     };
                     notifications.push(notification);
@@ -217,7 +218,7 @@ pub(crate) async fn notification(
                         id2: 0,
                         id3: 0,
                         content1: "".into(),
-                        content2: solo.content,
+                        content2: unescape(&solo.content).unwrap(),
                         is_read: value[8] == 1,
                     };
                     notifications.push(notification);

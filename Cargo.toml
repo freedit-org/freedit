@@ -29,6 +29,7 @@ ring = { version = "0.16.20", default-features = false }
 rss = { version = "2.0.3", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 sled = { version = "0.34.7", features = ["compression"] }
+snailquote = "0.3.1"
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
