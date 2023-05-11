@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2023-05-11
+
+### Fixed
+
+- fix #109
+- fix #107
+- set default cookie Max-Age 4h to avoid panic
+- inn mod code 8 ->7 
+-  update timeline if comment has been deleted 
+
 ## [0.4.1] - 2023-04-14
 
 - upgrade crates
@@ -153,7 +163,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.4.1...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/freedit-org/freedit/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/freedit-org/freedit/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/freedit-org/freedit/compare/v0.3.7...v0.4.0
 [0.3.7]: https://github.com/freedit-org/freedit/compare/v0.3.6...v0.3.7
