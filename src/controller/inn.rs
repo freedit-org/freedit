@@ -689,6 +689,7 @@ struct OutPostList {
     title: String,
     created_at: String,
     comment_count: u32,
+    last_reply: Option<(u32, String)>,
 }
 
 /// Page data: `tag.html`
@@ -999,6 +1000,19 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
             let comment_count =
                 get_count_by_prefix(db, "post_comments", &u32_to_ivec(*pid))? as u32;
 
+            let last_reply = if let Some(i) = db
+                .open_tree("post_comments")?
+                .scan_prefix(u32_to_ivec(*pid))
+                .last()
+            {
+                let (_, v) = i?;
+                let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
+                let user: User = get_one(db, "users", one.uid)?;
+                Some((user.uid, user.username))
+            } else {
+                None
+            };
+
             let post_list = OutPostList {
                 pid: post.pid,
                 iid: post.iid,
@@ -1008,6 +1022,7 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
                 title: post.title,
                 created_at: date,
                 comment_count,
+                last_reply,
             };
             post_lists.push(post_list);
         }
