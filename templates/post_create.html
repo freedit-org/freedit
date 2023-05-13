@@ -7,9 +7,13 @@
             <fieldset>
                 <div class="field">
                     <div class="control">
-                        {% for inn in joined %}
-                        <label class="radio"><input type="radio" name="iid" {% if inn.1 == selected_iid %} checked {% endif %} value={{inn.1}} required="required" autocomplete="off" /> {{inn.0}} </label>
-                        {% endfor %}
+                        <div class="select is-primary">
+                            <select name="iid">
+                                {% for inn in joined %}
+                                <option {% if inn.1 == selected_iid %} selected {% endif %} value="{{inn.1}}">{{inn.0}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
                 </div>
 
