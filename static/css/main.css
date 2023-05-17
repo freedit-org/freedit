@@ -2,7 +2,9 @@
     max-width: 350px;
 }
 
-nav, section, footer {
+nav,
+section,
+footer {
     max-width: 1100px;
     margin: 0 auto;
 }
@@ -12,14 +14,14 @@ nav {
 }
 
 #notification-indicator {
-    border-radius:50%;
+    border-radius: 50%;
     width: 14px;
     height: 14px;
-    margin-left:-16px;
-    margin-top:-4px;
+    margin-left: -16px;
+    margin-top: -4px;
 }
 
-#comment > .list-item {
+#comment>.list-item {
     align-items: flex-start;
 }
 
@@ -38,14 +40,14 @@ nav {
     background-color: white
 }
 
-.pagination > a {
+.pagination>a {
     background-color: white
 }
 
 .pagination {
     padding-bottom: 1.5rem;
 }
-  
+
 .overlay {
     position: fixed;
     top: 0;
@@ -99,6 +101,29 @@ p {
     text-align: justify
 }
 
-details summary { 
+details summary {
     cursor: pointer;
+}
+
+.replytag {
+    display: inline-block;
+    line-height: 1;
+    font-weight: 700;
+    font-size: .7rem;
+    background: #e8e8e8;
+    padding: .5833em .833em .5833em .5em;
+    border-radius: .28571429rem;
+}
+
+.replytag img {
+    height: 2.1666em;
+    display: inline-block;
+    vertical-align: top;
+    margin: -.5833em .5em -.5833em -.5em;
+    border-radius: .28571429rem 0 0 .28571429rem;
+}
+
+.replytag a {
+    text-decoration: none;
+    color: rgba(62, 212, 70, 0.6);
 }

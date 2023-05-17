@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use maplit::{hashmap, hashset};
 use once_cell::sync::Lazy;
 use pulldown_cmark::{html, CodeBlockKind, Event, Options, Tag};
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
@@ -25,7 +26,10 @@ pub(super) fn md2html(md: &str) -> String {
     let processed = SyntaxPreprocessor::new(parser);
     let mut html_output = String::with_capacity(md.len() * 2);
     html::push_html(&mut html_output, processed);
-    html_output
+    ammonia::Builder::default()
+        .allowed_classes(hashmap!["span" => hashset!["replytag"]])
+        .clean(&html_output)
+        .to_string()
 }
 
 const OPTIONS: Options = Options::all();
@@ -67,10 +71,6 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
                     .unwrap_or_else(|e| e.to_string())
                     .into(),
                 ));
-            }
-            Event::Html(h) => {
-                code.push_str(&h);
-                "html".into()
             }
             other => return Some(other),
         };

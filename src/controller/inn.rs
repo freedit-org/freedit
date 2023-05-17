@@ -1484,7 +1484,9 @@ pub(crate) async fn comment_post(
                 }
             }
         };
-        let notification_link = format!("[{username}](/user/{uid})");
+        let notification_link = format!(
+            "<span class='replytag'>[![](/static/avatars/{uid}.png){username}](/user/{uid})</span>"
+        );
         let from = format!("@{notification}");
         let to = format!("@{notification_link}");
         content = content.replace(&from, &to);
