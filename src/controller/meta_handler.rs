@@ -6,7 +6,7 @@ use axum::{
     body::BoxBody,
     extract::{rejection::FormRejection, FromRequest},
     headers::{HeaderName, Referer},
-    http::{self, HeaderMap, HeaderValue, Request},
+    http::{self, HeaderMap, HeaderValue, Request, Uri},
     response::{IntoResponse, Redirect, Response},
     Form, TypedHeader,
 };
@@ -75,8 +75,9 @@ impl IntoResponse for AppError {
     }
 }
 
-pub(crate) async fn handler_404() -> impl IntoResponse {
-    AppError::NotFound.into_response()
+pub(crate) async fn handler_404(uri: Uri) -> impl IntoResponse {
+    error!("No route for {}", uri);
+    StatusCode::NOT_FOUND.into_response()
 }
 
 pub(crate) struct ValidatedForm<T>(pub(super) T);
@@ -104,7 +105,7 @@ pub(crate) async fn home() -> impl IntoResponse {
 
 static CSS: Lazy<String> = Lazy::new(|| {
     // TODO: CSS minification
-    let mut css = include_str!("../../static/css/bulma.css").to_string();
+    let mut css = include_str!("../../static/css/bulma.min.css").to_string();
     css.push('\n');
     css.push_str(include_str!("../../static/css/bulma-list.css"));
     css.push('\n');
