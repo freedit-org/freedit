@@ -20,7 +20,7 @@
 <div class="media box">
     <div class="media-content">
         <div class="content">
-            <p class="title">{{item.title}}</p>
+            <p class="title">{{item.title|truncate(100)}}</p>
             <p>📅 {{item.updated}} &nbsp;&nbsp; 
                 ⚓ {{item.feed_title}} &nbsp;&nbsp;
                 <a href="{{item.link}}">🌐 Origin</a> &nbsp;&nbsp;
