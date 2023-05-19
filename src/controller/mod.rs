@@ -14,6 +14,7 @@
 //! | "user_stats"     | `timestamp_uid_type` | N                |
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
+//! | home_pages       | `uid`                | `u8`             |
 //!
 //! ### notification
 //! | tree            | key                   | value             |
@@ -39,9 +40,9 @@
 //! | "hashtags"         | `hashtag#sid` | `&[]`            |
 //!
 //! ### session
-//! | tree       | key                | value   |
-//! |------------|--------------------|---------|
-//! | "sessions" | `timestamp_nanoid` | `Claim` |
+//! | tree       | key                | value     |
+//! |------------|--------------------|-----------|
+//! | "sessions" | `timestamp_nanoid` | [`Claim`] |
 //!
 //! ### site config
 //! | tree      | key           | value          |

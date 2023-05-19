@@ -553,6 +553,7 @@ pub(crate) struct FormUser {
     about: String,
     #[validate(length(max = 256))]
     url: String,
+    home_page: u8,
 }
 
 /// Page data: `user_setting.html`
@@ -565,6 +566,7 @@ struct PageUserSetting<'a> {
     url: String,
     about: String,
     sessions: Vec<String>,
+    home_page: u8,
 }
 
 /// `GET /user/setting`
@@ -586,6 +588,11 @@ pub(crate) async fn user_setting(
         }
     }
 
+    let home_page = db
+        .open_tree("home_pages")?
+        .get(u32_to_ivec(claim.uid))?
+        .map_or(0, |hp| hp[0]);
+
     let has_unread = User::has_unread(&db, claim.uid)?;
     let page_user_setting = PageUserSetting {
         uid: claim.uid,
@@ -594,6 +601,7 @@ pub(crate) async fn user_setting(
         about: user.about,
         url: user.url,
         sessions,
+        home_page,
     };
 
     Ok(into_response(&page_user_setting))
@@ -719,6 +727,10 @@ pub(crate) async fn user_setting_post(
     user.username = input.username;
     user.about = input.about;
     user.url = input.url;
+    if input.home_page != 0 {
+        db.open_tree("home_pages")?
+            .insert(u32_to_ivec(user.uid), &[input.home_page])?;
+    }
     set_one(&db, "users", claim.uid, &user)?;
 
     let target = format!("/user/{}", claim.uid);

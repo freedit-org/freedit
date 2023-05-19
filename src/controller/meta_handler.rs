@@ -1,11 +1,11 @@
-use super::{fmt::md2html, Claim, SiteConfig};
+use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{config::CONFIG, error::AppError, CURRENT_SHA256, GIT_COMMIT, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
     body::BoxBody,
-    extract::{rejection::FormRejection, FromRequest},
-    headers::{HeaderName, Referer},
+    extract::{rejection::FormRejection, FromRequest, State},
+    headers::{Cookie, HeaderName, Referer},
     http::{self, HeaderMap, HeaderValue, Request, Uri},
     response::{IntoResponse, Redirect, Response},
     Form, TypedHeader,
@@ -13,6 +13,7 @@ use axum::{
 use once_cell::sync::Lazy;
 use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
+use sled::Db;
 use tokio::signal;
 use tracing::error;
 use validator::Validate;
@@ -99,8 +100,27 @@ where
     }
 }
 
-pub(crate) async fn home() -> impl IntoResponse {
-    Redirect::to("/inn/0")
+pub(crate) async fn home(
+    State(db): State<Db>,
+    cookie: Option<TypedHeader<Cookie>>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = SiteConfig::get(&db)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    if let Some(claim) = claim {
+        if let Some(home_page) = db.open_tree("home_pages")?.get(u32_to_ivec(claim.uid))? {
+            let redirect = match home_page[0] {
+                1 => format!("/feed/{}", claim.uid),
+                2 => "/inn/0?filter=joined".into(),
+                3 => "/inn/0?filter=following".into(),
+                4 => "/solo/user/0".into(),
+                5 => "/solo/user/0?filter=Following".into(),
+                _ => "/inn/0".into(),
+            };
+            return Ok(Redirect::to(&redirect));
+        }
+    }
+
+    Ok(Redirect::to("/inn/0"))
 }
 
 static CSS: Lazy<String> = Lazy::new(|| {
