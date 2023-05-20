@@ -727,10 +727,8 @@ pub(crate) async fn user_setting_post(
     user.username = input.username;
     user.about = input.about;
     user.url = input.url;
-    if input.home_page != 0 {
-        db.open_tree("home_pages")?
-            .insert(u32_to_ivec(user.uid), &[input.home_page])?;
-    }
+    db.open_tree("home_pages")?
+        .insert(u32_to_ivec(user.uid), &[input.home_page])?;
     set_one(&db, "users", claim.uid, &user)?;
 
     let target = format!("/user/{}", claim.uid);
