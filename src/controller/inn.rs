@@ -643,13 +643,47 @@ pub(crate) async fn edit_post_post(
         db.open_tree("tags")?.apply_batch(batch)?;
     }
 
+    let mut content = input.content;
+    // extract @username or @uid notificaiton
+    let notifications = extract_element(&content, 5, '@');
+    for notification in &notifications {
+        let (uid, username) = match notification.parse::<u32>() {
+            Ok(uid) => {
+                if let Ok(user) = get_one::<User>(&db, "users", uid) {
+                    (uid, user.username)
+                } else {
+                    continue;
+                }
+            }
+            Err(_) => {
+                if let Some(uid) = User::get_uid_by_name(&db, notification)? {
+                    (uid, notification.to_string())
+                } else {
+                    continue;
+                }
+            }
+        };
+        let notification_link = format!(
+            "<span class='replytag'>[![](/static/avatars/{uid}.png){username}](/user/{uid})</span>"
+        );
+        let from = format!("@{notification}");
+        let to = format!("@{notification_link}");
+        content = content.replace(&from, &to);
+
+        // notify user to be mentioned
+        // prevent duplicate notifications
+        if uid != claim.uid {
+            add_notification(&db, uid, NtType::PostMention, pid, 0)?;
+        }
+    }
+
     let post = Post {
         pid,
         uid: claim.uid,
         iid,
         title: input.title,
         tags,
-        content: PostContent::Markdown(input.content),
+        content: PostContent::Markdown(content),
         created_at,
         status: PostStatus::Normal,
     };
