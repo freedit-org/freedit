@@ -115,6 +115,7 @@ pub(super) mod upload;
 pub(super) mod user;
 
 mod fmt;
+mod tantity;
 
 use self::db_utils::{
     get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
