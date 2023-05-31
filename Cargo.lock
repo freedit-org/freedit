@@ -597,6 +597,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fast2s"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1316063b5422f1f7bf4cc784c959eaf04b843de7c9ecbd4190c60614aa23b27e"
+dependencies = [
+ "bincode 1.3.3",
+ "hashbrown 0.12.3",
+ "lazy_static",
+]
+
+[[package]]
 name = "fastdivide"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -673,6 +684,7 @@ dependencies = [
  "captcha",
  "chrono",
  "data-encoding",
+ "fast2s",
  "identicon",
  "image",
  "img-parts",
@@ -688,9 +700,11 @@ dependencies = [
  "reqwest",
  "ring",
  "rss",
+ "rust-stemmers",
  "serde",
  "sled",
  "snailquote",
+ "stop-words",
  "syntect",
  "tantivy",
  "thiserror",
@@ -2232,6 +2246,15 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "stop-words"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14470755b1752284db8403b797270e1197b14caa77c95c88dc8854afb8838de5"
+dependencies = [
+ "serde_json",
+]
 
 [[package]]
 name = "string_cache"
