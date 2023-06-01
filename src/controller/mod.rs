@@ -14,7 +14,8 @@
 //! | "user_stats"     | `timestamp_uid_type` | N                |
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
-//! | home_pages       | `uid`                | `u8`             |
+//! | "home_pages"     | `uid`                | `u8`             |
+//! | "tan"            | `content_type#id`    | `&[]`or &[0]     |
 //!
 //! ### notification
 //! | tree            | key                   | value             |
@@ -107,21 +108,24 @@ pub mod db_utils;
 pub mod feed;
 pub mod meta_handler;
 pub mod notification;
+pub mod tantivy;
 
 pub(super) mod admin;
 pub(super) mod inn;
+pub(super) mod search;
 pub(super) mod solo;
 pub(super) mod upload;
 pub(super) mod user;
 
 mod fmt;
-mod tantity;
 
 use self::db_utils::{
     get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
 };
-use self::fmt::md2html;
+use self::fmt::{md2html, ts_to_date};
+use self::tantivy::{ToDoc, FIELDS};
 use crate::{controller::meta_handler::into_response, error::AppError};
+use ::tantivy::Document;
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use chrono::{Days, Utc};
@@ -223,6 +227,18 @@ struct Solo {
     replies: Vec<u32>,
 }
 
+impl ToDoc for Solo {
+    fn to_doc(&self, _id: Option<u32>) -> Document {
+        let mut doc = Document::default();
+        doc.add_text(FIELDS.id, format!("solo{}", self.sid));
+        doc.add_text(FIELDS.title, &self.content);
+        doc.add_text(FIELDS.time, ts_to_date(self.created_at));
+        doc.add_u64(FIELDS.uid, self.uid as u64);
+        doc.add_text(FIELDS.content_type, "solo");
+        doc
+    }
+}
+
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Inn {
     iid: u32,
@@ -289,6 +305,19 @@ pub struct Post {
     pub status: PostStatus,
 }
 
+impl ToDoc for Post {
+    fn to_doc(&self, _id: Option<u32>) -> Document {
+        let mut doc = Document::default();
+        doc.add_text(FIELDS.id, format!("post{}", self.pid));
+        doc.add_text(FIELDS.title, &self.title);
+        doc.add_text(FIELDS.time, ts_to_date(self.created_at));
+        doc.add_u64(FIELDS.uid, self.uid as u64);
+        doc.add_text(FIELDS.content, &self.content);
+        doc.add_text(FIELDS.content_type, "post");
+        doc
+    }
+}
+
 /// Form data: `/inn/:iid/post/:pid` post create/edit page
 #[derive(Debug, Default, Deserialize, Validate, Encode, Decode)]
 pub(super) struct FormPost {
@@ -314,6 +343,18 @@ struct Comment {
     is_hidden: bool,
 }
 
+impl ToDoc for Comment {
+    fn to_doc(&self, _id: Option<u32>) -> Document {
+        let mut doc = Document::default();
+        doc.add_text(FIELDS.id, format!("comt{}#{}", self.pid, self.cid));
+        doc.add_text(FIELDS.title, &self.content);
+        doc.add_text(FIELDS.time, ts_to_date(self.created_at));
+        doc.add_u64(FIELDS.uid, self.uid as u64);
+        doc.add_text(FIELDS.content_type, "comt");
+        doc
+    }
+}
+
 #[derive(Encode, Decode, Debug)]
 struct Feed {
     link: String,
@@ -327,6 +368,18 @@ struct Item {
     feed_title: String,
     updated: i64,
     content: String,
+}
+
+impl ToDoc for Item {
+    fn to_doc(&self, id: Option<u32>) -> Document {
+        let mut doc = Document::default();
+        doc.add_text(FIELDS.id, format!("item{}", id.unwrap()));
+        doc.add_text(FIELDS.title, &self.title);
+        doc.add_text(FIELDS.time, ts_to_date(self.updated));
+        doc.add_text(FIELDS.content, &self.content);
+        doc.add_text(FIELDS.content_type, "item");
+        doc
+    }
 }
 
 /// Go to source code to see default value: [SiteConfig::default()]

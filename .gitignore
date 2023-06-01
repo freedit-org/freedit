@@ -6,3 +6,4 @@
 .rustdoc_fingerprint.json
 config.toml
 /snapshots
+/tantivy

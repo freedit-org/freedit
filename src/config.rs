@@ -15,6 +15,7 @@ pub struct Config {
     pub(crate) avatars_path: String,
     pub(crate) inn_icons_path: String,
     pub(crate) upload_path: String,
+    pub(crate) tantivy_path: String,
     pub(crate) serve_dir: Vec<(String, String, String)>,
     cert: String,
     key: String,
@@ -40,6 +41,7 @@ impl Config {
         check_path(&config.avatars_path);
         check_path(&config.inn_icons_path);
         check_path(&config.upload_path);
+        check_path(&config.tantivy_path);
 
         config
     }
@@ -59,9 +61,10 @@ impl Default for Config {
         Config {
             db: "freedit.db".into(),
             addr: "127.0.0.1:3001".into(),
-            avatars_path: "./static/imgs/avatars".into(),
-            inn_icons_path: "./static/imgs/inn_icons".into(),
-            upload_path: "./static/imgs/upload".into(),
+            avatars_path: "static/imgs/avatars".into(),
+            inn_icons_path: "static/imgs/inn_icons".into(),
+            upload_path: "static/imgs/upload".into(),
+            tantivy_path: "tantivy".into(),
             serve_dir: vec![],
             cert: "".into(),
             key: "".into(),
@@ -74,6 +77,8 @@ fn check_path(path_str: &str) {
     let path = Path::new(path_str);
     if !path.exists() {
         fs::create_dir_all(path).unwrap();
+        info!("create path: {}", path_str);
+    } else {
+        info!("{path_str} is ok");
     }
-    info!("static path {path_str}");
 }

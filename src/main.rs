@@ -4,7 +4,9 @@ use chrono::Utc;
 use freedit::{
     app_router::router,
     config::CONFIG,
-    controller::{db_utils::clear_invalid, feed::cron_feed, meta_handler::shutdown_signal},
+    controller::{
+        db_utils::clear_invalid, feed::cron_feed, meta_handler::shutdown_signal, tantivy::Tan,
+    },
     error::AppError,
     CURRENT_SHA256, GIT_COMMIT, VERSION,
 };
@@ -58,7 +60,40 @@ async fn main() -> Result<(), AppError> {
             if let Err(e) = clear_invalid(&db2, "user_stats").await {
                 error!(%e);
             }
-            sleep_seconds(3600 * 8).await;
+            sleep_seconds(3600 * 4).await;
+        }
+    });
+
+    let db2 = db.clone();
+    tokio::spawn(async move {
+        // TODO:
+        // 1. inn feed search
+        // 2. rebuild whole search
+        let mut tan = Tan::init().unwrap();
+        let mut subscriber = db2.open_tree("tan").unwrap().watch_prefix(vec![]);
+        while let Some(event) = (&mut subscriber).await {
+            let db2 = db2.clone();
+            let (k, op_type) = match event {
+                sled::Event::Insert { key, value } => {
+                    if value.len() == 1 {
+                        (key, "update")
+                    } else {
+                        (key, "add")
+                    }
+                }
+                sled::Event::Remove { key } => (key, "delete"),
+            };
+            let id = String::from_utf8_lossy(&k);
+
+            if op_type == "delete" || op_type == "update" {
+                tan.del_index(&id).unwrap();
+            }
+
+            if op_type == "update" || op_type == "add" {
+                tan.add_doc(id.into(), db2).unwrap();
+            }
+
+            tan.commit().unwrap();
         }
     });
 

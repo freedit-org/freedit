@@ -11,6 +11,7 @@ use crate::{
         },
         meta_handler::{handler_404, home, style},
         notification::notification,
+        search::search,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         upload::{gallery, upload, upload_pic_post, upload_post},
         user::{
@@ -104,6 +105,7 @@ pub async fn router(db: Db) -> Router {
         .route("/feed/star/:item_id", get(feed_star))
         .route("/feed/subscribe/:uid/:item_id", get(feed_subscribe))
         .route("/feed/read/:item_id", get(feed_read))
+        .route("/search", get(search))
         .with_state(db);
 
     let mut router_static = Router::new()

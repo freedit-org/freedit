@@ -470,6 +470,10 @@ pub(crate) async fn solo_post(
     User::update_stats(&db, claim.uid, "solo")?;
     claim.update_last_write(&db)?;
 
+    if visibility == 0 {
+        db.open_tree("tan")?.insert(format!("solo{}", sid), &[])?;
+    }
+
     let target = if input.reply_to > 0 {
         format!("/solo/{}", input.reply_to)
     } else {
@@ -553,6 +557,8 @@ pub(crate) async fn solo_delete(
 
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
     db.open_tree("user_solos")?.remove(k)?;
+
+    db.open_tree("tan")?.remove(format!("solo{}", sid))?;
 
     let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))

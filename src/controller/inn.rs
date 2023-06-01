@@ -709,6 +709,12 @@ pub(crate) async fn edit_post_post(
     User::update_stats(&db, claim.uid, "post")?;
     claim.update_last_write(&db)?;
 
+    if inn.inn_type.as_str() != "Private" {
+        let is_update: &[u8] = if old_pid == 0 { &[] } else { &[0] };
+        db.open_tree("tan")?
+            .insert(format!("post{}", pid), is_update)?;
+    }
+
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
@@ -1575,6 +1581,12 @@ pub(crate) async fn comment_post(
     User::update_stats(&db, claim.uid, "comment")?;
     claim.update_last_write(&db)?;
 
+    let inn: Inn = get_one(&db, "inns", iid)?;
+    if inn.inn_type != "Private" {
+        db.open_tree("tan")?
+            .insert(format!("comt{}#{}", pid, cid), &[])?;
+    }
+
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
@@ -1643,7 +1655,10 @@ pub(crate) async fn comment_delete(
 
     inn_add_index(&db, iid, pid, timestamp as u32, visibility)?;
 
-    let target = format!("/post/{iid}/{pid}");
+    db.open_tree("tan")?
+        .remove(format!("comt{}#{}", pid, cid))?;
+
+    let target = format!("/post/{pid}/{cid}");
     Ok(Redirect::to(&target))
 }
 

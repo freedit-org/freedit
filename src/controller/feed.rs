@@ -632,29 +632,29 @@ pub(super) async fn update(
     let content = CLIENT.get(url).send().await?.bytes().await?;
 
     let item_links_tree = db.open_tree("item_links")?;
+    let tan_tree = db.open_tree("tan")?;
     let mut item_ids = vec![];
     let feed = match rss::Channel::read_from(&content[..]) {
         Ok(rss) => {
             for item in rss.items.into_iter().take(n) {
                 let source_item: SourceItem = item.try_into()?;
-                let item_id = if let Some(v) = item_links_tree.get(&source_item.link)? {
-                    ivec_to_u32(&v)
-                } else {
-                    incr_id(db, "items_count")?
-                };
 
-                let item = Item {
-                    link: source_item.link,
-                    title: source_item.title,
-                    feed_title: rss.title.clone(),
-                    updated: source_item.updated,
-                    content: source_item.content,
-                };
+                if let None = item_links_tree.get(&source_item.link)? {
+                    let item_id = incr_id(db, "items_count")?;
+                    let item = Item {
+                        link: source_item.link,
+                        title: source_item.title,
+                        feed_title: rss.title.clone(),
+                        updated: source_item.updated,
+                        content: source_item.content,
+                    };
 
-                item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
-                set_one(db, "items", item_id, &item)?;
+                    item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
+                    set_one(db, "items", item_id, &item)?;
 
-                item_ids.push((item_id, item.updated));
+                    item_ids.push((item_id, item.updated));
+                    tan_tree.insert(format!("item{}", item_id), &[])?;
+                }
             }
 
             Feed {
@@ -666,22 +666,22 @@ pub(super) async fn update(
             Ok(atom) => {
                 for entry in atom.entries.into_iter().take(n) {
                     let source_item: SourceItem = entry.into();
-                    let item_id = if let Some(v) = item_links_tree.get(&source_item.link)? {
-                        ivec_to_u32(&v)
-                    } else {
-                        incr_id(db, "items_count")?
-                    };
-                    let item = Item {
-                        link: source_item.link,
-                        title: source_item.title,
-                        feed_title: atom.title.to_string(),
-                        updated: source_item.updated,
-                        content: source_item.content,
-                    };
-                    item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
-                    set_one(db, "items", item_id, &item)?;
+                    if let None = item_links_tree.get(&source_item.link)? {
+                        let item_id = incr_id(db, "items_count")?;
+                        let item = Item {
+                            link: source_item.link,
+                            title: source_item.title,
+                            feed_title: atom.title.to_string(),
+                            updated: source_item.updated,
+                            content: source_item.content,
+                        };
 
-                    item_ids.push((item_id, item.updated));
+                        item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
+                        set_one(db, "items", item_id, &item)?;
+
+                        item_ids.push((item_id, item.updated));
+                        tan_tree.insert(format!("item{}", item_id), &[])?;
+                    };
                 }
 
                 Feed {

@@ -15,6 +15,8 @@ pub enum AppError {
     IoError(#[from] std::io::Error),
     #[error("You must join inn first")]
     NoJoinedInn,
+    #[error(transparent)]
+    TantivyError(#[from] tantivy::TantivyError),
 
     // 4XX
     #[error("Captcha Error")]
