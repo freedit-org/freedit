@@ -122,7 +122,7 @@ impl Tan {
     /// It just add doc to tantivy, not commit.
     pub fn add_doc(&mut self, id: String, db: Db) -> Result<(), AppError> {
         let content_type = &id[0..4];
-        let ids: Vec<_> = id[4..].split("#").collect();
+        let ids: Vec<_> = id[4..].split('#').collect();
         let id1: u32 = ids[0].parse().unwrap();
         let doc = match content_type {
             "post" => {

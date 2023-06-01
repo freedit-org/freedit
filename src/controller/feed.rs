@@ -639,7 +639,7 @@ pub(super) async fn update(
             for item in rss.items.into_iter().take(n) {
                 let source_item: SourceItem = item.try_into()?;
 
-                if let None = item_links_tree.get(&source_item.link)? {
+                if item_links_tree.get(&source_item.link)?.is_none() {
                     let item_id = incr_id(db, "items_count")?;
                     let item = Item {
                         link: source_item.link,
@@ -666,7 +666,7 @@ pub(super) async fn update(
             Ok(atom) => {
                 for entry in atom.entries.into_iter().take(n) {
                     let source_item: SourceItem = entry.into();
-                    if let None = item_links_tree.get(&source_item.link)? {
+                    if item_links_tree.get(&source_item.link)?.is_none() {
                         let item_id = incr_id(db, "items_count")?;
                         let item = Item {
                             link: source_item.link,

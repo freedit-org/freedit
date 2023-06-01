@@ -17,7 +17,7 @@ pub(crate) async fn search(Query(input): Query<ParamsSearch>) -> impl IntoRespon
     let search = input.search.trim();
 
     if !search.is_empty() {
-        let Ok(query) = SEARCHER.query_parser.parse_query(&search)else{
+        let Ok(query) = SEARCHER.query_parser.parse_query(search)else{
             return AppError::Custom("Please remove special chars".to_owned()).into_response();
         };
 
@@ -32,5 +32,5 @@ pub(crate) async fn search(Query(input): Query<ParamsSearch>) -> impl IntoRespon
         }
     }
 
-    return ().into_response();
+    ().into_response()
 }
