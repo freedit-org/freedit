@@ -85,7 +85,7 @@ pub(crate) async fn search(
         for (_score, doc_address) in top_docs {
             let doc = searcher.doc(doc_address).unwrap();
             let id = doc.get_first(FIELDS.id).unwrap().as_text().unwrap();
-            let out = OutSearch::get(&id, &db)?;
+            let out = OutSearch::get(id, &db)?;
             out_searchs.push(out);
         }
     }
@@ -250,7 +250,7 @@ impl OutSearch {
         let id1: u32 = ids[0].parse().unwrap();
         let out = match content_type {
             "post" => {
-                let post: Post = get_one(&db, "posts", id1)?;
+                let post: Post = get_one(db, "posts", id1)?;
                 Self {
                     url: format!("/post/{}/{}", post.iid, post.pid),
                     title: post.title,
@@ -267,7 +267,7 @@ impl OutSearch {
                     .get(k)?
                     .ok_or(AppError::NotFound)?;
                 let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-                let post: Post = get_one(&db, "posts", id1)?;
+                let post: Post = get_one(db, "posts", id1)?;
                 Self {
                     url: format!(
                         "/post/{}/{}?anchor={}&is_desc=false#{}",
@@ -283,7 +283,7 @@ impl OutSearch {
                 }
             }
             "solo" => {
-                let solo: Solo = get_one(&db, "solos", id1)?;
+                let solo: Solo = get_one(db, "solos", id1)?;
                 Self {
                     url: format!("/solo/{}", solo.sid),
                     title: solo.content,
@@ -293,7 +293,7 @@ impl OutSearch {
                 }
             }
             "item" => {
-                let item: Item = get_one(&db, "items", id1)?;
+                let item: Item = get_one(db, "items", id1)?;
                 Self {
                     url: format!("/feed/read/{}", id1),
                     title: item.title,
