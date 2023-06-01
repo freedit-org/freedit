@@ -1584,7 +1584,7 @@ pub(crate) async fn comment_post(
     let inn: Inn = get_one(&db, "inns", iid)?;
     if inn.inn_type != "Private" {
         db.open_tree("tan")?
-            .insert(format!("comt{}#{}", pid, cid), &[])?;
+            .insert(format!("comt{}/{}", pid, cid), &[])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -1656,7 +1656,7 @@ pub(crate) async fn comment_delete(
     inn_add_index(&db, iid, pid, timestamp as u32, visibility)?;
 
     db.open_tree("tan")?
-        .remove(format!("comt{}#{}", pid, cid))?;
+        .remove(format!("comt{}/{}", pid, cid))?;
 
     let target = format!("/post/{pid}/{cid}");
     Ok(Redirect::to(&target))

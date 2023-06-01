@@ -11,8 +11,8 @@ use crate::{
         },
         meta_handler::{handler_404, home, style},
         notification::notification,
-        search::search,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
+        tantivy::search,
         upload::{gallery, upload, upload_pic_post, upload_post},
         user::{
             remove_session, reset, reset_post, role_post, signin, signin_post, signout, signup,

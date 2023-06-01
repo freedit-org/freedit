@@ -112,7 +112,6 @@ pub mod tantivy;
 
 pub(super) mod admin;
 pub(super) mod inn;
-pub(super) mod search;
 pub(super) mod solo;
 pub(super) mod upload;
 pub(super) mod user;
@@ -122,7 +121,7 @@ mod fmt;
 use self::db_utils::{
     get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
 };
-use self::fmt::{md2html, ts_to_date};
+use self::fmt::md2html;
 use self::tantivy::{ToDoc, FIELDS};
 use crate::{controller::meta_handler::into_response, error::AppError};
 use ::tantivy::Document;
@@ -232,7 +231,6 @@ impl ToDoc for Solo {
         let mut doc = Document::default();
         doc.add_text(FIELDS.id, format!("solo{}", self.sid));
         doc.add_text(FIELDS.title, &self.content);
-        doc.add_text(FIELDS.time, ts_to_date(self.created_at));
         doc.add_u64(FIELDS.uid, self.uid as u64);
         doc.add_text(FIELDS.content_type, "solo");
         doc
@@ -310,7 +308,6 @@ impl ToDoc for Post {
         let mut doc = Document::default();
         doc.add_text(FIELDS.id, format!("post{}", self.pid));
         doc.add_text(FIELDS.title, &self.title);
-        doc.add_text(FIELDS.time, ts_to_date(self.created_at));
         doc.add_u64(FIELDS.uid, self.uid as u64);
         doc.add_text(FIELDS.content, &self.content);
         doc.add_text(FIELDS.content_type, "post");
@@ -348,7 +345,6 @@ impl ToDoc for Comment {
         let mut doc = Document::default();
         doc.add_text(FIELDS.id, format!("comt{}#{}", self.pid, self.cid));
         doc.add_text(FIELDS.title, &self.content);
-        doc.add_text(FIELDS.time, ts_to_date(self.created_at));
         doc.add_u64(FIELDS.uid, self.uid as u64);
         doc.add_text(FIELDS.content_type, "comt");
         doc
@@ -375,7 +371,6 @@ impl ToDoc for Item {
         let mut doc = Document::default();
         doc.add_text(FIELDS.id, format!("item{}", id.unwrap()));
         doc.add_text(FIELDS.title, &self.title);
-        doc.add_text(FIELDS.time, ts_to_date(self.updated));
         doc.add_text(FIELDS.content, &self.content);
         doc.add_text(FIELDS.content_type, "item");
         doc
