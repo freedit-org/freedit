@@ -12,7 +12,7 @@ use jieba_rs::{Jieba, TokenizeMode};
 use once_cell::sync::Lazy;
 use rust_stemmers::{Algorithm, Stemmer};
 use serde::Deserialize;
-use sled::Db;
+use sled::{Batch, Db};
 use tantivy::{
     collector::TopDocs,
     directory::MmapDirectory,
@@ -24,16 +24,17 @@ use tantivy::{
     tokenizer::{BoxTokenStream, Token, TokenStream, Tokenizer},
     Document, Index, IndexReader, IndexWriter, Term,
 };
+use tracing::info;
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
 use crate::{config::CONFIG, error::AppError};
 
 use super::{
-    db_utils::{get_one, u32_to_ivec},
+    db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
     fmt::ts_to_date,
     meta_handler::{into_response, PageData},
-    Claim, Comment, Item, Post, SiteConfig, Solo, User,
+    Claim, Comment, Item, Post, PostStatus, SiteConfig, Solo, User,
 };
 
 struct OutSearch {
@@ -41,7 +42,7 @@ struct OutSearch {
     title: String,
     date: String,
     uid: Option<u32>,
-    content_type: String,
+    ctype: String,
 }
 
 /// Page data: `search.html`
@@ -52,12 +53,16 @@ struct PageSearch<'a> {
     outs: Vec<OutSearch>,
     search: String,
     offset: usize,
+    ctype: String,
+    uid: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct ParamsSearch {
     search: String,
     offset: Option<usize>,
+    uid: Option<String>,
+    ctype: Option<String>,
 }
 
 pub(crate) async fn search(
@@ -71,9 +76,23 @@ pub(crate) async fn search(
     let offset = input.offset.unwrap_or_default();
     let search = input.search.trim();
 
+    let mut query = search.to_owned();
+    if let Some(ref uid) = input.uid {
+        if !uid.is_empty() {
+            query.push_str(" uid:");
+            query.push_str(uid);
+        };
+    }
+    if let Some(ref ctype) = input.ctype {
+        if ctype != "all" {
+            query.push_str(" ctype:");
+            query.push_str(ctype);
+        }
+    };
+
     let mut out_searchs = Vec::with_capacity(20);
     if !search.is_empty() {
-        let Ok(query) = SEARCHER.query_parser.parse_query(search)else{
+        let Ok(query) = SEARCHER.query_parser.parse_query(&query) else {
             return Err(AppError::Custom("Please remove special chars".to_owned()));
         };
 
@@ -83,7 +102,7 @@ pub(crate) async fn search(
             .unwrap_or_default();
 
         for (_score, doc_address) in top_docs {
-            let doc = searcher.doc(doc_address).unwrap();
+            let doc = searcher.doc(doc_address)?;
             let id = doc.get_first(FIELDS.id).unwrap().as_text().unwrap();
             let out = OutSearch::get(id, &db)?;
             out_searchs.push(out);
@@ -102,6 +121,8 @@ pub(crate) async fn search(
         outs: out_searchs,
         search: input.search,
         offset,
+        uid: input.uid,
+        ctype: input.ctype.unwrap_or_else(|| "all".to_owned()),
     };
 
     Ok(into_response(&page_search))
@@ -128,7 +149,7 @@ pub(super) struct Fields {
     pub(super) title: Field,
     pub(super) uid: Field,
     pub(super) content: Field,
-    pub(super) content_type: Field,
+    pub(super) ctype: Field,
 }
 
 impl Tan {
@@ -141,14 +162,14 @@ impl Tan {
     /// id should be `post123` `comt45/1` `solo123` or `item123`
     ///
     /// It just add doc to tantivy, not commit.
-    pub fn add_doc(&mut self, id: String, db: Db) -> Result<(), AppError> {
+    pub fn add_doc(&mut self, id: String, db: &Db) -> Result<(), AppError> {
         let doc = extract_id(&id, db)?;
         self.writer.add_document(doc)?;
 
         Ok(())
     }
 
-    pub fn del_index(&mut self, id: &str) -> tantivy::Result<()> {
+    pub fn del_doc(&mut self, id: &str) -> tantivy::Result<()> {
         self.writer
             .delete_term(Term::from_field_text(FIELDS.id, id));
         Ok(())
@@ -156,6 +177,64 @@ impl Tan {
 
     pub fn commit(&mut self) -> tantivy::Result<()> {
         self.writer.commit()?;
+        Ok(())
+    }
+
+    pub fn rebuild_index(&mut self, db: &Db) -> Result<(), AppError> {
+        let tan_tree = &db.open_tree("tan")?;
+        tan_tree.clear()?;
+
+        let mut batch = Batch::default();
+        for i in &db.open_tree("posts")? {
+            let (_, v) = i?;
+            let (post, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
+            if post.status == PostStatus::Normal {
+                batch.insert(format!("post{}", post.pid).as_bytes(), &[]);
+            }
+        }
+
+        for i in &db.open_tree("post_comments")? {
+            let (_, v) = i?;
+            let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
+            if !comment.is_hidden {
+                batch.insert(
+                    format!("comt{}/{}", comment.pid, comment.cid).as_bytes(),
+                    &[],
+                );
+            }
+        }
+
+        for i in &db.open_tree("solos")? {
+            let (_, v) = i?;
+            let (solo, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
+            if solo.visibility == 0 {
+                batch.insert(format!("solo{}", solo.sid).as_bytes(), &[]);
+            }
+        }
+
+        for i in &db.open_tree("items")? {
+            let (k, _) = i?;
+            let id = u8_slice_to_u32(&k);
+            batch.insert(format!("item{}", id).as_bytes(), &[]);
+        }
+
+        tan_tree.apply_batch(batch)?;
+
+        self.writer.delete_all_documents()?;
+        self.commit()?;
+        info!("All search index deleted");
+
+        for (idx, i) in db.open_tree("tan")?.into_iter().enumerate() {
+            let (k, _) = i?;
+            let id = String::from_utf8_lossy(&k);
+            self.add_doc(id.into(), db)?;
+            if idx % 500 == 0 {
+                self.commit()?;
+            }
+        }
+        self.commit()?;
+        info!("rebuild index done");
+
         Ok(())
     }
 
@@ -171,14 +250,14 @@ impl Tan {
         let title = schema_builder.add_text_field("title", text_options_nostored.clone());
         let uid = schema_builder.add_u64_field("uid", INDEXED);
         let content = schema_builder.add_text_field("content", text_options_nostored);
-        let content_type = schema_builder.add_text_field("content_type", FAST | STRING);
+        let ctype = schema_builder.add_text_field("ctype", FAST | STRING);
 
         let fields = Fields {
             id,
             title,
             uid,
             content,
-            content_type,
+            ctype,
         };
         let schema = schema_builder.build();
 
@@ -212,13 +291,13 @@ impl Tan {
     }
 }
 
-fn extract_id(id: &str, db: Db) -> Result<Document, AppError> {
-    let content_type = &id[0..4];
+fn extract_id(id: &str, db: &Db) -> Result<Document, AppError> {
+    let ctype = &id[0..4];
     let ids: Vec<_> = id[4..].split('/').collect();
     let id1: u32 = ids[0].parse().unwrap();
-    match content_type {
+    match ctype {
         "post" => {
-            let post: Post = get_one(&db, "posts", id1)?;
+            let post: Post = get_one(db, "posts", id1)?;
             Ok(post.to_doc(None))
         }
         "comt" => {
@@ -232,11 +311,11 @@ fn extract_id(id: &str, db: Db) -> Result<Document, AppError> {
             Ok(comment.to_doc(None))
         }
         "solo" => {
-            let solo: Solo = get_one(&db, "solos", id1)?;
+            let solo: Solo = get_one(db, "solos", id1)?;
             Ok(solo.to_doc(None))
         }
         "item" => {
-            let item: Item = get_one(&db, "items", id1)?;
+            let item: Item = get_one(db, "items", id1)?;
             Ok(item.to_doc(Some(id1)))
         }
         _ => unreachable!(),
@@ -245,10 +324,10 @@ fn extract_id(id: &str, db: Db) -> Result<Document, AppError> {
 
 impl OutSearch {
     fn get(id: &str, db: &Db) -> Result<Self, AppError> {
-        let content_type = &id[0..4];
+        let ctype = &id[0..4];
         let ids: Vec<_> = id[4..].split('/').collect();
         let id1: u32 = ids[0].parse().unwrap();
-        let out = match content_type {
+        let out = match ctype {
             "post" => {
                 let post: Post = get_one(db, "posts", id1)?;
                 Self {
@@ -256,7 +335,7 @@ impl OutSearch {
                     title: post.title,
                     date: ts_to_date(post.created_at),
                     uid: Some(post.uid),
-                    content_type: "post".to_string(),
+                    ctype: "post".to_string(),
                 }
             }
             "comt" => {
@@ -279,7 +358,7 @@ impl OutSearch {
                     title: comment.content,
                     date: ts_to_date(comment.created_at),
                     uid: Some(comment.uid),
-                    content_type: "comment".to_string(),
+                    ctype: "comment".to_string(),
                 }
             }
             "solo" => {
@@ -289,7 +368,7 @@ impl OutSearch {
                     title: solo.content,
                     date: ts_to_date(solo.created_at),
                     uid: Some(solo.uid),
-                    content_type: "solo".to_string(),
+                    ctype: "solo".to_string(),
                 }
             }
             "item" => {
@@ -299,7 +378,7 @@ impl OutSearch {
                     title: item.title,
                     date: ts_to_date(item.updated),
                     uid: None,
-                    content_type: "item".to_string(),
+                    ctype: "item".to_string(),
                 }
             }
             _ => unreachable!(),

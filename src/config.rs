@@ -12,6 +12,7 @@ pub static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
 pub struct Config {
     pub db: String,
     pub addr: String,
+    pub rebuild_index: Option<bool>,
     pub(crate) avatars_path: String,
     pub(crate) inn_icons_path: String,
     pub(crate) upload_path: String,
@@ -61,6 +62,7 @@ impl Default for Config {
         Config {
             db: "freedit.db".into(),
             addr: "127.0.0.1:3001".into(),
+            rebuild_index: None,
             avatars_path: "static/imgs/avatars".into(),
             inn_icons_path: "static/imgs/inn_icons".into(),
             upload_path: "static/imgs/upload".into(),

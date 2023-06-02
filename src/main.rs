@@ -21,7 +21,7 @@ static IS_DEBUG: Lazy<bool> =
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new("info"))
+        .with(tracing_subscriber::EnvFilter::new("info,tantivy=warn"))
         .with(tracing_subscriber::fmt::layer())
         .init();
 
@@ -54,6 +54,7 @@ async fn main() -> Result<(), AppError> {
     let db2 = db.clone();
     tokio::spawn(async move {
         loop {
+            sleep_seconds(60).await;
             if let Err(e) = cron_feed(&db2).await {
                 error!(%e);
             }
@@ -66,10 +67,10 @@ async fn main() -> Result<(), AppError> {
 
     let db2 = db.clone();
     tokio::spawn(async move {
-        // TODO:
-        // 1. inn feed search
-        // 2. rebuild whole search
         let mut tan = Tan::init().unwrap();
+        if let Some(true) = CONFIG.rebuild_index {
+            tan.rebuild_index(&db2).unwrap();
+        }
         let mut subscriber = db2.open_tree("tan").unwrap().watch_prefix(vec![]);
         while let Some(event) = (&mut subscriber).await {
             let db2 = db2.clone();
@@ -86,11 +87,11 @@ async fn main() -> Result<(), AppError> {
             let id = String::from_utf8_lossy(&k);
 
             if op_type == "delete" || op_type == "update" {
-                tan.del_index(&id).unwrap();
+                tan.del_doc(&id).unwrap();
             }
 
             if op_type == "update" || op_type == "add" {
-                tan.add_doc(id.into(), db2).unwrap();
+                tan.add_doc(id.into(), &db2).unwrap();
             }
 
             tan.commit().unwrap();

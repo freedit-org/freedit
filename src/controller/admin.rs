@@ -277,6 +277,10 @@ pub(crate) async fn admin_view(
                     let uid = u8_slice_to_u32(&k);
                     ones.push(format!("{uid}: {}", v[0]));
                 }
+                "tan" => {
+                    let id = String::from_utf8_lossy(&k);
+                    ones.push(format!("{id}: {:?}", v));
+                }
                 _ => ones.push(format!("{tree_name} has not been supported yet")),
             }
         }

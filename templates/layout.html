@@ -96,6 +96,20 @@
             </main>
             <aside class="column">
                 {% block aside %}
+                    <div class="box">
+                        <form id="search" action="/search" method="get">
+                            <fieldset>
+                                <div class="field has-addons">
+                                    <div class="control">
+                                        <input class="input" name="search" type="text" placeholder="Search">
+                                    </div>
+                                    <div class="control">
+                                        <button type="submit" form="search" class="button is-link">Search</button>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
                     {% match page_data.claim %} {% when Some with (val) %}
                         {% if val.role == 255 %}
                             <div class="box">

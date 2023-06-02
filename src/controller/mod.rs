@@ -15,7 +15,7 @@
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
 //! | "home_pages"     | `uid`                | `u8`             |
-//! | "tan"            | `content_type#id`    | `&[]`or &[0]     |
+//! | "tan"            | `ctype#id`           | `&[]`or &[0]     |
 //!
 //! ### notification
 //! | tree            | key                   | value             |
@@ -232,7 +232,7 @@ impl ToDoc for Solo {
         doc.add_text(FIELDS.id, format!("solo{}", self.sid));
         doc.add_text(FIELDS.title, &self.content);
         doc.add_u64(FIELDS.uid, self.uid as u64);
-        doc.add_text(FIELDS.content_type, "solo");
+        doc.add_text(FIELDS.ctype, "solo");
         doc
     }
 }
@@ -310,7 +310,7 @@ impl ToDoc for Post {
         doc.add_text(FIELDS.title, &self.title);
         doc.add_u64(FIELDS.uid, self.uid as u64);
         doc.add_text(FIELDS.content, &self.content);
-        doc.add_text(FIELDS.content_type, "post");
+        doc.add_text(FIELDS.ctype, "post");
         doc
     }
 }
@@ -343,10 +343,10 @@ struct Comment {
 impl ToDoc for Comment {
     fn to_doc(&self, _id: Option<u32>) -> Document {
         let mut doc = Document::default();
-        doc.add_text(FIELDS.id, format!("comt{}#{}", self.pid, self.cid));
+        doc.add_text(FIELDS.id, format!("comt{}/{}", self.pid, self.cid));
         doc.add_text(FIELDS.title, &self.content);
         doc.add_u64(FIELDS.uid, self.uid as u64);
-        doc.add_text(FIELDS.content_type, "comt");
+        doc.add_text(FIELDS.ctype, "comt");
         doc
     }
 }
@@ -372,7 +372,7 @@ impl ToDoc for Item {
         doc.add_text(FIELDS.id, format!("item{}", id.unwrap()));
         doc.add_text(FIELDS.title, &self.title);
         doc.add_text(FIELDS.content, &self.content);
-        doc.add_text(FIELDS.content_type, "item");
+        doc.add_text(FIELDS.ctype, "item");
         doc
     }
 }

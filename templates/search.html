@@ -1,6 +1,70 @@
 {% extends "layout.html" %}
 
 {% block content %}
+<form id="search" class="box" action="/search" method="GET">
+    <fieldset>
+        <div class="field is-horizontal has-addons">
+            <div class="field-label is-normal">
+                <label class="label">Search</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                    <input name="search" class="input" type="text" required maxlength="64" value="{{search}}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">uid</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input name="uid" class="input" type="text" 
+                        {% match uid %} {% when Some(uid) %} value="{{uid}}" {% else %}{% endmatch %}>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Content type</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <div class="select">
+                            <select name="ctype">
+                                <option {% if ctype == "all" %} selected {% endif %} value="all">All</option>
+                                <option {% if ctype == "item" %} selected {% endif %} value="item">Feed</option>
+                                <option {% if ctype == "post" %} selected {% endif %} value="post">Post</option>
+                                <option {% if ctype == "comt" %} selected {% endif %} value="comt">Comment</option>
+                                <option {% if ctype == "solo" %} selected {% endif %} value="solo">Solo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label"></div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" form="search" class="button is-link">Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<div class="divider"></div>
 
 <div class="list has-visible-pointer-controls has-overflow-ellipsis box">
     {% for out in outs %}
@@ -19,25 +83,34 @@
             </div>
             <div class="list-item-description">
                 <span class="tag">{{out.date}}</span>
-                <span class="tag">{{out.content_type}}</span>
+                <span class="tag">{{out.ctype}}</span>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
 <div class="divider"></div>
 
 <nav class="pagination">
     {% if offset < 20 %}
-    <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>Prev</a>
     {% else %}
-    <a class="pagination-previous" href="/search?search={{search}}&offset={{offset-20}}">Prev</a>
+        {% match uid %} {% when Some(uid) %} 
+        <a class="pagination-previous" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset-20}}">Prev</a>
+        {% else %}
+        <a class="pagination-previous" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset-20}}">Prev</a>
+        {% endmatch %}
     {% endif %}
 
     {% if outs.len() < 20 %}
-    <a class="pagination-next" disabled>Next</a>
+        <a class="pagination-next" disabled>Next</a>
     {% else %}
-    <a class="pagination-next" href="/search?search={{search}}&offset={{offset+20}}">Next</a>
+        {% match uid %} {% when Some(uid) %} 
+        <a class="pagination-next" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset+20}}">Next</a>
+        {% else %}
+        <a class="pagination-next" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset+20}}">Next</a>
+        {% endmatch %}
     {% endif %}
 </nav>
 {% endblock %}
