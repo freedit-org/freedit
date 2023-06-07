@@ -25,8 +25,8 @@ pub enum AppError {
     NameExists,
     #[error("Too many inns you are managing")]
     InnCreateLimit,
-    #[error("Username should not start with a number, should not contain '@' or '#'")]
-    UsernameInvalid,
+    #[error("Name should not start with a number, should be <a href='https://doc.rust-lang.org/std/primitive.char.html#method.is_alphanumeric'>alphanumeric</a> or '_' or ' '")]
+    NameInvalid,
     #[error("Not found")]
     NotFound,
     #[error("wrong password")]

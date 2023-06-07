@@ -33,7 +33,7 @@ pub(super) fn into_response<T: Template>(t: &T) -> Response<BoxBody> {
 }
 
 #[derive(Template)]
-#[template(path = "error.html")]
+#[template(path = "error.html", escape = "none")]
 struct PageError<'a> {
     page_data: PageData<'a>,
     status: String,
@@ -46,7 +46,7 @@ impl IntoResponse for AppError {
             AppError::CaptchaError
             | AppError::NameExists
             | AppError::InnCreateLimit
-            | AppError::UsernameInvalid
+            | AppError::NameInvalid
             | AppError::WrongPassword
             | AppError::ImageError(_)
             | AppError::LockedOrHidden

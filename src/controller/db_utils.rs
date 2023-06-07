@@ -336,6 +336,35 @@ pub(super) fn extract_element(input: &str, max_len: usize, char: char) -> Vec<St
     vec
 }
 
+pub(super) fn is_valid_name(name: &str) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+    if name.chars().next().unwrap().is_numeric() {
+        return false;
+    }
+    if name
+        .chars()
+        .any(|c| (!char::is_alphanumeric(c)) && c != '_' && c != ' ')
+    {
+        return false;
+    }
+
+    true
+}
+
+/// get id by name
+pub(super) fn get_id_by_name(
+    db: &Db,
+    tree_name: &str,
+    name: &str,
+) -> Result<Option<u32>, AppError> {
+    let v = db
+        .open_tree(tree_name)?
+        .get(name.replace(' ', "_").to_lowercase())?;
+    Ok(v.map(|v| ivec_to_u32(&v)))
+}
+
 /// generate a new nanoid with expiration time that is hex encoded.
 ///
 /// format: "hex_timestamp_nanoid"

@@ -2,8 +2,8 @@
 
 use super::{
     db_utils::{
-        generate_nanoid_ttl, get_count, get_count_by_prefix, get_range, ivec_to_u32, set_one,
-        set_one_with_key, IterType,
+        generate_nanoid_ttl, get_count, get_count_by_prefix, get_id_by_name, get_range,
+        is_valid_name, ivec_to_u32, set_one, set_one_with_key, IterType,
     },
     fmt::ts_to_date,
     get_ids_by_prefix, get_one, incr_id, into_response,
@@ -64,10 +64,16 @@ struct OutUser {
 pub(crate) async fn user(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(uid): Path<u32>,
+    Path(username): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+
+    let uid = match username.parse::<u32>() {
+        Ok(uid) => uid,
+        Err(_) => get_id_by_name(&db, "usernames", &username)?.ok_or(AppError::NotFound)?,
+    };
+
     let user: User = get_one(&db, "users", uid)?;
     let out_user = OutUser {
         uid: user.uid,
@@ -121,11 +127,16 @@ pub(crate) async fn user(
 pub(crate) async fn user_follow(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(uid): Path<u32>,
+    Path(username): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let uid = match username.parse::<u32>() {
+        Ok(uid) => uid,
+        Err(_) => get_id_by_name(&db, "usernames", &username)?.ok_or(AppError::NotFound)?,
+    };
 
     let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
     let followers_k = [&u32_to_ivec(uid), &u32_to_ivec(claim.uid)].concat();
@@ -661,7 +672,7 @@ pub(crate) async fn reset_post(
 
     let uid = match input.username.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => User::get_uid_by_name(&db, &input.username)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&db, "usernames", &input.username)?.ok_or(AppError::NotFound)?,
     };
 
     let mut user: User = get_one(&db, "users", uid)?;
@@ -702,26 +713,23 @@ pub(crate) async fn user_setting_post(
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&db, "users", claim.uid)?;
 
-    if input.username.chars().next().unwrap().is_numeric() {
-        return Err(AppError::UsernameInvalid);
-    }
-    if input.username.chars().any(char::is_control) {
-        return Err(AppError::UsernameInvalid);
-    }
-    if input.username.contains(['@', '#']) {
-        return Err(AppError::UsernameInvalid);
+    if !is_valid_name(&input.username) {
+        return Err(AppError::NameInvalid);
     }
 
-    let tree = db.open_tree("usernames")?;
-    if let Some(v) = tree.get(input.username.to_lowercase())? {
+    let username_key = input.username.replace(' ', "_").to_lowercase();
+
+    let username_tree = db.open_tree("usernames")?;
+    if let Some(v) = username_tree.get(&username_key)? {
         if ivec_to_u32(&v) != claim.uid {
             return Err(AppError::NameExists);
         }
     }
 
     if user.username != input.username {
-        tree.remove(&user.username)?;
-        tree.insert(&input.username, u32_to_ivec(user.uid))?;
+        let old_username_key = input.username.replace(' ', "_").to_lowercase();
+        username_tree.remove(old_username_key)?;
+        username_tree.insert(username_key, u32_to_ivec(user.uid))?;
     }
 
     user.username = input.username;
@@ -808,7 +816,9 @@ pub(crate) async fn signin_post(
 ) -> impl IntoResponse {
     let uid = match input.username.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => User::get_uid_by_name(&db, &input.username)?.ok_or(AppError::WrongPassword)?,
+        Err(_) => {
+            get_id_by_name(&db, "usernames", &input.username)?.ok_or(AppError::WrongPassword)?
+        }
     };
     let user: User = get_one(&db, "users", uid)?;
     if check_password(&input.password, &user.password_hash) {
@@ -894,14 +904,8 @@ pub(crate) async fn signup_post(
     State(db): State<Db>,
     ValidatedForm(input): ValidatedForm<FormSignup>,
 ) -> Result<impl IntoResponse, AppError> {
-    if input.username.chars().next().unwrap().is_numeric() {
-        return Err(AppError::UsernameInvalid);
-    }
-    if input.username.chars().any(char::is_control) {
-        return Err(AppError::UsernameInvalid);
-    }
-    if input.username.contains(['@', '#']) {
-        return Err(AppError::UsernameInvalid);
+    if !is_valid_name(&input.username) {
+        return Err(AppError::NameInvalid);
     }
 
     let captcha_char = db
@@ -914,8 +918,9 @@ pub(crate) async fn signup_post(
         return Err(AppError::CaptchaError);
     }
 
-    let tree = db.open_tree("usernames")?;
-    if tree.contains_key(input.username.to_lowercase())? {
+    let usernames_tree = db.open_tree("usernames")?;
+    let username_key = input.username.replace(' ', "_").to_lowercase();
+    if usernames_tree.contains_key(&username_key)? {
         return Err(AppError::NameExists);
     }
 
@@ -943,8 +948,7 @@ pub(crate) async fn signup_post(
     };
 
     set_one(&db, "users", uid, &user)?;
-    db.open_tree("usernames")?
-        .insert(user.username.to_lowercase(), u32_to_ivec(uid))?;
+    usernames_tree.insert(username_key, u32_to_ivec(uid))?;
 
     let cookie = Claim::generate_cookie(&db, user, "4h")?;
     let mut headers = HeaderMap::new();

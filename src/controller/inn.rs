@@ -13,9 +13,9 @@
 
 use super::{
     db_utils::{
-        extract_element, get_batch, get_count, get_count_by_prefix, get_ids_by_prefix,
-        get_ids_by_tag, get_one, get_range, ivec_to_u32, set_one, set_one_with_key, u32_to_ivec,
-        u8_slice_to_u32, IterType,
+        extract_element, get_batch, get_count, get_count_by_prefix, get_id_by_name,
+        get_ids_by_prefix, get_ids_by_tag, get_one, get_range, is_valid_name, ivec_to_u32, set_one,
+        set_one_with_key, u32_to_ivec, u8_slice_to_u32, IterType,
     },
     feed::{inn_feed_to_post, update},
     fmt::{md2html, ts_to_date},
@@ -133,6 +133,12 @@ pub(crate) async fn mod_inn_post(
     Path(mut iid): Path<u32>,
     ValidatedForm(input): ValidatedForm<FormInn>,
 ) -> Result<impl IntoResponse, AppError> {
+    if !is_valid_name(&input.inn_name) {
+        return Err(AppError::NameInvalid);
+    }
+
+    let inn_name_key = input.inn_name.replace(' ', "_").to_lowercase();
+
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
@@ -170,7 +176,7 @@ pub(crate) async fn mod_inn_post(
     // create new inn
     if iid == 0 {
         // check if inn name exists
-        if inn_names_tree.contains_key(&input.inn_name.to_lowercase())? {
+        if inn_names_tree.contains_key(&inn_name_key)? {
             return Err(AppError::NameExists);
         }
         iid = incr_id(&db, "inns_count")?;
@@ -178,7 +184,7 @@ pub(crate) async fn mod_inn_post(
         // edit inn
 
         // check if this name is used by other inn
-        let search_iid = inn_names_tree.get(&input.inn_name.to_lowercase())?;
+        let search_iid = inn_names_tree.get(&inn_name_key)?;
         if search_iid.is_some() && search_iid != Some(u32_to_ivec(iid)) {
             return Err(AppError::NameExists);
         }
@@ -197,7 +203,8 @@ pub(crate) async fn mod_inn_post(
 
         // remove the old inn name
         if input.inn_name != inn.inn_name {
-            inn_names_tree.remove(&inn.inn_name)?;
+            let old_inn_name_key = inn.inn_name.replace(' ', "_").to_lowercase();
+            inn_names_tree.remove(&old_inn_name_key)?;
         }
 
         // remove the old inn topics
@@ -241,7 +248,7 @@ pub(crate) async fn mod_inn_post(
     }
 
     set_one(&db, "inns", iid, &inn)?;
-    inn_names_tree.insert(inn.inn_name, iid_ivec)?;
+    inn_names_tree.insert(inn_name_key, iid_ivec)?;
 
     let target = format!("/inn/{iid}");
     Ok(Redirect::to(&target))
@@ -656,7 +663,7 @@ pub(crate) async fn edit_post_post(
                 }
             }
             Err(_) => {
-                if let Some(uid) = User::get_uid_by_name(&db, notification)? {
+                if let Some(uid) = get_id_by_name(&db, "usernames", notification)? {
                     (uid, notification.to_string())
                 } else {
                     continue;
@@ -819,9 +826,14 @@ pub(crate) struct ParamsInn {
 pub(crate) async fn inn(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(iid): Path<u32>,
+    Path(inn_name): Path<String>,
     Query(params): Query<ParamsInn>,
 ) -> Result<impl IntoResponse, AppError> {
+    let iid = match inn_name.parse::<u32>() {
+        Ok(iid) => iid,
+        Err(_) => get_id_by_name(&db, "inn_names", &inn_name)?.ok_or(AppError::NotFound)?,
+    };
+
     let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
 
@@ -963,7 +975,7 @@ struct FeedPost {
 /// `GET /inn/:iid/feed` inn page
 pub(crate) async fn inn_feed(
     State(db): State<Db>,
-    Path(iid): Path<u32>,
+    Path(inn_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let page_params = ParamsPage {
         anchor: 0,
@@ -972,6 +984,10 @@ pub(crate) async fn inn_feed(
     };
 
     let site_config = SiteConfig::get(&db)?;
+    let iid = match inn_name.parse::<u32>() {
+        Ok(iid) => iid,
+        Err(_) => get_id_by_name(&db, "inn_names", &inn_name)?.ok_or(AppError::NotFound)?,
+    };
 
     let mut index = Vec::with_capacity(page_params.n);
     let title;
@@ -1165,11 +1181,16 @@ fn get_pids_by_uids(
 pub(crate) async fn inn_join(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(iid): Path<u32>,
+    Path(inn_name): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&db)?;
     let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let iid = match inn_name.parse::<u32>() {
+        Ok(iid) => iid,
+        Err(_) => get_id_by_name(&db, "inn_names", &inn_name)?.ok_or(AppError::NotFound)?,
+    };
 
     let inn: Inn = get_one(&db, "inns", iid)?;
 
@@ -1517,7 +1538,7 @@ pub(crate) async fn comment_post(
                 }
             }
             Err(_) => {
-                if let Some(uid) = User::get_uid_by_name(&db, notification)? {
+                if let Some(uid) = get_id_by_name(&db, "usernames", notification)? {
                     (uid, notification.to_string())
                 } else {
                     continue;

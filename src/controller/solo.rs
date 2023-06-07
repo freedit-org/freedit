@@ -1,6 +1,7 @@
 use super::{
     db_utils::{
-        extract_element, get_count_by_prefix, get_ids_by_tag, get_range, set_one, IterType,
+        extract_element, get_count_by_prefix, get_id_by_name, get_ids_by_tag, get_range, set_one,
+        IterType,
     },
     fmt::{md2html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, into_response, ivec_to_u32,
@@ -128,11 +129,16 @@ pub(crate) struct ParamsSolo {
 pub(crate) async fn solo_list(
     State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
-    Path(uid): Path<u32>,
+    Path(username): Path<String>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&db)?;
     let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+
+    let uid = match username.parse::<u32>() {
+        Ok(uid) => uid,
+        Err(_) => get_id_by_name(&db, "usernames", &username)?.ok_or(AppError::NotFound)?,
+    };
 
     let n = site_config.per_page;
     let anchor = params.anchor.unwrap_or(0);
@@ -428,7 +434,7 @@ pub(crate) async fn solo_post(
                     }
                 }
                 Err(_) => {
-                    if let Some(uid) = User::get_uid_by_name(&db, notification)? {
+                    if let Some(uid) = get_id_by_name(&db, "usernames", notification)? {
                         (uid, notification.to_string())
                     } else {
                         continue;

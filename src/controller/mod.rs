@@ -187,12 +187,6 @@ impl User {
         Ok(false)
     }
 
-    /// get uid by username
-    fn get_uid_by_name(db: &Db, name: &str) -> Result<Option<u32>, AppError> {
-        let v = db.open_tree("usernames")?.get(name.to_lowercase())?;
-        Ok(v.map(|v| ivec_to_u32(&v)))
-    }
-
     fn update_stats(db: &Db, uid: u32, stat_type: &str) -> Result<(), AppError> {
         let expire = Utc::now()
             .date_naive()
