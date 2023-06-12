@@ -101,6 +101,21 @@
 
 {% block aside %}
 
+<div class="box">
+    <form id="search" action="/search" method="get">
+        <fieldset>
+            <div class="field has-addons">
+                <div class="control">
+                    <input class="input" name="search" type="text" placeholder="Search">
+                </div>
+                <div class="control">
+                    <button type="submit" form="search" class="button is-link">Search</button>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
 {% match username %} {% when None %}
 <div class="box">
     <a href="/feed/update">
