@@ -9,10 +9,10 @@ use super::{
     notification::{add_notification, mark_read, NtType},
     u32_to_ivec, u8_slice_to_u32, Claim, SiteConfig, Solo, User,
 };
-use crate::error::AppError;
+use crate::{error::AppError, DB};
 use askama::Template;
 use axum::{
-    extract::{Path, Query, State, TypedHeader},
+    extract::{Path, Query, TypedHeader},
     headers::{Cookie, Referer},
     response::{IntoResponse, Redirect},
 };
@@ -127,17 +127,16 @@ pub(crate) struct ParamsSolo {
 
 /// `GET /solo/user/:uid` solo page
 pub(crate) async fn solo_list(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(username): Path<String>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
-    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
     let uid = match username.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => get_id_by_name(&db, "usernames", &username)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "usernames", &username)?.ok_or(AppError::NotFound)?,
     };
 
     let n = site_config.per_page;
@@ -151,11 +150,11 @@ pub(crate) async fn solo_list(
     let mut current_uid = 0;
     if let Some(ref claim) = claim {
         let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
-        if db.open_tree("user_following")?.contains_key(following_k)? {
+        if DB.open_tree("user_following")?.contains_key(following_k)? {
             is_following = true;
         }
 
-        if let Ok(v) = get_ids_by_prefix(&db, "user_followers", u32_to_ivec(claim.uid), None) {
+        if let Ok(v) = get_ids_by_prefix(&DB, "user_followers", u32_to_ivec(claim.uid), None) {
             followers = v;
         }
         current_uid = claim.uid;
@@ -166,16 +165,16 @@ pub(crate) async fn solo_list(
         Some("Following") => {
             if let Some(ref claim) = claim {
                 if let Ok(uids) =
-                    get_ids_by_prefix(&db, "user_following", u32_to_ivec(claim.uid), None)
+                    get_ids_by_prefix(&DB, "user_following", u32_to_ivec(claim.uid), None)
                 {
-                    index = get_solos_by_uids(&db, &uids, &followers, current_uid, &page_params)?;
+                    index = get_solos_by_uids(&DB, &uids, &followers, current_uid, &page_params)?;
                 };
             }
         }
         Some("Like") => {
             if let Some(ref claim) = claim {
                 if let Ok(sids) =
-                    get_ids_by_prefix(&db, "user_solos_like", u32_to_ivec(claim.uid), None)
+                    get_ids_by_prefix(&DB, "user_solos_like", u32_to_ivec(claim.uid), None)
                 {
                     let (start, end) = get_range(sids.len(), &page_params);
                     index = sids[start - 1..end].to_vec();
@@ -187,18 +186,18 @@ pub(crate) async fn solo_list(
         }
         _ => {
             if let Some(ref hashtag) = params.hashtag {
-                index = get_ids_by_tag(&db, "hashtags", hashtag, Some(&page_params))?;
+                index = get_ids_by_tag(&DB, "hashtags", hashtag, Some(&page_params))?;
             } else if uid == 0 {
-                index = get_all_solos(&db, "solo_timeline", &followers, current_uid, &page_params)?;
+                index = get_all_solos(&DB, "solo_timeline", &followers, current_uid, &page_params)?;
             } else {
-                index = get_solos_by_uids(&db, &[uid], &followers, current_uid, &page_params)?;
+                index = get_solos_by_uids(&DB, &[uid], &followers, current_uid, &page_params)?;
             }
         }
     }
 
     let mut out_solos = Vec::with_capacity(index.len());
     for sid in index {
-        if let Some(out_solo) = OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))? {
+        if let Some(out_solo) = OutSolo::get(&DB, sid, claim.as_ref().map(|c| c.uid))? {
             out_solos.push(out_solo);
         }
     }
@@ -206,13 +205,13 @@ pub(crate) async fn solo_list(
     let filter = if claim.is_none() { None } else { params.filter };
 
     let has_unread = if let Some(ref claim) = claim {
-        User::has_unread(&db, claim.uid)?
+        User::has_unread(&DB, claim.uid)?
     } else {
         false
     };
 
     let username = if uid > 0 {
-        let user: User = get_one(&db, "users", uid)?;
+        let user: User = get_one(&DB, "users", uid)?;
         user.username
     } else {
         "All".to_owned()
@@ -245,20 +244,19 @@ struct PageSolo<'a> {
 
 /// `GET /solo/:sid`
 pub(crate) async fn solo(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u32>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
-    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
     let out_solo =
-        OutSolo::get(&db, sid, claim.as_ref().map(|c| c.uid))?.ok_or(AppError::NotFound)?;
+        OutSolo::get(&DB, sid, claim.as_ref().map(|c| c.uid))?.ok_or(AppError::NotFound)?;
 
     let mut reply_solos = Vec::with_capacity(out_solo.replies.len());
     for i in &out_solo.replies {
-        if let Ok(Some(out_solo)) = OutSolo::get(&db, *i, claim.as_ref().map(|c| c.uid)) {
+        if let Ok(Some(out_solo)) = OutSolo::get(&DB, *i, claim.as_ref().map(|c| c.uid)) {
             reply_solos.push(out_solo);
         }
     }
@@ -266,7 +264,7 @@ pub(crate) async fn solo(
     if let Some(nid) = params.nid {
         if let Some(ref claim) = claim {
             let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
-            let tree = db.open_tree("notifications")?;
+            let tree = DB.open_tree("notifications")?;
             for i in tree.scan_prefix(prefix) {
                 let (k, _) = i?;
                 tree.update_and_fetch(k, mark_read)?;
@@ -275,7 +273,7 @@ pub(crate) async fn solo(
     }
 
     let has_unread = if let Some(ref claim) = claim {
-        User::has_unread(&db, claim.uid)?
+        User::has_unread(&DB, claim.uid)?
     } else {
         false
     };
@@ -356,13 +354,12 @@ fn get_solos_by_uids(
 
 /// `POST /solo/user/:uid` solo page
 pub(crate) async fn solo_post(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     ValidatedForm(input): ValidatedForm<FormSolo>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let claim = cookie
-        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
     let created_at = Utc::now().timestamp();
@@ -379,7 +376,7 @@ pub(crate) async fn solo_post(
 
     let uid = claim.uid;
 
-    let sid = incr_id(&db, "solos_count")?;
+    let sid = incr_id(&DB, "solos_count")?;
     let sid_ivec = u32_to_ivec(sid);
     let mut content = input.content;
     let mut hashtags = Vec::new();
@@ -390,14 +387,14 @@ pub(crate) async fn solo_post(
         replied_uesr = None;
         reply_to = None;
     } else {
-        let mut solo_replied: Solo = get_one(&db, "solos", input.reply_to)?;
+        let mut solo_replied: Solo = get_one(&DB, "solos", input.reply_to)?;
         solo_replied.replies.push(sid);
         replied_uesr = Some(solo_replied.uid);
-        set_one(&db, "solos", input.reply_to, &solo_replied)?;
+        set_one(&DB, "solos", input.reply_to, &solo_replied)?;
 
         if solo_replied.uid != uid {
             add_notification(
-                &db,
+                &DB,
                 solo_replied.uid,
                 NtType::SoloComment,
                 input.reply_to,
@@ -411,7 +408,7 @@ pub(crate) async fn solo_post(
     if visibility == 0 {
         hashtags = extract_element(&content, 5, '#');
         if !hashtags.is_empty() {
-            let hashtags_tree = db.open_tree("hashtags")?;
+            let hashtags_tree = DB.open_tree("hashtags")?;
             for hashtag in &hashtags {
                 let k = [hashtag.as_bytes(), &sid_ivec].concat();
                 hashtags_tree.insert(k, &[])?;
@@ -427,14 +424,14 @@ pub(crate) async fn solo_post(
         for notification in &notifications {
             let (uid, username) = match notification.parse::<u32>() {
                 Ok(uid) => {
-                    if let Ok(user) = get_one::<User>(&db, "users", uid) {
+                    if let Ok(user) = get_one::<User>(&DB, "users", uid) {
                         (uid, user.username)
                     } else {
                         continue;
                     }
                 }
                 Err(_) => {
-                    if let Some(uid) = get_id_by_name(&db, "usernames", notification)? {
+                    if let Some(uid) = get_id_by_name(&DB, "usernames", notification)? {
                         (uid, notification.to_string())
                     } else {
                         continue;
@@ -448,7 +445,7 @@ pub(crate) async fn solo_post(
 
             // notify user to be mentioned in comment
             if uid != claim.uid && replied_uesr != Some(uid) {
-                add_notification(&db, uid, NtType::SoloMention, sid, 0)?;
+                add_notification(&DB, uid, NtType::SoloMention, sid, 0)?;
             }
         }
     }
@@ -464,20 +461,20 @@ pub(crate) async fn solo_post(
         replies: vec![],
     };
 
-    set_one(&db, "solos", sid, &solo)?;
+    set_one(&DB, "solos", sid, &solo)?;
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
-    db.open_tree("user_solos")?
+    DB.open_tree("user_solos")?
         .insert(k, &u32_to_ivec(visibility))?;
 
     // kv_pair: sid = uid#visibility
     let v = [&u32_to_ivec(claim.uid), &u32_to_ivec(visibility)].concat();
-    db.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
+    DB.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
 
-    User::update_stats(&db, claim.uid, "solo")?;
-    claim.update_last_write(&db)?;
+    User::update_stats(&DB, claim.uid, "solo")?;
+    claim.update_last_write(&DB)?;
 
     if visibility == 0 {
-        db.open_tree("tan")?.insert(format!("solo{}", sid), &[])?;
+        DB.open_tree("tan")?.insert(format!("solo{}", sid), &[])?;
     }
 
     let target = if input.reply_to > 0 {
@@ -490,21 +487,20 @@ pub(crate) async fn solo_post(
 
 /// `GET /solo/:sid/like` solo like
 pub(crate) async fn solo_like(
-    State(db): State<Db>,
     referer: Option<TypedHeader<Referer>>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let solo: Solo = get_one(&db, "solos", sid)?;
+    let solo: Solo = get_one(&DB, "solos", sid)?;
 
     let user_solos_like_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(sid)].concat();
     let solo_users_like_k = [&u32_to_ivec(sid), &u32_to_ivec(claim.uid)].concat();
-    let user_solos_like_tree = db.open_tree("user_solos_like")?;
-    let solo_users_like_tree = db.open_tree("solo_users_like")?;
+    let user_solos_like_tree = DB.open_tree("user_solos_like")?;
+    let solo_users_like_tree = DB.open_tree("solo_users_like")?;
 
     match solo_users_like_tree.get(&solo_users_like_k)? {
         None => {
@@ -527,26 +523,25 @@ pub(crate) async fn solo_like(
 
 /// `GET /solo/:sid/delete` solo delete
 pub(crate) async fn solo_delete(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(sid): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let solo: Solo = get_one(&db, "solos", sid)?;
+    let solo: Solo = get_one(&DB, "solos", sid)?;
     if solo.uid != claim.uid {
         return Err(AppError::Unauthorized);
     }
 
     let sid_ivec = u32_to_ivec(sid);
 
-    db.open_tree("solos")?.remove(&sid_ivec)?;
-    db.open_tree("solo_timeline")?.remove(&sid_ivec)?;
+    DB.open_tree("solos")?.remove(&sid_ivec)?;
+    DB.open_tree("solo_timeline")?.remove(&sid_ivec)?;
 
-    let solo_users_like_tree = db.open_tree("solo_users_like")?;
-    let user_solos_like_tree = db.open_tree("user_solos_like")?;
+    let solo_users_like_tree = DB.open_tree("solo_users_like")?;
+    let user_solos_like_tree = DB.open_tree("user_solos_like")?;
     for i in solo_users_like_tree.scan_prefix(&sid_ivec) {
         let (k, _) = i?;
         let uid = &k[4..8];
@@ -555,16 +550,16 @@ pub(crate) async fn solo_delete(
         solo_users_like_tree.remove(&k)?;
     }
 
-    let hashtags_tree = db.open_tree("hashtags")?;
+    let hashtags_tree = DB.open_tree("hashtags")?;
     for hashtag in solo.hashtags {
         let k = [hashtag.as_bytes(), &sid_ivec].concat();
         hashtags_tree.remove(k)?;
     }
 
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
-    db.open_tree("user_solos")?.remove(k)?;
+    DB.open_tree("user_solos")?.remove(k)?;
 
-    db.open_tree("tan")?.remove(format!("solo{}", sid))?;
+    DB.open_tree("tan")?.remove(format!("solo{}", sid))?;
 
     let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))

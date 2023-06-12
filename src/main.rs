@@ -8,7 +8,7 @@ use freedit::{
         db_utils::clear_invalid, feed::cron_feed, meta_handler::shutdown_signal, tantivy::Tan,
     },
     error::AppError,
-    CURRENT_SHA256, GIT_COMMIT, VERSION,
+    DB, VERSION,
 };
 use once_cell::sync::Lazy;
 use std::{fs, path::PathBuf};
@@ -25,55 +25,42 @@ async fn main() -> Result<(), AppError> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    info!("sha256: {}", *CURRENT_SHA256);
-    info!(VERSION);
-    info!(GIT_COMMIT);
-
-    let db_url = &CONFIG.db;
-    let config = sled::Config::default().path(db_url).use_compression(true);
-    let db = config.open()?;
-    info!(%db_url);
-
     if !*IS_DEBUG {
-        create_snapshot(&db);
+        create_snapshot(&DB);
     }
 
-    let db2 = db.clone();
     tokio::spawn(async move {
         loop {
-            if let Err(e) = clear_invalid(&db2, "captcha").await {
+            if let Err(e) = clear_invalid(&DB, "captcha").await {
                 error!(%e);
             }
-            if let Err(e) = clear_invalid(&db2, "sessions").await {
+            if let Err(e) = clear_invalid(&DB, "sessions").await {
                 error!(%e);
             }
             sleep_seconds(300).await;
         }
     });
 
-    let db2 = db.clone();
     tokio::spawn(async move {
         loop {
             sleep_seconds(60).await;
-            if let Err(e) = cron_feed(&db2).await {
+            if let Err(e) = cron_feed(&DB).await {
                 error!(%e);
             }
-            if let Err(e) = clear_invalid(&db2, "user_stats").await {
+            if let Err(e) = clear_invalid(&DB, "user_stats").await {
                 error!(%e);
             }
             sleep_seconds(3600 * 4).await;
         }
     });
 
-    let db2 = db.clone();
     tokio::spawn(async move {
         let mut tan = Tan::init().unwrap();
         if let Some(true) = CONFIG.rebuild_index {
-            tan.rebuild_index(&db2).unwrap();
+            tan.rebuild_index(&DB).unwrap();
         }
-        let mut subscriber = db2.open_tree("tan").unwrap().watch_prefix(vec![]);
+        let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
         while let Some(event) = (&mut subscriber).await {
-            let db2 = db2.clone();
             let (k, op_type) = match event {
                 sled::Event::Insert { key, value } => {
                     if value.len() == 1 {
@@ -91,14 +78,14 @@ async fn main() -> Result<(), AppError> {
             }
 
             if op_type == "update" || op_type == "add" {
-                tan.add_doc(id.into(), &db2).unwrap();
+                tan.add_doc(id.into(), &DB).unwrap();
             }
 
             tan.commit().unwrap();
         }
     });
 
-    let app = router(db).await;
+    let app = router().await;
     let addr = CONFIG.addr.parse().unwrap();
 
     match CONFIG.tls_config().await {

@@ -2,10 +2,10 @@ use super::{
     incr_id, inn::ParamsTag, into_response, meta_handler::PageData, u32_to_ivec, user::InnRole,
     Claim, SiteConfig, User,
 };
-use crate::{config::CONFIG, error::AppError};
+use crate::{config::CONFIG, error::AppError, DB};
 use askama::Template;
 use axum::{
-    extract::{Multipart, Query, State},
+    extract::{Multipart, Query},
     headers::Cookie,
     response::{IntoResponse, Redirect},
     TypedHeader,
@@ -16,7 +16,7 @@ use img_parts::{DynImage, ImageEXIF};
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::Deserialize;
-use sled::{Batch, Db};
+use sled::Batch;
 use tokio::fs;
 
 #[derive(Deserialize)]
@@ -27,20 +27,19 @@ pub(crate) struct UploadPicParams {
 
 /// `POST /mod/inn_icon` && `/user/avatar`
 pub(crate) async fn upload_pic_post(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<UploadPicParams>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let target;
     let fname = match params.page_type.as_str() {
         "inn" => {
             if let Some(iid) = params.iid {
-                let inn_role = InnRole::get(&db, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
+                let inn_role = InnRole::get(&DB, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
                 if inn_role < InnRole::Mod {
                     return Err(AppError::Unauthorized);
                 }
@@ -79,20 +78,19 @@ struct PageGallery<'a> {
 
 /// `GET /gallery`
 pub(crate) async fn gallery(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsTag>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
 
     let anchor = params.anchor.unwrap_or(0);
     let is_desc = params.is_desc.unwrap_or(true);
 
     let mut imgs = Vec::new();
-    for (idx, i) in db
+    for (idx, i) in DB
         .open_tree("user_uploads")?
         .scan_prefix(u32_to_ivec(claim.uid))
         .enumerate()
@@ -138,13 +136,12 @@ struct PageUpload<'a> {
 
 /// `GET /upload`
 pub(crate) async fn upload(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
     let page_upload = PageUpload {
         page_data,
@@ -156,13 +153,12 @@ pub(crate) async fn upload(
 
 /// `POST /upload`
 pub(crate) async fn upload_post(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let mut imgs = Vec::with_capacity(10);
     let mut batch = Batch::default();
@@ -244,15 +240,15 @@ pub(crate) async fn upload_post(
         let location = format!("{}/{}", &CONFIG.upload_path, fname);
 
         fs::write(location, &img_data).await.unwrap();
-        let img_id = incr_id(&db, "imgs_count")?;
+        let img_id = incr_id(&DB, "imgs_count")?;
         let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(img_id)].concat();
         batch.insert(k, &*fname);
 
         imgs.push(fname);
     }
-    db.open_tree("user_uploads")?.apply_batch(batch)?;
+    DB.open_tree("user_uploads")?.apply_batch(batch)?;
 
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
     let page_upload = PageUpload { page_data, imgs };
 

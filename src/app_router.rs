@@ -25,7 +25,6 @@ use axum::{
     error_handling::HandleErrorLayer, extract::DefaultBodyLimit, handler::Handler,
     http::StatusCode, routing::get, BoxError, Router,
 };
-use sled::Db;
 use std::time::Duration;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{
@@ -37,7 +36,7 @@ use tracing::{info, Level};
 
 const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
 
-pub async fn router(db: Db) -> Router {
+pub async fn router() -> Router {
     let middleware_stack = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: BoxError| async {
             StatusCode::REQUEST_TIMEOUT
@@ -105,8 +104,7 @@ pub async fn router(db: Db) -> Router {
         .route("/feed/star/:item_id", get(feed_star))
         .route("/feed/subscribe/:uid/:item_id", get(feed_subscribe))
         .route("/feed/read/:item_id", get(feed_read))
-        .route("/search", get(search))
-        .with_state(db);
+        .route("/search", get(search));
 
     let mut router_static = Router::new()
         .route("/static/style.css", get(style))

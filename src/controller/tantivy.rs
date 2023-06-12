@@ -1,12 +1,7 @@
 use std::collections::HashSet;
 
 use askama::Template;
-use axum::{
-    extract::{Query, State},
-    headers::Cookie,
-    response::IntoResponse,
-    TypedHeader,
-};
+use axum::{extract::Query, headers::Cookie, response::IntoResponse, TypedHeader};
 use bincode::config::standard;
 use jieba_rs::{Jieba, TokenizeMode};
 use once_cell::sync::Lazy;
@@ -28,7 +23,7 @@ use tracing::info;
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
-use crate::{config::CONFIG, error::AppError};
+use crate::{config::CONFIG, error::AppError, DB};
 
 use super::{
     db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
@@ -67,11 +62,10 @@ pub(crate) struct ParamsSearch {
 
 pub(crate) async fn search(
     Query(input): Query<ParamsSearch>,
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
-    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
     let offset = input.offset.unwrap_or_default();
     let search = input.search.trim();
@@ -104,13 +98,13 @@ pub(crate) async fn search(
         for (_score, doc_address) in top_docs {
             let doc = searcher.doc(doc_address)?;
             let id = doc.get_first(FIELDS.id).unwrap().as_text().unwrap();
-            let out = OutSearch::get(id, &db)?;
+            let out = OutSearch::get(id, &DB)?;
             out_searchs.push(out);
         }
     }
 
     let has_unread = if let Some(ref claim) = claim {
-        User::has_unread(&db, claim.uid)?
+        User::has_unread(&DB, claim.uid)?
     } else {
         false
     };

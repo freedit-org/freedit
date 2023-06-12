@@ -8,16 +8,16 @@ use super::{
 use crate::{
     controller::{Comment, Inn, Post, Solo, User},
     error::AppError,
+    DB,
 };
 use askama::Template;
 use axum::{
-    extract::{Query, State, TypedHeader},
+    extract::{Query, TypedHeader},
     headers::Cookie,
     response::{IntoResponse, Redirect},
 };
 use bincode::config::standard;
 use serde::Deserialize;
-use sled::Db;
 use snailquote::unescape;
 
 /// Page data: `admin_view.html`
@@ -43,13 +43,12 @@ pub(crate) struct ParamsAdminView {
 
 /// `GET /admin/view`
 pub(crate) async fn admin_view(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<ParamsAdminView>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
@@ -59,7 +58,7 @@ pub(crate) async fn admin_view(
     let is_desc = params.is_desc.unwrap_or(true);
 
     let mut tree_names = Vec::with_capacity(64);
-    for i in db.tree_names() {
+    for i in DB.tree_names() {
         let name = String::from_utf8_lossy(&i);
         tree_names.push(name.to_string());
     }
@@ -71,7 +70,7 @@ pub(crate) async fn admin_view(
         .unwrap_or_else(|| "__sled__default".to_owned());
 
     if tree_names.contains(&tree_name) {
-        let tree = db.open_tree(&tree_name)?;
+        let tree = DB.open_tree(&tree_name)?;
         let iter = if is_desc {
             IterType::Rev(tree.iter().rev())
         } else {
@@ -286,7 +285,7 @@ pub(crate) async fn admin_view(
         }
     }
 
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("Admin view", &site_config, Some(claim), has_unread);
     let page_admin_view = PageAdminView {
         page_data,
@@ -310,17 +309,16 @@ struct PageAdmin<'a> {
 
 /// `GET /admin/site_setting`
 pub(crate) async fn admin(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("Admin", &site_config, Some(claim), has_unread);
     let page_admin = PageAdmin {
         site_config: &site_config,
@@ -331,17 +329,16 @@ pub(crate) async fn admin(
 
 /// `POST /admin`
 pub(crate) async fn admin_post(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     ValidatedForm(input): ValidatedForm<SiteConfig>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &input).ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &input).ok_or(AppError::NonLogin)?;
     if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
-    set_one_with_key(&db, "__sled__default", "site_config", &input)?;
+    set_one_with_key(&DB, "__sled__default", "site_config", &input)?;
     Ok(Redirect::to("/admin"))
 }
 
@@ -376,18 +373,17 @@ struct PageAdminStats<'a> {
 
 /// `GET /admin/stats`
 pub(crate) async fn admin_stats(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&db)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
     let mut stats = Vec::with_capacity(100);
-    for i in &db.open_tree("user_stats")? {
+    for i in &DB.open_tree("user_stats")? {
         let (k, v) = i?;
         let mut k_str = std::str::from_utf8(&k)?.split('_');
         let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
@@ -403,7 +399,7 @@ pub(crate) async fn admin_stats(
         stats.truncate(100);
     }
 
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("Admin pageview", &site_config, Some(claim), has_unread);
     let page_admin_pageview = PageAdminStats { page_data, stats };
     Ok(into_response(&page_admin_pageview))

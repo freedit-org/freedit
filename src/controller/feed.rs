@@ -11,10 +11,11 @@ use super::{
 use crate::{
     controller::{incr_id, Feed, Item},
     error::AppError,
+    DB,
 };
 use askama::Template;
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, Query},
     headers::{Cookie, Referer},
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
@@ -146,19 +147,18 @@ struct Folder {
 
 /// `GET /feed`
 pub(crate) async fn feed(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u32>,
     Query(params): Query<ParamsFeed>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
-    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
     let mut read = false;
     let username = match claim {
         Some(ref claim) if claim.uid == uid => None,
         _ => {
             read = true;
-            let user: User = get_one(&db, "users", uid)?;
+            let user: User = get_one(&DB, "users", uid)?;
             Some(user.username)
         }
     };
@@ -168,7 +168,7 @@ pub(crate) async fn feed(
     let mut item_ids = vec![];
 
     let mut folders = vec![];
-    for i in db.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
+    for i in DB.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
         let (k, v) = i?;
         let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
         let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
@@ -194,7 +194,7 @@ pub(crate) async fn feed(
                         feed_ids.push(i.feed_id);
                     }
                     let e: &mut Vec<OutFeed> = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -211,7 +211,7 @@ pub(crate) async fn feed(
                     feed_ids.push(i.feed_id);
                 }
                 let e = map.entry(i.folder).or_default();
-                let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
+                let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
                 e.push(out_feed);
             }
         }
@@ -226,22 +226,22 @@ pub(crate) async fn feed(
                     if id == i.feed_id {
                         is_active = true;
                         if let Some(ref claim) = claim {
-                            let mut star_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
+                            let mut star_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?;
                             let ids_in_feed =
-                                get_ids_by_prefix(&db, "feed_items", u32_to_ivec(i.feed_id), None)?;
+                                get_ids_by_prefix(&DB, "feed_items", u32_to_ivec(i.feed_id), None)?;
                             star_ids.retain(|(i, _)| ids_in_feed.contains(i));
                             item_ids = star_ids;
                         }
                     }
                     let e = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
         }
         (Some(ref filter), None) if filter == "star" => {
             if let Some(ref claim) = claim {
-                item_ids = get_item_ids_and_ts(&db, "star", claim.uid)?;
+                item_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?;
             }
         }
         (Some(ref filter), Some(filter_value)) if filter == "unread" => {
@@ -256,29 +256,29 @@ pub(crate) async fn feed(
                         is_active = true;
                         if let Some(ref claim) = claim {
                             let read_ids =
-                                get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
-                            let mut ids_in_feed = get_item_ids_and_ts(&db, "feed_items", id)?;
+                                get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?;
+                            let mut ids_in_feed = get_item_ids_and_ts(&DB, "feed_items", id)?;
                             ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
                             item_ids = ids_in_feed;
                         }
                     }
                     let e = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
         }
         (Some(ref filter), None) if filter == "unread" => {
             if let Some(ref claim) = claim {
-                let read_ids = get_ids_by_prefix(&db, "read", u32_to_ivec(claim.uid), None)?;
+                let read_ids = get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?;
                 for i in folders {
                     let is_active = false;
-                    let mut ids_in_feed = get_item_ids_and_ts(&db, "feed_items", i.feed_id)?;
+                    let mut ids_in_feed = get_item_ids_and_ts(&DB, "feed_items", i.feed_id)?;
                     ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
                     item_ids.append(&mut ids_in_feed);
 
                     let e = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -289,19 +289,19 @@ pub(crate) async fn feed(
                     continue;
                 }
 
-                let mut ids = get_item_ids_and_ts(&db, "feed_items", i.feed_id)?;
+                let mut ids = get_item_ids_and_ts(&DB, "feed_items", i.feed_id)?;
                 item_ids.append(&mut ids);
 
                 let is_active = false;
                 let e = map.entry(i.folder).or_default();
-                let out_feed = OutFeed::new(&db, i.feed_id, is_active, i.is_public)?;
+                let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
                 e.push(out_feed);
             }
         }
     }
 
     for id in feed_ids {
-        let mut ids = get_item_ids_and_ts(&db, "feed_items", id)?;
+        let mut ids = get_item_ids_and_ts(&DB, "feed_items", id)?;
         item_ids.append(&mut ids);
     }
     item_ids.sort_unstable_by(|a, b| a.1.cmp(&b.1));
@@ -315,10 +315,10 @@ pub(crate) async fn feed(
         item_ids.reverse();
     }
     let mut items = Vec::with_capacity(n);
-    let star_tree = db.open_tree("star")?;
-    let read_tree = db.open_tree("read")?;
+    let star_tree = DB.open_tree("star")?;
+    let read_tree = DB.open_tree("read")?;
     for (i, _) in item_ids {
-        let item: Item = get_one(&db, "items", i)?;
+        let item: Item = get_one(&DB, "items", i)?;
         let mut is_read = read;
         let is_starred = if let Some(ref claim) = claim {
             let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(i)].concat();
@@ -342,7 +342,7 @@ pub(crate) async fn feed(
     }
 
     let has_unread = if let Some(ref claim) = claim {
-        User::has_unread(&db, claim.uid)?
+        User::has_unread(&DB, claim.uid)?
     } else {
         false
     };
@@ -401,18 +401,17 @@ pub(crate) struct ParamsFeedRead {
 
 /// `GET /feed/read/:item_id`
 pub(crate) async fn feed_read(
-    State(db): State<Db>,
     Path(item_id): Path<u32>,
     Query(params): Query<ParamsFeedRead>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
-    let claim = cookie.and_then(|cookie| Claim::get(&db, &cookie, &site_config));
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
-    let item: Item = get_one(&db, "items", item_id)?;
+    let item: Item = get_one(&DB, "items", item_id)?;
     let is_starred = if let Some(ref claim) = claim {
         let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(item_id)].concat();
-        db.open_tree("star")?.contains_key(k)?
+        DB.open_tree("star")?.contains_key(k)?
     } else {
         false
     };
@@ -428,12 +427,12 @@ pub(crate) async fn feed_read(
     };
     if let Some(ref claim) = claim {
         let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(item_id)].concat();
-        db.open_tree("read")?.insert(k, &[])?;
+        DB.open_tree("read")?.insert(k, &[])?;
     }
 
     let allow_img = params.allow_img.unwrap_or_default();
     let has_unread = if let Some(ref claim) = claim {
-        User::has_unread(&db, claim.uid)?
+        User::has_unread(&DB, claim.uid)?
     } else {
         false
     };
@@ -459,15 +458,14 @@ struct PageFeedAdd<'a> {
 
 /// `GET /feed/add`
 pub(crate) async fn feed_add(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let mut folders = HashSet::new();
-    for i in db
+    for i in DB
         .open_tree("user_folders")?
         .scan_prefix(u32_to_ivec(claim.uid))
         .keys()
@@ -480,7 +478,7 @@ pub(crate) async fn feed_add(
     if folders.is_empty() {
         folders.insert("Default".to_owned());
     }
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("Feed add", &site_config, Some(claim), has_unread);
     let page_feed_add = PageFeedAdd { page_data, folders };
 
@@ -509,17 +507,16 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 
 /// `POST /feed/add`
 pub(crate) async fn feed_add_post(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Form(form): Form<FormFeedAdd>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let (feed, item_ids) = update(&form.url, &db, 20).await?;
-    let feed_links_tree = db.open_tree("feed_links")?;
-    let user_folders_tree = db.open_tree("user_folders")?;
+    let (feed, item_ids) = update(&form.url, &DB, 20).await?;
+    let feed_links_tree = DB.open_tree("feed_links")?;
+    let user_folders_tree = DB.open_tree("user_folders")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
         let id = ivec_to_u32(&v);
         // change folder(remove the old record)
@@ -531,10 +528,10 @@ pub(crate) async fn feed_add_post(
         }
         id
     } else {
-        incr_id(&db, "feeds_count")?
+        incr_id(&DB, "feeds_count")?
     };
 
-    let feed_items_tree = db.open_tree("feed_items")?;
+    let feed_items_tree = DB.open_tree("feed_items")?;
     let feed_id_ivec = u32_to_ivec(feed_id);
     for (id, ts) in item_ids {
         let k = [&feed_id_ivec, &u32_to_ivec(id)].concat();
@@ -543,7 +540,7 @@ pub(crate) async fn feed_add_post(
 
     feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
 
-    set_one(&db, "feeds", feed_id, &feed)?;
+    set_one(&DB, "feeds", feed_id, &feed)?;
 
     let folder = if form.folder.as_str() != "New" {
         form.folder
@@ -567,42 +564,40 @@ pub(crate) async fn feed_add_post(
 
 /// `GET /feed/update`
 pub(crate) async fn feed_update(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let feed_items_tree = db.open_tree("feed_items")?;
+    let feed_items_tree = DB.open_tree("feed_items")?;
     let mut handers = vec![];
-    for i in db
+    for i in DB
         .open_tree("user_folders")?
         .scan_prefix(u32_to_ivec(claim.uid))
         .keys()
     {
         let i = i?;
         let feed_id = u8_slice_to_u32(&i[i.len() - 4..]);
-        let db = db.clone();
-        let feed: Feed = get_one(&db, "feeds", feed_id)?;
+        let feed: Feed = get_one(&DB, "feeds", feed_id)?;
         let feed_items_tree = feed_items_tree.clone();
 
         let h = tokio::spawn(async move {
-            match update(&feed.link, &db, 20).await {
+            match update(&feed.link, &DB, 20).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
                         if let Err(e) = feed_items_tree.insert(k, i64_to_ivec(ts)) {
                             error!(?e);
                         };
-                        if let Ok(tree) = db.open_tree("feed_errs") {
+                        if let Ok(tree) = DB.open_tree("feed_errs") {
                             let _ = tree.remove(u32_to_ivec(feed_id));
                         }
                     }
                 }
                 Err(e) => {
                     error!("update {} failed, error: {e}", feed.title);
-                    if let Err(e) = db
+                    if let Err(e) = DB
                         .open_tree("feed_errs")
                         .and_then(|t| t.insert(u32_to_ivec(feed_id), &*e.to_string()))
                     {
@@ -797,19 +792,18 @@ pub(super) fn inn_feed_to_post(
 
 /// `GET /feed/star`
 pub(crate) async fn feed_star(
-    State(db): State<Db>,
     referer: Option<TypedHeader<Referer>>,
     cookie: Option<TypedHeader<Cookie>>,
     Path(item_id): Path<u32>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let item_id_ivec = u32_to_ivec(item_id);
-    if db.open_tree("items")?.contains_key(&item_id_ivec)? {
+    if DB.open_tree("items")?.contains_key(&item_id_ivec)? {
         let k = [&u32_to_ivec(claim.uid), &item_id_ivec].concat();
-        let star_tree = db.open_tree("star")?;
+        let star_tree = DB.open_tree("star")?;
         if star_tree.contains_key(&k)? {
             star_tree.remove(&k)?;
         } else {
@@ -828,15 +822,14 @@ pub(crate) async fn feed_star(
 
 /// `GET /feed/subscribe`
 pub(crate) async fn feed_subscribe(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Path((uid, feed_id)): Path<(u32, u32)>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let claim = Claim::get(&db, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let user_folder_tree = db.open_tree("user_folders")?;
+    let user_folder_tree = DB.open_tree("user_folders")?;
 
     for k in user_folder_tree.scan_prefix(u32_to_ivec(uid)).keys() {
         let k = k?;

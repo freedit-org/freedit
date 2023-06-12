@@ -5,14 +5,9 @@ use super::{
     user::{InnRole, Role},
     Claim, Comment, Inn, Post, SiteConfig, Solo, User,
 };
-use crate::error::AppError;
+use crate::{error::AppError, DB};
 use askama::Template;
-use axum::{
-    extract::{Query, State},
-    headers::Cookie,
-    response::IntoResponse,
-    TypedHeader,
-};
+use axum::{extract::Query, headers::Cookie, response::IntoResponse, TypedHeader};
 use bincode::config::standard;
 use serde::Deserialize;
 use sled::{Db, IVec};
@@ -96,17 +91,16 @@ pub(super) fn mark_read(old: Option<&[u8]>) -> Option<Vec<u8>> {
 ///
 /// 30 notifications in a batch and batch delete only if they has been marked read
 pub(crate) async fn notification(
-    State(db): State<Db>,
     cookie: Option<TypedHeader<Cookie>>,
     Query(params): Query<NotifyParams>,
 ) -> Result<impl IntoResponse, AppError> {
-    let site_config = SiteConfig::get(&db)?;
+    let site_config = SiteConfig::get(&DB)?;
     let claim = cookie
-        .and_then(|cookie| Claim::get(&db, &cookie, &site_config))
+        .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
     let prefix = u32_to_ivec(claim.uid);
-    let tree = db.open_tree("notifications")?;
+    let tree = DB.open_tree("notifications")?;
 
     if let Some(op_type) = params.op_type {
         match op_type.as_str() {
@@ -162,10 +156,10 @@ pub(crate) async fn notification(
         let nt_type: NtType = key[8].into();
         match nt_type {
             NtType::PostComment | NtType::PostMention => {
-                if let Some(v) = &db.open_tree("post_comments")?.get(&value[0..8])? {
+                if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
-                    let post: Post = get_one(&db, "posts", comment.pid)?;
-                    let user: User = get_one(&db, "users", comment.uid)?;
+                    let post: Post = get_one(&DB, "posts", comment.pid)?;
+                    let user: User = get_one(&DB, "users", comment.uid)?;
                     let notification = Notification {
                         nid,
                         nt_type: nt_type.to_string(),
@@ -186,8 +180,8 @@ pub(crate) async fn notification(
             NtType::SoloComment => {
                 let sid1 = u8_slice_to_u32(&value[0..4]);
                 let sid2 = u8_slice_to_u32(&value[4..8]);
-                if let Ok(solo) = get_one::<Solo>(&db, "solos", sid2) {
-                    let user: User = get_one(&db, "users", solo.uid)?;
+                if let Ok(solo) = get_one::<Solo>(&DB, "solos", sid2) {
+                    let user: User = get_one(&DB, "users", solo.uid)?;
                     let notification = Notification {
                         nid,
                         nt_type: nt_type.to_string(),
@@ -207,8 +201,8 @@ pub(crate) async fn notification(
             }
             NtType::SoloMention => {
                 let sid1 = u8_slice_to_u32(&value[0..4]);
-                if let Ok(solo) = get_one::<Solo>(&db, "solos", sid1) {
-                    let user: User = get_one(&db, "users", solo.uid)?;
+                if let Ok(solo) = get_one::<Solo>(&DB, "solos", sid1) {
+                    let user: User = get_one(&DB, "users", solo.uid)?;
                     let notification = Notification {
                         nid,
                         nt_type: nt_type.to_string(),
@@ -230,7 +224,7 @@ pub(crate) async fn notification(
                 let role = u8_slice_to_u32(&value[0..4]);
                 let role_desc = InnRole::from(role as u8).to_string();
                 let iid = u8_slice_to_u32(&value[4..8]);
-                let inn: Inn = get_one(&db, "inns", iid)?;
+                let inn: Inn = get_one(&DB, "inns", iid)?;
                 let notification = Notification {
                     nid,
                     nt_type: nt_type.to_string(),
@@ -274,9 +268,9 @@ pub(crate) async fn notification(
     notifications.reverse();
 
     let mut inn_notifications = Vec::new();
-    let mod_inns = get_ids_by_prefix(&db, "mod_inns", prefix, None)?;
+    let mod_inns = get_ids_by_prefix(&DB, "mod_inns", prefix, None)?;
     for i in mod_inns {
-        for i in db.open_tree("inn_apply")?.scan_prefix(u32_to_ivec(i)) {
+        for i in DB.open_tree("inn_apply")?.scan_prefix(u32_to_ivec(i)) {
             let (k, _) = i?;
             let inn_notification = InnNotification {
                 iid: u8_slice_to_u32(&k[0..4]),
@@ -290,7 +284,7 @@ pub(crate) async fn notification(
         }
     }
 
-    let has_unread = User::has_unread(&db, claim.uid)?;
+    let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_data = PageData::new("notification", &site_config, Some(claim), has_unread);
     let notification_page = NotificationPage {
         page_data,
