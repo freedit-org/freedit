@@ -818,12 +818,12 @@ pub(crate) struct ParamsInn {
 /// `GET /inn/:iid` inn page
 pub(crate) async fn inn(
     cookie: Option<TypedHeader<Cookie>>,
-    Path(inn_name): Path<String>,
+    Path(i): Path<String>,
     Query(params): Query<ParamsInn>,
 ) -> Result<impl IntoResponse, AppError> {
-    let iid = match inn_name.parse::<u32>() {
+    let iid = match i.parse::<u32>() {
         Ok(iid) => iid,
-        Err(_) => get_id_by_name(&DB, "inn_names", &inn_name)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "inn_names", &i)?.ok_or(AppError::NotFound)?,
     };
 
     let site_config = SiteConfig::get(&DB)?;
@@ -965,7 +965,7 @@ struct FeedPost {
 }
 
 /// `GET /inn/:iid/feed` inn page
-pub(crate) async fn inn_feed(Path(inn_name): Path<String>) -> Result<impl IntoResponse, AppError> {
+pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse, AppError> {
     let page_params = ParamsPage {
         anchor: 0,
         n: 30,
@@ -973,9 +973,9 @@ pub(crate) async fn inn_feed(Path(inn_name): Path<String>) -> Result<impl IntoRe
     };
 
     let site_config = SiteConfig::get(&DB)?;
-    let iid = match inn_name.parse::<u32>() {
+    let iid = match i.parse::<u32>() {
         Ok(iid) => iid,
-        Err(_) => get_id_by_name(&DB, "inn_names", &inn_name)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "inn_names", &i)?.ok_or(AppError::NotFound)?,
     };
 
     let mut index = Vec::with_capacity(page_params.n);
@@ -1169,15 +1169,15 @@ fn get_pids_by_uids(
 /// `GET /inn/:iid/join` join inn
 pub(crate) async fn inn_join(
     cookie: Option<TypedHeader<Cookie>>,
-    Path(inn_name): Path<String>,
+    Path(i): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let iid = match inn_name.parse::<u32>() {
+    let iid = match i.parse::<u32>() {
         Ok(iid) => iid,
-        Err(_) => get_id_by_name(&DB, "inn_names", &inn_name)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "inn_names", &i)?.ok_or(AppError::NotFound)?,
     };
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
@@ -1211,7 +1211,7 @@ pub(crate) async fn inn_join(
         }
     }
 
-    let target = format!("/inn/{iid}");
+    let target = format!("/inn/{i}");
     Ok(Redirect::to(&target))
 }
 

@@ -128,15 +128,15 @@ pub(crate) struct ParamsSolo {
 /// `GET /solo/user/:uid` solo page
 pub(crate) async fn solo_list(
     cookie: Option<TypedHeader<Cookie>>,
-    Path(username): Path<String>,
+    Path(u): Path<String>,
     Query(params): Query<ParamsSolo>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
     let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
-    let uid = match username.parse::<u32>() {
+    let uid = match u.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => get_id_by_name(&DB, "usernames", &username)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "usernames", &u)?.ok_or(AppError::NotFound)?,
     };
 
     let n = site_config.per_page;

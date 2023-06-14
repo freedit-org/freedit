@@ -63,14 +63,14 @@ struct OutUser {
 /// `GET /user/:uid`
 pub(crate) async fn user(
     cookie: Option<TypedHeader<Cookie>>,
-    Path(username): Path<String>,
+    Path(u): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
     let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
-    let uid = match username.parse::<u32>() {
+    let uid = match u.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => get_id_by_name(&DB, "usernames", &username)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "usernames", &u)?.ok_or(AppError::NotFound)?,
     };
 
     let user: User = get_one(&DB, "users", uid)?;
@@ -125,15 +125,15 @@ pub(crate) async fn user(
 /// `GET /user/:uid/follow` follow user
 pub(crate) async fn user_follow(
     cookie: Option<TypedHeader<Cookie>>,
-    Path(username): Path<String>,
+    Path(u): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let uid = match username.parse::<u32>() {
+    let uid = match u.parse::<u32>() {
         Ok(uid) => uid,
-        Err(_) => get_id_by_name(&DB, "usernames", &username)?.ok_or(AppError::NotFound)?,
+        Err(_) => get_id_by_name(&DB, "usernames", &u)?.ok_or(AppError::NotFound)?,
     };
 
     let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
@@ -150,7 +150,7 @@ pub(crate) async fn user_follow(
         user_followers_tree.insert(&followers_k, &[])?;
     }
 
-    let target = format!("/user/{uid}");
+    let target = format!("/user/{u}");
     Ok(Redirect::to(&target))
 }
 
