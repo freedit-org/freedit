@@ -27,7 +27,6 @@
                             {% block tabs %}
                             <li><a href="/inn/0">Inn</a></li>
                             <li><a href="/solo/user/0">Solo</a></li>
-                            <li><a href="/inn/list">Explore</a></li>
                             {% endblock %}
                         </ul>
                     </div>
@@ -94,7 +93,7 @@
             <main class="column is-three-quarters">
                 {% block content %}{% endblock %}
             </main>
-            <aside class="column">
+            <aside class="column is-one-quarter">
                 {% block aside %}
                     <div class="box">
                         <form id="search" action="/search" method="get">
@@ -125,13 +124,15 @@
                             </div>
                         {% endif %}
                     {% else %}{% endmatch %}
+
+                    {% block box %}
+                    {% endblock %}
+
                     <div class="box">
                         <a href="/user/list">
                             <span class="tag is-info">users</span>
                         </a>
                     </div>
-                    {% block box %}
-                    {% endblock %}
                 {% endblock %}
             </aside>
         </div>

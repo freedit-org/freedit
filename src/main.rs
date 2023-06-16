@@ -43,7 +43,7 @@ async fn main() -> Result<(), AppError> {
 
     tokio::spawn(async move {
         loop {
-            sleep_seconds(60).await;
+            sleep_seconds(600).await;
             if let Err(e) = cron_feed(&DB).await {
                 error!(%e);
             }

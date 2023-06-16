@@ -3,7 +3,6 @@
 {% block tabs %}
     <li class="is-active"><a href="/inn/0">Inn</a></li>
     <li><a href="/solo/user/0">Solo</a></li>
-    <li><a href="/inn/list">Explore</a></li>
 {% endblock %}
 
 {% block content %}
@@ -199,5 +198,33 @@
     </div>
 </div>
 {% endif %}
+
+<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+    {% for inn in inns %}
+    <div class="list-item">
+        <div class="list-item-image">
+            <figure class="image is-64x64">
+                <a href="/inn/{{inn.0}}"><img class="is-rounded" src="/static/inn_icons/{{inn.0}}.png"></a>
+            </figure>
+        </div>
+        <div class="list-item-content">
+            <div class="list-item-title"><a href="/inn/{{inn.1}}">{{inn.1}}</a></div>
+        </div>
+        
+        <div class="list-item-controls">
+            {% if inn.2 %}
+                <a href="/post/edit/0?iid={{inn.0}}"><button class="button is-success is-small is-rounded">New</button></a>
+            {% else %}
+                <a href="/inn/{{inn.0}}/join"><button class="button is-success is-small is-rounded">Join</button></a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    <div class="list-item">
+        <div class="list-item-content">
+            <div class="list-item-title">Explore all <a href="/inn/list">⚓ inns</a></div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

@@ -34,11 +34,15 @@ use axum::{
     Form,
 };
 use bincode::config::standard;
+use cached::proc_macro::cached;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
-use std::{collections::BTreeSet, path::PathBuf};
+use std::{
+    collections::{BTreeSet, HashMap},
+    path::PathBuf,
+};
 use validator::Validate;
 
 /// Page data: `inn_create.html`
@@ -805,6 +809,7 @@ struct PageInn<'a> {
     username: Option<String>,
     inn_users_count: usize,
     is_mod: bool,
+    inns: Vec<(u32, String, bool)>,
 }
 
 /// url params: `inn.html`
@@ -907,6 +912,17 @@ pub(crate) async fn inn(
     } else {
         false
     };
+
+    let recommend_inns = recommend_inns()?;
+
+    let mut inns = Vec::new();
+    for (id, inn_name) in recommend_inns {
+        if id != iid {
+            let joined = joined_inns.contains(&id);
+            inns.push((id, inn_name, joined))
+        }
+    }
+
     let page_data = PageData::new("inn", &site_config, claim, has_unread);
 
     let inn_name;
@@ -938,10 +954,37 @@ pub(crate) async fn inn(
         filter,
         username,
         inn_users_count,
+        inns,
         is_mod,
     };
 
     Ok(into_response(&page_inn))
+}
+
+#[cached(time = 120, result = true)]
+fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
+    let mut maps = HashMap::new();
+    for i in &DB.open_tree("inn_posts")? {
+        let (k, _) = i?;
+        let iid = u8_slice_to_u32(&k[0..4]);
+        maps.entry(iid).and_modify(|e| *e += 1).or_insert(1);
+    }
+
+    let mut maps = maps.into_iter().collect::<Vec<_>>();
+    maps.sort_by(|a, b| b.1.cmp(&a.1));
+
+    let mut recommend_inns = Vec::new();
+    for (iid, _) in maps.into_iter() {
+        let inn: Inn = get_one(&DB, "inns", iid)?;
+        if inn.inn_type.as_str() != "Private" {
+            recommend_inns.push((iid, inn.inn_name));
+        }
+        if recommend_inns.len() >= 3 {
+            break;
+        }
+    }
+
+    Ok(recommend_inns)
 }
 
 /// Page data: `inn_feed.html`
