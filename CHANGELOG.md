@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0-rc.4] - 2023-06-18
+
+- bug fixed
+
 ## [0.5.0-rc.3] - 2023-06-16
 
 - bug fixed
@@ -201,8 +205,9 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.3...HEAD
-[0.5.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.2...v0.5.0-rc.3
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.4...HEAD
+[0.5.0-rc.4]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.3...v0.5.0-rc.4
+[0.5.0-rc.3]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.2...v0.5.0-rc.3
 [0.5.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.1...v0.5.0-rc.2
 [0.5.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.4.5...v0.5.0-rc.1
 [0.4.5]: https://github.com/freedit-org/freedit/compare/v0.4.4...v0.4.5
