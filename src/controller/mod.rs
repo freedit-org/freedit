@@ -270,7 +270,21 @@ impl PostContent {
             PostContent::Markdown(md) => Ok(md2html(md)),
             PostContent::FeedItemId(id) => {
                 let item: Item = get_one(db, "items", *id)?;
-                Ok(item.content)
+                let mut content = format!(
+                    r#"
+                    <article class="message is-info">
+                        <div class="message-header">
+                            <p>Info</p>
+                        </div>
+                        <div class="message-body">
+                        This post is auto-generated from an RSS feed <b>{}</b>. Origin: <a href="{}">{}</a>
+                        </div>
+                    </article>
+                    "#,
+                    item.feed_title, item.link, item.title
+                );
+                content.push_str(&item.content);
+                Ok(content)
             }
         }
     }

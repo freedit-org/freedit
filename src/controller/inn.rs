@@ -1398,7 +1398,28 @@ pub(crate) async fn post(
     let content = match post.status {
         PostStatus::HiddenByMod => "<p><i>Hidden by mod.</i></p>".into(),
         PostStatus::HiddenByUser => "<p><i>Hidden by user.</i></p>".into(),
-        _ => post.content.to_html(&DB)?,
+        _ => {
+            let diff = (Utc::now().timestamp() - post.created_at) / 24 / 3600;
+            if diff > 30 {
+                let mut content = format!(
+                    r#"
+                    <article class="message is-warning">
+                        <div class="message-header">
+                            <p>Warning</p>
+                        </div>
+                        <div class="message-body">
+                            This post was published <b>{} days ago</b>. The infomation described in this article may have changed.
+                        </div>
+                    </article>
+                    "#,
+                    diff
+                );
+                content.push_str(&post.content.to_html(&DB)?);
+                content
+            } else {
+                post.content.to_html(&DB)?
+            }
+        }
     };
 
     let out_post = OutPost {
