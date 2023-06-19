@@ -142,9 +142,6 @@
 
     <footer class="footer p-5">
         <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
-        {% for footer_link in page_data.footer_links %}
-        <p><a href="{{footer_link.1}}" target="_blank">{{footer_link.0|capitalize}}</a></p>    
-        {% endfor %}
         <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{page_data.version}}">v{{page_data.version}}</a></small></p>
         <p><small>sha256: {{page_data.sha256|truncate(10)}}</small></p>
         <p><small>commit: <a href="https://github.com/freedit-org/freedit/commit/{{page_data.git_commit}}">{{page_data.git_commit}}</a></small></p>

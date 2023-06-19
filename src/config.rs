@@ -17,7 +17,7 @@ pub struct Config {
     pub(crate) inn_icons_path: String,
     pub(crate) upload_path: String,
     pub(crate) tantivy_path: String,
-    pub(crate) serve_dir: Vec<(String, String, String)>,
+    pub(crate) serve_dir: Vec<(String, String)>,
     cert: String,
     key: String,
 }

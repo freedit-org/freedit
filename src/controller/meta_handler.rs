@@ -1,5 +1,5 @@
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
-use crate::{config::CONFIG, error::AppError, CURRENT_SHA256, DB, GIT_COMMIT, VERSION};
+use crate::{error::AppError, CURRENT_SHA256, DB, GIT_COMMIT, VERSION};
 use askama::Template;
 use axum::{
     async_trait,
@@ -181,7 +181,6 @@ pub(super) struct PageData<'a> {
     pub(super) sha256: &'a str,
     pub(super) version: &'a str,
     pub(super) git_commit: &'a str,
-    pub(super) footer_links: Vec<(&'a str, &'a str)>,
 }
 
 impl<'a> PageData<'a> {
@@ -191,12 +190,6 @@ impl<'a> PageData<'a> {
         claim: Option<Claim>,
         has_unread: bool,
     ) -> Self {
-        let mut footer_links = vec![];
-        for (path, _, link) in &CONFIG.serve_dir {
-            if !link.is_empty() {
-                footer_links.push((path.as_str(), link.as_str()));
-            }
-        }
         let site_description = md2html(&site_config.description);
         Self {
             title,
@@ -207,7 +200,6 @@ impl<'a> PageData<'a> {
             sha256: &CURRENT_SHA256,
             version: VERSION,
             git_commit: GIT_COMMIT,
-            footer_links,
         }
     }
 }
