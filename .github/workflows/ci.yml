@@ -55,6 +55,7 @@ jobs:
         run: |
           cargo doc --no-deps --document-private-items
           echo "<meta http-equiv='refresh' content='0; url=freedit'>" > target/doc/index.html
+          rm .lock
 
       - name: Upload artifact
         if: ${{ github.ref == 'refs/heads/main' }}
