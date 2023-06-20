@@ -180,6 +180,8 @@ pub(crate) async fn feed(
         })
     }
 
+    let mut active_folder = params.active_folder;
+
     for feed in folders {
         if username.is_some() && !feed.is_public {
             continue;
@@ -193,7 +195,8 @@ pub(crate) async fn feed(
             if active_feed != feed.feed_id {
                 continue;
             }
-        } else if let Some(ref active_folder) = params.active_folder {
+            active_folder = Some(feed.folder)
+        } else if let Some(ref active_folder) = active_folder {
             if active_folder != &feed.folder && !active_folder.is_empty() {
                 continue;
             }
@@ -282,7 +285,7 @@ pub(crate) async fn feed(
         uid,
         username,
         active_feed: params.active_feed.unwrap_or_default(),
-        active_folder: params.active_folder.unwrap_or_default(),
+        active_folder: active_folder.unwrap_or_default(),
     };
 
     Ok(into_response(&page_feed))
