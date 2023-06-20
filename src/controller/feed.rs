@@ -94,18 +94,19 @@ struct PageFeed<'a> {
     is_desc: bool,
     uid: u32,
     username: Option<String>,
+    active_folder: String,
+    active_feed: u32,
 }
 
 struct OutFeed {
     feed_id: u32,
     title: String,
-    is_active: bool,
     is_public: bool,
     err: Option<String>,
 }
 
 impl OutFeed {
-    fn new(db: &Db, feed_id: u32, is_active: bool, is_public: bool) -> Result<Self, AppError> {
+    fn new(db: &Db, feed_id: u32, is_public: bool) -> Result<Self, AppError> {
         let feed: Feed = get_one(db, "feeds", feed_id)?;
         let err = db
             .open_tree("feed_errs")?
@@ -114,7 +115,6 @@ impl OutFeed {
         Ok(OutFeed {
             feed_id,
             title: feed.title,
-            is_active,
             is_public,
             err,
         })
@@ -180,6 +180,8 @@ pub(crate) async fn feed(
         })
     }
 
+    let mut active_folder = String::new();
+    let mut active_feed = 0;
     match (&params.filter, &params.filter_value) {
         (Some(ref filter), Some(filter_value)) if filter == "feed" => {
             if let Ok(id) = filter_value.parse::<u32>() {
@@ -188,13 +190,13 @@ pub(crate) async fn feed(
                         continue;
                     }
 
-                    let mut is_active = false;
                     if id == i.feed_id {
-                        is_active = true;
+                        active_feed = id;
+                        active_folder = i.folder.clone();
                         feed_ids.push(i.feed_id);
                     }
                     let e: &mut Vec<OutFeed> = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -205,13 +207,12 @@ pub(crate) async fn feed(
                     continue;
                 }
 
-                let mut is_active = false;
                 if filter_value == &i.folder {
-                    is_active = true;
                     feed_ids.push(i.feed_id);
+                    active_folder = i.folder.clone();
                 }
                 let e = map.entry(i.folder).or_default();
-                let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
+                let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
                 e.push(out_feed);
             }
         }
@@ -222,9 +223,9 @@ pub(crate) async fn feed(
                         break;
                     }
 
-                    let mut is_active = false;
                     if id == i.feed_id {
-                        is_active = true;
+                        active_feed = id;
+                        active_folder = i.folder.clone();
                         if let Some(ref claim) = claim {
                             let mut star_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?;
                             let ids_in_feed =
@@ -234,7 +235,7 @@ pub(crate) async fn feed(
                         }
                     }
                     let e = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -251,9 +252,9 @@ pub(crate) async fn feed(
                         break;
                     }
 
-                    let mut is_active = false;
                     if id == i.feed_id {
-                        is_active = true;
+                        active_feed = id;
+                        active_folder = i.folder.clone();
                         if let Some(ref claim) = claim {
                             let read_ids =
                                 get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?;
@@ -263,7 +264,7 @@ pub(crate) async fn feed(
                         }
                     }
                     let e = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -272,13 +273,12 @@ pub(crate) async fn feed(
             if let Some(ref claim) = claim {
                 let read_ids = get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?;
                 for i in folders {
-                    let is_active = false;
                     let mut ids_in_feed = get_item_ids_and_ts(&DB, "feed_items", i.feed_id)?;
                     ids_in_feed.retain(|(i, _)| !read_ids.contains(i));
                     item_ids.append(&mut ids_in_feed);
 
                     let e = map.entry(i.folder).or_default();
-                    let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
+                    let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
                     e.push(out_feed);
                 }
             }
@@ -292,9 +292,8 @@ pub(crate) async fn feed(
                 let mut ids = get_item_ids_and_ts(&DB, "feed_items", i.feed_id)?;
                 item_ids.append(&mut ids);
 
-                let is_active = false;
                 let e = map.entry(i.folder).or_default();
-                let out_feed = OutFeed::new(&DB, i.feed_id, is_active, i.is_public)?;
+                let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
                 e.push(out_feed);
             }
         }
@@ -358,6 +357,8 @@ pub(crate) async fn feed(
         is_desc,
         uid,
         username,
+        active_feed,
+        active_folder,
     };
 
     Ok(into_response(&page_feed))
