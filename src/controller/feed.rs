@@ -243,6 +243,11 @@ pub(crate) async fn feed(
         (Some(ref filter), None) if filter == "star" => {
             if let Some(ref claim) = claim {
                 item_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?;
+                for i in folders {
+                    let e = map.entry(i.folder).or_default();
+                    let out_feed = OutFeed::new(&DB, i.feed_id, i.is_public)?;
+                    e.push(out_feed);
+                }
             }
         }
         (Some(ref filter), Some(filter_value)) if filter == "unread" => {
