@@ -27,15 +27,15 @@
     </div>
     <div class="level-right">
         {% match filter.as_deref() %}{% when Some with ("feed") %}
-            {% match filter_value %}{% when Some with (fid) %}
-                <a href="/feed/subscribe/{{uid}}/{{fid}}">
+            {% if active_feed != 0 %}
+                <a href="/feed/subscribe/{{uid}}/{{active_feed}}">
                     {% if username.is_some() %}
                     <button class="button is-success is-small is-rounded">Add to my feed</button>
                     {% else %}
                     <button class="button is-small is-rounded is-danger">Unsubscribe</button>
                     {% endif %}
                 </a>
-            {% else %}{% endmatch %}
+            {% endif %}
         {% else %}
             <a href="/feed/add"><button class="button is-success is-small is-rounded">New Feed</button></a>
         {% endmatch %}
@@ -71,11 +71,7 @@
         <a class="pagination-previous" disabled>Prev</a>
     {% else %}
         {% match filter %} {% when Some with (val) %}
-            {% match filter_value %} {% when Some with (value) %}
-                <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Prev</a>
-            {% else %}
-                <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
-            {% endmatch %}
+            <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}&active_folder={{active_folder}}&active_feed={{active_feed}}">Prev</a>
         {% else %}
             <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
         {% endmatch %}
@@ -85,11 +81,7 @@
         <a class="pagination-next" disabled>Next</a>
     {% else %}
         {% match filter %} {% when Some with (val) %}
-            {% match filter_value %} {% when Some with (value) %}
-                <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}&filter_value={{value}}">Next</a>
-            {% else %}
-                <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
-            {% endmatch %}
+            <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}&active_folder={{active_folder}}&active_feed={{active_feed}}">Next</a>
         {% else %}
             <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
         {% endmatch %}
@@ -127,17 +119,20 @@
 <div class="box">
     {% for folder in folders %}
     <details {% if folder.0 == active_folder.as_str() %} open {% endif %}>
-        <summary><a href="/feed/{{uid}}?filter=folder&filter_value={{folder.0}}">{{folder.0}}</a></summary>
+        {% match filter.as_deref() %} {% when Some(val) %}
+            <summary><a href="/feed/{{uid}}?filter={{val}}&active_folder={{folder.0}}">{{folder.0}}</a></summary>
+        {% else %}
+            <summary><a href="/feed/{{uid}}?&active_folder={{folder.0}}">{{folder.0}}</a></summary>
+        {% endmatch %}
+
         <ul>
             {% for feed in folder.1 %}
             <li>
                 <div class="py-1">
-                    {% match filter.as_deref() %} {% when Some("star") %}
-                    <a href="/feed/{{uid}}?filter=star&filter_value={{feed.feed_id}}">
-                    {% when Some("unread") %}
-                    <a href="/feed/{{uid}}?filter=unread&filter_value={{feed.feed_id}}">
+                    {% match filter.as_deref() %} {% when Some(val) %}
+                        <a href="/feed/{{uid}}?filter={{val}}&active_folder={{active_folder}}&active_feed={{feed.feed_id}}">
                     {% else %}
-                    <a href="/feed/{{uid}}?filter=feed&filter_value={{feed.feed_id}}">
+                        <a href="/feed/{{uid}}?&active_folder={{active_folder}}&active_feed={{feed.feed_id}}">
                     {% endmatch %}
 
                     {% match feed.err %}{% when Some(e) %}
