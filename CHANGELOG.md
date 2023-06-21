@@ -7,29 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.0-rc.5] - 2023-06-19
+## [0.5.0] - 2023-06-21
 
-- bug fixed
-
-## [0.5.0-rc.4] - 2023-06-18
-
-- bug fixed
-
-## [0.5.0-rc.3] - 2023-06-16
-
-- bug fixed
-
-## [0.5.0-rc.2] - 2023-06-07
+It's not a breaking change, but it requires more memory for tantivy. If you don't want to upgrade, you can use the old version.
 
 ### Added
 
-- <https://freedit.eu/post/1/82>
+- Search with tantivy :tada: :tada: :tada:
+- add the @user function when posting
+- support /inn/inn_name && /user/username
+- move explore tab to the side
+- Display tips for inn feed posts and old posts
+- feed read tree view 
 
-## [0.5.0-rc.1] - 2023-06-02
-
-### Added
-
-- Search with tantivy
+### Fixed
+- update crates
+- fix home page resetting bug
+- remove `State<Db>`
+- remove search bar in search page 
 
 ## [0.4.5] - 2023-05-19
 
@@ -209,12 +204,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.5...HEAD
-[0.5.0-rc.5]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.4...v0.5.0-rc.5
-[0.5.0-rc.4]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.3...v0.5.0-rc.4
-[0.5.0-rc.3]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.2...v0.5.0-rc.3
-[0.5.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.5.0-rc.1...v0.5.0-rc.2
-[0.5.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.4.5...v0.5.0-rc.1
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/freedit-org/freedit/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/freedit-org/freedit/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/freedit-org/freedit/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/freedit-org/freedit/compare/v0.4.2...v0.4.3
