@@ -210,23 +210,23 @@ pub(crate) async fn feed(
         item_ids.append(&mut ids);
     }
 
+    let mut star_ids = HashSet::new();
+    let mut read_ids = HashSet::new();
+    if let Some(ref claim) = claim {
+        star_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?
+            .into_iter()
+            .map(|i| i.0)
+            .collect();
+
+        read_ids = get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?
+            .into_iter()
+            .collect();
+    }
+
     if let Some(ref filter) = &params.filter {
         if filter == "star" {
-            let star_ids = if let Some(ref claim) = claim {
-                get_item_ids_and_ts(&DB, "star", claim.uid)?
-                    .into_iter()
-                    .map(|i| i.0)
-                    .collect()
-            } else {
-                vec![]
-            };
             item_ids.retain(|(i, _)| star_ids.contains(i));
         } else if filter == "unread" {
-            let read_ids = if let Some(ref claim) = claim {
-                get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?
-            } else {
-                vec![]
-            };
             item_ids.retain(|(i, _)| !read_ids.contains(i));
         }
     }
@@ -242,21 +242,14 @@ pub(crate) async fn feed(
         item_ids.reverse();
     }
     let mut items = Vec::with_capacity(n);
-    let star_tree = DB.open_tree("star")?;
-    let read_tree = DB.open_tree("read")?;
     for (i, _) in item_ids {
         let item: Item = get_one(&DB, "items", i)?;
         let mut is_read = read;
-        let is_starred = if let Some(ref claim) = claim {
-            let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(i)].concat();
-            if read_tree.contains_key(&k)? {
-                is_read = true;
-            }
-            star_tree.contains_key(k)?
-        } else {
-            false
-        };
+        if read_ids.contains(&i) {
+            is_read = true;
+        }
 
+        let is_starred = star_ids.contains(&i);
         let out_item = OutItem {
             item_id: i,
             title: item.title,
