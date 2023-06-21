@@ -49,6 +49,9 @@ unicode-segmentation = "1"
 validator = { version = "0.16", features = ["derive"] }
 whichlang = "0.1.0"
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+tikv-jemallocator = "0.5"
+
 [profile.release]
 lto = true
 strip = true

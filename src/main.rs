@@ -15,6 +15,13 @@ use std::{fs, path::PathBuf};
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+#[cfg(not(target_env = "msvc"))]
+use tikv_jemallocator::Jemalloc;
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 static IS_DEBUG: Lazy<bool> =
     Lazy::new(|| matches!(std::env::var("PROFILE"), Ok(key) if key.as_str() == "debug"));
 
