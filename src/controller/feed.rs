@@ -26,7 +26,7 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
-use std::{collections::HashSet, time::Duration};
+use std::{collections::HashSet, sync::Arc, time::Duration};
 use tracing::error;
 use validator::Validate;
 
@@ -492,6 +492,16 @@ pub(crate) async fn feed_update(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let feed_items_tree = DB.open_tree("feed_items")?;
+    let mut inn_feeds = Vec::new();
+    for i in &DB.open_tree("inn_feeds")? {
+        let (k, v) = i?;
+        let iid = u8_slice_to_u32(&k[0..4]);
+        let feed_id = u8_slice_to_u32(&k[4..8]);
+        let uid = u8_slice_to_u32(&v);
+        inn_feeds.push((iid, feed_id, uid));
+    }
+    let inn_feeds = Arc::new(inn_feeds);
+
     let mut handers = vec![];
     for i in DB
         .open_tree("user_folders")?
@@ -502,15 +512,7 @@ pub(crate) async fn feed_update(
         let feed_id = u8_slice_to_u32(&i[i.len() - 4..]);
         let feed: Feed = get_one(&DB, "feeds", feed_id)?;
         let feed_items_tree = feed_items_tree.clone();
-
-        let mut inn_feeds = Vec::new();
-        for i in &DB.open_tree("inn_feeds")? {
-            let (k, v) = i?;
-            let iid = u8_slice_to_u32(&k[0..4]);
-            let feed_id = u8_slice_to_u32(&k[4..8]);
-            let uid = u8_slice_to_u32(&v);
-            inn_feeds.push((iid, feed_id, uid));
-        }
+        let inn_feeds = inn_feeds.clone();
 
         let h = tokio::spawn(async move {
             match update(&feed.link, &DB, 20).await {
@@ -523,7 +525,7 @@ pub(crate) async fn feed_update(
                         if let Ok(tree) = DB.open_tree("feed_errs") {
                             let _ = tree.remove(u32_to_ivec(feed_id));
                         }
-                        for (iid, feed_id2, uid) in &inn_feeds {
+                        for (iid, feed_id2, uid) in inn_feeds.iter() {
                             if *feed_id2 == feed_id {
                                 if let Err(e) = inn_feed_to_post(&DB, *iid, item_id, *uid, ts) {
                                     error!(?e);
