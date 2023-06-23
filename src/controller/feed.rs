@@ -503,6 +503,15 @@ pub(crate) async fn feed_update(
         let feed: Feed = get_one(&DB, "feeds", feed_id)?;
         let feed_items_tree = feed_items_tree.clone();
 
+        let mut inn_feeds = Vec::new();
+        for i in &DB.open_tree("inn_feeds")? {
+            let (k, v) = i?;
+            let iid = u8_slice_to_u32(&k[0..4]);
+            let feed_id = u8_slice_to_u32(&k[4..8]);
+            let uid = u8_slice_to_u32(&v);
+            inn_feeds.push((iid, feed_id, uid));
+        }
+
         let h = tokio::spawn(async move {
             match update(&feed.link, &DB, 20).await {
                 Ok((_, item_ids)) => {
@@ -513,6 +522,13 @@ pub(crate) async fn feed_update(
                         };
                         if let Ok(tree) = DB.open_tree("feed_errs") {
                             let _ = tree.remove(u32_to_ivec(feed_id));
+                        }
+                        for (iid, feed_id2, uid) in &inn_feeds {
+                            if *feed_id2 == feed_id {
+                                if let Err(e) = inn_feed_to_post(&DB, *iid, item_id, *uid, ts) {
+                                    error!(?e);
+                                }
+                            }
                         }
                     }
                 }
