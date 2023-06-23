@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1-rc.1] - 2023-06-23
+
+### Fixed
+
+- inn feed missing bug
+
 ## [0.5.0] - 2023-06-21
 
 It's not a breaking change, but it requires more memory for tantivy. If you don't want to upgrade, you can use the old version.
