@@ -105,75 +105,76 @@
     </div>
 </div>
 
-<div class="box list has-visible-pointer-controls" id="comment">
+<div class="box">
     {% for comment in comments %}
-    <div class="list-item" id="{{comment.cid}}">
-        <div class="list-item-image">
-            <figure class="image is-48x48 is-hidden-mobile">
+    <article class="media">
+        <figure class="media-left is-hidden-mobile">
+            <p class="image is-48x48">
                 <a href="/user/{{comment.uid}}"><img src="/static/avatars/{{comment.uid}}.png"></a>
-            </figure>
-        </div>
-        <div class="list-item-content">
-            <p>
-                <small>
-                    <a href="/user/{{comment.uid}}">{{comment.username}}</a> &nbsp;&nbsp;
-                    {{comment.created_at}}
-                    {% if page_data.claim.is_some() %}
-                        {% if comment.is_upvoted %}
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
-                        {% else %}
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
-                        {% endif %}
-
-                        {% if comment.is_downvoted %}
-                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
-                        {% else %}
-                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
-                        {% endif %}
-                    {% else %}
-                        <span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span>
-                        <span class="tag is-info is-light is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span>
-                    {% endif %}
-                    {% if comment.uid == post.uid %}
-                        [op]
-                    {% endif %}
-
-                    {% if is_mod %}
-                    <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
-                        {% if comment.is_hidden %}
-                        Open
-                        {% else %}
-                        Hide
-                        {% endif %}
-                    </a>
-                    {% endif %}
-
-                    {% match page_data.claim %} {% when Some with (val) %}
-                    {% if comment.uid == val.uid %}
-                    <a href="#delete_pop_{{comment.cid}}">Delete</a>
-                    <div id="delete_pop_{{comment.cid}}" class="overlay">
-                        <div class="popup content">
-                            <h3>Delete permanently?</h3>
-                            <a class="close" href="#">&times;</a>
-                            <p>Are you sure you want to delete this comment?</p>
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete" class="button is-danger">Delete</a>
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% else %}{% endmatch %}
-                </small>
             </p>
-            {% if comment.is_hidden %}
-                <p><i>Hidden by mod.</i></p>
-            {% else %}
-                {{comment.content}}
-            {% endif %}
+        </figure>
+        <div class="media-content">
+            <div class="content">
+                <p>
+                    <small>
+                        <a href="/user/{{comment.uid}}">{{comment.username}}</a> &nbsp;&nbsp;
+                        {{comment.created_at}}
+                        {% if page_data.claim.is_some() %}
+                            {% if comment.is_upvoted %}
+                                <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
+                            {% else %}
+                                <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
+                            {% endif %}
+    
+                            {% if comment.is_downvoted %}
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
+                            {% else %}
+                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
+                            {% endif %}
+                        {% else %}
+                            <span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span>
+                            <span class="tag is-info is-light is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span>
+                        {% endif %}
+                        {% if comment.uid == post.uid %}
+                            [op]
+                        {% endif %}
+    
+                        {% if is_mod %}
+                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
+                            {% if comment.is_hidden %}
+                            Open
+                            {% else %}
+                            Hide
+                            {% endif %}
+                        </a>
+                        {% endif %}
+    
+                        {% match page_data.claim %} {% when Some with (val) %}
+                        {% if comment.uid == val.uid %}
+                        <a href="#delete_pop_{{comment.cid}}">Delete</a>
+                        <div id="delete_pop_{{comment.cid}}" class="overlay">
+                            <div class="popup content">
+                                <h3>Delete permanently?</h3>
+                                <a class="close" href="#">&times;</a>
+                                <p>Are you sure you want to delete this comment?</p>
+                                <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete" class="button is-danger">Delete</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% else %}{% endmatch %}
+                    </small>
+                </p>
+                {% if comment.is_hidden %}
+                    <p><i>Hidden by mod.</i></p>
+                {% else %}
+                    {{comment.content}}
+                {% endif %}
+            </div>
         </div>
-        
-        <div class="list-item-controls is-hidden-mobile">
+        <div class="media-right">
             <a href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info">{{comment.cid}}</span></a>
         </div>
-    </div>
+    </article>
     {% endfor %}
 </div>
 

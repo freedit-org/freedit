@@ -21,8 +21,12 @@ nav {
     margin-top: -4px;
 }
 
-#comment>.list-item {
-    align-items: flex-start;
+.media-content {
+    min-width: 0;
+}
+
+.list-item-content {
+    min-width: 0;
 }
 
 .divider {
