@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1-rc.2] - 2023-06-25
+
+### Fixed
+
+- #106
+- use br instead of gzip
+
 ## [0.5.1-rc.1] - 2023-06-23
 
 ### Fixed
