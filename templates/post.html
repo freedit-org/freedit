@@ -107,7 +107,7 @@
 
 <div class="box">
     {% for comment in comments %}
-    <article class="media">
+    <article class="media" id="{{comment.cid}}">
         <figure class="media-left is-hidden-mobile">
             <p class="image is-48x48">
                 <a href="/user/{{comment.uid}}"><img src="/static/avatars/{{comment.uid}}.png"></a>
