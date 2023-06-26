@@ -1,4 +1,6 @@
 #![doc = include_str!("../README.md")]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
 
 use chrono::Utc;
 use freedit::{
@@ -63,7 +65,7 @@ async fn main() -> Result<(), AppError> {
 
     tokio::spawn(async move {
         let mut tan = Tan::init().unwrap();
-        if let Some(true) = CONFIG.rebuild_index {
+        if CONFIG.rebuild_index == Some(true) {
             tan.rebuild_index(&DB).unwrap();
         }
         let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
@@ -95,22 +97,19 @@ async fn main() -> Result<(), AppError> {
     let app = router().await;
     let addr = CONFIG.addr.parse().unwrap();
 
-    match CONFIG.tls_config().await {
-        Some(tls_config) => {
-            info!("listening on https://{}", addr);
-            axum_server::bind_rustls(addr, tls_config)
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-        }
-        None => {
-            info!("listening on http://{}", addr);
-            axum::Server::bind(&addr)
-                .serve(app.into_make_service())
-                .with_graceful_shutdown(shutdown_signal())
-                .await
-                .unwrap();
-        }
+    if let Some(tls_config) = CONFIG.tls_config().await {
+        info!("listening on https://{}", addr);
+        axum_server::bind_rustls(addr, tls_config)
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    } else {
+        info!("listening on http://{}", addr);
+        axum::Server::bind(&addr)
+            .serve(app.into_make_service())
+            .with_graceful_shutdown(shutdown_signal())
+            .await
+            .unwrap();
     }
 
     Ok(())
@@ -138,5 +137,5 @@ fn create_snapshot(db: &sled::Db) {
 }
 
 async fn sleep_seconds(seconds: u64) {
-    tokio::time::sleep(std::time::Duration::from_secs(seconds)).await
+    tokio::time::sleep(std::time::Duration::from_secs(seconds)).await;
 }
