@@ -36,7 +36,7 @@ jobs:
         run: cargo fmt -- --check
 
       - name: Cargo clippy
-        run: cargo clippy --all-features --message-format=json -- -D warnings > clippy_result.json
+        run: cargo clippy --all-targets --all-features --message-format=json > clippy_result.json
         continue-on-error: true
       
       - name: Install clippy-sarif sarif-fmt (require cargo)
