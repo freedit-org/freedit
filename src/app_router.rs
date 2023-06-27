@@ -9,7 +9,7 @@ use crate::{
             mod_inn_post, post, post_delete, post_downvote, post_hide, post_lock, post_upvote,
             preview, tag,
         },
-        meta_handler::{handler_404, home, style},
+        meta_handler::{handler_404, home, robots, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
@@ -108,6 +108,7 @@ pub async fn router() -> Router {
 
     let mut router_static = Router::new()
         .route("/static/style.css", get(style))
+        .route("/robots.txt", get(robots))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
         .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path));

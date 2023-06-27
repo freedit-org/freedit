@@ -146,6 +146,10 @@ pub(crate) async fn style() -> (HeaderMap, &'static str) {
     (headers, &CSS)
 }
 
+pub(crate) async fn robots() -> &'static str {
+    "User-agent: *\nDisallow: /search"
+}
+
 pub async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c()
