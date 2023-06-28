@@ -833,7 +833,6 @@ dependencies = [
  "indexmap 2.0.0",
  "jieba-rs",
  "latex2mathml",
- "maplit",
  "mozjpeg",
  "nanoid",
  "once_cell",

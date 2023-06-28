@@ -3,7 +3,7 @@ use super::{
         get_ids_by_prefix, get_one, get_range, i64_to_ivec, ivec_to_u32, set_one, u32_to_ivec,
         u8_slice_to_i64, u8_slice_to_u32,
     },
-    fmt::ts_to_date,
+    fmt::{clean_html, ts_to_date},
     inn::inn_add_index,
     meta_handler::{get_referer, into_response, PageData, ParamsPage},
     Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
@@ -577,10 +577,10 @@ pub(super) async fn update(
                     let item_id = incr_id(db, "items_count")?;
                     let item = Item {
                         link: source_item.link,
-                        title: source_item.title,
-                        feed_title: rss.title.clone(),
+                        title: clean_html(&source_item.title),
+                        feed_title: clean_html(&rss.title),
                         updated: source_item.updated,
-                        content: source_item.content,
+                        content: clean_html(&source_item.content),
                     };
 
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
@@ -604,10 +604,10 @@ pub(super) async fn update(
                         let item_id = incr_id(db, "items_count")?;
                         let item = Item {
                             link: source_item.link,
-                            title: source_item.title,
-                            feed_title: atom.title.to_string(),
+                            title: clean_html(&source_item.title),
+                            feed_title: clean_html(&atom.title),
                             updated: source_item.updated,
-                            content: source_item.content,
+                            content: clean_html(&source_item.content),
                         };
 
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;

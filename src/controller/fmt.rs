@@ -1,5 +1,4 @@
 use chrono::NaiveDateTime;
-use maplit::{hashmap, hashset};
 use once_cell::sync::Lazy;
 use pulldown_cmark::{html, CodeBlockKind, Event, Options, Tag};
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
@@ -27,14 +26,17 @@ pub(super) fn md2html(md: &str) -> String {
     let mut html_output = String::with_capacity(md.len() * 2);
     html::push_html(&mut html_output, processed);
     ammonia::Builder::default()
-        .allowed_classes(hashmap!["span" => hashset!["replytag"]])
-        .tag_attributes(hashmap! {
-            "pre" => hashset!["style"],
-            "span" => hashset!["style"],
-            "a" => hashset!["href", "title"],
-            "img" => hashset!["src", "alt", "title"],
-        })
+        .add_allowed_classes("span", &["replytag"])
+        .add_tag_attributes("pre", &["style"])
+        .add_tag_attributes("span", &["style"])
         .clean(&html_output)
+        .to_string()
+}
+
+pub(super) fn clean_html(raw: &str) -> String {
+    ammonia::Builder::default()
+        .add_tag_attributes("img", &["style"])
+        .clean(raw)
         .to_string()
 }
 
