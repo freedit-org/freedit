@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1-rc.4] - 2023-06-28
+
+### Breaking
+
+- Site admin could set global default page(but it Will make your site config broken, please backup site info first)
+
+### Fixed
+
+- unsubscribe button
+- better not found error page
+
 ## [0.5.1-rc.4] - 2023-06-26
 
 ### Fixed
