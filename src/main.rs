@@ -12,7 +12,6 @@ use freedit::{
     error::AppError,
     DB, VERSION,
 };
-use once_cell::sync::Lazy;
 use std::{fs, path::PathBuf};
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -24,9 +23,6 @@ use tikv_jemallocator::Jemalloc;
 #[global_allocator]
 static GLOBAL: Jemalloc = Jemalloc;
 
-static IS_DEBUG: Lazy<bool> =
-    Lazy::new(|| matches!(std::env::var("PROFILE"), Ok(key) if key.as_str() == "debug"));
-
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     tracing_subscriber::registry()
@@ -34,9 +30,9 @@ async fn main() -> Result<(), AppError> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    if !*IS_DEBUG {
-        create_snapshot(&DB);
-    }
+    // only create snapshot in release mode
+    #[cfg(not(debug_assertions))]
+    create_snapshot(&DB);
 
     tokio::spawn(async move {
         loop {
@@ -116,7 +112,7 @@ async fn main() -> Result<(), AppError> {
 }
 
 // TODO: TEST with https://github.com/hatoo/oha
-
+#[allow(dead_code)]
 fn create_snapshot(db: &sled::Db) {
     let checksum = db.checksum().unwrap();
     info!(%checksum);
