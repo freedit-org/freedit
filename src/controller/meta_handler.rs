@@ -104,21 +104,30 @@ pub(crate) async fn home(
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
     let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
+    let mut home_page_code = site_config.home_page;
+
     if let Some(claim) = claim {
         if let Some(home_page) = DB.open_tree("home_pages")?.get(u32_to_ivec(claim.uid))? {
-            let redirect = match home_page[0] {
-                1 => format!("/feed/{}", claim.uid),
-                2 => "/inn/0?filter=joined".into(),
-                3 => "/inn/0?filter=following".into(),
-                4 => "/solo/user/0".into(),
-                5 => "/solo/user/0?filter=Following".into(),
-                _ => "/inn/0".into(),
+            if let Some(code) = home_page.first() {
+                home_page_code = *code;
+                if home_page_code == 1 {
+                    return Ok(Redirect::to(&format!("/feed/{}", claim.uid)));
+                }
             };
-            return Ok(Redirect::to(&redirect));
         }
     }
 
-    Ok(Redirect::to("/inn/0"))
+    let redirect = match home_page_code {
+        0 => "/inn/0",
+        2 => "/inn/0?filter=joined",
+        3 => "/inn/0?filter=following",
+        4 => "/solo/user/0",
+        5 => "/solo/user/0?filter=Following",
+        6 => "/inn/list",
+        _ => "/inn/0",
+    };
+
+    Ok(Redirect::to(redirect))
 }
 
 static CSS: Lazy<String> = Lazy::new(|| {

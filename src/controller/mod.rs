@@ -413,6 +413,7 @@ pub(super) struct SiteConfig {
     per_page: usize,
     captcha_difficulty: String,
     captcha_name: String,
+    home_page: u8,
 }
 
 impl SiteConfig {

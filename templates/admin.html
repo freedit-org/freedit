@@ -192,6 +192,28 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="home_page">Default home page</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <div class="select">
+                            <select name="home_page" required>
+                                <option {% if site_config.home_page ==0 %} selected {% endif %} value="0">Inn/All</option>
+                                <option {% if site_config.home_page ==2 %} selected {% endif %} value="2">Inn/Joined</option>
+                                <option {% if site_config.home_page ==3 %} selected {% endif %} value="3">Inn/Following</option>
+                                <option {% if site_config.home_page ==4 %} selected {% endif %} value="4">Solo/All</option>
+                                <option {% if site_config.home_page ==5 %} selected {% endif %} value="5">Solo/Following</option>
+                                <option {% if site_config.home_page ==6 %} selected {% endif %} value="6">Explore all ⚓ inns</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">
