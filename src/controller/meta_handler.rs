@@ -77,7 +77,7 @@ impl IntoResponse for AppError {
 
 pub(crate) async fn handler_404(uri: Uri) -> impl IntoResponse {
     error!("No route for {}", uri);
-    StatusCode::NOT_FOUND.into_response()
+    AppError::NotFound
 }
 
 pub(crate) struct ValidatedForm<T>(pub(super) T);
