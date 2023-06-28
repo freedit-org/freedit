@@ -31,7 +31,8 @@ pub(super) fn md2html(md: &str) -> String {
         .tag_attributes(hashmap! {
             "pre" => hashset!["style"],
             "span" => hashset!["style"],
-            "a" => hashset!["href"],
+            "a" => hashset!["href", "title"],
+            "img" => hashset!["src", "alt", "title"],
         })
         .clean(&html_output)
         .to_string()
