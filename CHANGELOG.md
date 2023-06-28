@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1-rc.4] - 2023-06-26
+
+### Fixed
+
+- Fix broken comment anchor [8ea5f8f](https://github.com/freedit-org/freedit/commit/8ea5f8f8796ac8119ecf8e0220f178bcb17ac312)
+- Add robots.txt [3a5051f](https://github.com/freedit-org/freedit/commit/3a5051fdd6159bef711dc455b858e8171dcecaf6)
+- Fix all broken link [4632907](https://github.com/freedit-org/freedit/commit/4632907680bcff58bf39b55a3dcbb8e372a5599a)
+
 ## [0.5.1-rc.3] - 2023-06-26
 
 ### Fixed
