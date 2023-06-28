@@ -26,19 +26,17 @@
         </div>
     </div>
     <div class="level-right">
-        {% match filter.as_deref() %}{% when Some with ("feed") %}
-            {% if active_feed != 0 %}
-                <a href="/feed/subscribe/{{uid}}/{{active_feed}}">
-                    {% if username.is_some() %}
-                    <button class="button is-success is-small is-rounded">Add to my feed</button>
-                    {% else %}
-                    <button class="button is-small is-rounded is-danger">Unsubscribe</button>
-                    {% endif %}
-                </a>
-            {% endif %}
+        {% if active_feed != 0 %}
+            <a href="/feed/subscribe/{{uid}}/{{active_feed}}">
+                {% if username.is_some() %}
+                <button class="button is-success is-small is-rounded">Subscribe</button>
+                {% else %}
+                <button class="button is-small is-rounded is-danger">Unsubscribe</button>
+                {% endif %}
+            </a>
         {% else %}
             <a href="/feed/add"><button class="button is-success is-small is-rounded">New Feed</button></a>
-        {% endmatch %}
+        {% endif %}
     </div>
 </div>
 
