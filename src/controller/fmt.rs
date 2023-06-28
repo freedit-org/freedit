@@ -30,7 +30,8 @@ pub(super) fn md2html(md: &str) -> String {
         .allowed_classes(hashmap!["span" => hashset!["replytag"]])
         .tag_attributes(hashmap! {
             "pre" => hashset!["style"],
-            "span" => hashset!["style"]
+            "span" => hashset!["style"],
+            "a" => hashset!["href"],
         })
         .clean(&html_output)
         .to_string()
