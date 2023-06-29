@@ -26,7 +26,7 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
-use std::{collections::HashSet, sync::Arc, time::Duration};
+use std::{collections::HashSet, time::Duration};
 use tracing::error;
 use validator::Validate;
 
@@ -492,16 +492,6 @@ pub(crate) async fn feed_update(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let feed_items_tree = DB.open_tree("feed_items")?;
-    let mut inn_feeds = Vec::new();
-    for i in &DB.open_tree("inn_feeds")? {
-        let (k, v) = i?;
-        let iid = u8_slice_to_u32(&k[0..4]);
-        let feed_id = u8_slice_to_u32(&k[4..8]);
-        let uid = u8_slice_to_u32(&v);
-        inn_feeds.push((iid, feed_id, uid));
-    }
-    let inn_feeds = Arc::new(inn_feeds);
-
     let mut handers = vec![];
     for i in DB
         .open_tree("user_folders")?
@@ -512,7 +502,6 @@ pub(crate) async fn feed_update(
         let feed_id = u8_slice_to_u32(&i[i.len() - 4..]);
         let feed: Feed = get_one(&DB, "feeds", feed_id)?;
         let feed_items_tree = feed_items_tree.clone();
-        let inn_feeds = inn_feeds.clone();
 
         let h = tokio::spawn(async move {
             match update(&feed.link, &DB, 20).await {
@@ -524,13 +513,6 @@ pub(crate) async fn feed_update(
                         };
                         if let Ok(tree) = DB.open_tree("feed_errs") {
                             let _ = tree.remove(u32_to_ivec(feed_id));
-                        }
-                        for (iid, feed_id2, uid) in inn_feeds.iter() {
-                            if *feed_id2 == feed_id {
-                                if let Err(e) = inn_feed_to_post(&DB, *iid, item_id, *uid, ts) {
-                                    error!(?e);
-                                }
-                            }
                         }
                     }
                 }
@@ -640,14 +622,10 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
         set.insert(feed_id);
     }
 
-    let mut inn_feeds = Vec::new();
     for i in &db.open_tree("inn_feeds")? {
-        let (k, v) = i?;
-        let iid = u8_slice_to_u32(&k[0..4]);
+        let (k, _) = i?;
         let feed_id = u8_slice_to_u32(&k[4..8]);
-        let uid = u8_slice_to_u32(&v);
         set.insert(feed_id);
-        inn_feeds.push((iid, feed_id, uid));
     }
 
     let feed_items_tree = db.open_tree("feed_items")?;
@@ -659,11 +637,6 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(id), &u32_to_ivec(item_id)].concat();
                         feed_items_tree.insert(k, i64_to_ivec(ts))?;
-                        for (iid, feed_id, uid) in &inn_feeds {
-                            if *feed_id == id {
-                                inn_feed_to_post(db, *iid, item_id, *uid, ts)?;
-                            }
-                        }
                     }
                     let _ = feed_errs_tree.remove(u32_to_ivec(id));
                 }
@@ -675,55 +648,61 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
         };
     }
 
+    for i in &db.open_tree("inn_feeds")? {
+        let (k, v) = i?;
+        let iid = u8_slice_to_u32(&k[0..4]);
+        let feed_id = u8_slice_to_u32(&k[4..8]);
+        let uid = u8_slice_to_u32(&v);
+
+        inn_feed_to_post(db, iid, feed_id, uid)?;
+    }
+
     Ok(())
 }
 
 /// convert inn feed items to post
-pub(super) fn inn_feed_to_post(
-    db: &Db,
-    iid: u32,
-    item_id: u32,
-    uid: u32,
-    ts: i64,
-) -> Result<(), AppError> {
-    let inn_item_k = &[u32_to_ivec(iid), u32_to_ivec(item_id)].concat();
+pub(super) fn inn_feed_to_post(db: &Db, iid: u32, feed_id: u32, uid: u32) -> Result<(), AppError> {
     let inn_items_tree = db.open_tree("inn_items")?;
-    if !inn_items_tree.contains_key(inn_item_k)? {
-        let inn: Inn = get_one(db, "inns", iid)?;
-        let tag = format!("{}_feed", inn.inn_name);
-        let visibility = if inn.inn_type.as_str() == "Private" {
-            10
-        } else {
-            0
-        };
-        let pid = incr_id(db, "posts_count")?;
-        let item: Item = get_one(db, "items", item_id)?;
-        let post = Post {
-            pid,
-            uid,
-            iid,
-            title: item.title,
-            tags: vec![tag.clone()],
-            content: PostContent::FeedItemId(item_id),
-            created_at: ts,
-            status: PostStatus::Normal,
-        };
+    let item_ids = get_item_ids_and_ts(db, "feed_items", feed_id)?;
+    for (item_id, ts) in item_ids.into_iter().rev().take(5) {
+        let inn_item_k = &[u32_to_ivec(iid), u32_to_ivec(item_id)].concat();
+        if !inn_items_tree.contains_key(inn_item_k)? {
+            let inn: Inn = get_one(db, "inns", iid)?;
+            let tag = format!("{}_feed", inn.inn_name);
+            let visibility = if inn.inn_type.as_str() == "Private" {
+                10
+            } else {
+                0
+            };
+            let pid = incr_id(db, "posts_count")?;
+            let item: Item = get_one(db, "items", item_id)?;
+            let post = Post {
+                pid,
+                uid,
+                iid,
+                title: item.title,
+                tags: vec![tag.clone()],
+                content: PostContent::FeedItemId(item_id),
+                created_at: ts,
+                status: PostStatus::Normal,
+            };
 
-        set_one(db, "posts", pid, &post)?;
+            set_one(db, "posts", pid, &post)?;
 
-        let tag_k = [tag.as_bytes(), &u32_to_ivec(pid)].concat();
-        db.open_tree("tags")?.insert(tag_k, &[])?;
+            let tag_k = [tag.as_bytes(), &u32_to_ivec(pid)].concat();
+            db.open_tree("tags")?.insert(tag_k, &[])?;
 
-        let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-        db.open_tree("inn_posts")?.insert(k, &[])?;
+            let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+            db.open_tree("inn_posts")?.insert(k, &[])?;
 
-        inn_add_index(db, iid, pid, ts as u32, visibility)?;
+            inn_add_index(db, iid, pid, ts as u32, visibility)?;
 
-        let k = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
-        let v = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
-        db.open_tree("user_posts")?.insert(k, v)?;
+            let k = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
+            let v = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
+            db.open_tree("user_posts")?.insert(k, v)?;
 
-        inn_items_tree.insert(inn_item_k, &[])?;
+            inn_items_tree.insert(inn_item_k, &[])?;
+        }
     }
 
     Ok(())

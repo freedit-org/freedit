@@ -279,15 +279,16 @@ pub(crate) async fn mod_feed_post(
         return Err(AppError::Custom("You can not feed yourself".into()));
     }
 
-    let (feed, item_ids) = update(&input.url, &DB, 5).await?;
+    let (feed, _) = update(&input.url, &DB, 5).await?;
 
     let feed_links_tree = DB.open_tree("feed_links")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
         ivec_to_u32(&v)
     } else {
-        incr_id(&DB, "feeds_count")?
+        let id = incr_id(&DB, "feeds_count")?;
+        feed_links_tree.insert(&feed.link, u32_to_ivec(id))?;
+        id
     };
-    feed_links_tree.insert(&feed.link, u32_to_ivec(feed_id))?;
 
     set_one(&DB, "feeds", feed_id, &feed)?;
 
@@ -297,9 +298,7 @@ pub(crate) async fn mod_feed_post(
         inn_feeds_tree.remove(k)?;
     } else {
         inn_feeds_tree.insert(k, u32_to_ivec(claim.uid))?;
-        for (item_id, ts) in item_ids.into_iter().take(5) {
-            inn_feed_to_post(&DB, iid, item_id, claim.uid, ts)?;
-        }
+        inn_feed_to_post(&DB, iid, feed_id, claim.uid)?;
     }
 
     let target = format!("/mod/{iid}");
