@@ -21,11 +21,11 @@ use axum::{
     Form, TypedHeader,
 };
 use chrono::{DateTime, Utc};
-use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
+use std::collections::BTreeMap;
 use std::{collections::HashSet, time::Duration};
 use tracing::error;
 use validator::Validate;
@@ -85,7 +85,7 @@ impl From<atom_syndication::Entry> for SourceItem {
 #[template(path = "feed.html")]
 struct PageFeed<'a> {
     page_data: PageData<'a>,
-    folders: IndexMap<String, Vec<OutFeed>>,
+    folders: BTreeMap<String, Vec<OutFeed>>,
     items: Vec<OutItem>,
     filter: Option<String>,
     anchor: usize,
@@ -163,7 +163,7 @@ pub(crate) async fn feed(
         }
     };
 
-    let mut map = IndexMap::new();
+    let mut map = BTreeMap::new();
     let mut feed_ids = vec![];
     let mut item_ids = vec![];
 
