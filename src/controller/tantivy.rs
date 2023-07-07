@@ -16,7 +16,7 @@ use tantivy::{
         Field, IndexRecordOption, Schema, SchemaBuilder, TextFieldIndexing, TextOptions, FAST,
         INDEXED, STORED, STRING,
     },
-    tokenizer::{BoxTokenStream, Token, TokenStream, Tokenizer},
+    tokenizer::{Token, TokenStream, Tokenizer},
     Document, Index, IndexReader, IndexWriter, Term,
 };
 use tracing::info;
@@ -388,16 +388,17 @@ const MULTI_LINGO_TOKENIZER: &str = "multi_lingo_tokenizer";
 struct MultiLingoTokenizer;
 
 impl Tokenizer for MultiLingoTokenizer {
-    fn token_stream<'a>(&self, text: &'a str) -> BoxTokenStream<'a> {
+    type TokenStream<'a> = MultiLingoTokenStream;
+    fn token_stream<'a>(&'a mut self, text: &'a str) -> MultiLingoTokenStream {
         if text.is_empty() {
-            return BoxTokenStream::from(MultiLingoTokenStream {
+            return MultiLingoTokenStream {
                 tokens: vec![],
                 index: 0,
-            });
+            };
         }
 
         let tokens = pre_tokenize_text(text);
-        BoxTokenStream::from(MultiLingoTokenStream { tokens, index: 0 })
+        MultiLingoTokenStream { tokens, index: 0 }
     }
 }
 

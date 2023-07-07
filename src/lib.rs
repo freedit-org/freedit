@@ -52,7 +52,7 @@ pub static DB: Lazy<Db> = Lazy::new(|| {
     info!(GIT_COMMIT);
 
     let db_url = &CONFIG.db;
-    let config = sled::Config::default().path(db_url).use_compression(true);
+    let config = sled::Config::default().path(db_url);
     let db = config.open().unwrap();
     info!(%db_url);
     db

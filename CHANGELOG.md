@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-rc.1] - 2023-07-07
+
+### Breaking
+
+- The old version of the database is not compatible with the new version. Please backup the database first. If you want to keep old data, please see [examples/disable_compress.rs](./examples/disable_compress.rs) for data migration.
+
 ## [0.5.1] - 2023-07-07
 
 ### Breaking
