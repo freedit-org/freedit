@@ -123,9 +123,7 @@ fn create_snapshot(db: &sled::Db) {
         fs::create_dir_all(&snapshot_path).unwrap();
     }
     snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
-    let snapshot_cfg = sled::Config::default()
-        .path(&snapshot_path)
-        .use_compression(true);
+    let snapshot_cfg = sled::Config::default().path(&snapshot_path);
     let snapshot = snapshot_cfg.open().unwrap();
     snapshot.import(db.export());
     info!("create snapshot: {}", snapshot_path.display());
