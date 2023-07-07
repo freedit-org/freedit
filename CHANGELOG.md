@@ -7,48 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.1-rc.6] - 2023-06-29
-
-### Fixed
-
-- Inn feed missing bug
-
-## [0.5.1-rc.5] - 2023-06-28
+## [0.5.1] - 2023-07-07
 
 ### Breaking
 
 - Site admin could set global default page(but it Will make your site config broken, please backup site info first)
 
 ### Fixed
-
+- Inn feed missing bug
 - unsubscribe button
 - better not found error page
-
-## [0.5.1-rc.4] - 2023-06-26
-
-### Fixed
-
 - Fix broken comment anchor [8ea5f8f](https://github.com/freedit-org/freedit/commit/8ea5f8f8796ac8119ecf8e0220f178bcb17ac312)
 - Add robots.txt [3a5051f](https://github.com/freedit-org/freedit/commit/3a5051fdd6159bef711dc455b858e8171dcecaf6)
 - Fix all broken link [4632907](https://github.com/freedit-org/freedit/commit/4632907680bcff58bf39b55a3dcbb8e372a5599a)
-
-## [0.5.1-rc.3] - 2023-06-26
-
-### Fixed
-
 - code highlight fixed
-
-## [0.5.1-rc.2] - 2023-06-25
-
-### Fixed
-
 - #106
 - use br instead of gzip
-
-## [0.5.1-rc.1] - 2023-06-23
-
-### Fixed
-
 - inn feed missing bug
 
 ## [0.5.0] - 2023-06-21
@@ -248,7 +222,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.0...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/freedit-org/freedit/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/freedit-org/freedit/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/freedit-org/freedit/compare/v0.4.4...v0.4.5
 [0.4.4]: https://github.com/freedit-org/freedit/compare/v0.4.3...v0.4.4
