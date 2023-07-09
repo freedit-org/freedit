@@ -71,11 +71,19 @@ impl From<atom_syndication::Entry> for SourceItem {
             atom.updated.timestamp()
         };
 
+        let content = if let Some(content) = atom.content {
+            content.value.unwrap_or_default()
+        } else if let Some(summary) = atom.summary {
+            summary.value
+        } else {
+            String::new()
+        };
+
         Self {
             link: atom.links[0].href.clone(),
             title: atom.title.to_string(),
             updated,
-            content: atom.content.unwrap_or_default().value.unwrap_or_default(),
+            content,
         }
     }
 }
