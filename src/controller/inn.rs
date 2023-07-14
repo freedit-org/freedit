@@ -125,6 +125,7 @@ pub(crate) struct FormInn {
     topics: String,
     inn_type: String,
     early_birds: u32,
+    limit_edit_seconds: u32,
 }
 
 /// `POST /mod/:iid` inn create/edit page
@@ -243,6 +244,7 @@ pub(crate) async fn mod_inn_post(
         inn_type: input.inn_type,
         early_birds: input.early_birds,
         created_at: Utc::now().timestamp(),
+        limit_edit_seconds: input.limit_edit_seconds,
     };
 
     if inn.inn_type.as_str() == "Private" {
@@ -492,8 +494,11 @@ pub(crate) async fn edit_post(
         Ok(into_response(&page_post_create))
     } else {
         let post: Post = get_one(&DB, "posts", pid)?;
+        let inn: Inn = get_one(&DB, "inns", post.iid)?;
 
-        if post.created_at + 30 * 60 < Utc::now().timestamp() {
+        if (post.created_at + (inn.limit_edit_seconds as i64) < Utc::now().timestamp())
+            && inn.limit_edit_seconds != 0
+        {
             return Err(AppError::Unauthorized);
         }
 
@@ -1368,7 +1373,10 @@ pub(crate) async fn post(
             is_downvoted = true;
         }
 
-        if post.created_at + 30 * 60 >= Utc::now().timestamp() && is_author {
+        if is_author
+            && (inn.limit_edit_seconds == 0
+                || post.created_at + (inn.limit_edit_seconds as i64) >= Utc::now().timestamp())
+        {
             can_edit = true;
         }
 

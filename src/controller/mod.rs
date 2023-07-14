@@ -241,6 +241,7 @@ struct Inn {
     inn_type: String,
     early_birds: u32,
     created_at: i64,
+    limit_edit_seconds: u32,
 }
 
 #[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug, Clone)]
