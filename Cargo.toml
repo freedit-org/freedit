@@ -27,7 +27,7 @@ nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.9", features = ["simd"], default-features = false }
 rand = "0.8"
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "socks"] }
 ring = { version = "0.16.20", default-features = false }
 rss = { version = "2.0", default-features = false }
 rust-stemmers = "1.2.0"

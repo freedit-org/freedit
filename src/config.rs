@@ -18,6 +18,7 @@ pub struct Config {
     pub(crate) upload_path: String,
     pub(crate) tantivy_path: String,
     pub(crate) serve_dir: Vec<(String, String)>,
+    pub(crate) proxy: String,
     cert: String,
     key: String,
 }
@@ -68,6 +69,7 @@ impl Default for Config {
             upload_path: "static/imgs/upload".into(),
             tantivy_path: "tantivy".into(),
             serve_dir: vec![],
+            proxy: "".into(),
             cert: "".into(),
             key: "".into(),
         }

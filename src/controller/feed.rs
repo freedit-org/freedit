@@ -9,6 +9,7 @@ use super::{
     Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{
+    config::CONFIG,
     controller::{incr_id, Feed, Item},
     error::AppError,
     DB,
@@ -427,11 +428,20 @@ pub(crate) struct FormFeedAdd {
 }
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
-    reqwest::Client::builder()
-        // timeout shoule be less than global timeout
-        .timeout(Duration::from_secs(6))
-        .build()
-        .unwrap()
+    if !CONFIG.proxy.is_empty() {
+        let proxy = reqwest::Proxy::all(&CONFIG.proxy).unwrap();
+        reqwest::Client::builder()
+            .timeout(Duration::from_secs(6))
+            .proxy(proxy)
+            .build()
+            .unwrap()
+    } else {
+        reqwest::Client::builder()
+            // timeout shoule be less than global timeout
+            .timeout(Duration::from_secs(6))
+            .build()
+            .unwrap()
+    }
 });
 
 /// `POST /feed/add`
