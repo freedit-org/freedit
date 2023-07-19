@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-rc.3] - 2023-07-19
+
+### Added
+
+- Add proxy option
+
 ## [0.6.0-rc.2] - 2023-07-14
 
 ### Breaking
