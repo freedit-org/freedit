@@ -493,7 +493,7 @@ pub(crate) async fn edit_post(
 
         Ok(into_response(&page_post_create))
     } else {
-        let post: Post = get_one(&DB, "posts", pid)?;
+        let mut post: Post = get_one(&DB, "posts", pid)?;
         let inn: Inn = get_one(&DB, "inns", post.iid)?;
 
         if (post.created_at + (inn.limit_edit_seconds as i64) < Utc::now().timestamp())
@@ -508,6 +508,10 @@ pub(crate) async fn edit_post(
 
         if post.status != PostStatus::Normal {
             return Err(AppError::LockedOrHidden);
+        }
+
+        if inn.inn_type.as_str() == "Private" {
+            post.tags.push("private".into());
         }
 
         let page_data = PageData::new("edit post", &site_config, Some(claim), has_unread);
