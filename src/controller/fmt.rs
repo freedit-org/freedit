@@ -21,16 +21,53 @@ pub(super) fn ts_to_date(timestamp: i64) -> String {
 // You should have received a copy of the GNU General Public License
 // along with cmark-syntax. If not, see <http://www.gnu.org/licenses/>
 pub(super) fn md2html(md: &str) -> String {
+    // list of mathml tags obtained from
+    // <https://www.tutorialspoint.com/mathml/mathml_all_elements.htm>
+    let mathml_tags = [
+        "maction",
+        "math",
+        "menclose",
+        "merror",
+        "mfenced",
+        "mfrac",
+        "mglyph",
+        "mi",
+        "mlabeledtr",
+        "mmultiscripts",
+        "mn",
+        "mo",
+        "mover",
+        "mpadded",
+        "mphantom",
+        "mroot",
+        "mrow",
+        "ms",
+        "mspace",
+        "msqrt",
+        "mstyle",
+        "msub",
+        "msubsup",
+        "msup",
+        "mtable",
+        "mtd",
+        "mtext",
+        "mtr",
+        "munder",
+        "munderover",
+        "semantics",
+    ];
     let parser = pulldown_cmark::Parser::new_ext(md, OPTIONS);
     let processed = SyntaxPreprocessor::new(parser);
     let mut html_output = String::with_capacity(md.len() * 2);
     html::push_html(&mut html_output, processed);
-    ammonia::Builder::default()
+    let sanitized_html_string = ammonia::Builder::default()
+        .add_tags(&mathml_tags)
         .add_allowed_classes("span", &["replytag"])
         .add_tag_attributes("pre", &["style"])
         .add_tag_attributes("span", &["style"])
         .clean(&html_output)
-        .to_string()
+        .to_string();
+    sanitized_html_string
 }
 
 pub(super) fn clean_html(raw: &str) -> String {
