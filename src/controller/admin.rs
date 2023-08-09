@@ -185,7 +185,9 @@ pub(crate) async fn admin_view(
                     let uid = k_str.next().unwrap();
                     let stat_type = k_str.next().unwrap().to_owned();
                     let count = ivec_to_u32(&v);
-                    ones.push(format!("{uid} - {date} - {stat_type} - {count}"));
+                    ones.push(format!(
+                        "<a href='/user/{uid}'>{uid}</a> - {date} - {stat_type} - {count}"
+                    ));
                 }
                 "inn_names" | "usernames" | "feed_links" | "item_links" => {
                     let name = std::str::from_utf8(&k)?;
@@ -362,46 +364,4 @@ impl Default for SiteConfig {
             home_page: 0,
         }
     }
-}
-
-/// Page data: `admin_stats.html`
-#[derive(Template)]
-#[template(path = "admin_stats.html")]
-struct PageAdminStats<'a> {
-    page_data: PageData<'a>,
-    stats: Vec<(String, String, String, u32)>,
-}
-
-/// `GET /admin/stats`
-pub(crate) async fn admin_stats(
-    cookie: Option<TypedHeader<Cookie>>,
-) -> Result<impl IntoResponse, AppError> {
-    let cookie = cookie.ok_or(AppError::NonLogin)?;
-    let site_config = SiteConfig::get(&DB)?;
-    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if Role::from(claim.role) != Role::Admin {
-        return Err(AppError::Unauthorized);
-    }
-
-    let mut stats = Vec::with_capacity(100);
-    for i in &DB.open_tree("user_stats")? {
-        let (k, v) = i?;
-        let mut k_str = std::str::from_utf8(&k)?.split('_');
-        let timestamp = i64::from_str_radix(k_str.next().unwrap(), 16).unwrap();
-        let date = ts_to_date(timestamp);
-        let uid = k_str.next().unwrap().to_owned();
-        let stat_type = k_str.next().unwrap().to_owned();
-        let count = ivec_to_u32(&v);
-        stats.push((uid, date, stat_type, count));
-    }
-
-    stats.sort_unstable_by(|a, b| b.3.cmp(&a.3));
-    if stats.len() > 100 {
-        stats.truncate(100);
-    }
-
-    let has_unread = User::has_unread(&DB, claim.uid)?;
-    let page_data = PageData::new("Admin pageview", &site_config, Some(claim), has_unread);
-    let page_admin_pageview = PageAdminStats { page_data, stats };
-    Ok(into_response(&page_admin_pageview))
 }
