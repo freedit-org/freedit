@@ -55,11 +55,20 @@ impl TryFrom<rss::Item> for SourceItem {
             return Err(AppError::InvalidFeedLink);
         };
 
+        let content = rss.description.unwrap_or_default();
+        let title = if let Some(title) = rss.title {
+            title
+        } else if content.len() > 100 {
+            content[0..100].to_string()
+        } else {
+            content.clone()
+        };
+
         Ok(Self {
             link,
-            title: rss.title.unwrap_or_else(|| "No Title".to_owned()),
+            title,
             updated,
-            content: rss.description.unwrap_or_default(),
+            content,
         })
     }
 }
