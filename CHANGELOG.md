@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-rc.4] - 2023-08-18
+
+### Fixed
+
+- whitelist mathml tags in html sanitizer #126 by @aszepieniec
+- Add default tag for private inn post
+- Remove page admin stats
+- Add basic og meta tags
+- if rss has no title, use content as title
+
 ## [0.6.0-rc.3] - 2023-07-19
 
 ### Added
