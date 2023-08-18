@@ -59,7 +59,11 @@ impl TryFrom<rss::Item> for SourceItem {
         let title = if let Some(title) = rss.title {
             title
         } else if content.len() > 100 {
-            content[0..100].to_string()
+            let mut real_len = 100;
+            while !content.is_char_boundary(real_len) {
+                real_len -= 1;
+            }
+            format!("{}...", &content[0..real_len])
         } else {
             content.clone()
         };
