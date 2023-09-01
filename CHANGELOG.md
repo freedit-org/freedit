@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-rc.4] - 2023-09-01
+
+## Fixed
+
+- https://github.com/freedit-org/freedit/security/dependabot/8
+
+## Added
+
+- Open Graph Meta Tag #128
+
 ## [0.6.0-rc.4] - 2023-08-18
 
 ### Fixed
