@@ -197,9 +197,8 @@ pub(crate) async fn upload_post(
                     let target_height = resized_img.height() as usize;
                     comp.set_size(target_width, target_height);
 
-                    comp.set_mem_dest();
                     comp.set_optimize_scans(true);
-                    comp.start_compress();
+                    let mut comp = comp.start_compress(Vec::new()).unwrap();
 
                     let mut line: usize = 0;
                     let resized_img_data = resized_img.into_rgb8().into_vec();
@@ -208,12 +207,11 @@ pub(crate) async fn upload_post(
                             break;
                         }
                         let idx = line * target_width * 3..(line + 1) * target_width * 3;
-                        comp.write_scanlines(&resized_img_data[idx]);
+                        comp.write_scanlines(&resized_img_data[idx]).unwrap();
                         line += 1;
                     }
-                    comp.finish_compress();
 
-                    if let Ok(comp) = comp.data_to_vec() {
+                    if let Ok(comp) = comp.finish() {
                         ext = "jpeg";
                         comp
                     } else {

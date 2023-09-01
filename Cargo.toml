@@ -22,7 +22,7 @@ image = { version = "0.24", default-features = false, features = ["jpeg", "png",
 img-parts = "0.3.0"
 jieba-rs = "0.6.8"
 latex2mathml = "0.2.3"
-mozjpeg = "0.9"
+mozjpeg = "0.10.0"
 nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.9", features = ["simd"], default-features = false }
@@ -36,7 +36,7 @@ sled = "0.34.7"
 snailquote = "0.3.1"
 stop-words = "0.7.2"
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
-tantivy = "0.20.2"
+tantivy = "0.21.0"
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
 tower = { version = "0.4", features = ["timeout"] }

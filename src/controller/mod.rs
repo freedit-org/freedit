@@ -289,6 +289,16 @@ impl PostContent {
             }
         }
     }
+
+    fn get_md(&self, db: &Db) -> Result<String, AppError> {
+        match self {
+            PostContent::Markdown(md) => Ok(md.to_string()),
+            PostContent::FeedItemId(id) => {
+                let item: Item = get_one(db, "items", *id)?;
+                Ok(item.content)
+            }
+        }
+    }
 }
 
 impl Display for PostContent {

@@ -1060,7 +1060,7 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
         let date = ts_to_date(post.created_at);
         if idx == 0 {
             let naivedatetime = NaiveDateTime::from_timestamp_opt(post.created_at, 0).unwrap();
-            updated = DateTime::<Utc>::from_utc(naivedatetime, Utc).to_rfc3339();
+            updated = DateTime::<Utc>::from_naive_utc_and_offset(naivedatetime, Utc).to_rfc3339();
         }
 
         let feed_post = FeedPost {
@@ -1276,6 +1276,7 @@ struct OutPost {
     title: String,
     tags: Vec<String>,
     content_html: String,
+    og_content: String,
     created_at: String,
     upvotes: usize,
     downvotes: usize,
@@ -1406,6 +1407,11 @@ pub(crate) async fn post(
         }
     }
 
+    let og_content: String = match post.status {
+        PostStatus::HiddenByMod => "Hidden by mod.".into(),
+        PostStatus::HiddenByUser => "Hidden by user.".into(),
+        _ => post.content.get_md(&DB)?,
+    };
     let content = match post.status {
         PostStatus::HiddenByMod => "<p><i>Hidden by mod.</i></p>".into(),
         PostStatus::HiddenByUser => "<p><i>Hidden by user.</i></p>".into(),
@@ -1443,6 +1449,7 @@ pub(crate) async fn post(
         tags: post.tags,
         status: post.status.to_string(),
         content_html: content,
+        og_content,
         created_at: date,
         upvotes,
         downvotes,

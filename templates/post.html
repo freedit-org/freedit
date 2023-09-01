@@ -11,6 +11,10 @@
     <li><a href="/solo/user/0">Solo</a></li>
 {% endblock %}
 
+{% block og %}
+    <meta property="og:description" content="{{ post.og_content|truncate(1000) }}">
+{% endblock %}
+
 {% block content %}
 <div class="media box">
     <div class="media-content">
