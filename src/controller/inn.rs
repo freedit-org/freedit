@@ -1009,19 +1009,20 @@ fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
 
 #[cached(time = 120, result = true)]
 fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
-    let mut uids = HashSet::with_capacity(12);
+    const NUM: usize = 15;
+    let mut uids = HashSet::with_capacity(NUM);
     let mut users = vec![];
     for i in &DB.open_tree("user_posts")? {
         let (k, _) = i?;
         let uid = u8_slice_to_u32(&k[0..4]);
         uids.insert(uid);
-        if uids.len() >= 12 {
+        if uids.len() >= NUM {
             break;
         }
     }
 
     for i in &DB.open_tree("user_comments")? {
-        if uids.len() >= 12 {
+        if uids.len() >= NUM {
             break;
         }
         let (k, _) = i?;
@@ -1030,7 +1031,7 @@ fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
     }
 
     for i in &DB.open_tree("user_solos")? {
-        if uids.len() >= 12 {
+        if uids.len() >= NUM {
             break;
         }
         let (k, _) = i?;

@@ -235,7 +235,7 @@
     </div>
     <div class="is-flex is-flex-wrap-wrap m-2">
         {% for user in recommend_users %}
-            <figure class="image is-32x32">
+            <figure class="image is-32x32 m-1">
                 <a href="/user/{{user.0}}"><img class="is-rounded" src="/static/avatars/{{user.0}}.png" title="{{user.1}}"></a>
             </figure>
         {% endfor %}
