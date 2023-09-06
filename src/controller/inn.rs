@@ -1423,7 +1423,10 @@ pub(crate) async fn post(
     let og_content: String = match post.status {
         PostStatus::HiddenByMod => "Hidden by mod.".into(),
         PostStatus::HiddenByUser => "Hidden by user.".into(),
-        _ => post.content.get_md(&DB)?,
+        _ => match post.content {
+            PostContent::Markdown(ref content) => content.to_string(),
+            PostContent::FeedItemId(_) => "This post is auto-generated from an RSS feed".into(),
+        },
     };
     let content = match post.status {
         PostStatus::HiddenByMod => "<p><i>Hidden by mod.</i></p>".into(),
