@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-rc.6] - 2023-09-06
+
+## Fixed
+
+- ogcontent bug with post from feed
+
+## Added
+
+- Post pin <https://freedit.eu/post/1/127>
+- Recommend users <https://freedit.eu/post/1/131>
+
 ## [0.6.0-rc.5] - 2023-09-01
 
 ## Fixed
