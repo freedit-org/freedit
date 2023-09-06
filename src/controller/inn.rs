@@ -40,7 +40,7 @@ use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::{BTreeSet, HashMap, HashSet},
     path::PathBuf,
 };
 use validator::Validate;
@@ -819,6 +819,7 @@ struct PageInn<'a> {
     inn_users_count: usize,
     is_mod: bool,
     inns: Vec<(u32, String, bool)>,
+    recommend_users: Vec<(u32, String)>,
 }
 
 /// url params: `inn.html`
@@ -956,6 +957,8 @@ pub(crate) async fn inn(
         description = "".into();
     };
 
+    let recommend_users = recommend_users()?;
+
     let page_inn = PageInn {
         page_data,
         inn_name,
@@ -972,6 +975,7 @@ pub(crate) async fn inn(
         inn_users_count,
         inns,
         is_mod,
+        recommend_users,
     };
 
     Ok(into_response(&page_inn))
@@ -1001,6 +1005,45 @@ fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     }
 
     Ok(recommend_inns)
+}
+
+#[cached(time = 120, result = true)]
+fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
+    let mut uids = HashSet::with_capacity(12);
+    let mut users = vec![];
+    for i in &DB.open_tree("user_posts")? {
+        let (k, _) = i?;
+        let uid = u8_slice_to_u32(&k[0..4]);
+        uids.insert(uid);
+        if uids.len() >= 12 {
+            break;
+        }
+    }
+
+    for i in &DB.open_tree("user_comments")? {
+        if uids.len() >= 12 {
+            break;
+        }
+        let (k, _) = i?;
+        let uid = u8_slice_to_u32(&k[0..4]);
+        uids.insert(uid);
+    }
+
+    for i in &DB.open_tree("user_solos")? {
+        if uids.len() >= 12 {
+            break;
+        }
+        let (k, _) = i?;
+        let uid = u8_slice_to_u32(&k[0..4]);
+        uids.insert(uid);
+    }
+
+    for i in uids {
+        let user: User = get_one(&DB, "users", i)?;
+        users.push((i, user.username));
+    }
+
+    Ok(users)
 }
 
 /// Page data: `inn_feed.html`

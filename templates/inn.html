@@ -200,6 +200,11 @@
 {% endif %}
 
 <div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+    <div class="list-item">
+        <div class="list-item-content">
+            <div class="list-item-title">Explore all <a href="/inn/list">⚓ inns</a></div>
+        </div>
+    </div>
     {% for inn in inns %}
     <div class="list-item">
         <div class="list-item-image">
@@ -220,10 +225,20 @@
         </div>
     </div>
     {% endfor %}
+</div>
+
+<div class="box">
     <div class="list-item">
         <div class="list-item-content">
-            <div class="list-item-title">Explore all <a href="/inn/list">⚓ inns</a></div>
+            <div class="list-item-title">Active <a href="/user/list">User</a></div>
         </div>
+    </div>
+    <div class="is-flex is-flex-wrap-wrap m-2">
+        {% for user in recommend_users %}
+            <figure class="image is-32x32">
+                <a href="/user/{{user.0}}"><img class="is-rounded" src="/static/avatars/{{user.0}}.png" title="{{user.1}}"></a>
+            </figure>
+        {% endfor %}
     </div>
 </div>
 
