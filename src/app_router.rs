@@ -6,8 +6,8 @@ use crate::{
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
             edit_post, edit_post_post, inn, inn_feed, inn_join, inn_list, mod_feed_post, mod_inn,
-            mod_inn_post, post, post_delete, post_downvote, post_hide, post_lock, post_upvote,
-            preview, tag,
+            mod_inn_post, post, post_delete, post_downvote, post_hide, post_lock, post_pin,
+            post_upvote, preview, tag,
         },
         meta_handler::{handler_404, home, robots, style},
         notification::notification,
@@ -73,6 +73,7 @@ pub async fn router() -> Router {
         )
         .route("/mod/:iid/:pid/lock", get(post_lock))
         .route("/mod/:iid/:pid/hide", get(post_hide))
+        .route("/mod/:iid/:pid/pin", get(post_pin))
         .route("/inn/list", get(inn_list))
         .route("/inn/tag/:tag", get(tag))
         .route("/inn/:i", get(inn))

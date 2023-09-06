@@ -19,7 +19,7 @@
 <div class="media box">
     <div class="media-content">
         <div class="content">
-            <p class="title">{{post.title}}</p>
+            <p class="title">{% if post.is_pinned %} 📌 {% endif %}{{post.title}}</p>
 
             <a href="/inn/{{post.iid}}">
             ⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
@@ -42,6 +42,13 @@
                         {% when "HiddenByMod" %} Open
                         {% else %} Hide
                     {% endmatch %}
+                </a> &nbsp;&nbsp;
+                <a href="/mod/{{post.iid}}/{{post.pid}}/pin">
+                    {% if post.is_pinned %}
+                        Unpin
+                    {% else %}
+                        Pin
+                    {% endif %}
                 </a>
             {% else if is_author %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">

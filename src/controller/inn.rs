@@ -743,6 +743,7 @@ struct OutPostList {
     created_at: String,
     comment_count: u32,
     last_reply: Option<(u32, String)>,
+    is_pinned: bool,
 }
 
 /// Page data: `tag.html`
@@ -885,15 +886,22 @@ pub(crate) async fn inn(
         _ => {
             if iid == 0 {
                 index = get_pids_all(&DB, joined_inns, &page_params)?;
-            } else if DB
-                .open_tree("inns_private")?
-                .contains_key(u32_to_ivec(iid))?
-            {
-                if joined_inns.contains(&iid) {
+            } else {
+                if DB
+                    .open_tree("inns_private")?
+                    .contains_key(u32_to_ivec(iid))?
+                {
+                    if joined_inns.contains(&iid) {
+                        index = get_pids_by_iids(&DB, &[iid], &page_params)?;
+                    }
+                } else {
                     index = get_pids_by_iids(&DB, &[iid], &page_params)?;
                 }
-            } else {
-                index = get_pids_by_iids(&DB, &[iid], &page_params)?;
+
+                // add pinned posts
+                let pinned_pids = get_ids_by_prefix(&DB, "post_pins", u32_to_ivec(iid), None)?;
+                index.retain(|r| !pinned_pids.contains(r));
+                index = pinned_pids.into_iter().chain(index).collect();
             }
         }
     }
@@ -1109,6 +1117,9 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
                 None
             };
 
+            let k = [&u32_to_ivec(post.iid), &u32_to_ivec(post.pid)].concat();
+            let is_pinned = db.open_tree("post_pins")?.contains_key(k)?;
+
             let post_list = OutPostList {
                 pid: post.pid,
                 iid: post.iid,
@@ -1119,6 +1130,7 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
                 created_at: date,
                 comment_count,
                 last_reply,
+                is_pinned,
             };
             post_lists.push(post_list);
         }
@@ -1284,6 +1296,7 @@ struct OutPost {
     is_upvoted: bool,
     is_downvoted: bool,
     can_edit: bool,
+    is_pinned: bool,
 }
 
 /// Page data: `post.html`
@@ -1439,6 +1452,9 @@ pub(crate) async fn post(
         }
     };
 
+    let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+    let is_pinned = DB.open_tree("post_pins")?.contains_key(k)?;
+
     let out_post = OutPost {
         pid: post.pid,
         uid: post.uid,
@@ -1456,6 +1472,7 @@ pub(crate) async fn post(
         is_upvoted,
         is_downvoted,
         can_edit,
+        is_pinned,
     };
 
     let n = site_config.per_page;
@@ -1900,7 +1917,7 @@ pub(crate) async fn comment_downvote(
     Ok(Redirect::to(&target))
 }
 
-/// `GET /inn/:iid/:pid/post_lock` post lock
+/// `GET /inn/:iid/:pid/lock` post lock
 pub(crate) async fn post_lock(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
@@ -1932,7 +1949,7 @@ pub(crate) async fn post_lock(
     Ok(Redirect::to(&target))
 }
 
-/// `GET /inn/:iid/:pid/post_hide` post hide
+/// `GET /inn/:iid/:pid/hide` post hide
 pub(crate) async fn post_hide(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
@@ -1979,6 +1996,32 @@ pub(crate) async fn post_hide(
                 u8_slice_to_u32(&v[4..8]),
             )?;
         }
+    }
+
+    let target = format!("/post/{iid}/{pid}");
+    Ok(Redirect::to(&target))
+}
+
+/// `GET /inn/:iid/:pid/pin` post pin
+pub(crate) async fn post_pin(
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((iid, pid)): Path<(u32, u32)>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = cookie
+        .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
+        .ok_or(AppError::NonLogin)?;
+
+    if !User::is_mod(&DB, claim.uid, iid)? {
+        return Err(AppError::Unauthorized);
+    }
+
+    let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+    let tree = DB.open_tree("post_pins")?;
+    if tree.contains_key(&k)? {
+        tree.remove(&k)?;
+    } else {
+        tree.insert(&k, &[])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
