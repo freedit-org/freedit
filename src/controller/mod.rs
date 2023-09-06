@@ -79,6 +79,7 @@
 //! | "post_timeline_idx" | `iid#pid`           | `timestamp`          |
 //! | "post_timeline"     | `timestamp#iid#pid` | `visibility`         |
 //! | "post_pageviews"    | `pid`               | N                    |
+//! | "post_pins"         | `iid#pid`           | `&[]`                |
 //!
 //! ### comment
 //! | tree                  | key                  | value       |
