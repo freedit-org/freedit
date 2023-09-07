@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0-rc.7] - 2023-09-07
+
+## Fixed
+
+- <https://freedit.eu/post/1/133>
+
 ## [0.6.0-rc.6] - 2023-09-06
 
 ## Fixed
