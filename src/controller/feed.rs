@@ -21,14 +21,13 @@ use axum::{
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
 };
-use bincode::config::standard;
 use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::{collections::HashSet, time::Duration};
 use tracing::error;
 use validator::Validate;
@@ -147,6 +146,7 @@ impl OutFeed {
 struct OutItem {
     item_id: u32,
     title: String,
+    folder: String,
     feed_id: u32,
     feed_title: String,
     updated: String,
@@ -193,10 +193,12 @@ pub(crate) async fn feed(
     let mut item_ids = vec![];
 
     let mut folders = vec![];
+    let mut feed_id_folder = HashMap::new();
     for i in DB.open_tree("user_folders")?.scan_prefix(u32_to_ivec(uid)) {
         let (k, v) = i?;
         let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
         let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
+        feed_id_folder.insert(feed_id, folder.clone());
         let is_public = v[0] == 1;
         folders.push(Folder {
             folder,
@@ -275,10 +277,12 @@ pub(crate) async fn feed(
         }
 
         let is_starred = star_ids.contains(&i);
-        let feed_id = get_feed_id(item.feed_title.clone())?;
+        let feed_id = get_feed_id(i)?;
+        let folder = feed_id_folder.get(&feed_id).unwrap().to_owned();
         let out_item = OutItem {
             item_id: i,
             title: item.title,
+            folder,
             feed_id,
             feed_title: item.feed_title,
             updated: ts_to_date(item.updated),
@@ -311,13 +315,13 @@ pub(crate) async fn feed(
     Ok(into_response(&page_feed))
 }
 
-#[cached(time = 7200, result = true)]
-fn get_feed_id(feed_title: String) -> Result<u32, AppError> {
-    for i in DB.open_tree("feeds")?.iter() {
-        let (k, v) = i?;
-        let feed_id = u8_slice_to_u32(&k);
-        let (feed, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
-        if feed.title == feed_title {
+#[cached(result = true)]
+fn get_feed_id(item_id: u32) -> Result<u32, AppError> {
+    for i in DB.open_tree("feed_items")?.iter() {
+        let (k, _) = i?;
+        let item_id2 = u8_slice_to_u32(&k[4..8]);
+        if item_id == item_id2 {
+            let feed_id = u8_slice_to_u32(&k[0..4]);
             return Ok(feed_id);
         }
     }
