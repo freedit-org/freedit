@@ -1,6 +1,6 @@
 [package]
 name = "freedit"
-version = "0.6.0-rc.8"
+version = "0.6.0"
 edition = "2021"
 license = "MIT"
 
@@ -22,7 +22,7 @@ image = { version = "0.24", default-features = false, features = ["jpeg", "png",
 img-parts = "0.3.0"
 jieba-rs = "0.6.8"
 latex2mathml = "0.2.3"
-mozjpeg = "0.10.0"
+mozjpeg = "0.10.1"
 nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.9", features = ["simd"], default-features = false }

@@ -7,74 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.0-rc.8] - 2023-09-08
+## [0.6.0] - 2023-09-08
 
-## Added
+### Breaking
+- Inn mod could set limit edit seconds(set 0 to disable)
+- The old version of the database is not compatible with the new version. Please backup the database first. If you want to keep old data, please see [examples/disable_compress.rs](./examples/disable_compress.rs) for data migration.
 
-- Add feed link
 
 ## Fixed
-
 - Only count public
-
-## [0.6.0-rc.7] - 2023-09-07
-
-## Fixed
-
 - <https://freedit.eu/post/1/133>
-
-## [0.6.0-rc.6] - 2023-09-06
-
-## Fixed
-
 - ogcontent bug with post from feed
-
-## Added
-
-- Post pin <https://freedit.eu/post/1/127>
-- Recommend users <https://freedit.eu/post/1/131>
-
-## [0.6.0-rc.5] - 2023-09-01
-
-## Fixed
-
 - https://github.com/freedit-org/freedit/security/dependabot/8
-
-## Added
-
-- Open Graph Meta Tag #128
-
-## [0.6.0-rc.4] - 2023-08-18
-
-### Fixed
-
 - whitelist mathml tags in html sanitizer #126 by @aszepieniec
 - Add default tag for private inn post
 - Remove page admin stats
 - Add basic og meta tags
 - if rss has no title, use content as title
-
-## [0.6.0-rc.3] - 2023-07-19
-
-### Added
-
-- Add proxy option
-
-## [0.6.0-rc.2] - 2023-07-14
-
-### Breaking
-
-- Inn mod could set limit edit seconds(set 0 to disable)
-
-### Fixed
-
 - Atom feed content from summary if its content is empty.
 
-## [0.6.0-rc.1] - 2023-07-07
-
-### Breaking
-
-- The old version of the database is not compatible with the new version. Please backup the database first. If you want to keep old data, please see [examples/disable_compress.rs](./examples/disable_compress.rs) for data migration.
+## Added
+- Add feed link
+- Post pin <https://freedit.eu/post/1/127>
+- Recommend users <https://freedit.eu/post/1/131>
+- Open Graph Meta Tag #128
+- Add proxy option
 
 ## [0.5.1] - 2023-07-07
 
@@ -291,7 +248,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.5.1...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/freedit-org/freedit/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/freedit-org/freedit/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/freedit-org/freedit/compare/v0.4.5...v0.5.0
 [0.4.5]: https://github.com/freedit-org/freedit/compare/v0.4.4...v0.4.5
