@@ -83,15 +83,40 @@ pub(crate) async fn user(
         created_at: ts_to_date(user.created_at),
     };
     let uid_ivec = u32_to_ivec(uid);
-    let user_solos_count = get_count_by_prefix(&DB, "user_solos", &uid_ivec)?;
-    let user_posts_count = get_count_by_prefix(&DB, "user_posts", &uid_ivec)?;
-    let user_feeds_count = get_count_by_prefix(&DB, "user_folders", &uid_ivec)?;
-    let user_following_count = get_count_by_prefix(&DB, "user_following", &u32_to_ivec(uid))?;
-    let user_followers_count = get_count_by_prefix(&DB, "user_followers", &u32_to_ivec(uid))?;
+
+    let mut user_solos_count = 0;
+    for i in DB.open_tree("user_solos")?.scan_prefix(&uid_ivec) {
+        let (_, v) = i?;
+        // only count public solos
+        if u8_slice_to_u32(&v) == 0 {
+            user_solos_count += 1;
+        }
+    }
+
+    let mut user_posts_count = 0;
+    for i in DB.open_tree("user_posts")?.scan_prefix(&uid_ivec) {
+        let (_, v) = i?;
+        // exclude private posts
+        if u8_slice_to_u32(&v[4..8]) != 10 {
+            user_posts_count += 1;
+        }
+    }
+
+    let mut user_feeds_count = 0;
+    for i in DB.open_tree("user_folders")?.scan_prefix(&uid_ivec) {
+        let (_, v) = i?;
+        // only count public feeds
+        if v[0] == 1 {
+            user_feeds_count += 1;
+        }
+    }
+
+    let user_following_count = get_count_by_prefix(&DB, "user_following", &uid_ivec)?;
+    let user_followers_count = get_count_by_prefix(&DB, "user_followers", &uid_ivec)?;
 
     let has_followed = if let Some(ref claim) = claim {
         if claim.uid != uid {
-            let following_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(uid)].concat();
+            let following_k = [&u32_to_ivec(claim.uid), &uid_ivec].concat();
             Some(DB.open_tree("user_following")?.contains_key(following_k)?)
         } else {
             None
