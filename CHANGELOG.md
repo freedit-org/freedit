@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Inn mod could set limit edit seconds(set 0 to disable)
 - The old version of the database is not compatible with the new version. Please backup the database first. If you want to keep old data, please see [examples/disable_compress.rs](./examples/disable_compress.rs) for data migration.
 
-
-## Fixed
+### Fixed
 - Only count public
 - <https://freedit.eu/post/1/133>
 - ogcontent bug with post from feed
@@ -26,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - if rss has no title, use content as title
 - Atom feed content from summary if its content is empty.
 
-## Added
+### Added
 - Add feed link
 - Post pin <https://freedit.eu/post/1/127>
 - Recommend users <https://freedit.eu/post/1/131>
