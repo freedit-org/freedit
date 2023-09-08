@@ -21,6 +21,8 @@ use axum::{
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
 };
+use bincode::config::standard;
+use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -145,6 +147,7 @@ impl OutFeed {
 struct OutItem {
     item_id: u32,
     title: String,
+    feed_id: u32,
     feed_title: String,
     updated: String,
     is_starred: bool,
@@ -272,9 +275,11 @@ pub(crate) async fn feed(
         }
 
         let is_starred = star_ids.contains(&i);
+        let feed_id = get_feed_id(item.feed_title.clone())?;
         let out_item = OutItem {
             item_id: i,
             title: item.title,
+            feed_id,
             feed_title: item.feed_title,
             updated: ts_to_date(item.updated),
             is_starred,
@@ -304,6 +309,19 @@ pub(crate) async fn feed(
     };
 
     Ok(into_response(&page_feed))
+}
+
+#[cached(time = 7200, result = true)]
+fn get_feed_id(feed_title: String) -> Result<u32, AppError> {
+    for i in DB.open_tree("feeds")?.iter() {
+        let (k, v) = i?;
+        let feed_id = u8_slice_to_u32(&k);
+        let (feed, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
+        if feed.title == feed_title {
+            return Ok(feed_id);
+        }
+    }
+    Err(AppError::NotFound)
 }
 
 fn get_item_ids_and_ts(db: &Db, tree: &str, id: u32) -> Result<Vec<(u32, i64)>, AppError> {
