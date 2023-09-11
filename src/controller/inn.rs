@@ -820,6 +820,7 @@ struct PageInn<'a> {
     is_mod: bool,
     inns: Vec<(u32, String, bool)>,
     recommend_users: Vec<(u32, String)>,
+    counts: usize,
 }
 
 /// url params: `inn.html`
@@ -958,7 +959,7 @@ pub(crate) async fn inn(
     };
 
     let recommend_users = recommend_users()?;
-
+    let counts = get_count_by_prefix(&DB, "inn_posts", &u32_to_ivec(iid)).unwrap_or_default();
     let page_inn = PageInn {
         page_data,
         inn_name,
@@ -976,6 +977,7 @@ pub(crate) async fn inn(
         inns,
         is_mod,
         recommend_users,
+        counts,
     };
 
     Ok(into_response(&page_inn))
