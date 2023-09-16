@@ -12,7 +12,7 @@ use freedit::{
     error::AppError,
     DB, VERSION,
 };
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, net::SocketAddr};
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -91,7 +91,7 @@ async fn main() -> Result<(), AppError> {
     });
 
     let app = router().await;
-    let addr = CONFIG.addr.parse().unwrap();
+    let addr = CONFIG.addr.parse::<SocketAddr>().unwrap();
 
     if let Some(tls_config) = CONFIG.tls_config().await {
         info!("listening on https://{}", addr);
