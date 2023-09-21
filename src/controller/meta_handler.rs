@@ -217,6 +217,7 @@ impl<'a> PageData<'a> {
     }
 }
 
+// TODO: https://github.com/hyperium/headers/issues/48
 pub(super) fn get_referer(header: Option<TypedHeader<Referer>>) -> Option<String> {
     if let Some(TypedHeader(r)) = header {
         let referer = format!("{r:?}");
