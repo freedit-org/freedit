@@ -1693,7 +1693,7 @@ pub(crate) async fn comment_post(
         }
     }
 
-    let reply_to = extract_element(&content, 1, '#');
+    let reply_to = extract_element(&content, 5, '#');
     let mut reply_to_cid = None;
     if !reply_to.is_empty() {
         if let Ok(reply_cid) = reply_to[0].parse::<u32>() {
