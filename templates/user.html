@@ -1,6 +1,21 @@
 {% extends "layout.html" %}
 
 {% block content %}
+{% if !has_recovery_code %}
+<div class="box">
+    <article class="message is-warning">
+        <div class="message-header">
+            <p>Warning</p>
+        </div>
+        <div class="message-body">
+            You have not set a recovery code. If you lose your password, you will not be able to recover your account.
+            <br>
+            <a href="/user/setting#recovery">Set recovery code</a>
+        </div>
+    </article>
+</div>
+{% endif %}
+
 <article class="media box">
     <figure class="media-left">
         <p class="image is-64x64">

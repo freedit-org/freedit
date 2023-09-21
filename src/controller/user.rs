@@ -48,6 +48,7 @@ struct PageUser<'a> {
     user_following_count: usize,
     user_followers_count: usize,
     has_followed: Option<bool>,
+    has_recovery_code: bool,
 }
 
 /// Vec data: user
@@ -114,11 +115,13 @@ pub(crate) async fn user(
     let user_following_count = get_count_by_prefix(&DB, "user_following", &uid_ivec)?;
     let user_followers_count = get_count_by_prefix(&DB, "user_followers", &uid_ivec)?;
 
+    let mut has_recovery_code = true;
     let has_followed = if let Some(ref claim) = claim {
         if claim.uid != uid {
             let following_k = [&u32_to_ivec(claim.uid), &uid_ivec].concat();
             Some(DB.open_tree("user_following")?.contains_key(following_k)?)
         } else {
+            has_recovery_code = user.recovery_hash.is_some();
             None
         }
     } else {
@@ -142,6 +145,7 @@ pub(crate) async fn user(
         user_following_count,
         user_followers_count,
         has_followed,
+        has_recovery_code,
     };
 
     Ok(into_response(&page_user))
