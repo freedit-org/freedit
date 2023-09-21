@@ -1471,7 +1471,7 @@ pub(crate) async fn post(
         PostStatus::HiddenByUser => "Hidden by user.".into(),
         _ => match post.content {
             PostContent::Markdown(ref content) => content.to_string(),
-            PostContent::FeedItemId(_) => "This post is auto-generated from an RSS feed".into(),
+            PostContent::FeedItemId(_) => "This post is auto-generated from RSS feed".into(),
         },
     };
     let content = match post.status {

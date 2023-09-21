@@ -279,7 +279,7 @@ impl PostContent {
                             <p>Info</p>
                         </div>
                         <div class="message-body">
-                        This post is auto-generated from an RSS feed <b>{}</b>. Origin: <a href="{}">{}</a>
+                        This post is auto-generated from RSS feed <b>{}</b>. Source: <a href="{}">{}</a>
                         </div>
                     </article>
                     "#,
