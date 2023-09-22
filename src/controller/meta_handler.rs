@@ -63,7 +63,7 @@ impl IntoResponse for AppError {
         };
 
         error!("{}, {}", status, self);
-        let site_config = SiteConfig::default();
+        let site_config = SiteConfig::get(&DB).unwrap_or_default();
         let page_data = PageData::new("Error", &site_config, None, false);
         let page_error = PageError {
             page_data,
