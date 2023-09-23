@@ -747,8 +747,7 @@ pub(crate) async fn user_setting_post(
     }
 
     if user.username != input.username {
-        let old_username_key = input.username.replace(' ', "_").to_lowercase();
-        username_tree.remove(old_username_key)?;
+        username_tree.remove(user.username)?;
         username_tree.insert(username_key, u32_to_ivec(user.uid))?;
     }
 
