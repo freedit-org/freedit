@@ -26,7 +26,7 @@ use super::{
     Claim, Comment, Feed, FormPost, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{error::AppError, DB};
-use askama::Template;
+use askama::{filters::escape, Html, Template};
 use axum::{
     extract::{Path, Query, TypedHeader},
     headers::Cookie,
@@ -1470,7 +1470,7 @@ pub(crate) async fn post(
         PostStatus::HiddenByMod => "Hidden by mod.".into(),
         PostStatus::HiddenByUser => "Hidden by user.".into(),
         _ => match post.content {
-            PostContent::Markdown(ref content) => content.to_string(),
+            PostContent::Markdown(ref content) => escape(Html, content).unwrap().to_string(),
             PostContent::FeedItemId(_) => "This post is auto-generated from RSS feed".into(),
         },
     };

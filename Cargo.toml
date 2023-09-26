@@ -12,7 +12,7 @@ axum = { version = "0.6", features = ["http2", "headers", "form", "query", "mult
 axum-server = { version = "0.5", features = ["tls-rustls"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.3"
-cached = { version = "0.45.0", default-features = false, features = ["proc_macro"] }
+cached = { version = "0.46.0", default-features = false, features = ["proc_macro", "ahash"] }
 captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
@@ -22,7 +22,7 @@ image = { version = "0.24", default-features = false, features = ["jpeg", "png",
 img-parts = "0.3.0"
 jieba-rs = "0.6.8"
 latex2mathml = "0.2.3"
-mozjpeg = "0.10.3"
+mozjpeg = "0.10.4"
 nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.9", features = ["simd"], default-features = false }
