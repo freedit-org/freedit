@@ -737,7 +737,8 @@ pub(crate) async fn user_setting_post(
         return Err(AppError::NameInvalid);
     }
 
-    let username_key = input.username.replace(' ', "_").to_lowercase();
+    let username = input.username.trim();
+    let username_key = username.replace(' ', "_").to_lowercase();
 
     let username_tree = DB.open_tree("usernames")?;
     if let Some(v) = username_tree.get(&username_key)? {
@@ -746,12 +747,12 @@ pub(crate) async fn user_setting_post(
         }
     }
 
-    if user.username != input.username {
+    if user.username != username {
         username_tree.remove(user.username)?;
         username_tree.insert(username_key, u32_to_ivec(user.uid))?;
     }
 
-    user.username = input.username;
+    user.username = username.to_owned();
     user.about = input.about;
     user.url = input.url;
     DB.open_tree("home_pages")?
@@ -931,8 +932,9 @@ pub(crate) async fn signup_post(
         return Err(AppError::CaptchaError);
     }
 
+    let username = input.username.trim();
+    let username_key = username.replace(' ', "_").to_lowercase();
     let usernames_tree = DB.open_tree("usernames")?;
-    let username_key = input.username.replace(' ', "_").to_lowercase();
     if usernames_tree.contains_key(&username_key)? {
         return Err(AppError::NameExists);
     }
@@ -953,7 +955,7 @@ pub(crate) async fn signup_post(
     };
     let user = User {
         uid,
-        username: input.username,
+        username: username.to_owned(),
         password_hash,
         created_at,
         role: role as u8,
