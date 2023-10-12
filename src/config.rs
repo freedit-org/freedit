@@ -19,6 +19,8 @@ pub struct Config {
     pub(crate) tantivy_path: String,
     pub(crate) serve_dir: Vec<(String, String)>,
     pub(crate) proxy: String,
+    pub(crate) seo_description: String,
+    pub(crate) seo_keywords: String,
     cert: String,
     key: String,
 }
@@ -72,6 +74,8 @@ impl Default for Config {
             proxy: "".into(),
             cert: "".into(),
             key: "".into(),
+            seo_description: "The safest and lightest forum, powered by rust.".into(),
+            seo_keywords: "forum, bbs, reddit, social, community".into(),
         }
     }
 }
