@@ -19,7 +19,7 @@ use tantivy::{
     tokenizer::{Token, TokenStream, Tokenizer},
     Document, Index, IndexReader, IndexWriter, Term,
 };
-use tracing::info;
+use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
@@ -86,9 +86,10 @@ pub(crate) async fn search(
 
     let mut out_searchs = Vec::with_capacity(20);
     if !search.is_empty() {
-        let Ok(query) = SEARCHER.query_parser.parse_query(&query) else {
-            return Err(AppError::Custom("Please remove special chars".to_owned()));
-        };
+        let (query, err) = SEARCHER.query_parser.parse_query_lenient(&query);
+        if !err.is_empty() {
+            warn!("search {search} contains err: {err:?}");
+        }
 
         let searcher = SEARCHER.reader.searcher();
         let top_docs: Vec<(_, _)> = searcher
