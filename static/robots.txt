@@ -1,0 +1,25 @@
+User-agent: *
+Disallow: /admin
+Disallow: /mod
+Disallow: /preview
+
+User-agent: MJ12Bot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: AspiegelBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SEMrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MauiBot
+Disallow: /

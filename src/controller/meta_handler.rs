@@ -156,7 +156,7 @@ pub(crate) async fn style() -> (HeaderMap, &'static str) {
 }
 
 pub(crate) async fn robots() -> &'static str {
-    "User-agent: *\nDisallow: /search"
+    include_str!("../../static/robots.txt")
 }
 
 pub async fn shutdown_signal() {

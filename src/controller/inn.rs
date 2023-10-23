@@ -207,7 +207,7 @@ pub(crate) async fn mod_inn_post(
         // remove the old inn name
         if input.inn_name != inn.inn_name {
             let old_inn_name_key = inn.inn_name.replace(' ', "_").to_lowercase();
-            inn_names_tree.remove(&old_inn_name_key)?;
+            inn_names_tree.remove(old_inn_name_key)?;
         }
 
         // remove the old inn topics
