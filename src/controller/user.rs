@@ -583,7 +583,7 @@ pub(crate) async fn role_post(
 /// Form data: `/user/setting`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormUser {
-    #[validate(length(min = 1, max = 64))]
+    #[validate(length(min = 1, max = 32))]
     username: String,
     #[validate(length(max = 1024))]
     about: String,
@@ -860,7 +860,7 @@ pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoRespo
 /// Form data: `/signup`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormSignup {
-    #[validate(length(min = 1, max = 64))]
+    #[validate(length(min = 1, max = 32))]
     username: String,
     #[validate(must_match(other = "password2", message = "Two passwords do not match"))]
     password: String,
