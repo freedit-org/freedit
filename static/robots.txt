@@ -2,6 +2,7 @@ User-agent: *
 Disallow: /admin
 Disallow: /mod
 Disallow: /preview
+Disallow: /gallery
 
 User-agent: MJ12Bot
 Disallow: /
