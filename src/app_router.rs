@@ -32,7 +32,7 @@ use tower_http::{
     services::ServeDir,
     trace::{DefaultMakeSpan, TraceLayer},
 };
-use tracing::{info, Level};
+use tracing::Level;
 
 const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
 
@@ -106,18 +106,12 @@ pub async fn router() -> Router {
         .route("/feed/read/:item_id", get(feed_read))
         .route("/search", get(search));
 
-    let mut router_static = Router::new()
+    let router_static = Router::new()
         .route("/static/style.css", get(style))
         .route("/robots.txt", get(robots))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
         .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path));
-
-    for (path, dir) in &CONFIG.serve_dir {
-        let path = format!("/{path}");
-        info!("serve dir: {} -> {}", path, dir);
-        router_static = router_static.nest_service(&path, ServeDir::new(dir));
-    }
 
     let app = router_static.merge(router_db);
     app.layer(middleware_stack).fallback(handler_404)

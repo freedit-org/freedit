@@ -16,8 +16,6 @@
 
     <meta property="og:title" content="{{ page_data.title }}">
     <meta property="og:site_name" content="{{ page_data.site_name }}">
-    <meta name="keywords" content="{{ page_data.seo_keywords }}">
-    <meta name="description" content="{{ page_data.seo_description }}">
 
     {% block og %}
     {% endblock %}
@@ -144,9 +142,9 @@
 
     <footer class="footer p-5">
         <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
-        <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{page_data.version}}">v{{page_data.version}}</a></small></p>
-        <p><small>sha256: {{page_data.sha256|truncate(10)}}</small></p>
-        <p><small>commit: <a href="https://github.com/freedit-org/freedit/commit/{{page_data.git_commit}}">{{page_data.git_commit}}</a></small></p>
+        <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{ crate::VERSION }}">v{{ crate::VERSION }}</a></small></p>
+        <p><small>sha256: {{ crate::CURRENT_SHA256.as_str()|truncate(10) }}</small></p>
+        <p><small>commit: <a href="https://github.com/freedit-org/freedit/commit/{{ crate::GIT_COMMIT }}">{{ crate::GIT_COMMIT }}</a></small></p>
     </footer>
 </body>
 

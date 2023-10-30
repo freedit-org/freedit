@@ -17,10 +17,7 @@ pub struct Config {
     pub(crate) inn_icons_path: String,
     pub(crate) upload_path: String,
     pub(crate) tantivy_path: String,
-    pub(crate) serve_dir: Vec<(String, String)>,
     pub(crate) proxy: String,
-    pub(crate) seo_description: String,
-    pub(crate) seo_keywords: String,
     cert: String,
     key: String,
 }
@@ -70,12 +67,9 @@ impl Default for Config {
             inn_icons_path: "static/imgs/inn_icons".into(),
             upload_path: "static/imgs/upload".into(),
             tantivy_path: "tantivy".into(),
-            serve_dir: vec![],
             proxy: "".into(),
             cert: "".into(),
             key: "".into(),
-            seo_description: "The safest and lightest forum, powered by rust.".into(),
-            seo_keywords: "forum, bbs, reddit, social, community".into(),
         }
     }
 }

@@ -1,5 +1,5 @@
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
-use crate::{config::CONFIG, error::AppError, CURRENT_SHA256, DB, GIT_COMMIT, VERSION};
+use crate::{error::AppError, DB};
 use askama::Template;
 use axum::{
     async_trait,
@@ -191,11 +191,6 @@ pub(super) struct PageData<'a> {
     pub(super) site_description: String,
     pub(super) claim: Option<Claim>,
     pub(super) has_unread: bool,
-    pub(super) sha256: &'a str,
-    pub(super) version: &'a str,
-    pub(super) git_commit: &'a str,
-    pub(super) seo_description: &'a str,
-    pub(super) seo_keywords: &'a str,
 }
 
 impl<'a> PageData<'a> {
@@ -212,11 +207,6 @@ impl<'a> PageData<'a> {
             site_description,
             claim,
             has_unread,
-            sha256: &CURRENT_SHA256,
-            version: VERSION,
-            git_commit: GIT_COMMIT,
-            seo_description: &CONFIG.seo_description,
-            seo_keywords: &CONFIG.seo_keywords,
         }
     }
 }
