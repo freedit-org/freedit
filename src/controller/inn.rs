@@ -1532,11 +1532,11 @@ pub(crate) async fn post(
     let mut out_comments = Vec::with_capacity(n);
     let max_id = get_count(&DB, "post_comments_count", u32_to_ivec(pid))?;
     if max_id > 0 {
-        let (start, end) = get_range(max_id, &page_params);
+        let (start, _) = get_range(max_id, &page_params);
         let post_comments_tree = DB.open_tree("post_comments")?;
         let comment_upvotes_tree = DB.open_tree("comment_upvotes")?;
         let comment_downvotes_tree = DB.open_tree("comment_downvotes")?;
-        for i in start..=end {
+        for i in start..=max_id {
             let k = [&u32_to_ivec(pid), &u32_to_ivec(i as u32)].concat();
             let v = &post_comments_tree.get(k)?;
             if let Some(v) = v {
@@ -1577,6 +1577,9 @@ pub(crate) async fn post(
                     is_hidden: comment.is_hidden,
                 };
                 out_comments.push(out_comment);
+                if out_comments.len() >= n {
+                    break;
+                }
             }
         }
         if is_desc {

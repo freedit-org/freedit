@@ -254,6 +254,7 @@ pub(crate) async fn solo(
     let out_solo =
         OutSolo::get(&DB, sid, claim.as_ref().map(|c| c.uid))?.ok_or(AppError::NotFound)?;
 
+    // TODO: Reply solos should be paginated
     let mut reply_solos = Vec::with_capacity(out_solo.replies.len());
     for i in &out_solo.replies {
         if let Ok(Some(out_solo)) = OutSolo::get(&DB, *i, claim.as_ref().map(|c| c.uid)) {
