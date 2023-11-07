@@ -18,6 +18,7 @@ use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::Deserialize;
 use sled::Batch;
 use tokio::fs;
+use tracing::log::error;
 
 #[derive(Deserialize)]
 pub(crate) struct UploadPicParams {
@@ -167,7 +168,14 @@ pub(crate) async fn upload_post(
             break;
         }
 
-        let data = field.bytes().await.unwrap();
+        let data = match field.bytes().await {
+            Ok(data) => data,
+            Err(e) => {
+                error!("{:?}", e);
+                return Ok(e.into_response());
+            }
+        };
+
         let image_format_detected = image::guess_format(&data)?;
         let ext;
         let img_data = match image_format_detected {
