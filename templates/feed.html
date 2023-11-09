@@ -72,7 +72,7 @@
         {% match filter %} {% when Some with (val) %}
             <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}&active_folder={{active_folder}}&active_feed={{active_feed}}">Prev</a>
         {% else %}
-            <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            <a class="pagination-previous" href="/feed/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&active_folder={{active_folder}}&active_feed={{active_feed}}">Prev</a>
         {% endmatch %}
     {% endif %}
 
@@ -82,7 +82,7 @@
         {% match filter %} {% when Some with (val) %}
             <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}&active_folder={{active_folder}}&active_feed={{active_feed}}">Next</a>
         {% else %}
-            <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            <a class="pagination-next" href="/feed/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&active_folder={{active_folder}}&active_feed={{active_feed}}">Next</a>
         {% endmatch %}
     {% endif %}
 </nav>

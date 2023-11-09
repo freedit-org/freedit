@@ -218,14 +218,18 @@ pub(crate) async fn feed(
         let out_feed = OutFeed::new(&DB, feed.feed_id, feed.is_public)?;
         e.push(out_feed);
 
-        if let Some(active_feed) = params.active_feed {
-            if active_feed != feed.feed_id {
-                continue;
-            }
-            active_folder = Some(feed.folder)
-        } else if let Some(ref active_folder) = active_folder {
+        if let Some(ref active_folder) = active_folder {
             if active_folder != &feed.folder && !active_folder.is_empty() {
                 continue;
+            }
+        }
+
+        if let Some(active_feed) = params.active_feed {
+            if active_feed != 0 {
+                if active_feed != feed.feed_id {
+                    continue;
+                }
+                active_folder = Some(feed.folder)
             }
         }
 
