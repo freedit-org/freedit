@@ -2,15 +2,15 @@
     max-width: 350px;
 }
 
-nav,
-section,
-footer {
+section, footer {
     max-width: 1100px;
     margin: 0 auto;
 }
 
 nav {
     height: 48px;
+    max-width: 1076px;
+    margin: 0 auto;
 }
 
 #notification-indicator {
@@ -131,3 +131,4 @@ details summary {
     text-decoration: none;
     color: rgba(62, 212, 70, 0.6);
 }
+
