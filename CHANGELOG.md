@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2-rc.5] - 2023-11-9
+
+- fixed <https://freedit.eu/post/1/171>
+- fixed <https://freedit.eu/post/1/172>
+- fixed feed pagination bug
+
 ## [0.6.2-rc.4] - 2023-11-1
 
 - fixed <https://freedit.eu/post/1/167>
@@ -267,7 +273,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.4...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.5...HEAD
+[0.6.2-rc.5]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.4...v0.6.2-rc.5
 [0.6.2-rc.4]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.3...v0.6.2-rc.4
 [0.6.2-rc.3]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.2...v0.6.2-rc.3
 [0.6.2-rc.2]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.1...v0.6.2-rc.2
