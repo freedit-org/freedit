@@ -25,58 +25,67 @@
         <p><small>uid: {{user.uid}}</small></p>
     </figure>
     <div class="media-content">
-        <div class="content">
-            <h3>{{user.username}}</h3>
-            <p><small>Created: {{user.created_at}}</small></p>
-            <p>Url: <a href="{{user.url}}">{{user.url}}</a></p>
-            <p>About: {{user.about}}</p>
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div class="content">
+                        <p class="title">{{user.username}}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <a>
+                        <span class="icon is-large">
+                            <span class="icon">
+                                {% include "icons/mail.svg" %}
+                            </span>
+                        </span>
+                    </a>
+                {% match has_followed %} {% when Some with (true) %}
+                    <a href="/user/{{user.uid}}/follow">
+                        <span class="icon is-large">
+                            <span class="icon has-text-success">
+                                {% include "icons/user-xmark.svg" %}
+                            </span>
+                        </span>
+                    </a>
+                {% when Some with (false) %}
+                    <a href="/user/{{user.uid}}/follow">
+                        <span class="icon is-large">
+                            <span class="icon">
+                                {% include "icons/user-plus.svg" %}
+                            </span>
+                        </span>
+                    </a>
+                {% else %}
+                    {% match page_data.claim %}{% when Some with (val) %}
+                    {% if val.uid == user.uid %}
+                    <a href="/user/setting">
+                        <span class="icon is-large">
+                            <span class="icon">
+                                {% include "icons/setting.svg" %}
+                            </span>
+                        </span>
+                    </a>
+                    <a href="/signout">
+                        <span class="icon is-large">
+                            <span class="icon">
+                                {% include "icons/signout.svg" %}
+                            </span>
+                        </span>
+                    </a>
+                    {% endif %}
+                    {% else %}{% endmatch %}
+                {% endmatch %}
+                </div>
+            </div>
         </div>
-    </div>
-
-    <div class="media-right">
-        <a>
-            <span class="icon is-large">
-                <span class="icon">
-                    {% include "icons/mail.svg" %}
-                </span>
-            </span>
-        </a>
-    {% match has_followed %} {% when Some with (true) %}
-        <a href="/user/{{user.uid}}/follow">
-            <span class="icon is-large">
-                <span class="icon has-text-success">
-                    {% include "icons/user-xmark.svg" %}
-                </span>
-            </span>
-        </a>
-    {% when Some with (false) %}
-        <a href="/user/{{user.uid}}/follow">
-            <span class="icon is-large">
-                <span class="icon">
-                    {% include "icons/user-plus.svg" %}
-                </span>
-            </span>
-        </a>
-    {% else %}
-        {% match page_data.claim %}{% when Some with (val) %}
-        {% if val.uid == user.uid %}
-        <a href="/user/setting">
-            <span class="icon is-large">
-                <span class="icon">
-                    {% include "icons/setting.svg" %}
-                </span>
-            </span>
-        </a>
-        <a href="/signout">
-            <span class="icon is-large">
-                <span class="icon">
-                    {% include "icons/signout.svg" %}
-                </span>
-            </span>
-        </a>
-        {% endif %}
-        {% else %}{% endmatch %}
-    {% endmatch %}
+        <div class="content">
+            <p><b>Created</b>: {{user.created_at}}</p>
+            <p><b>Url</b>: <a href="{{user.url}}">{{user.url}}</a></p>
+            <p><b>About</b>: {{user.about}}</p>
+        </div>
     </div>
 </article>
 
