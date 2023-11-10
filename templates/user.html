@@ -34,10 +34,29 @@
     </div>
 
     <div class="media-right">
+        <a>
+            <span class="icon is-large">
+                <span class="icon">
+                    {% include "icons/mail.svg" %}
+                </span>
+            </span>
+        </a>
     {% match has_followed %} {% when Some with (true) %}
-        <a href="/user/{{user.uid}}/follow"><button class="button is-small is-rounded">Unfollow</button></a>
+        <a href="/user/{{user.uid}}/follow">
+            <span class="icon is-large">
+                <span class="icon has-text-success">
+                    {% include "icons/user-xmark.svg" %}
+                </span>
+            </span>
+        </a>
     {% when Some with (false) %}
-        <a href="/user/{{user.uid}}/follow"><button class="button is-success is-small is-rounded">Follow</button></a>
+        <a href="/user/{{user.uid}}/follow">
+            <span class="icon is-large">
+                <span class="icon">
+                    {% include "icons/user-plus.svg" %}
+                </span>
+            </span>
+        </a>
     {% else %}
         {% match page_data.claim %}{% when Some with (val) %}
         {% if val.uid == user.uid %}
