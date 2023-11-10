@@ -94,12 +94,12 @@
     </header>
 
     {% block section %}
-    <section class="section px-3">
-        <div class="columns">
-            <main class="column is-three-quarters">
+    <section class="section">
+        <div class="columns mx-0">
+            <main class="column is-three-quarters pl-0">
                 {% block content %}{% endblock %}
             </main>
-            <aside class="column is-one-quarter">
+            <aside class="column is-one-quarter pr-0">
                 {% block aside %}
                     <div class="box">
                         <form id="search" action="/search" method="get">
