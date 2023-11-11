@@ -190,7 +190,6 @@ pub(crate) async fn feed(
 
     let mut map = BTreeMap::new();
     let mut feed_ids = vec![];
-    let mut item_ids = vec![];
 
     let mut folders = vec![];
     let mut feed_id_folder = HashMap::new();
@@ -236,18 +235,18 @@ pub(crate) async fn feed(
         feed_ids.push(feed.feed_id);
     }
 
+    let mut item_ids = vec![];
     for id in feed_ids {
         let mut ids = get_item_ids_and_ts(&DB, "feed_items", id)?;
         item_ids.append(&mut ids);
     }
 
-    let mut star_ids = HashSet::new();
     let mut read_ids = HashSet::new();
+    let mut star_ids = vec![];
+    let mut star_ids_set = HashSet::new();
     if let Some(ref claim) = claim {
-        star_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?
-            .into_iter()
-            .map(|i| i.0)
-            .collect();
+        star_ids = get_item_ids_and_ts(&DB, "star", claim.uid)?;
+        star_ids_set = star_ids.iter().map(|(i, _)| *i).collect();
 
         read_ids = get_ids_by_prefix(&DB, "read", u32_to_ivec(claim.uid), None)?
             .into_iter()
@@ -256,7 +255,11 @@ pub(crate) async fn feed(
 
     if let Some(ref filter) = &params.filter {
         if filter == "star" {
-            item_ids.retain(|(i, _)| star_ids.contains(i));
+            if active_folder.is_some() {
+                item_ids.retain(|(i, _)| star_ids_set.contains(i));
+            } else {
+                item_ids = star_ids;
+            }
         } else if filter == "unread" {
             item_ids.retain(|(i, _)| !read_ids.contains(i));
         }
@@ -280,9 +283,13 @@ pub(crate) async fn feed(
             is_read = true;
         }
 
-        let is_starred = star_ids.contains(&i);
+        let is_starred = star_ids_set.contains(&i);
         let feed_id = get_feed_id(i)?;
-        let folder = feed_id_folder.get(&feed_id).unwrap().to_owned();
+        let folder = if let Some(r) = feed_id_folder.get(&feed_id) {
+            r.to_owned()
+        } else {
+            "".to_owned()
+        };
         let out_item = OutItem {
             item_id: i,
             title: item.title,
