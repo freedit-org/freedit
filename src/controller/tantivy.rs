@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use askama::Template;
 use axum::{extract::Query, headers::Cookie, response::IntoResponse, TypedHeader};
 use bincode::config::standard;
+use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};
 use once_cell::sync::Lazy;
 use rust_stemmers::{Algorithm, Stemmer};
@@ -84,7 +85,7 @@ pub(crate) async fn search(
         }
     };
 
-    let mut ids = HashSet::with_capacity(20);
+    let mut ids = IndexSet::with_capacity(20);
     if !search.is_empty() {
         let (query, err) = SEARCHER.query_parser.parse_query_lenient(&query);
         if !err.is_empty() {

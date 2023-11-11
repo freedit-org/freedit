@@ -20,6 +20,7 @@ fast2s = "0.3"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
+indexmap = "2"
 jieba-rs = "0.6.8"
 latex2mathml = "0.2.3"
 mozjpeg = "0.10.4"
