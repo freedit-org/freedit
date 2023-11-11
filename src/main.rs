@@ -79,11 +79,11 @@ async fn main() -> Result<(), AppError> {
             let id = String::from_utf8_lossy(&k);
 
             if op_type == "delete" || op_type == "update" {
-                tan.del_doc(&id).unwrap();
+                let _ = tan.del_doc(&id, &DB);
             }
 
             if op_type == "update" || op_type == "add" {
-                tan.add_doc(id.into(), &DB).unwrap();
+                tan.add_doc(&id, &DB).unwrap();
             }
 
             tan.commit().unwrap();

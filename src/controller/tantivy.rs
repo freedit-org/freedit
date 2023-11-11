@@ -99,8 +99,9 @@ pub(crate) async fn search(
         for (_score, doc_address) in top_docs {
             let doc = searcher.doc(doc_address)?;
             let id = doc.get_first(FIELDS.id).unwrap().as_text().unwrap();
-            let out = OutSearch::get(id, &DB)?;
-            out_searchs.push(out);
+            if let Some(out) = OutSearch::get(id, &DB) {
+                out_searchs.push(out);
+            }
         }
     }
 
@@ -157,14 +158,22 @@ impl Tan {
     /// id should be `post123` `comt45/1` `solo123` or `item123`
     ///
     /// It just add doc to tantivy, not commit.
-    pub fn add_doc(&mut self, id: String, db: &Db) -> Result<(), AppError> {
-        let doc = extract_id(&id, db)?;
+    pub fn add_doc(&mut self, id: &str, db: &Db) -> Result<(), AppError> {
+        let doc = extract_id(id, db)?;
         self.writer.add_document(doc)?;
 
         Ok(())
     }
 
-    pub fn del_doc(&mut self, id: &str) -> tantivy::Result<()> {
+    pub fn del_doc(&mut self, id: &str, db: &Db) -> Result<(), AppError> {
+        let doc = extract_id(id, db)?;
+        for i in doc {
+            let field = i.field();
+            let value = i.value();
+            self.writer
+                .delete_term(Term::from_field_text(field, value.as_text().unwrap()));
+        }
+
         self.writer
             .delete_term(Term::from_field_text(FIELDS.id, id));
         Ok(())
@@ -222,7 +231,7 @@ impl Tan {
         for (idx, i) in db.open_tree("tan")?.into_iter().enumerate() {
             let (k, _) = i?;
             let id = String::from_utf8_lossy(&k);
-            self.add_doc(id.into(), db)?;
+            self.add_doc(&id, db)?;
             if idx % 500 == 0 {
                 self.commit()?;
             }
@@ -318,31 +327,30 @@ fn extract_id(id: &str, db: &Db) -> Result<Document, AppError> {
 }
 
 impl OutSearch {
-    fn get(id: &str, db: &Db) -> Result<Self, AppError> {
+    fn get(id: &str, db: &Db) -> Option<Self> {
         let ctype = &id[0..4];
         let ids: Vec<_> = id[4..].split('/').collect();
         let id1: u32 = ids[0].parse().unwrap();
-        let out = match ctype {
+
+        match ctype {
             "post" => {
-                let post: Post = get_one(db, "posts", id1)?;
-                Self {
+                let post: Post = get_one(db, "posts", id1).ok()?;
+                Some(Self {
                     url: format!("/post/{}/{}", post.iid, post.pid),
                     title: post.title,
                     date: ts_to_date(post.created_at),
                     uid: Some(post.uid),
                     ctype: "post".to_string(),
-                }
+                })
             }
             "comt" => {
                 let id2: u32 = ids[1].parse().unwrap();
                 let k = [&u32_to_ivec(id1), &u32_to_ivec(id2)].concat();
-                let v = db
-                    .open_tree("post_comments")?
-                    .get(k)?
-                    .ok_or(AppError::NotFound)?;
-                let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-                let post: Post = get_one(db, "posts", id1)?;
-                Self {
+                let v = db.open_tree("post_comments").ok()?.get(k).ok()??;
+                let (comment, _): (Comment, usize) =
+                    bincode::decode_from_slice(&v, standard()).ok()?;
+                let post: Post = get_one(db, "posts", id1).ok()?;
+                Some(Self {
                     url: format!(
                         "/post/{}/{}?anchor={}&is_desc=false#{}",
                         post.iid,
@@ -354,32 +362,30 @@ impl OutSearch {
                     date: ts_to_date(comment.created_at),
                     uid: Some(comment.uid),
                     ctype: "comment".to_string(),
-                }
+                })
             }
             "solo" => {
-                let solo: Solo = get_one(db, "solos", id1)?;
-                Self {
+                let solo: Solo = get_one(db, "solos", id1).ok()?;
+                Some(Self {
                     url: format!("/solo/{}", solo.sid),
                     title: solo.content,
                     date: ts_to_date(solo.created_at),
                     uid: Some(solo.uid),
                     ctype: "solo".to_string(),
-                }
+                })
             }
             "item" => {
-                let item: Item = get_one(db, "items", id1)?;
-                Self {
+                let item: Item = get_one(db, "items", id1).ok()?;
+                Some(Self {
                     url: format!("/feed/read/{}", id1),
                     title: item.title,
                     date: ts_to_date(item.updated),
                     uid: None,
                     ctype: "item".to_string(),
-                }
+                })
             }
             _ => unreachable!(),
-        };
-
-        Ok(out)
+        }
     }
 }
 
