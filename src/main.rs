@@ -67,18 +67,12 @@ async fn main() -> Result<(), AppError> {
         let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
         while let Some(event) = (&mut subscriber).await {
             let (k, op_type) = match event {
-                sled::Event::Insert { key, value } => {
-                    if value.len() == 1 {
-                        (key, "update")
-                    } else {
-                        (key, "add")
-                    }
-                }
+                sled::Event::Insert { key, value: _ } => (key, "add"),
                 sled::Event::Remove { key } => (key, "delete"),
             };
             let id = String::from_utf8_lossy(&k);
 
-            if op_type == "update" || op_type == "add" {
+            if op_type == "add" {
                 tan.add_doc(&id, &DB).unwrap();
             }
 

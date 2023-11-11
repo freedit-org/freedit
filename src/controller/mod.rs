@@ -15,7 +15,7 @@
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
 //! | "home_pages"     | `uid`                | `u8`             |
-//! | "tan"            | `ctype#id`           | `&[]`or &[0]     |
+//! | "tan"            | `ctype#id`           | `&[]`            |
 //!
 //! ### notification
 //! | tree            | key                   | value             |

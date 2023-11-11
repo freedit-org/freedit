@@ -723,9 +723,7 @@ pub(crate) async fn edit_post_post(
     claim.update_last_write(&DB)?;
 
     if inn.inn_type.as_str() != "Private" {
-        let is_update: &[u8] = if old_pid == 0 { &[] } else { &[0] };
-        DB.open_tree("tan")?
-            .insert(format!("post{}", pid), is_update)?;
+        DB.open_tree("tan")?.insert(format!("post{}", pid), &[])?;
     }
 
     let target = format!("/post/{iid}/{pid}");

@@ -84,7 +84,7 @@ pub(crate) async fn search(
         }
     };
 
-    let mut out_searchs = Vec::with_capacity(20);
+    let mut ids = HashSet::with_capacity(20);
     if !search.is_empty() {
         let (query, err) = SEARCHER.query_parser.parse_query_lenient(&query);
         if !err.is_empty() {
@@ -99,9 +99,14 @@ pub(crate) async fn search(
         for (_score, doc_address) in top_docs {
             let doc = searcher.doc(doc_address)?;
             let id = doc.get_first(FIELDS.id).unwrap().as_text().unwrap();
-            if let Some(out) = OutSearch::get(id, &DB) {
-                out_searchs.push(out);
-            }
+            ids.insert(id.to_owned());
+        }
+    }
+
+    let mut out_searchs = Vec::with_capacity(20);
+    for id in ids {
+        if let Some(out) = OutSearch::get(&id, &DB) {
+            out_searchs.push(out);
         }
     }
 
