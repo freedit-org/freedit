@@ -17,7 +17,7 @@ use tantivy::{
         INDEXED, STORED, STRING,
     },
     tokenizer::{Token, TokenStream, Tokenizer},
-    Document, Index, IndexReader, IndexWriter, Term,
+    Document, Index, IndexReader, IndexWriter,
 };
 use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
@@ -162,20 +162,6 @@ impl Tan {
         let doc = extract_id(id, db)?;
         self.writer.add_document(doc)?;
 
-        Ok(())
-    }
-
-    pub fn del_doc(&mut self, id: &str, db: &Db) -> Result<(), AppError> {
-        let doc = extract_id(id, db)?;
-        for i in doc {
-            let field = i.field();
-            let value = i.value();
-            self.writer
-                .delete_term(Term::from_field_text(field, value.as_text().unwrap()));
-        }
-
-        self.writer
-            .delete_term(Term::from_field_text(FIELDS.id, id));
         Ok(())
     }
 
