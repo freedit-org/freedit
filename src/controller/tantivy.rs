@@ -181,22 +181,28 @@ impl Tan {
         tan_tree.clear()?;
 
         let mut batch = Batch::default();
-        for i in &db.open_tree("posts")? {
-            let (_, v) = i?;
-            let (post, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
-            if post.status == PostStatus::Normal {
-                batch.insert(format!("post{}", post.pid).as_bytes(), &[]);
-            }
-        }
 
-        for i in &db.open_tree("post_comments")? {
-            let (_, v) = i?;
-            let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-            if !comment.is_hidden {
-                batch.insert(
-                    format!("comt{}/{}", comment.pid, comment.cid).as_bytes(),
-                    &[],
-                );
+        for i in &db.open_tree("user_posts")? {
+            let (k, v) = i?;
+            let pid = u8_slice_to_u32(&k[4..8]);
+            let visibility = u8_slice_to_u32(&v[4..8]);
+            if visibility == 0 {
+                let post: Post = get_one(db, "posts", pid)?;
+                if post.status != PostStatus::HiddenByMod && post.status != PostStatus::HiddenByUser
+                {
+                    batch.insert(format!("post{}", post.pid).as_bytes(), &[]);
+                    for i in db.open_tree("post_comments")?.scan_prefix(&k[4..8]) {
+                        let (_, v) = i?;
+                        let (comment, _): (Comment, usize) =
+                            bincode::decode_from_slice(&v, standard())?;
+                        if !comment.is_hidden {
+                            batch.insert(
+                                format!("comt{}/{}", comment.pid, comment.cid).as_bytes(),
+                                &[],
+                            );
+                        }
+                    }
+                }
             }
         }
 
