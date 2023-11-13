@@ -18,7 +18,7 @@ use super::{
         set_one_with_key, u32_to_ivec, u8_slice_to_u32, IterType,
     },
     feed::{inn_feed_to_post, update},
-    fmt::{md2html, ts_to_date},
+    fmt::{clean_html, md2html, ts_to_date},
     incr_id,
     meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
@@ -142,11 +142,12 @@ pub(crate) async fn mod_inn_post(
     Path(mut iid): Path<u32>,
     ValidatedForm(input): ValidatedForm<FormInn>,
 ) -> Result<impl IntoResponse, AppError> {
-    if !is_valid_name(&input.inn_name) {
+    let inn_name = clean_html(&input.inn_name);
+    if !is_valid_name(&inn_name) {
         return Err(AppError::NameInvalid);
     }
 
-    let inn_name_key = input.inn_name.replace(' ', "_").to_lowercase();
+    let inn_name_key = inn_name.replace(' ', "_").to_lowercase();
 
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
@@ -166,6 +167,7 @@ pub(crate) async fn mod_inn_post(
     let mut topics: BTreeSet<String> = input
         .topics
         .split('#')
+        .map(clean_html)
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
         .collect();
@@ -209,9 +211,15 @@ pub(crate) async fn mod_inn_post(
         if inn.inn_type.as_str() != "Private" && input.inn_type == "Private" {
             return Err(AppError::Unauthorized);
         }
+        if inn.inn_type.as_str() != "Private"
+            && input.inn_type != "Public"
+            && input.inn_type != "Apply"
+        {
+            return Err(AppError::Unauthorized);
+        }
 
         // remove the old inn name
-        if input.inn_name != inn.inn_name {
+        if inn_name != inn.inn_name {
             let old_inn_name_key = inn.inn_name.replace(' ', "_").to_lowercase();
             inn_names_tree.remove(old_inn_name_key)?;
         }
@@ -243,9 +251,9 @@ pub(crate) async fn mod_inn_post(
 
     let inn = Inn {
         iid,
-        inn_name: input.inn_name,
-        about: input.about,
-        description: input.description,
+        inn_name,
+        about: clean_html(&input.about),
+        description: clean_html(&input.description),
         topics,
         inn_type: input.inn_type,
         early_birds: input.early_birds,
@@ -287,7 +295,7 @@ pub(crate) async fn mod_feed_post(
         return Err(AppError::Custom("You can not feed yourself".into()));
     }
 
-    let (feed, _) = update(&input.url, &DB, 5).await?;
+    let (feed, _) = update(&clean_html(&input.url), &DB, 5).await?;
 
     let feed_links_tree = DB.open_tree("feed_links")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
@@ -626,6 +634,7 @@ pub(crate) async fn edit_post_post(
         let tags_set: BTreeSet<String> = input
             .tags
             .split('#')
+            .map(clean_html)
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
@@ -700,9 +709,9 @@ pub(crate) async fn edit_post_post(
         pid,
         uid: claim.uid,
         iid,
-        title: input.title,
+        title: clean_html(&input.title),
         tags,
-        content: PostContent::Markdown(content),
+        content: PostContent::Markdown(clean_html(&content)),
         created_at,
         status: PostStatus::Normal,
     };

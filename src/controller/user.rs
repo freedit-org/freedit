@@ -5,7 +5,7 @@ use super::{
         generate_nanoid_ttl, get_count, get_count_by_prefix, get_id_by_name, get_range,
         is_valid_name, ivec_to_u32, set_one, set_one_with_key, IterType,
     },
-    fmt::ts_to_date,
+    fmt::{clean_html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, into_response,
     meta_handler::{PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, NtType},
@@ -733,11 +733,12 @@ pub(crate) async fn user_setting_post(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&DB, "users", claim.uid)?;
 
-    if !is_valid_name(&input.username) {
+    let username = clean_html(&input.username);
+    if !is_valid_name(&username) {
         return Err(AppError::NameInvalid);
     }
 
-    let username = input.username.trim();
+    let username = username.trim();
     let username_key = username.replace(' ', "_").to_lowercase();
 
     let username_tree = DB.open_tree("usernames")?;
@@ -753,8 +754,8 @@ pub(crate) async fn user_setting_post(
     }
 
     user.username = username.to_owned();
-    user.about = input.about;
-    user.url = input.url;
+    user.about = clean_html(&input.about);
+    user.url = clean_html(&input.url);
     DB.open_tree("home_pages")?
         .insert(u32_to_ivec(user.uid), &[input.home_page])?;
     set_one(&DB, "users", claim.uid, &user)?;
@@ -918,7 +919,8 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
 pub(crate) async fn signup_post(
     ValidatedForm(input): ValidatedForm<FormSignup>,
 ) -> Result<impl IntoResponse, AppError> {
-    if !is_valid_name(&input.username) {
+    let username = clean_html(&input.username);
+    if !is_valid_name(&username) {
         return Err(AppError::NameInvalid);
     }
 
@@ -932,7 +934,7 @@ pub(crate) async fn signup_post(
         return Err(AppError::CaptchaError);
     }
 
-    let username = input.username.trim();
+    let username = username.trim();
     let username_key = username.replace(' ', "_").to_lowercase();
     let usernames_tree = DB.open_tree("usernames")?;
     if usernames_tree.contains_key(&username_key)? {

@@ -1,6 +1,6 @@
 use super::{
     db_utils::{ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
-    fmt::ts_to_date,
+    fmt::{clean_html, ts_to_date},
     meta_handler::{into_response, PageData, ValidatedForm},
     user::Role,
     Claim, Feed, FormPost, Item, SiteConfig,
@@ -340,7 +340,14 @@ pub(crate) async fn admin_post(
         return Err(AppError::Unauthorized);
     }
 
-    set_one_with_key(&DB, "__sled__default", "site_config", &input)?;
+    let mut site_config = input;
+    site_config.site_name = clean_html(&site_config.site_name);
+    site_config.domain = clean_html(&site_config.domain);
+    site_config.description = clean_html(&site_config.description);
+    site_config.captcha_difficulty = clean_html(&site_config.captcha_difficulty);
+    site_config.captcha_name = clean_html(&site_config.captcha_name);
+
+    set_one_with_key(&DB, "__sled__default", "site_config", &site_config)?;
     Ok(Redirect::to("/admin"))
 }
 
