@@ -7,35 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.2-rc.7] - 2023-11-13
+## [0.6.2] - 2023-11-13
 
-- bug fixed
+***Highlight: important security update***
 
-## [0.6.2-rc.6] - 2023-11-10
+- Security update: some user input is not escaped, which may cause problems. Please update as soon as possible.
+- Privacy update: when reindexing, the private post had been indexed.
 
-- fixed <https://freedit.eu/post/1/175>
+### Fixed
 
-## [0.6.2-rc.5] - 2023-11-9
-
-- fixed <https://freedit.eu/post/1/171>
-- fixed <https://freedit.eu/post/1/172>
-- fixed feed pagination bug
-
-## [0.6.2-rc.4] - 2023-11-1
-
-- fixed <https://freedit.eu/post/1/167>
-
-## [0.6.2-rc.3] - 2023-10-30
-
-- fixed #163
-
-## [0.6.2-rc.2] - 2023-10-23
-
-- bug fixed
-
-## [0.6.2-rc.1] - 2023-10-12
-
-- bug fixed <https://freedit.eu/post/1/155>
+- `<meta property="og:description" content="...">` should be escaped #154
+- fix https://freedit.eu/post/1/155 name-spoofing 
+- update robots.txt <https://github.com/freedit-org/freedit/commit/b2b637b>
+- limit username to 32 chars <https://github.com/freedit-org/freedit/commit/8559933>
+- fix <https://freedit.eu/post/1/167>
+- fix <https://freedit.eu/post/1/171>
+- fix feed pagination error <https://github.com/freedit-org/freedit/commit/a113aad>
+- fix <https://freedit.eu/post/1/172>
+- fix layout overflow <https://github.com/freedit-org/freedit/commit/6d4d9b2>
+- fix <https://freedit.eu/post/1/175>
+- use search emoji <https://github.com/freedit-org/freedit/commit/3593b0f>
+- fix <https://freedit.eu/post/1/177>
+- fix <https://freedit.eu/post/1/176>
+- remove duplicate search result <https://github.com/freedit-org/freedit/commit/01675aa>
+- inn feed <https://github.com/freedit-org/freedit/commit/8a2b171>
 
 ## [0.6.1] - 2023-09-25
 
@@ -281,14 +276,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.7...HEAD
-[0.6.2-rc.7]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.6...v0.6.2-rc.7
-[0.6.2-rc.6]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.5...v0.6.2-rc.6
-[0.6.2-rc.5]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.4...v0.6.2-rc.5
-[0.6.2-rc.4]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.3...v0.6.2-rc.4
-[0.6.2-rc.3]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.2...v0.6.2-rc.3
-[0.6.2-rc.2]: https://github.com/freedit-org/freedit/compare/v0.6.2-rc.1...v0.6.2-rc.2
-[0.6.2-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.1...v0.6.2-rc.1
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/freedit-org/freedit/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/freedit-org/freedit/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/freedit-org/freedit/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/freedit-org/freedit/compare/v0.5.0...v0.5.1
