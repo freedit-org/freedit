@@ -13,6 +13,7 @@
 
 {% block og %}
     <meta property="og:description" content="{{ post.og_content|truncate(1000) }}">
+    <link rel="alternate" type="application/atom+xml" href="/inn/{{ post.iid }}/atom.xml" />
 {% endblock %}
 
 {% block content %}

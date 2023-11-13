@@ -7,7 +7,7 @@ license = "MIT"
 [dependencies]
 ammonia = "3"
 askama = { version = "0.12", default-features = false }
-atom_syndication = { version = "0.12", default-features = false }
+atom_syndication = "0.12"
 axum = { version = "0.6", features = ["http2", "headers", "form", "query", "multipart", "tokio"], default-features = false }
 axum-server = { version = "0.5", features = ["tls-rustls"] }
 basic-toml = "*"

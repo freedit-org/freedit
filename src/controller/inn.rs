@@ -27,15 +27,21 @@ use super::{
 };
 use crate::{error::AppError, DB};
 use askama::{filters::escape, Html, Template};
+use atom_syndication::{
+    CategoryBuilder, ContentBuilder, EntryBuilder, FeedBuilder, LinkBuilder, PersonBuilder, Text,
+    WriteConfig,
+};
 use axum::{
     extract::{Path, Query, TypedHeader},
     headers::Cookie,
+    http,
     response::{IntoResponse, Redirect},
     Form,
 };
 use bincode::config::standard;
 use cached::proc_macro::cached;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
@@ -1047,31 +1053,16 @@ fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
     Ok(users)
 }
 
-/// Page data: `inn_feed.html`
-#[derive(Template)]
-#[template(path = "inn_feed.html")]
-struct PageInnFeed {
-    title: String,
-    description: String,
-    link: String,
-    updated: String,
-    posts: Vec<FeedPost>,
-}
+static FEED_CONFIG: Lazy<WriteConfig> = Lazy::new(|| WriteConfig {
+    write_document_declaration: false,
+    indent_size: Some(2),
+});
 
-struct FeedPost {
-    pid: u32,
-    iid: u32,
-    username: String,
-    title: String,
-    created_at: String,
-    content: String,
-}
-
-/// `GET /inn/:iid/feed` inn page
+/// `GET /inn/:iid/atom.xml` inn page
 pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse, AppError> {
     let page_params = ParamsPage {
         anchor: 0,
-        n: 30,
+        n: 20,
         is_desc: true,
     };
 
@@ -1084,11 +1075,13 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
     let mut index = Vec::with_capacity(page_params.n);
     let title;
     let description;
-    let link = PathBuf::from(&site_config.domain)
+    let alternate_link = PathBuf::from(&site_config.domain)
         .join("inn")
         .join(iid.to_string())
         .display()
         .to_string();
+    let self_link = format!("{alternate_link}/atom.xml");
+    let mut categories = Vec::new();
 
     if iid == 0 {
         index = get_pids_all(&DB, &[], &page_params)?;
@@ -1097,43 +1090,74 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
     } else {
         let inn: Inn = get_one(&DB, "inns", iid)?;
         title = inn.inn_name;
-        description = md2html(&inn.description);
+        description = md2html(&inn.about);
 
         if inn.inn_type != "Private" {
             index = get_pids_by_iids(&DB, &[iid], &page_params)?;
         }
+
+        for i in &inn.topics {
+            categories.push(CategoryBuilder::default().term(i).build());
+        }
     }
 
-    let mut feed_posts = Vec::with_capacity(index.len());
-    let mut updated = Utc::now().to_rfc3339();
-    for (idx, i) in index.into_iter().enumerate() {
+    let mut entries = Vec::with_capacity(index.len());
+    for i in index.into_iter() {
         let post: Post = get_one(&DB, "posts", i)?;
         let user: User = get_one(&DB, "users", post.uid)?;
-        let date = ts_to_date(post.created_at);
-        if idx == 0 {
-            let naivedatetime = NaiveDateTime::from_timestamp_opt(post.created_at, 0).unwrap();
-            updated = DateTime::<Utc>::from_naive_utc_and_offset(naivedatetime, Utc).to_rfc3339();
-        }
-
-        let feed_post = FeedPost {
-            pid: post.pid,
-            iid: post.iid,
-            username: user.username,
-            title: post.title,
-            created_at: date,
-            content: post.content.to_html(&DB)?,
-        };
-        feed_posts.push(feed_post);
+        let content = post.content.to_html(&DB)?;
+        let post_link = format!("/post/{}/{}", post.iid, post.pid);
+        let dt: DateTime<Utc> = DateTime::<Utc>::from_timestamp(post.created_at, 0).unwrap();
+        let entry = EntryBuilder::default()
+            .authors(vec![PersonBuilder::default()
+                .name(user.username)
+                .uri(Some(format!("{}/user/{}", &site_config.domain, user.uid)))
+                .build()])
+            .id(&post_link)
+            .updated(dt)
+            .links(vec![LinkBuilder::default()
+                .rel("alternate".to_owned())
+                .mime_type(Some("text/html".to_owned()))
+                .href(post_link)
+                .build()])
+            .title(Text::plain(post.title))
+            .content(Some(ContentBuilder::default().value(Some(content)).build()))
+            .build();
+        entries.push(entry);
     }
 
-    let page_inn_feed = PageInnFeed {
-        title,
-        description,
-        link,
-        updated,
-        posts: feed_posts,
-    };
-    Ok(into_response(&page_inn_feed))
+    let mut feed = FeedBuilder::default()
+        .title(title)
+        .subtitle(Some(Text::plain(description)))
+        .id(&self_link)
+        .link(
+            LinkBuilder::default()
+                .rel("self".to_owned())
+                .mime_type(Some("application/atom+xml".to_owned()))
+                .href(self_link)
+                .build(),
+        )
+        .link(
+            LinkBuilder::default()
+                .rel("alternate".to_owned())
+                .mime_type(Some("text/html".to_owned()))
+                .href(alternate_link)
+                .build(),
+        )
+        .build();
+
+    feed.set_categories(categories);
+    feed.set_entries(entries);
+
+    let mut output = Vec::new();
+    feed.write_with_config(&mut output, *FEED_CONFIG).unwrap();
+
+    let headers = [(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("application/xml"),
+    )];
+
+    Ok((headers, output))
 }
 
 /// get [OutPostList] from pids

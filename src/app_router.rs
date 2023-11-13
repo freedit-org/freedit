@@ -78,7 +78,7 @@ pub async fn router() -> Router {
         .route("/inn/tag/:tag", get(tag))
         .route("/inn/:i", get(inn))
         .route("/inn/:i/join", get(inn_join))
-        .route("/inn/:i/feed", get(inn_feed))
+        .route("/inn/:i/atom.xml", get(inn_feed))
         .route("/post/:iid/:pid", get(post).post(comment_post))
         .route("/post/:iid/:pid/:cid/delete", get(comment_delete))
         .route("/post/:iid/:pid/:cid/hide", get(comment_hide))
