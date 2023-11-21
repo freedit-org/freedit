@@ -27,7 +27,7 @@
                 <button class="button is-small is-rounded">
                     <span>
                         {% match role %}{% when Some(10) %} Super
-                        {% when Some(8) %} Mod
+                        {% when Some(7) %} Mod
                         {% when Some(5) %} Fellow
                         {% when Some(4) %} Intern
                         {% when Some(3) %} Limited
@@ -46,7 +46,7 @@
                     <a href="/user/list?filter=inn&id={{info.0}}&role=3" class="dropdown-item">Limited</a>
                     <a href="/user/list?filter=inn&id={{info.0}}&role=4" class="dropdown-item">Intern</a>
                     <a href="/user/list?filter=inn&id={{info.0}}&role=5" class="dropdown-item">Fellow</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=8" class="dropdown-item">Mod</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=7" class="dropdown-item">Mod</a>
                     <a href="/user/list?filter=inn&id={{info.0}}&role=10" class="dropdown-item">Super</a>
                     <hr class="dropdown-divider">
                     <a href="/user/list?filter=inn&id={{info.0}}" class="dropdown-item">All</a>
@@ -115,7 +115,7 @@
                                     <option {% if user.role == 3 %} selected {% endif %}>Limited</option>
                                     <option {% if user.role == 4 %} selected {% endif %}>Intern</option>
                                     <option {% if user.role == 5 %} selected {% endif %}>Fellow</option>
-                                    <option {% if user.role == 8 %} selected {% endif %}>Mod</option>
+                                    <option {% if user.role == 7 %} selected {% endif %}>Mod</option>
                                     <option {% if user.role == 10 %} selected {% endif %}>Super</option>
                                 </select>
                             </span>

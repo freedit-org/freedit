@@ -540,7 +540,7 @@ pub(crate) async fn role_post(
                     DB.open_tree("user_inns")?.remove(&user_inns_k)?;
                 }
 
-                if inn_role >= 8 {
+                if inn_role >= 7 {
                     DB.open_tree("mod_inns")?.insert(&user_inns_k, &[])?;
                 } else {
                     DB.open_tree("mod_inns")?.remove(&user_inns_k)?;
