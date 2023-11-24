@@ -58,13 +58,19 @@ pub(crate) async fn upload_pic_post(
     };
 
     if let Some(field) = multipart.next_field().await.unwrap() {
-        let data = field.bytes().await.unwrap();
+        let data = match field.bytes().await {
+            Ok(data) => data,
+            Err(e) => {
+                error!("{:?}", e);
+                return Ok(e.into_response());
+            }
+        };
         let image_format_detected = image::guess_format(&data)?;
         image::load_from_memory_with_format(&data, image_format_detected)?;
         fs::write(fname, &data).await.unwrap();
     }
 
-    Ok(Redirect::to(&target))
+    Ok(Redirect::to(&target).into_response())
 }
 
 /// Page data: `gallery.html`
