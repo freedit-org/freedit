@@ -155,6 +155,14 @@ pub(crate) async fn style() -> (HeaderMap, &'static str) {
     (headers, &CSS)
 }
 
+pub(crate) async fn encryption_js() -> &'static str {
+    include_str!("../../static/js/encryption-helper.js")
+}
+
+pub(crate) async fn encoding_js() -> &'static str {
+    include_str!("../../static/js/encoding-helper.js")
+}
+
 pub(crate) async fn robots() -> &'static str {
     include_str!("../../static/robots.txt")
 }

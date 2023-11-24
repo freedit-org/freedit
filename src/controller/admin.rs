@@ -258,10 +258,10 @@ pub(crate) async fn admin_view(
                     let one_fmt = unescape(&format!("{:?}", one)).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
-                "feed_errs" => {
-                    let feed_id = ivec_to_u32(&k);
-                    let err = String::from_utf8_lossy(&v);
-                    ones.push(format!("{feed_id}: {err}"));
+                "feed_errs" | "pub_keys" => {
+                    let id = ivec_to_u32(&k);
+                    let msg = String::from_utf8_lossy(&v);
+                    ones.push(format!("{id}: {msg}"));
                 }
                 "drafts" => {
                     let uid = u8_slice_to_u32(&k[0..4]);

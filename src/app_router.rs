@@ -9,7 +9,8 @@ use crate::{
             mod_inn_post, post, post_delete, post_downvote, post_hide, post_lock, post_pin,
             post_upvote, preview, tag,
         },
-        meta_handler::{handler_404, home, robots, style},
+        message::{key, key_post, message},
+        meta_handler::{encoding_js, encryption_js, handler_404, home, robots, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
@@ -104,11 +105,15 @@ pub async fn router() -> Router {
         .route("/feed/star/:item_id", get(feed_star))
         .route("/feed/subscribe/:uid/:item_id", get(feed_subscribe))
         .route("/feed/read/:item_id", get(feed_read))
-        .route("/search", get(search));
+        .route("/search", get(search))
+        .route("/message/:uid", get(message))
+        .route("/key", get(key).post(key_post));
 
     let router_static = Router::new()
         .route("/static/style.css", get(style))
         .route("/robots.txt", get(robots))
+        .route("/static/js/encryption-helper.js", get(encryption_js))
+        .route("/static/js/encoding-helper.js", get(encoding_js))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
         .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path));
