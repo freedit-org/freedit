@@ -113,6 +113,7 @@ pub mod tantivy;
 
 pub(super) mod admin;
 pub(super) mod inn;
+pub(super) mod message;
 pub(super) mod solo;
 pub(super) mod upload;
 pub(super) mod user;

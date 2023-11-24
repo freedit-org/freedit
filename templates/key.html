@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block csp %}
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+    img-src 'self';script-src 'self' 'unsafe-inline'; style-src 'self'; object-src 'none';
+    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+{% endblock %}
+
+{% block content %}
+<div class="box">
+    <div class="content">
+        <p class="title">Generate RSA Keys</p>
+        <p>Your keys and data are kept confidential by running cryptography operations in your browser using
+            <a href="https://www.w3.org/TR/WebCryptoAPI/" target="Web Crypto API">Web Crypto API</a> and
+            JavaScript is left unminified so you can verify page source.
+        </p>
+        <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
+        <p class="has-text-danger">You must keep Private Key yourself and upload public key.</p>
+        <p>You can generate key pair from <a href="https://github.com/galehouse5/rsa-webcrypto-tool">rsa-webcrypto-tool</a> and upload public key here.</p>
+        <button id="button" class="button is-link">Generate Keys</button>
+        <div id="message"></div>
+
+        <div class="box">
+            <fieldset>
+                <div class="field">
+                    <div class="is-normal">
+                        <label class="label" for="private-key">RSA Private Key</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <p class="help">Download <a id="private-key-download" class="download" download="id_rsa">private key</a></p>
+                                <textarea id="private-key-text" name="pri_key" rows="10" class="textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <form id="result" class="box" action="/key" method="post">
+            <fieldset>
+                <div class="field">
+                    <div class="is-normal">
+                        <label class="label" for="public-key">RSA Public Key</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                            <textarea id="public-key-text" name="pub_key" rows="10" class="textarea" placeholder="{{pub_key}}">{{pub_key}}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label"></div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <p class="help">Only the last uploaded public key will be used.</p>
+                                <button type="submit" form="result" class="button is-link">Upload Public Key</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>
+
+<div class="divider"></div>
+{% endblock %}
+
+{% block extra %}
+    <script src="static/js/encoding-helper.js"></script>
+    <script src="static/js/encryption-helper.js"></script>
+    <script>
+        (function () {
+            var publicKeyText = document.getElementById("public-key-text");
+            var privateKeyText = document.getElementById("private-key-text");
+            var privateKeyDownload = document.getElementById("private-key-download");
+            var button = document.getElementById("button");
+            var message = document.getElementById("message");
+            var result = document.getElementById("result");
+
+            var success = function (keys) {
+                publicKeyText.value = arrayBufferToPem(keys.publicKeyBuffer, "RSA PUBLIC KEY");
+                privateKeyText.value = arrayBufferToPem(keys.privateKeyBuffer, "RSA PRIVATE KEY");
+                privateKeyDownload.href = window.URL.createObjectURL(
+                    new Blob([privateKeyText.value], { type: "application/octet-stream" }));
+                result.style.display = "block";
+                message.innerText = null;
+                button.disabled = false;
+            };
+
+            var error = function (error) {
+                message.innerText = error;
+                button.disabled = false;
+            };
+
+            var process = function () {
+                message.innerText = "Processing...";
+                button.disabled = true;
+                generateRsaKeys().then(success, error);
+            };
+
+            var warn = function () {
+                if (privateKey.value === "") return;
+                return "Are you sure? Your keys will be lost unless you've saved them.";
+            };
+
+            button.addEventListener("click", process);
+            window.onbeforeunload = warn;
+        })();
+    </script>
+{% endblock %}
