@@ -37,6 +37,7 @@ pub enum NtType {
     SoloMention = 4,
     InnNotification = 5,
     SiteNotification = 6,
+    Message = 7,
 }
 
 impl From<u8> for NtType {
@@ -48,6 +49,7 @@ impl From<u8> for NtType {
             4 => Self::SoloMention,
             5 => Self::InnNotification,
             6 => Self::SiteNotification,
+            7 => Self::Message,
             _ => unreachable!(),
         }
     }
@@ -62,6 +64,7 @@ impl Display for NtType {
             Self::SoloMention => write!(f, "SoloMention"),
             Self::InnNotification => write!(f, "InnNotification"),
             Self::SiteNotification => write!(f, "SiteNotification"),
+            Self::Message => write!(f, "Message"),
         }
     }
 }
@@ -255,6 +258,28 @@ pub(crate) async fn notification(
                     id3: 0,
                     content1: "".into(),
                     content2: format!("Your site role has been changed to {role_desc}"),
+                    is_read: value[8] == 1,
+                };
+                notifications.push(notification);
+            }
+            NtType::Message => {
+                let sender_id = u8_slice_to_u32(&value[0..4]);
+                let sender: User = get_one(&DB, "users", sender_id)?;
+                let mid = u8_slice_to_u32(&value[4..8]);
+                let content2 = format!(
+                    "You have received a <a href='/inbox/{mid}?nid={nid}'>e2ee message</a> from {}",
+                    sender.username
+                );
+                let notification = Notification {
+                    nid,
+                    nt_type: nt_type.to_string(),
+                    uid: sender.uid,
+                    username: sender.username.clone(),
+                    id1: 0,
+                    id2: mid,
+                    id3: 0,
+                    content1: "".into(),
+                    content2,
                     is_read: value[8] == 1,
                 };
                 notifications.push(notification);

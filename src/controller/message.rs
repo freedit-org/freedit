@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::{
-    extract::Path,
+    extract::{Path, Query},
     headers::Cookie,
     response::{IntoResponse, Redirect},
     Form, TypedHeader,
@@ -10,9 +10,10 @@ use serde::Deserialize;
 use crate::{controller::fmt::clean_html, error::AppError, DB};
 
 use super::{
-    db_utils::u32_to_ivec,
+    db_utils::{get_one, incr_id, u32_to_ivec, u8_slice_to_u32},
     meta_handler::{into_response, PageData},
-    Claim, SiteConfig,
+    notification::{add_notification, mark_read, NtType},
+    Claim, SiteConfig, User,
 };
 
 /// Page data: `message.html`
@@ -39,7 +40,7 @@ pub(crate) async fn message(
         .is_none()
     {
         return Err(AppError::Custom(
-            "You have not generated key pairs. In order to receive<a href= '/key'>Generate Key Pairs</a>".to_string(),
+            "You have not generated key pairs. In order to receive msg, please <a href= '/key'>generate one</a>.".to_string(),
         ));
     }
 
@@ -76,16 +77,17 @@ pub(crate) async fn message_post(
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
+    let mid = incr_id(&DB, "messages_count")?;
     let message = clean_html(&input.message);
-    let now = chrono::Utc::now().timestamp() as u32;
-    let k = [
+    let v = [
         &u32_to_ivec(uid),
         &u32_to_ivec(claim.uid),
-        &u32_to_ivec(now),
+        message.as_bytes(),
     ]
     .concat();
 
-    DB.open_tree("messages")?.insert(k, message.as_str())?;
+    DB.open_tree("messages")?.insert(&u32_to_ivec(mid), v)?;
+    add_notification(&DB, uid, NtType::Message, claim.uid, mid)?;
 
     let redirect = format!("/user/{}", uid);
     Ok(Redirect::to(&redirect))
@@ -142,4 +144,62 @@ pub(crate) async fn key_post(
         .insert(u32_to_ivec(claim.uid), pub_key.as_str())?;
 
     Ok(Redirect::to("/key"))
+}
+
+/// Page data: `inbox.html`
+#[derive(Template)]
+#[template(path = "inbox.html", escape = "none")]
+struct PageInbox<'a> {
+    page_data: PageData<'a>,
+    message: String,
+    sender_id: u32,
+    sender_name: String,
+}
+
+/// url params: `inbox.html`
+#[derive(Deserialize)]
+pub(crate) struct ParamsInbox {
+    nid: Option<u32>,
+}
+
+/// `GET /inbox`
+pub(crate) async fn inbox(
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(mid): Path<u32>,
+    Query(params): Query<ParamsInbox>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let v = DB
+        .open_tree("messages")?
+        .get(u32_to_ivec(mid))?
+        .ok_or(AppError::NotFound)?;
+
+    let receiver = u8_slice_to_u32(&v[0..4]);
+    if receiver != claim.uid {
+        return Err(AppError::NotFound);
+    }
+    let sender_id = u8_slice_to_u32(&v[4..8]);
+    let sender: User = get_one(&DB, "users", sender_id)?;
+    let message = String::from_utf8_lossy(&v[8..]).to_string();
+
+    if let Some(nid) = params.nid {
+        let tree = DB.open_tree("notifications")?;
+        let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
+        for i in tree.scan_prefix(prefix) {
+            let (k, _) = i?;
+            tree.update_and_fetch(k, mark_read)?;
+        }
+    }
+
+    let page_inbox = PageInbox {
+        page_data: PageData::new("Inbox", &site_config, Some(claim), false),
+        message,
+        sender_id,
+        sender_name: sender.username,
+    };
+
+    Ok(into_response(&page_inbox))
 }
