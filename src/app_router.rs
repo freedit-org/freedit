@@ -9,7 +9,7 @@ use crate::{
             mod_inn_post, post, post_delete, post_downvote, post_hide, post_lock, post_pin,
             post_upvote, preview, tag,
         },
-        message::{key, key_post, message},
+        message::{key, key_post, message, message_post},
         meta_handler::{encoding_js, encryption_js, handler_404, home, robots, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
@@ -106,7 +106,7 @@ pub async fn router() -> Router {
         .route("/feed/subscribe/:uid/:item_id", get(feed_subscribe))
         .route("/feed/read/:item_id", get(feed_read))
         .route("/search", get(search))
-        .route("/message/:uid", get(message))
+        .route("/message/:uid", get(message).post(message_post))
         .route("/key", get(key).post(key_post));
 
     let router_static = Router::new()
