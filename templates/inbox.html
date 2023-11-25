@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block csp %}
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
+    img-src 'self';script-src 'self' 'unsafe-inline'; style-src 'self'; object-src 'none';
+    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+{% endblock %}
+
+{% block content %}
+<div class="box">
+    <div class="content">
+        <p class="title">Decrypting e2ee message from <a href="/user/{{sender_id}}">{{sender_name}}</a>.</p>
+        <p>Your keys and data are kept confidential by running cryptography operations in your browser using
+            <a href="https://www.w3.org/TR/WebCryptoAPI/" target="Web Crypto API">Web Crypto API</a> and
+            JavaScript is left unminified so you can verify page source.
+        </p>
+        <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
+        <div class="box">
+            <fieldset>
+                <div class="field">
+                    <div class="is-normal">
+                        <label class="label" for="encrypted-text">Encrypted Message</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <textarea id="encrypted-text" rows="5" class="textarea" readonly>{{message}}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="is-normal">
+                        <label class="label" for="private-key">RSA Private Key</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <textarea id="private-key" rows="10" class="textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <button id="button" class="button is-link">Decrypt Message</button>
+        <div class="divider"></div>
+        <div id="message"></div>
+
+        <div class="box">
+            <fieldset>
+                <div class="field">
+                    <div class="is-normal">
+                        <label class="label" for="decrypted-text">Decrypted Message</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <textarea id="decrypted-text" rows="10" class="textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+</div>
+
+<div class="divider"></div>
+{% endblock %}
+
+{% block extra %}
+    <script src="/static/js/encoding-helper.js"></script>
+    <script src="/static/js/encryption-helper.js"></script>
+    <script>
+        (function () {
+            var privateKey = document.getElementById("private-key");
+            var encryptedText = document.getElementById("encrypted-text");
+            var button = document.getElementById("button");
+            var message = document.getElementById("message");
+            var decryptedText = document.getElementById("decrypted-text");
+            var result = document.getElementById("result");
+
+            var success = function (data) {
+                decryptedText.value = new TextDecoder().decode(data);
+                message.innerText = null;
+                button.disabled = false;
+            };
+
+            var error = function (error) {
+                message.innerText = error;
+                button.disabled = false;
+            };
+
+            var process = function () {
+                message.innerText = "Processing...";
+                button.disabled = true;
+
+                if (privateKey.value.trim() === "")
+                    return error("Private key must be specified.");
+
+                var privateKeyArrayBuffer = null;
+                try { privateKeyArrayBuffer = pemToArrayBuffer(privateKey.value.trim()); }
+                catch (_) { return error("Private key is invalid."); }
+
+                if (encryptedText.value.trim() === "")
+                    return error("Text to decrypt must be specified.");
+
+                var data = null;
+                try { data = pemToArrayBuffer(encryptedText.value.trim()); }
+                catch (_) { return error("Encrypted text is invalid."); }
+
+                rsaDecrypt(data, privateKeyArrayBuffer).then(success, error);
+            };
+
+            button.addEventListener("click", process);
+        })();
+    </script>
+{% endblock %}

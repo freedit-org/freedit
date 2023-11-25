@@ -106,10 +106,11 @@
 //! | "star"                | `uid#item_id`        | `timestamp` |
 //!
 //! ### e2ee message
-//! | tree                  | key                  | value       |
-//! |-----------------------|----------------------|-------------|
-//! | "messages"            | `uid#uid#timestamp`  | `message`   |
-//! | "pub_keys"            | `uid`                | `pub_key`   |
+//! | tree                  | key              | value              |
+//! |-----------------------|------------------|--------------------|
+//! | default               | "messages_count" | N                  |
+//! | "messages"            | `mid`            | `#uid#uid#message` |
+//! | "pub_keys"            | `uid`            | `pub_key`          |
 
 pub mod db_utils;
 pub mod feed;
