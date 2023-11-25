@@ -60,6 +60,37 @@ pub(crate) async fn message(
     Ok(into_response(&page_message))
 }
 
+/// Form data: `/message/:uid`
+#[derive(Deserialize)]
+pub(crate) struct FormMessage {
+    message: String,
+}
+
+/// `GET /message/:uid`
+pub(crate) async fn message_post(
+    cookie: Option<TypedHeader<Cookie>>,
+    Path(uid): Path<u32>,
+    Form(input): Form<FormMessage>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    let message = clean_html(&input.message);
+    let now = chrono::Utc::now().timestamp() as u32;
+    let k = [
+        &u32_to_ivec(uid),
+        &u32_to_ivec(claim.uid),
+        &u32_to_ivec(now),
+    ]
+    .concat();
+
+    DB.open_tree("messages")?.insert(k, message.as_str())?;
+
+    let redirect = format!("/user/{}", uid);
+    Ok(Redirect::to(&redirect))
+}
+
 /// Page data: `key.html`
 #[derive(Template)]
 #[template(path = "key.html", escape = "none")]

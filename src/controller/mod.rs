@@ -104,6 +104,12 @@
 //! | "items"               | `item_id`            | [`Item`]    |
 //! | "read"                | `uid#item_id`        | `&[]`       |
 //! | "star"                | `uid#item_id`        | `timestamp` |
+//!
+//! ### e2ee message
+//! | tree                  | key                  | value       |
+//! |-----------------------|----------------------|-------------|
+//! | "messages"            | `uid#uid#timestamp`  | `message`   |
+//! | "pub_keys"            | `uid`                | `pub_key`   |
 
 pub mod db_utils;
 pub mod feed;

@@ -41,7 +41,7 @@
         <div class="divider"></div>
         <div id="message"></div>
 
-        <form id="result" class="box" action="/message" method="post">
+        <form id="result" class="box" action="/message/{{receiver_id}}" method="post">
             <fieldset>
                 <div class="field">
                     <div class="is-normal">
@@ -50,7 +50,7 @@
                     <div class="field-body">
                         <div class="field">
                             <div class="control">
-                            <textarea id="encrypted-text" rows="10" class="textarea"></textarea>
+                            <textarea id="encrypted-text" name="message" rows="10" class="textarea"></textarea>
                             </div>
                         </div>
                     </div>

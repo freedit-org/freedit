@@ -282,6 +282,14 @@ pub(crate) async fn admin_view(
                     let id = String::from_utf8_lossy(&k);
                     ones.push(format!("{id}: {:?}", v));
                 }
+                "messages" => {
+                    let receiver_id = u8_slice_to_u32(&k[0..4]);
+                    let sender_id = u8_slice_to_u32(&k[4..8]);
+                    let timestamp = u8_slice_to_u32(&k[8..12]);
+                    let date = ts_to_date(timestamp as i64);
+                    let msg = String::from_utf8_lossy(&v);
+                    ones.push(format!("{receiver_id} - {sender_id} - {date} - {msg}"));
+                }
                 _ => ones.push(format!("{tree_name} has not been supported yet")),
             }
         }
