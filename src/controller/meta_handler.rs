@@ -155,12 +155,34 @@ pub(crate) async fn style() -> (HeaderMap, &'static str) {
     (headers, &CSS)
 }
 
-pub(crate) async fn encryption_js() -> &'static str {
-    include_str!("../../static/js/encryption-helper.js")
+pub(crate) async fn encryption_js() -> (HeaderMap, &'static str) {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("text/javascript"),
+    );
+    headers.insert(
+        HeaderName::from_static("cache-control"),
+        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
+    );
+    let js = include_str!("../../static/js/encryption-helper.js");
+
+    (headers, js)
 }
 
-pub(crate) async fn encoding_js() -> &'static str {
-    include_str!("../../static/js/encoding-helper.js")
+pub(crate) async fn encoding_js() -> (HeaderMap, &'static str) {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("text/javascript"),
+    );
+    headers.insert(
+        HeaderName::from_static("cache-control"),
+        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
+    );
+    let js = include_str!("../../static/js/encoding-helper.js");
+
+    (headers, js)
 }
 
 pub(crate) async fn robots() -> &'static str {
