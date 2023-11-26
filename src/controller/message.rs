@@ -39,9 +39,7 @@ pub(crate) async fn message(
         .get(u32_to_ivec(claim.uid))?
         .is_none()
     {
-        return Err(AppError::Custom(
-            "You have not generated key pairs. In order to receive msg, please <a href= '/key'>generate one</a>.".to_string(),
-        ));
+        return Ok(Redirect::to("/key").into_response());
     }
 
     let Some(pub_key) = DB.open_tree("pub_keys")?.get(u32_to_ivec(uid))? else {
