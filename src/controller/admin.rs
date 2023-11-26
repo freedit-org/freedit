@@ -170,10 +170,10 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u32(&k[len - 4..]);
                     ones.push(format!("{str}#{id}"));
                 }
-                "user_following" | "user_followers" | "mod_inns" | "user_inns" | "inn_users"
-                | "inn_apply" | "post_upvotes" | "post_downvotes" | "user_solos_like"
-                | "inn_posts" | "solo_users_like" | "feed_items" | "read" | "star"
-                | "inn_feeds" | "inn_items" | "post_pins" => {
+                "user_following" | "user_followers" | "user_message" | "mod_inns" | "user_inns"
+                | "inn_users" | "inn_apply" | "post_upvotes" | "post_downvotes"
+                | "user_solos_like" | "inn_posts" | "solo_users_like" | "feed_items" | "read"
+                | "star" | "inn_feeds" | "inn_items" | "post_pins" => {
                     let id1 = u8_slice_to_u32(&k[0..4]);
                     let id2 = u8_slice_to_u32(&k[4..8]);
                     ones.push(format!("k: {id1}#{id2}, v: {v:?}"));

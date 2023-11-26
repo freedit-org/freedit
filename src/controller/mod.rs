@@ -111,6 +111,7 @@
 //! | default               | "messages_count" | N                  |
 //! | "messages"            | `mid`            | `#uid#uid#message` |
 //! | "pub_keys"            | `uid`            | `pub_key`          |
+//! | "user_messages"       | `uid#mid`        | `&[]`              |
 
 pub mod db_utils;
 pub mod feed;

@@ -67,7 +67,7 @@ pub(crate) struct FormMessage {
     message: String,
 }
 
-/// `GET /message/:uid`
+/// `POST /message/:uid`
 pub(crate) async fn message_post(
     cookie: Option<TypedHeader<Cookie>>,
     Path(uid): Path<u32>,
@@ -88,6 +88,9 @@ pub(crate) async fn message_post(
 
     DB.open_tree("messages")?.insert(&u32_to_ivec(mid), v)?;
     add_notification(&DB, uid, NtType::Message, claim.uid, mid)?;
+
+    let k = [&u32_to_ivec(uid), &u32_to_ivec(mid)].concat();
+    DB.open_tree("user_message")?.insert(k, &[])?;
 
     let redirect = format!("/user/{}", uid);
     Ok(Redirect::to(&redirect))
