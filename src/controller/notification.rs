@@ -22,12 +22,15 @@ struct NotificationPage<'a> {
     page_data: PageData<'a>,
     notifications: Vec<Notification>,
     inn_notifications: Vec<InnNotification>,
+    anchor: usize,
+    n: usize,
 }
 
 #[derive(Deserialize)]
 pub(crate) struct NotifyParams {
     op_type: Option<String>,
     nid: Option<u32>,
+    anchor: Option<usize>,
 }
 
 #[repr(u8)]
@@ -106,26 +109,34 @@ pub(crate) async fn notification(
     let prefix = u32_to_ivec(claim.uid);
     let tree = DB.open_tree("notifications")?;
 
+    let anchor = params.anchor.unwrap_or(0);
+    let n = site_config.per_page;
     if let Some(op_type) = params.op_type {
         match op_type.as_str() {
             "mark_batch" => {
-                for (n, i) in tree.scan_prefix(&prefix).enumerate() {
-                    let (key, _) = i?;
-                    tree.update_and_fetch(key, mark_read)?;
-                    if n >= 30 {
+                for (idx, i) in tree.scan_prefix(&prefix).enumerate() {
+                    if idx < anchor {
+                        continue;
+                    }
+                    if idx >= n + anchor {
                         break;
                     }
+                    let (key, _) = i?;
+                    tree.update_and_fetch(key, mark_read)?;
                 }
             }
             "delete_batch" => {
-                for (n, i) in tree.scan_prefix(&prefix).enumerate() {
+                for (idx, i) in tree.scan_prefix(&prefix).enumerate() {
+                    if idx < anchor {
+                        continue;
+                    }
+                    if idx >= n + anchor {
+                        break;
+                    }
                     let (key, value) = i?;
                     // Delete notification if it is read
                     if value[8] == 1 {
                         tree.remove(key)?;
-                    }
-                    if n >= 30 {
-                        break;
                     }
                 }
             }
@@ -151,8 +162,15 @@ pub(crate) async fn notification(
         }
     }
 
-    let mut notifications = Vec::with_capacity(30);
-    for (n, i) in tree.scan_prefix(&prefix).enumerate() {
+    let mut notifications = Vec::with_capacity(n);
+    for (idx, i) in tree.scan_prefix(&prefix).enumerate() {
+        if idx < anchor {
+            continue;
+        }
+        if idx >= n + anchor {
+            break;
+        }
+
         // uid#nid#nt_type = id1#id2#is_read
         let (key, value) = i?;
         let nid = u8_slice_to_u32(&key[4..8]);
@@ -286,10 +304,6 @@ pub(crate) async fn notification(
                 notifications.push(notification);
             }
         }
-
-        if n >= 30 {
-            break;
-        }
     }
     notifications.reverse();
 
@@ -305,7 +319,7 @@ pub(crate) async fn notification(
             inn_notifications.push(inn_notification);
         }
 
-        if inn_notifications.len() >= 30 {
+        if inn_notifications.len() >= n + anchor {
             break;
         }
     }
@@ -316,6 +330,8 @@ pub(crate) async fn notification(
         page_data,
         notifications,
         inn_notifications,
+        anchor,
+        n,
     };
 
     Ok(into_response(&notification_page))

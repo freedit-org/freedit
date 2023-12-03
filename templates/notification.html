@@ -96,4 +96,18 @@
 </div>
 
 <div class="divider"></div>
+
+<nav class="pagination">
+    {% if anchor < n %}
+        <a class="pagination-previous" disabled>Prev</a>
+    {% else %}
+        <a class="pagination-previous" href="/notification?anchor={{anchor - n}}">Prev</a>
+    {% endif %}
+
+    {% if notifications.len() < n %}
+        <a class="pagination-next" disabled >Next</a>
+    {% else %}
+        <a class="pagination-next" href="/notification?anchor={{anchor + n}}">Next</a>
+    {% endif %}
+</nav>
 {% endblock %}
