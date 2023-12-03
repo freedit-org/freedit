@@ -16,11 +16,10 @@ use ::rand::{thread_rng, Rng};
 use askama::Template;
 use axum::{
     extract::{Form, Path, Query},
-    headers::Cookie,
     http::{header::SET_COOKIE, HeaderMap},
     response::{IntoResponse, Redirect},
-    TypedHeader,
 };
+use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use captcha::{CaptchaName, Difficulty};
 use chrono::Utc;

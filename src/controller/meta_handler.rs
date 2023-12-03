@@ -3,21 +3,23 @@ use crate::{error::AppError, DB};
 use askama::Template;
 use axum::{
     async_trait,
-    body::BoxBody,
-    extract::{rejection::FormRejection, FromRequest},
-    headers::{Cookie, HeaderName, Referer},
-    http::{self, HeaderMap, HeaderValue, Request, Uri},
+    body::Body,
+    extract::{rejection::FormRejection, FromRequest, Request},
+    http::{self, HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
-    Form, TypedHeader,
+    Form,
 };
+use axum_extra::{
+    headers::{Cookie, Referer},
+    TypedHeader,
+};
+use http::{HeaderName, StatusCode};
 use once_cell::sync::Lazy;
-use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
-use tokio::signal;
 use tracing::error;
 use validator::Validate;
 
-pub(super) fn into_response<T: Template>(t: &T) -> Response<BoxBody> {
+pub(super) fn into_response<T: Template>(t: &T) -> Response<Body> {
     match t.render() {
         Ok(body) => {
             let headers = [(
@@ -83,16 +85,15 @@ pub(crate) async fn handler_404(uri: Uri) -> impl IntoResponse {
 pub(crate) struct ValidatedForm<T>(pub(super) T);
 
 #[async_trait]
-impl<T, S, B> FromRequest<S, B> for ValidatedForm<T>
+impl<T, S> FromRequest<S> for ValidatedForm<T>
 where
     T: DeserializeOwned + Validate,
     S: Send + Sync,
-    Form<T>: FromRequest<S, B, Rejection = FormRejection>,
-    B: Send + 'static,
+    Form<T>: FromRequest<S, Rejection = FormRejection>,
 {
     type Rejection = AppError;
 
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Form(value) = Form::<T>::from_request(req, state).await?;
         value.validate()?;
         Ok(ValidatedForm(value))
@@ -187,32 +188,6 @@ pub(crate) async fn encoding_js() -> (HeaderMap, &'static str) {
 
 pub(crate) async fn robots() -> &'static str {
     include_str!("../../static/robots.txt")
-}
-
-pub async fn shutdown_signal() {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
-
-    #[cfg(unix)]
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("failed to install signal handler")
-            .recv()
-            .await;
-    };
-
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-    }
-
-    println!("signal received, starting graceful shutdown");
 }
 
 pub(super) struct PageData<'a> {

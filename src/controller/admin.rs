@@ -12,10 +12,10 @@ use crate::{
 };
 use askama::Template;
 use axum::{
-    extract::{Query, TypedHeader},
-    headers::Cookie,
+    extract::Query,
     response::{IntoResponse, Redirect},
 };
+use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use serde::Deserialize;
 use snailquote::unescape;

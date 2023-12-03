@@ -32,12 +32,12 @@ use atom_syndication::{
     WriteConfig,
 };
 use axum::{
-    extract::{Path, Query, TypedHeader},
-    headers::Cookie,
+    extract::{Path, Query},
     http,
     response::{IntoResponse, Redirect},
     Form,
 };
+use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};

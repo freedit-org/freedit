@@ -7,7 +7,8 @@ use super::{
 };
 use crate::{error::AppError, DB};
 use askama::Template;
-use axum::{extract::Query, headers::Cookie, response::IntoResponse, TypedHeader};
+use axum::{extract::Query, response::IntoResponse};
+use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use serde::Deserialize;
 use sled::{Db, IVec};

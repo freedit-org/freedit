@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 use askama::Template;
-use axum::{extract::Query, headers::Cookie, response::IntoResponse, TypedHeader};
+use axum::{extract::Query, response::IntoResponse};
+use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};

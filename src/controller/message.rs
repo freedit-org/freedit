@@ -1,10 +1,10 @@
 use askama::Template;
 use axum::{
     extract::{Path, Query},
-    headers::Cookie,
     response::{IntoResponse, Redirect},
-    Form, TypedHeader,
+    Form,
 };
+use axum_extra::{headers::Cookie, TypedHeader};
 use serde::Deserialize;
 
 use crate::{controller::fmt::clean_html, error::AppError, DB};

@@ -12,9 +12,12 @@ use super::{
 use crate::{error::AppError, DB};
 use askama::Template;
 use axum::{
-    extract::{Path, Query, TypedHeader},
-    headers::{Cookie, Referer},
+    extract::{Path, Query},
     response::{IntoResponse, Redirect},
+};
+use axum_extra::{
+    headers::{Cookie, Referer},
+    TypedHeader,
 };
 use chrono::Utc;
 use serde::Deserialize;

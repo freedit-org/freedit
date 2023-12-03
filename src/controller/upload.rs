@@ -6,10 +6,9 @@ use crate::{config::CONFIG, error::AppError, DB};
 use askama::Template;
 use axum::{
     extract::{Multipart, Query},
-    headers::Cookie,
     response::{IntoResponse, Redirect},
-    TypedHeader,
 };
+use axum_extra::{headers::Cookie, TypedHeader};
 use data_encoding::HEXLOWER;
 use image::{imageops::FilterType, ImageFormat};
 use img_parts::{DynImage, ImageEXIF};
