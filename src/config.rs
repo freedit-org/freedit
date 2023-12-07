@@ -1,10 +1,10 @@
 use once_cell::sync::Lazy;
-use rustls_pemfile::{read_one, Item};
+use rustls_pemfile::{certs, private_key};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string, File};
 use std::io::{BufReader, Write};
 use std::path::Path;
-use tokio_rustls::rustls::{Certificate, PrivateKey, ServerConfig};
+use tokio_rustls::rustls::ServerConfig;
 use tracing::{info, warn};
 
 pub static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
@@ -50,26 +50,14 @@ impl Config {
 
     pub async fn tls_config(&self) -> Option<ServerConfig> {
         let mut key_reader = BufReader::new(File::open(&CONFIG.key).ok()?);
-        let key = match read_one(&mut key_reader).ok()?? {
-            Item::Crl(key) => key.as_ref().to_vec(),
-            Item::Pkcs1Key(key) => key.secret_pkcs1_der().to_vec(),
-            Item::Pkcs8Key(key) => key.secret_pkcs8_der().to_vec(),
-            Item::Sec1Key(key) => key.secret_sec1_der().to_vec(),
-            _ => return None,
-        };
-
-        let key = PrivateKey(key);
-
         let mut cert_reader = BufReader::new(File::open(&CONFIG.cert).ok()?);
-        let cert = match read_one(&mut cert_reader).ok()?? {
-            Item::X509Certificate(cert) => cert,
-            _ => return None,
-        };
 
-        let certs = vec![Certificate(cert.as_ref().to_vec())];
+        let key = private_key(&mut key_reader).ok()??;
+        let certs = certs(&mut cert_reader)
+            .filter_map(|x| x.ok())
+            .collect::<Vec<_>>();
 
         ServerConfig::builder()
-            .with_safe_defaults()
             .with_no_client_auth()
             .with_single_cert(certs, key)
             .ok()
