@@ -17,7 +17,7 @@ captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
 fast2s = "0.3"
-futures-util = "0.3.29"
+futures-util = "0.3.30"
 http = "1.0.0"
 hyper = "1.0.1"
 hyper-util = "0.1.1"
