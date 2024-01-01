@@ -9,7 +9,7 @@ ammonia = "3"
 askama = { version = "0.12", default-features = false }
 atom_syndication = "0.12"
 axum = { version = "0.7", features = ["http2", "form", "query", "multipart", "tokio"], default-features = false }
-axum-extra = { version = "0.9.0", features = ["typed-header"] }
+axum-extra = { version = "0.9.1", features = ["typed-header"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.3"
 cached = { version = "0.46.0", default-features = false, features = ["proc_macro", "ahash"] }
