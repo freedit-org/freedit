@@ -1483,7 +1483,7 @@ pub(crate) async fn post(
         if DB.open_tree("user_inns")?.contains_key(&k)? {
             has_joined = true;
         }
-        if DB.open_tree("mod_inns")?.contains_key(&k)? {
+        if DB.open_tree("mod_inns")?.contains_key(&k)? || Role::from(claim.role) == Role::Admin {
             is_mod = true;
         }
 
@@ -1860,7 +1860,7 @@ pub(crate) async fn comment_hide(
         .ok_or(AppError::NonLogin)?;
 
     let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
-    if !DB.open_tree("mod_inns")?.contains_key(k)? {
+    if !DB.open_tree("mod_inns")?.contains_key(k)? && Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -2012,7 +2012,7 @@ pub(crate) async fn post_lock(
 
     let mut post: Post = get_one(&DB, "posts", pid)?;
 
-    if User::is_mod(&DB, claim.uid, iid)? {
+    if User::is_mod(&DB, claim.uid, iid)? || Role::from(claim.role) == Role::Admin {
         if post.status != PostStatus::LockedByMod {
             post.status = PostStatus::LockedByMod
         } else if post.status == PostStatus::LockedByMod {
@@ -2045,7 +2045,7 @@ pub(crate) async fn post_hide(
     let mut post: Post = get_one(&DB, "posts", pid)?;
     let old_status = post.status.clone();
 
-    if User::is_mod(&DB, claim.uid, iid)? {
+    if User::is_mod(&DB, claim.uid, iid)? || Role::from(claim.role) == Role::Admin {
         if post.status != PostStatus::HiddenByMod {
             post.status = PostStatus::HiddenByMod
         } else if post.status == PostStatus::HiddenByMod {
@@ -2095,7 +2095,7 @@ pub(crate) async fn post_pin(
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
-    if !User::is_mod(&DB, claim.uid, iid)? {
+    if !User::is_mod(&DB, claim.uid, iid)? && Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
