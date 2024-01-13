@@ -7,23 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.4-rc.4] - 2023-12-18
-
-- bug fixed
-
-## [0.6.4-rc.3] - 2023-12-03
-
-- notification pagination
-
-## [0.6.4-rc.2] - 2023-11-26
-
-- fix js error
-
-## [0.6.4-rc.1] - 2023-11-26
+## [0.6.4] - 2024-01-13
 
 ### Added
 
 - e2ee message
+
+### Fixed
+
+- default user role standard
+- site admin could hide/lock/pin posts and hide comments
+- notification pagination
+- fix js error
+
 
 ## [0.6.3] - 2023-11-24
 
@@ -300,11 +296,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.4-rc.4...HEAD
-[0.6.4-rc.4]: https://github.com/freedit-org/freedit/compare/v0.6.4-rc.3...v0.6.4-rc.4
-[0.6.4-rc.3]: https://github.com/freedit-org/freedit/compare/v0.6.4-rc.2...v0.6.4-rc.3
-[0.6.4-rc.2]: https://github.com/freedit-org/freedit/compare/v0.6.4-rc.1...v0.6.4-rc.2
-[0.6.4-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4-rc.1
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.4...HEAD
+[0.6.4]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/freedit-org/freedit/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/freedit-org/freedit/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/freedit-org/freedit/compare/v0.6.0...v0.6.1
