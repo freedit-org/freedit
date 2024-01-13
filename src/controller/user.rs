@@ -949,8 +949,6 @@ pub(crate) async fn signup_post(
     let created_at = Utc::now().timestamp();
     let role = if uid == 1 {
         Role::Admin
-    } else if uid <= 500 {
-        Role::Senior
     } else {
         Role::Standard
     };
