@@ -48,7 +48,7 @@ thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tokio-rustls = "0.25.0"
 tower = { version = "0.4", features = ["timeout"] }
-tower-http = { version = "0.5.0", features = ["fs", "compression-br", "trace"] }
+tower-http = { version = "0.5.1", features = ["fs", "compression-br", "trace"] }
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 unicode-segmentation = "1"
