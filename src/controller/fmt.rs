@@ -11,6 +11,40 @@ pub(super) fn ts_to_date(timestamp: i64) -> String {
         .to_string()
 }
 
+const MATHML_TAGS: [&str; 31] = [
+    "maction",
+    "math",
+    "menclose",
+    "merror",
+    "mfenced",
+    "mfrac",
+    "mglyph",
+    "mi",
+    "mlabeledtr",
+    "mmultiscripts",
+    "mn",
+    "mo",
+    "mover",
+    "mpadded",
+    "mphantom",
+    "mroot",
+    "mrow",
+    "ms",
+    "mspace",
+    "msqrt",
+    "mstyle",
+    "msub",
+    "msubsup",
+    "msup",
+    "mtable",
+    "mtd",
+    "mtext",
+    "mtr",
+    "munder",
+    "munderover",
+    "semantics",
+];
+
 /// convert latex and markdown to html.
 /// Inspired by [cmark-syntax](https://github.com/grego/cmark-syntax/blob/master/src/lib.rs)
 
@@ -23,56 +57,20 @@ pub(super) fn ts_to_date(timestamp: i64) -> String {
 pub(super) fn md2html(md: &str) -> String {
     // list of mathml tags obtained from
     // <https://www.tutorialspoint.com/mathml/mathml_all_elements.htm>
-    let mathml_tags = [
-        "maction",
-        "math",
-        "menclose",
-        "merror",
-        "mfenced",
-        "mfrac",
-        "mglyph",
-        "mi",
-        "mlabeledtr",
-        "mmultiscripts",
-        "mn",
-        "mo",
-        "mover",
-        "mpadded",
-        "mphantom",
-        "mroot",
-        "mrow",
-        "ms",
-        "mspace",
-        "msqrt",
-        "mstyle",
-        "msub",
-        "msubsup",
-        "msup",
-        "mtable",
-        "mtd",
-        "mtext",
-        "mtr",
-        "munder",
-        "munderover",
-        "semantics",
-    ];
+
     let parser = pulldown_cmark::Parser::new_ext(md, OPTIONS);
     let processed = SyntaxPreprocessor::new(parser);
     let mut html_output = String::with_capacity(md.len() * 2);
     html::push_html(&mut html_output, processed);
-    let sanitized_html_string = ammonia::Builder::default()
-        .add_tags(&mathml_tags)
-        .add_allowed_classes("span", &["replytag"])
-        .add_tag_attributes("pre", &["style"])
-        .add_tag_attributes("span", &["style"])
-        .clean(&html_output)
-        .to_string();
-    sanitized_html_string
+    clean_html(&html_output)
 }
 
 pub(super) fn clean_html(raw: &str) -> String {
     ammonia::Builder::default()
-        .add_tag_attributes("img", &["style"])
+        .add_tags(&MATHML_TAGS)
+        .add_allowed_classes("span", &["replytag"])
+        .add_tag_attributes("pre", &["style"])
+        .add_tag_attributes("span", &["style"])
         .clean(raw)
         .to_string()
 }
