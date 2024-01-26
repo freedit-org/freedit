@@ -133,6 +133,7 @@ use self::db_utils::{
 };
 use self::fmt::md2html;
 use self::tantivy::{ToDoc, FIELDS};
+use self::user::Role;
 use crate::{controller::meta_handler::into_response, error::AppError};
 use ::tantivy::Document;
 use bincode::config::standard;
@@ -169,6 +170,11 @@ impl User {
     fn is_mod(db: &Db, uid: u32, iid: u32) -> Result<bool, AppError> {
         let k = [&u32_to_ivec(uid), &u32_to_ivec(iid)].concat();
         Ok(db.open_tree("mod_inns")?.contains_key(k)?)
+    }
+
+    fn is_admin(db: &Db, uid: u32) -> Result<bool, AppError> {
+        let user: User = get_one(db, "users", uid)?;
+        Ok(Role::from(user.role) == Role::Admin)
     }
 
     /// check if the user has unread notifications

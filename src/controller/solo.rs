@@ -22,6 +22,7 @@ use axum_extra::{
 use chrono::Utc;
 use serde::Deserialize;
 use sled::Db;
+use tracing::warn;
 use validator::Validate;
 
 /// Form data: `/solo/user/:uid` solo create.
@@ -69,18 +70,27 @@ impl OutSolo {
         let user: User = get_one(db, "users", solo.uid)?;
         let date = ts_to_date(solo.created_at);
 
+        let mut can_visit = false;
         if let Some(uid) = current_uid {
             if solo.visibility == 20 {
-                if uid != solo.uid {
-                    return Ok(None);
+                if uid == solo.uid {
+                    can_visit = true;
                 }
             } else if solo.visibility == 10 && uid != solo.uid {
                 let k = [&u32_to_ivec(solo.uid), &u32_to_ivec(uid)].concat();
-                if !db.open_tree("user_followers")?.contains_key(k)? {
-                    return Ok(None);
+                if db.open_tree("user_followers")?.contains_key(k)? {
+                    can_visit = true;
                 }
             }
-        } else if solo.visibility > 0 {
+
+            if User::is_admin(db, uid)? {
+                can_visit = true;
+            }
+        } else if solo.visibility == 0 {
+            can_visit = true;
+        }
+
+        if !can_visit {
             return Ok(None);
         }
 
@@ -116,6 +126,7 @@ fn can_visit_solo(visibility: u32, followers: &[u32], solo_uid: u32, current_uid
     visibility == 0
         || (visibility == 10 && followers.contains(&solo_uid))
         || (visibility == 20 && solo_uid == current_uid)
+        || User::is_admin(&DB, current_uid).unwrap_or_default()
 }
 
 /// url params: `solo.html`
@@ -202,6 +213,8 @@ pub(crate) async fn solo_list(
     for sid in index {
         if let Some(out_solo) = OutSolo::get(&DB, sid, claim.as_ref().map(|c| c.uid))? {
             out_solos.push(out_solo);
+        } else {
+            warn!("solo {} not found", sid);
         }
     }
 
