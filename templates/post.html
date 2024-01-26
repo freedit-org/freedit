@@ -21,12 +21,8 @@
     <div class="media-content">
         <div class="content">
             <p class="title">{% if post.is_pinned %} 📌 {% endif %}{{post.title}}</p>
-
-            <a href="/inn/{{post.iid}}">
-            ⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
-
-            <a href="/user/{{post.uid}}">
-            👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
+            <a href="/inn/{{post.iid}}">⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
+            <a href="/user/{{post.uid}}">👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% if post.can_edit %}
                 <a href="/post/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
             {% endif %}

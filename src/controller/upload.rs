@@ -112,7 +112,7 @@ pub(crate) async fn gallery(
             imgs.push(img);
         }
 
-        if imgs.len() >= 10 {
+        if imgs.len() >= 12 {
             break;
         }
     }
