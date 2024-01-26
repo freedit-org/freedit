@@ -2,14 +2,18 @@
 
 {% block content %}
 <div class="content">
-    {% for img in imgs %}
-    <figure>
-        <img src="/static/upload/{{img}}">
-        <figcaption>
-            <code>![](/static/upload/{{img}})</code>
-        </figcaption>
-    </figure>
-    {% endfor %}
+    <div class="columns is-multiline">
+        {% for img in imgs %}
+        <div class="column is-one-third">
+            <figure>
+                <a href="/static/upload/{{img}}" target="_blank"><img src="/static/upload/{{img}}"></a>
+                <figcaption>
+                    <code>![](/static/upload/{{img}})</code>
+                </figcaption>
+            </figure>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
 <div class="divider"></div>
