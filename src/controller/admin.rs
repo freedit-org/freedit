@@ -425,7 +425,7 @@ pub(crate) async fn admin_gallery(
     let page_params = ParamsPage { anchor, n, is_desc };
     let (start, end) = get_range(count, &page_params);
 
-    let mut imgs = imgs[(start - 1)..=(end - 1)].to_vec();
+    let mut imgs = imgs[(start - 1)..end].to_vec();
     if is_desc {
         imgs.reverse();
     }
