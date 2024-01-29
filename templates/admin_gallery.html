@@ -2,18 +2,16 @@
 
 {% block content %}
 <div class="box content">
-    <figure>
-        <p class="image is-32x32 is-hidden-mobile">
-            <a href="/gallery/{{uid}}"><img src="/static/avatars/{{uid}}.png"></a>
-        </p>
-    </figure>
     <div class="columns is-multiline">
         {% for img in imgs %}
         <div class="column is-one-third">
             <figure>
-                <a href="/static/upload/{{img}}" target="_blank"><img src="/static/upload/{{img}}"></a>
+                <p class="image is-32x32 is-hidden-mobile">
+                    <a href="/gallery/{{img.0}}"><img src="/static/avatars/{{img.0}}.png"></a>
+                </p>
+                <a href="/static/upload/{{img.2}}" target="_blank"><img src="/static/upload/{{img.2}}"></a>
                 <figcaption>
-                    <code>![](/static/upload/{{img}})</code>
+                    <code>{{img.2}}</code>
                 </figcaption>
             </figure>
         </div>
@@ -27,13 +25,13 @@
     {% if anchor < n %}
         <a class="pagination-previous" disabled>Prev</a>
     {% else %}
-        <a class="pagination-previous" href="/gallery/{{uid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+        <a class="pagination-previous" href="/admin/gallery?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
     {% endif %}
 
     {% if imgs.len() < n %}
         <a class="pagination-next" disabled >Next</a>
     {% else %}
-        <a class="pagination-next" href="/gallery/{{uid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+        <a class="pagination-next" href="/admin/gallery?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
     {% endif %}
 </nav>
 {% endblock %}

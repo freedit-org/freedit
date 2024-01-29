@@ -1,7 +1,8 @@
 use super::{
-    db_utils::{ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
+    db_utils::{get_count, get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
     fmt::{clean_html, ts_to_date},
-    meta_handler::{into_response, PageData, ValidatedForm},
+    inn::ParamsTag,
+    meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     user::Role,
     Claim, Feed, FormPost, Item, SiteConfig,
 };
@@ -378,4 +379,65 @@ impl Default for SiteConfig {
             home_page: 0,
         }
     }
+}
+
+/// Page data: `admin_gallery.html`
+#[derive(Template)]
+#[template(path = "admin_gallery.html")]
+struct PageAdminGallery<'a> {
+    page_data: PageData<'a>,
+    imgs: Vec<(u32, u32, String)>,
+    anchor: usize,
+    is_desc: bool,
+    n: usize,
+}
+
+/// `GET /admin/gallery`
+pub(crate) async fn admin_gallery(
+    cookie: Option<TypedHeader<Cookie>>,
+    Query(params): Query<ParamsTag>,
+) -> Result<impl IntoResponse, AppError> {
+    let site_config = SiteConfig::get(&DB)?;
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    if Role::from(claim.role) != Role::Admin {
+        return Err(AppError::Unauthorized);
+    }
+
+    let has_unread = User::has_unread(&DB, claim.uid)?;
+
+    let anchor = params.anchor.unwrap_or(0);
+    let is_desc = params.is_desc.unwrap_or(true);
+    let n = 12;
+
+    let count = get_count(&DB, "default", "imgs_count")?;
+    let mut imgs = Vec::new();
+    for i in &DB.open_tree("user_uploads")? {
+        let (k, v) = i?;
+        let uid = u8_slice_to_u32(&k[0..4]);
+        let img_id = u8_slice_to_u32(&k[4..8]);
+        let img = String::from_utf8_lossy(&v).to_string();
+        imgs.push((uid, img_id, img));
+    }
+
+    imgs.sort_unstable_by(|a, b| a.1.cmp(&b.1));
+
+    let page_params = ParamsPage { anchor, n, is_desc };
+    let (start, end) = get_range(count, &page_params);
+
+    let mut imgs = imgs[(start - 1)..=(end - 1)].to_vec();
+    if is_desc {
+        imgs.reverse();
+    }
+
+    let page_data = PageData::new("Admin gallery", &site_config, Some(claim), has_unread);
+    let page_gallery = PageAdminGallery {
+        page_data,
+        imgs,
+        anchor,
+        is_desc,
+        n,
+    };
+
+    Ok(into_response(&page_gallery))
 }

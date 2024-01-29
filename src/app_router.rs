@@ -1,7 +1,7 @@
 use crate::{
     config::CONFIG,
     controller::{
-        admin::{admin, admin_post, admin_view},
+        admin::{admin, admin_gallery, admin_post, admin_view},
         feed::{feed, feed_add, feed_add_post, feed_read, feed_star, feed_subscribe, feed_update},
         inn::{
             comment_delete, comment_downvote, comment_hide, comment_post, comment_upvote,
@@ -66,6 +66,7 @@ pub async fn router() -> Router {
         .route("/notification", get(notification))
         .route("/admin", get(admin).post(admin_post))
         .route("/admin/view", get(admin_view))
+        .route("/admin/gallery", get(admin_gallery))
         .route("/mod/:iid", get(mod_inn).post(mod_inn_post))
         .route("/mod/feed/:iid", get(mod_inn).post(mod_feed_post))
         .route(
@@ -98,7 +99,7 @@ pub async fn router() -> Router {
             "/upload",
             get(upload).post(upload_post.layer(DefaultBodyLimit::max(UPLOAD_LIMIT))),
         )
-        .route("/gallery", get(gallery))
+        .route("/gallery/:uid", get(gallery))
         .route("/feed/:uid", get(feed))
         .route("/feed/add", get(feed_add).post(feed_add_post))
         .route("/feed/update", get(feed_update))

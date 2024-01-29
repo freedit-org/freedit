@@ -1,11 +1,17 @@
 use super::{
-    incr_id, inn::ParamsTag, into_response, meta_handler::PageData, u32_to_ivec, user::InnRole,
+    db_utils::IterType,
+    incr_id,
+    inn::ParamsTag,
+    into_response,
+    meta_handler::PageData,
+    u32_to_ivec,
+    user::{InnRole, Role},
     Claim, SiteConfig, User,
 };
 use crate::{config::CONFIG, error::AppError, DB};
 use askama::Template;
 use axum::{
-    extract::{Multipart, Query},
+    extract::{Multipart, Path, Query},
     response::{IntoResponse, Redirect},
 };
 use axum_extra::{headers::Cookie, TypedHeader};
@@ -80,27 +86,38 @@ struct PageGallery<'a> {
     imgs: Vec<String>,
     anchor: usize,
     is_desc: bool,
+    n: usize,
+    uid: u32,
 }
 
-/// `GET /gallery`
+/// `GET /gallery/:uid`
 pub(crate) async fn gallery(
     cookie: Option<TypedHeader<Cookie>>,
+    Path(uid): Path<u32>,
     Query(params): Query<ParamsTag>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    if claim.uid != uid && Role::from(claim.role) != Role::Admin {
+        return Err(AppError::Unauthorized);
+    }
+
     let has_unread = User::has_unread(&DB, claim.uid)?;
 
     let anchor = params.anchor.unwrap_or(0);
     let is_desc = params.is_desc.unwrap_or(true);
+    let n = 12;
 
-    let mut imgs = Vec::new();
-    for (idx, i) in DB
-        .open_tree("user_uploads")?
-        .scan_prefix(u32_to_ivec(claim.uid))
-        .enumerate()
-    {
+    let mut imgs = Vec::with_capacity(n);
+    let iter = DB.open_tree("user_uploads")?.scan_prefix(u32_to_ivec(uid));
+    let iter = if is_desc {
+        IterType::Rev(iter.rev())
+    } else {
+        IterType::Iter(iter)
+    };
+
+    for (idx, i) in iter.enumerate() {
         if idx < anchor {
             continue;
         }
@@ -112,13 +129,9 @@ pub(crate) async fn gallery(
             imgs.push(img);
         }
 
-        if imgs.len() >= 12 {
+        if imgs.len() >= n {
             break;
         }
-    }
-
-    if is_desc {
-        imgs.reverse();
     }
 
     let page_data = PageData::new("gallery", &site_config, Some(claim), has_unread);
@@ -127,6 +140,8 @@ pub(crate) async fn gallery(
         imgs,
         anchor,
         is_desc,
+        n,
+        uid,
     };
 
     Ok(into_response(&page_gallery))
@@ -138,6 +153,7 @@ pub(crate) async fn gallery(
 struct PageUpload<'a> {
     page_data: PageData<'a>,
     imgs: Vec<String>,
+    uid: u32,
 }
 
 /// `GET /upload`
@@ -148,10 +164,12 @@ pub(crate) async fn upload(
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let has_unread = User::has_unread(&DB, claim.uid)?;
+    let uid = claim.uid;
     let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
     let page_upload = PageUpload {
         page_data,
         imgs: vec![],
+        uid,
     };
 
     Ok(into_response(&page_upload))
@@ -260,8 +278,13 @@ pub(crate) async fn upload_post(
     DB.open_tree("user_uploads")?.apply_batch(batch)?;
 
     let has_unread = User::has_unread(&DB, claim.uid)?;
+    let uid = claim.uid;
     let page_data = PageData::new("upload images", &site_config, Some(claim), has_unread);
-    let page_upload = PageUpload { page_data, imgs };
+    let page_upload = PageUpload {
+        page_data,
+        imgs,
+        uid,
+    };
 
     Ok(into_response(&page_upload))
 }
