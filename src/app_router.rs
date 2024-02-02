@@ -14,7 +14,7 @@ use crate::{
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
-        upload::{gallery, upload, upload_pic_post, upload_post},
+        upload::{gallery, image_delete, upload, upload_pic_post, upload_post},
         user::{
             remove_session, reset, reset_post, role_post, signin, signin_post, signout, signup,
             signup_post, user, user_follow, user_list, user_password_post, user_recovery_code,
@@ -67,6 +67,7 @@ pub async fn router() -> Router {
         .route("/admin", get(admin).post(admin_post))
         .route("/admin/view", get(admin_view))
         .route("/admin/gallery", get(admin_gallery))
+        .route("/image/delete/:uid/:img_id", get(image_delete))
         .route("/mod/:iid", get(mod_inn).post(mod_inn_post))
         .route("/mod/feed/:iid", get(mod_inn).post(mod_feed_post))
         .route(

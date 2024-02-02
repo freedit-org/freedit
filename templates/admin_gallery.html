@@ -4,14 +4,24 @@
 <div class="box content">
     <div class="columns is-multiline">
         {% for img in imgs %}
+        <div id="delete_{{img.2}}" class="overlay">
+            <div class="popup content">
+                <h3>Delete permanently?</h3>
+                <a class="close" href="#">&times;</a>
+                <p>Are you sure you want to delete this image?</p>
+                <p><a href="/image/delete/{{img.0}}/{{img.1}}" class="button is-danger">Delete</a></p>
+                <img src="/static/upload/{{img.2}}">
+            </div>
+        </div>
         <div class="column is-one-third">
             <figure>
-                <p class="image is-32x32 is-hidden-mobile">
+                <p class="image is-32x32">
                     <a href="/gallery/{{img.0}}"><img src="/static/avatars/{{img.0}}.png"></a>
                 </p>
                 <a href="/static/upload/{{img.2}}" target="_blank"><img src="/static/upload/{{img.2}}"></a>
+                <a href="#delete_{{img.2}}" class="delete">Delete</a>
                 <figcaption>
-                    <code>{{img.2}}</code>
+                    <span class="tag">{{img.2}}</span>
                 </figcaption>
             </figure>
         </div>

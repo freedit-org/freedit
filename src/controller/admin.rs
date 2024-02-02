@@ -1,5 +1,5 @@
 use super::{
-    db_utils::{get_count, get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
+    db_utils::{get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
     fmt::{clean_html, ts_to_date},
     inn::ParamsTag,
     meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
@@ -410,7 +410,6 @@ pub(crate) async fn admin_gallery(
     let is_desc = params.is_desc.unwrap_or(true);
     let n = 12;
 
-    let count = get_count(&DB, "default", "imgs_count")?;
     let mut imgs = Vec::new();
     for i in &DB.open_tree("user_uploads")? {
         let (k, v) = i?;
@@ -423,6 +422,7 @@ pub(crate) async fn admin_gallery(
     imgs.sort_unstable_by(|a, b| a.1.cmp(&b.1));
 
     let page_params = ParamsPage { anchor, n, is_desc };
+    let count = imgs.len();
     let (start, end) = get_range(count, &page_params);
 
     let mut imgs = imgs[(start - 1)..end].to_vec();

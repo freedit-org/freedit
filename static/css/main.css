@@ -72,6 +72,10 @@ nav {
     opacity: 1;
 }
 
+.overlay:target ~ .column {
+    visibility: hidden;
+}
+
 .popup {
     min-width: 300px;
     margin: 70px auto;

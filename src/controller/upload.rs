@@ -1,9 +1,9 @@
 use super::{
-    db_utils::IterType,
+    db_utils::{u8_slice_to_u32, IterType},
     incr_id,
     inn::ParamsTag,
     into_response,
-    meta_handler::PageData,
+    meta_handler::{get_referer, PageData},
     u32_to_ivec,
     user::{InnRole, Role},
     Claim, SiteConfig, User,
@@ -14,7 +14,10 @@ use axum::{
     extract::{Multipart, Path, Query},
     response::{IntoResponse, Redirect},
 };
-use axum_extra::{headers::Cookie, TypedHeader};
+use axum_extra::{
+    headers::{Cookie, Referer},
+    TypedHeader,
+};
 use data_encoding::HEXLOWER;
 use image::{imageops::FilterType, ImageFormat};
 use img_parts::{DynImage, ImageEXIF};
@@ -22,7 +25,7 @@ use mozjpeg::{ColorSpace, Compress, ScanMode};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::Deserialize;
 use sled::Batch;
-use tokio::fs;
+use tokio::fs::{self, remove_file};
 use tracing::log::error;
 
 #[derive(Deserialize)]
@@ -83,7 +86,7 @@ pub(crate) async fn upload_pic_post(
 #[template(path = "gallery.html")]
 struct PageGallery<'a> {
     page_data: PageData<'a>,
-    imgs: Vec<String>,
+    imgs: Vec<(u32, String)>,
     anchor: usize,
     is_desc: bool,
     n: usize,
@@ -122,12 +125,10 @@ pub(crate) async fn gallery(
             continue;
         }
 
-        let (_, v) = i?;
+        let (k, v) = i?;
+        let img_id = u8_slice_to_u32(&k[4..]);
         let img = String::from_utf8_lossy(&v).to_string();
-
-        if !imgs.contains(&img) {
-            imgs.push(img);
-        }
+        imgs.push((img_id, img));
 
         if imgs.len() >= n {
             break;
@@ -145,6 +146,50 @@ pub(crate) async fn gallery(
     };
 
     Ok(into_response(&page_gallery))
+}
+
+/// `GET /image/delete`
+pub(crate) async fn image_delete(
+    cookie: Option<TypedHeader<Cookie>>,
+    Path((uid, img_id)): Path<(u32, u32)>,
+    referer: Option<TypedHeader<Referer>>,
+) -> Result<impl IntoResponse, AppError> {
+    let cookie = cookie.ok_or(AppError::NonLogin)?;
+    let site_config = SiteConfig::get(&DB)?;
+    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+
+    if claim.uid != uid && Role::from(claim.role) != Role::Admin {
+        return Err(AppError::Unauthorized);
+    }
+
+    let k = [&u32_to_ivec(uid), &u32_to_ivec(img_id)].concat();
+    let tree = DB.open_tree("user_uploads")?;
+    if let Some(v1) = tree.remove(&k)? {
+        // When the same pictures uploaded, only one will be saved. So when deleting, we must check that.
+        let mut count = 0;
+        for i in tree.iter() {
+            let (_, v2) = i?;
+            if v1 == v2 {
+                count += 1;
+                break;
+            }
+        }
+
+        if count == 0 {
+            let img = String::from_utf8_lossy(&v1);
+            let path = format!("{}/{}", CONFIG.upload_path, img);
+            remove_file(path).await?;
+        }
+    } else {
+        return Err(AppError::NotFound);
+    }
+
+    let target = if let Some(referer) = get_referer(referer) {
+        referer
+    } else {
+        format!("/gallery/{}", uid)
+    };
+    Ok(Redirect::to(&target))
 }
 
 /// Page data: `upload.html`
