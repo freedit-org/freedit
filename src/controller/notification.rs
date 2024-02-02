@@ -13,7 +13,6 @@ use bincode::config::standard;
 use serde::Deserialize;
 use sled::{Db, IVec};
 use snailquote::unescape;
-use std::fmt::Display;
 
 /// notification.html
 #[derive(Template)]
@@ -42,6 +41,8 @@ pub enum NtType {
     InnNotification = 5,
     SiteNotification = 6,
     Message = 7,
+    SoloDelete = 8,
+    ImageDelete = 9,
 }
 
 impl From<u8> for NtType {
@@ -54,33 +55,16 @@ impl From<u8> for NtType {
             5 => Self::InnNotification,
             6 => Self::SiteNotification,
             7 => Self::Message,
+            8 => Self::SoloDelete,
+            9 => Self::ImageDelete,
             _ => unreachable!(),
-        }
-    }
-}
-
-impl Display for NtType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::PostComment => write!(f, "PostComment"),
-            Self::PostMention => write!(f, "PostMention"),
-            Self::SoloComment => write!(f, "SoloComment"),
-            Self::SoloMention => write!(f, "SoloMention"),
-            Self::InnNotification => write!(f, "InnNotification"),
-            Self::SiteNotification => write!(f, "SiteNotification"),
-            Self::Message => write!(f, "Message"),
         }
     }
 }
 
 struct Notification {
     nid: u32,
-    nt_type: String,
     uid: u32,
-    username: String,
-    id1: u32,
-    id2: u32,
-    id3: u32,
     content1: String,
     content2: String,
     is_read: bool,
@@ -174,25 +158,46 @@ pub(crate) async fn notification(
         // uid#nid#nt_type = id1#id2#is_read
         let (key, value) = i?;
         let nid = u8_slice_to_u32(&key[4..8]);
+        let is_read = value[8] == 1;
 
         let nt_type: NtType = key[8].into();
         match nt_type {
-            NtType::PostComment | NtType::PostMention => {
+            NtType::PostComment => {
                 if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                     let post: Post = get_one(&DB, "posts", comment.pid)?;
                     let user: User = get_one(&DB, "users", comment.uid)?;
+                    let content1 = format!(
+                        "{} commented on your post <a href='/post/{}/{}?nid={}#{}'>{}</a>",
+                        user.username, post.iid, comment.pid, nid, comment.cid, post.title
+                    );
                     let notification = Notification {
                         nid,
-                        nt_type: nt_type.to_string(),
                         uid: comment.uid,
-                        username: user.username,
-                        id1: post.iid,
-                        id2: comment.pid,
-                        id3: comment.cid,
-                        content1: post.title,
+                        content1,
                         content2: unescape(&comment.content).unwrap(),
-                        is_read: value[8] == 1,
+                        is_read,
+                    };
+                    notifications.push(notification);
+                } else {
+                    tree.remove(&key)?;
+                };
+            }
+            NtType::PostMention => {
+                if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
+                    let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
+                    let post: Post = get_one(&DB, "posts", comment.pid)?;
+                    let user: User = get_one(&DB, "users", comment.uid)?;
+                    let content1 = format!(
+                        "{} mentioned you on post <a href='/post/{}/{}?nid={}#{}'>{}</a>",
+                        user.username, post.iid, comment.pid, nid, comment.cid, post.title
+                    );
+                    let notification = Notification {
+                        nid,
+                        uid: comment.uid,
+                        content1,
+                        content2: unescape(&comment.content).unwrap(),
+                        is_read,
                     };
                     notifications.push(notification);
                 } else {
@@ -204,17 +209,16 @@ pub(crate) async fn notification(
                 let sid2 = u8_slice_to_u32(&value[4..8]);
                 if let Ok(solo) = get_one::<Solo>(&DB, "solos", sid2) {
                     let user: User = get_one(&DB, "users", solo.uid)?;
+                    let content1 = format!(
+                        "{} commented your <a href='/solo/{}?nid={}'>Solo</a>",
+                        &user.username, sid1, nid
+                    );
                     let notification = Notification {
                         nid,
-                        nt_type: nt_type.to_string(),
                         uid: solo.uid,
-                        username: user.username,
-                        id1: sid1,
-                        id2: sid2,
-                        id3: 0,
-                        content1: "".into(),
+                        content1,
                         content2: unescape(&solo.content).unwrap(),
-                        is_read: value[8] == 1,
+                        is_read,
                     };
                     notifications.push(notification);
                 } else {
@@ -225,59 +229,64 @@ pub(crate) async fn notification(
                 let sid1 = u8_slice_to_u32(&value[0..4]);
                 if let Ok(solo) = get_one::<Solo>(&DB, "solos", sid1) {
                     let user: User = get_one(&DB, "users", solo.uid)?;
+                    let content1 = format!(
+                        "{} mentioned you on <a href='/solo/{}?nid={}'>Solo</a>",
+                        &user.username, sid1, nid
+                    );
                     let notification = Notification {
                         nid,
-                        nt_type: nt_type.to_string(),
                         uid: solo.uid,
-                        username: user.username,
-                        id1: sid1,
-                        id2: 0,
-                        id3: 0,
-                        content1: "".into(),
+                        content1,
                         content2: unescape(&solo.content).unwrap(),
-                        is_read: value[8] == 1,
+                        is_read,
                     };
                     notifications.push(notification);
                 } else {
                     tree.remove(&key)?;
                 };
             }
+            NtType::SoloDelete => {
+                let uid = u8_slice_to_u32(&value[0..4]);
+                let user: User = get_one(&DB, "users", uid)?;
+                let sid = u8_slice_to_u32(&value[4..8]);
+                let content2 = format!("{} has deleted your solo(id={})", user.username, sid);
+                let notification = Notification {
+                    nid,
+                    uid: user.uid,
+                    content1: String::new(),
+                    content2,
+                    is_read,
+                };
+                notifications.push(notification);
+            }
             NtType::InnNotification => {
                 let role = u8_slice_to_u32(&value[0..4]);
                 let role_desc = InnRole::from(role as u8).to_string();
                 let iid = u8_slice_to_u32(&value[4..8]);
                 let inn: Inn = get_one(&DB, "inns", iid)?;
+                let content2 = format!(
+                    "Your role in {} (id:{}) has been changed to {role_desc}",
+                    inn.inn_name, iid
+                );
                 let notification = Notification {
                     nid,
-                    nt_type: nt_type.to_string(),
                     uid: claim.uid,
-                    username: claim.username.clone(),
-                    id1: 0,
-                    id2: 0,
-                    id3: 0,
-                    content1: "".into(),
-                    content2: format!(
-                        "Your role in {} (id:{}) has been changed to {role_desc}",
-                        inn.inn_name, iid
-                    ),
-                    is_read: value[8] == 1,
+                    content1: String::new(),
+                    content2,
+                    is_read,
                 };
                 notifications.push(notification);
             }
             NtType::SiteNotification => {
                 let role = u8_slice_to_u32(&value[0..4]);
                 let role_desc = Role::from(role as u8).to_string();
+                let content2 = format!("Your site role has been changed to {role_desc}");
                 let notification = Notification {
                     nid,
-                    nt_type: nt_type.to_string(),
                     uid: claim.uid,
-                    username: claim.username.clone(),
-                    id1: 0,
-                    id2: 0,
-                    id3: 0,
-                    content1: "".into(),
-                    content2: format!("Your site role has been changed to {role_desc}"),
-                    is_read: value[8] == 1,
+                    content1: String::new(),
+                    content2,
+                    is_read,
                 };
                 notifications.push(notification);
             }
@@ -286,20 +295,29 @@ pub(crate) async fn notification(
                 let sender: User = get_one(&DB, "users", sender_id)?;
                 let mid = u8_slice_to_u32(&value[4..8]);
                 let content2 = format!(
-                    "You have received a <a href='/inbox/{mid}?nid={nid}'>e2ee message</a> from {}",
+                    "{} send a <a href='/inbox/{mid}?nid={nid}'>e2ee message</a> to you.",
                     sender.username
                 );
                 let notification = Notification {
                     nid,
-                    nt_type: nt_type.to_string(),
                     uid: sender.uid,
-                    username: sender.username.clone(),
-                    id1: 0,
-                    id2: mid,
-                    id3: 0,
-                    content1: "".into(),
+                    content1: String::new(),
                     content2,
-                    is_read: value[8] == 1,
+                    is_read,
+                };
+                notifications.push(notification);
+            }
+            NtType::ImageDelete => {
+                let uid = u8_slice_to_u32(&value[0..4]);
+                let user: User = get_one(&DB, "users", uid)?;
+                let img_id = u8_slice_to_u32(&value[4..8]);
+                let content2 = format!("{} has deleted your image(id={})", &user.username, img_id);
+                let notification = Notification {
+                    nid,
+                    uid: user.uid,
+                    content1: String::new(),
+                    content2,
+                    is_read,
                 };
                 notifications.push(notification);
             }

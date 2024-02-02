@@ -4,6 +4,7 @@ use super::{
     inn::ParamsTag,
     into_response,
     meta_handler::{get_referer, PageData},
+    notification::{add_notification, NtType},
     u32_to_ivec,
     user::{InnRole, Role},
     Claim, SiteConfig, User,
@@ -148,7 +149,7 @@ pub(crate) async fn gallery(
     Ok(into_response(&page_gallery))
 }
 
-/// `GET /image/delete`
+/// `GET /image/delete/:uid/:img_id`
 pub(crate) async fn image_delete(
     cookie: Option<TypedHeader<Cookie>>,
     Path((uid, img_id)): Path<(u32, u32)>,
@@ -182,6 +183,10 @@ pub(crate) async fn image_delete(
         }
     } else {
         return Err(AppError::NotFound);
+    }
+
+    if uid != claim.uid {
+        add_notification(&DB, uid, NtType::ImageDelete, claim.uid, img_id)?;
     }
 
     let target = if let Some(referer) = get_referer(referer) {

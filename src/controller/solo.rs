@@ -587,6 +587,10 @@ pub(crate) async fn solo_delete(
 
     DB.open_tree("tan")?.remove(format!("solo{}", sid))?;
 
+    if solo.uid != claim.uid {
+        add_notification(&DB, solo.uid, NtType::SoloDelete, claim.uid, solo.sid)?;
+    }
+
     let target = format!("/solo/user/{}", solo.uid);
     Ok(Redirect::to(&target))
 }
