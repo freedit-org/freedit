@@ -868,9 +868,10 @@ pub(crate) async fn inn(
     let mut user_iins: Result<Vec<u32>, AppError> = Err(AppError::NotFound);
     let mut username: Option<String> = None;
     let mut is_mod = false;
+    let mut is_site_admin = false;
     if let Some(ref claim) = claim {
         is_mod = User::is_mod(&DB, claim.uid, iid)?;
-
+        is_site_admin = Role::from(claim.role) == Role::Admin;
         user_iins = get_ids_by_prefix(&DB, "user_inns", u32_to_ivec(claim.uid), None);
         if let Ok(ref user_iins) = user_iins {
             joined_inns = user_iins;
@@ -888,14 +889,20 @@ pub(crate) async fn inn(
                 let user_following: Vec<u32> =
                     get_ids_by_prefix(&DB, "user_following", u32_to_ivec(claim.uid), None)
                         .unwrap_or_default();
-                index = get_pids_by_uids(&DB, &user_following, joined_inns, &page_params)?;
+                index = get_pids_by_uids(
+                    &DB,
+                    &user_following,
+                    joined_inns,
+                    &page_params,
+                    is_site_admin,
+                )?;
             }
         }
         Some(uid) => {
             if let Ok(uid) = uid.parse::<u32>() {
                 let user: User = get_one(&DB, "users", uid)?;
                 username = Some(user.username);
-                index = get_pids_by_uids(&DB, &[uid], joined_inns, &page_params)?;
+                index = get_pids_by_uids(&DB, &[uid], joined_inns, &page_params, is_site_admin)?;
             };
         }
         _ => {
@@ -906,7 +913,7 @@ pub(crate) async fn inn(
                     .open_tree("inns_private")?
                     .contains_key(u32_to_ivec(iid))?
                 {
-                    if joined_inns.contains(&iid) {
+                    if joined_inns.contains(&iid) || is_site_admin {
                         index = get_pids_by_iids(&DB, &[iid], &page_params)?;
                     }
                 } else {
@@ -1283,6 +1290,7 @@ fn get_pids_by_uids(
     uids: &[u32],
     joined_inns: &[u32],
     page_params: &ParamsPage,
+    is_site_admin: bool,
 ) -> Result<Vec<u32>, AppError> {
     let mut pids = Vec::with_capacity(page_params.n);
     for uid in uids {
@@ -1293,7 +1301,8 @@ fn get_pids_by_uids(
             let pid = u8_slice_to_u32(&k[4..8]);
             let iid = u8_slice_to_u32(&v[0..4]);
             let visibility = u8_slice_to_u32(&v[4..8]);
-            if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) {
+            if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) || is_site_admin
+            {
                 pids.push(pid);
             }
         }
