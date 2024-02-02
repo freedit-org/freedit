@@ -74,23 +74,19 @@ impl OutSolo {
         let date = ts_to_date(solo.created_at);
 
         let mut can_visit = false;
-        if let Some(uid) = current_uid {
-            if solo.visibility == 20 {
-                if uid == solo.uid {
-                    can_visit = true;
-                }
-            } else if solo.visibility == 10 && uid != solo.uid {
+        if solo.visibility == 0 {
+            can_visit = true;
+        } else if let Some(uid) = current_uid {
+            if uid == solo.uid {
+                can_visit = true;
+            } else if solo.visibility == 10 {
                 let k = [&u32_to_ivec(solo.uid), &u32_to_ivec(uid)].concat();
                 if db.open_tree("user_followers")?.contains_key(k)? {
                     can_visit = true;
                 }
-            }
-
-            if User::is_admin(db, uid)? {
+            } else if User::is_admin(db, uid)? {
                 can_visit = true;
             }
-        } else if solo.visibility == 0 {
-            can_visit = true;
         }
 
         if !can_visit {
