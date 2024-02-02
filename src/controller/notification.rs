@@ -43,6 +43,9 @@ pub enum NtType {
     Message = 7,
     SoloDelete = 8,
     ImageDelete = 9,
+    PostLock = 10,
+    PostHide = 11,
+    CommentHide = 12,
 }
 
 impl From<u8> for NtType {
@@ -57,6 +60,9 @@ impl From<u8> for NtType {
             7 => Self::Message,
             8 => Self::SoloDelete,
             9 => Self::ImageDelete,
+            10 => Self::PostLock,
+            11 => Self::PostHide,
+            12 => Self::CommentHide,
             _ => unreachable!(),
         }
     }
@@ -191,6 +197,62 @@ pub(crate) async fn notification(
                     let content1 = format!(
                         "{} mentioned you on post <a href='/post/{}/{}?nid={}#{}'>{}</a>",
                         user.username, post.iid, comment.pid, nid, comment.cid, post.title
+                    );
+                    let notification = Notification {
+                        nid,
+                        uid: comment.uid,
+                        content1,
+                        content2: unescape(&comment.content).unwrap(),
+                        is_read,
+                    };
+                    notifications.push(notification);
+                } else {
+                    tree.remove(&key)?;
+                };
+            }
+            NtType::PostHide => {
+                let uid = u8_slice_to_u32(&value[0..4]);
+                let user: User = get_one(&DB, "users", uid)?;
+                let pid = u8_slice_to_u32(&value[4..8]);
+                let post: Post = get_one(&DB, "posts", pid)?;
+                let content2 = format!(
+                    "{} has hidden your post <a href='/post/{}/{}?nid={}'>{}</a>",
+                    user.username, post.iid, pid, nid, post.title
+                );
+                let notification = Notification {
+                    nid,
+                    uid: post.uid,
+                    content1: String::new(),
+                    content2,
+                    is_read,
+                };
+                notifications.push(notification);
+            }
+            NtType::PostLock => {
+                let uid = u8_slice_to_u32(&value[0..4]);
+                let user: User = get_one(&DB, "users", uid)?;
+                let pid = u8_slice_to_u32(&value[4..8]);
+                let post: Post = get_one(&DB, "posts", pid)?;
+                let content2 = format!(
+                    "{} has locked your post <a href='/post/{}/{}?nid={}'>{}</a>",
+                    user.username, post.iid, pid, nid, post.title
+                );
+                let notification = Notification {
+                    nid,
+                    uid: post.uid,
+                    content1: String::new(),
+                    content2,
+                    is_read,
+                };
+                notifications.push(notification);
+            }
+            NtType::CommentHide => {
+                if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
+                    let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
+                    let post: Post = get_one(&DB, "posts", comment.pid)?;
+                    let content1 = format!(
+                        "Your comment on <a href='/post/{}/{}?nid={}#{}'>{}</a> has been hidden",
+                        post.iid, comment.pid, nid, comment.cid, post.title
                     );
                     let notification = Notification {
                         nid,

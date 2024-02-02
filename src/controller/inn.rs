@@ -1873,6 +1873,13 @@ pub(crate) async fn comment_hide(
     comment.is_hidden = !comment.is_hidden;
 
     set_one_with_key(&DB, "post_comments", k, &comment)?;
+    add_notification(
+        &DB,
+        comment.uid,
+        NtType::CommentHide,
+        comment.pid,
+        comment.cid,
+    )?;
 
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
@@ -2014,6 +2021,7 @@ pub(crate) async fn post_lock(
 
     if User::is_mod(&DB, claim.uid, iid)? || Role::from(claim.role) == Role::Admin {
         if post.status != PostStatus::LockedByMod {
+            add_notification(&DB, post.uid, NtType::PostLock, claim.uid, post.pid)?;
             post.status = PostStatus::LockedByMod
         } else if post.status == PostStatus::LockedByMod {
             post.status = PostStatus::Normal
@@ -2047,6 +2055,7 @@ pub(crate) async fn post_hide(
 
     if User::is_mod(&DB, claim.uid, iid)? || Role::from(claim.role) == Role::Admin {
         if post.status != PostStatus::HiddenByMod {
+            add_notification(&DB, post.uid, NtType::PostHide, claim.uid, post.pid)?;
             post.status = PostStatus::HiddenByMod
         } else if post.status == PostStatus::HiddenByMod {
             post.status = PostStatus::Normal
