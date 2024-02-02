@@ -2,7 +2,7 @@
 name = "freedit"
 version = "0.6.4"
 edition = "2021"
-license = "MIT"
+license = "MIT License"
 
 [dependencies]
 ammonia = "3"

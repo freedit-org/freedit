@@ -477,20 +477,12 @@ pub(crate) struct FormFeedAdd {
 }
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
+    let mut client = reqwest::Client::builder().timeout(Duration::from_secs(6));
     if !CONFIG.proxy.is_empty() {
         let proxy = reqwest::Proxy::all(&CONFIG.proxy).unwrap();
-        reqwest::Client::builder()
-            .timeout(Duration::from_secs(6))
-            .proxy(proxy)
-            .build()
-            .unwrap()
-    } else {
-        reqwest::Client::builder()
-            // timeout shoule be less than global timeout
-            .timeout(Duration::from_secs(6))
-            .build()
-            .unwrap()
+        client = client.proxy(proxy);
     }
+    client.build().unwrap()
 });
 
 /// `POST /feed/add`
