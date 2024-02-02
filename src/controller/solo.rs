@@ -7,7 +7,9 @@ use super::{
     get_ids_by_prefix, get_one, incr_id, into_response, ivec_to_u32,
     meta_handler::{get_referer, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
-    u32_to_ivec, u8_slice_to_u32, Claim, SiteConfig, Solo, User,
+    u32_to_ivec, u8_slice_to_u32,
+    user::Role,
+    Claim, SiteConfig, Solo, User,
 };
 use crate::{error::AppError, DB};
 use askama::Template;
@@ -62,6 +64,7 @@ struct OutSolo {
     like_count: usize,
     reply_to: Option<u32>,
     replies: Vec<u32>,
+    can_delete: bool,
 }
 
 impl OutSolo {
@@ -95,10 +98,15 @@ impl OutSolo {
         }
 
         let mut like = false;
+        let mut can_delete = false;
         if let Some(uid) = current_uid {
             let k = [&u32_to_ivec(sid), &u32_to_ivec(uid)].concat();
             if db.open_tree("solo_users_like")?.contains_key(k)? {
                 like = true;
+            }
+
+            if solo.uid == uid || User::is_admin(db, uid)? {
+                can_delete = true;
             }
         }
 
@@ -116,6 +124,7 @@ impl OutSolo {
             like_count,
             reply_to: solo.reply_to,
             replies: solo.replies,
+            can_delete,
         };
 
         Ok(Some(out_solo))
@@ -548,7 +557,7 @@ pub(crate) async fn solo_delete(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let solo: Solo = get_one(&DB, "solos", sid)?;
-    if solo.uid != claim.uid {
+    if solo.uid != claim.uid && Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -573,7 +582,7 @@ pub(crate) async fn solo_delete(
         hashtags_tree.remove(k)?;
     }
 
-    let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
+    let k = [&u32_to_ivec(solo.uid), &sid_ivec].concat();
     DB.open_tree("user_solos")?.remove(k)?;
 
     DB.open_tree("tan")?.remove(format!("solo{}", sid))?;

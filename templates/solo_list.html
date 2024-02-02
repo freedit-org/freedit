@@ -148,8 +148,7 @@
                     <span>{{solo.like_count}}</span>
                     {% endif %}
                 </a>
-                {% match page_data.claim %} {% when Some with (claim) %}
-                {% if solo.uid == claim.uid %}
+                {% if solo.can_delete %}
                 <a class="level-item" href="#delete_{{solo.sid}}">🗑️</a>
                 <div id="delete_{{solo.sid}}" class="overlay">
                     <div class="popup content">
@@ -160,7 +159,6 @@
                     </div>
                 </div>
                 {% endif %}
-                {% else %}{% endmatch %}
                 <a href="/solo/{{solo.sid}}">💬
                     {% if solo.replies.len() >0 %}
                         {{solo.replies.len()}}
