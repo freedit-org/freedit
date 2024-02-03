@@ -77,3 +77,8 @@ COOKIE=<cookie> cargo run --example mock
 * icon: <https://iconoir.com/>
 * CSS framework: <https://bulma.io/>
 * Rust crates: [Cargo.toml](https://github.com/freedit-org/freedit/blob/main/Cargo.toml)
+
+## TODO
+
+- [ ] Add icon for private inn 
+- [ ] Change inn_type to enum(breaking change)

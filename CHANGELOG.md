@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.5-rc.1] - 2024-02-02
+
+### Fixed
+
+- post content @ bug fixed
+
+### Added
+
+- /admin/gallery
+- site admin could view all solos
+- site admin could delete solo
+- add notifications for post lock/hide/ comment hide...
+
 ## [0.6.4] - 2024-01-13
 
 ### Added
@@ -296,7 +309,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.4...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.5-rc.1...HEAD
+[0.6.5-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.4...v0.6.5-rc.1
 [0.6.4]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/freedit-org/freedit/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/freedit-org/freedit/compare/v0.6.1...v0.6.2
