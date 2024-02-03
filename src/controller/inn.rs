@@ -1732,7 +1732,7 @@ pub(crate) async fn comment_post(
         // notify user to be mentioned in comment
         // prevent duplicate notifications
         if uid != post.uid {
-            add_notification(&DB, uid, NtType::PostMention, pid, cid)?;
+            add_notification(&DB, uid, NtType::CommentMention, pid, cid)?;
         }
     }
 

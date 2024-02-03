@@ -46,6 +46,7 @@ pub enum NtType {
     PostLock = 10,
     PostHide = 11,
     CommentHide = 12,
+    CommentMention = 13,
 }
 
 impl From<u8> for NtType {
@@ -63,6 +64,7 @@ impl From<u8> for NtType {
             10 => Self::PostLock,
             11 => Self::PostHide,
             12 => Self::CommentHide,
+            13 => Self::CommentMention,
             _ => unreachable!(),
         }
     }
@@ -153,7 +155,7 @@ pub(crate) async fn notification(
     }
 
     let mut notifications = Vec::with_capacity(n);
-    for (idx, i) in tree.scan_prefix(&prefix).enumerate() {
+    for (idx, i) in tree.scan_prefix(&prefix).rev().enumerate() {
         if idx < anchor {
             continue;
         }
@@ -190,6 +192,26 @@ pub(crate) async fn notification(
                 };
             }
             NtType::PostMention => {
+                let pid = u8_slice_to_u32(&value[0..4]);
+                let Ok(post) = get_one::<Post>(&DB, "posts", pid) else {
+                    tree.remove(&key)?;
+                    continue;
+                };
+                let user: User = get_one(&DB, "users", post.uid)?;
+                let content2 = format!(
+                    "{} mentioned you on post <a href='/post/{}/{}?nid={}'>{}</a>",
+                    user.username, post.iid, pid, nid, post.title
+                );
+                let notification = Notification {
+                    nid,
+                    uid: post.uid,
+                    content1: String::new(),
+                    content2,
+                    is_read,
+                };
+                notifications.push(notification);
+            }
+            NtType::CommentMention => {
                 if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                     let post: Post = get_one(&DB, "posts", comment.pid)?;
@@ -385,7 +407,6 @@ pub(crate) async fn notification(
             }
         }
     }
-    notifications.reverse();
 
     let mut inn_notifications = Vec::new();
     let mod_inns = get_ids_by_prefix(&DB, "mod_inns", prefix, None)?;
