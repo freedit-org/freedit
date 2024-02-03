@@ -907,7 +907,7 @@ pub(crate) async fn inn(
         }
         _ => {
             if iid == 0 {
-                index = get_pids_all(&DB, joined_inns, &page_params)?;
+                index = get_pids_all(&DB, joined_inns, &page_params, is_site_admin)?;
             } else {
                 if DB
                     .open_tree("inns_private")?
@@ -1100,7 +1100,7 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
     let mut categories = Vec::new();
 
     if iid == 0 {
-        index = get_pids_all(&DB, &[], &page_params)?;
+        index = get_pids_all(&DB, &[], &page_params, false)?;
         title = site_config.site_name;
         description = site_config.description;
     } else {
@@ -1227,6 +1227,7 @@ fn get_pids_all(
     db: &Db,
     joined_inns: &[u32],
     page_params: &ParamsPage,
+    is_site_admin: bool,
 ) -> Result<Vec<u32>, AppError> {
     let tree = db.open_tree("post_timeline")?;
     let mut count: usize = 0;
@@ -1244,7 +1245,7 @@ fn get_pids_all(
         let out_id = u8_slice_to_u32(&k[8..12]);
 
         let visibility = ivec_to_u32(&v);
-        if visibility == 0 || (visibility == 10 && joined_inns.contains(&id)) {
+        if visibility == 0 || (visibility == 10 && joined_inns.contains(&id)) || is_site_admin {
             if count < page_params.anchor {
                 count += 1;
                 continue;
@@ -1442,7 +1443,9 @@ pub(crate) async fn post(
         match claim.as_ref() {
             Some(claim) => {
                 let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
-                if !DB.open_tree("user_inns")?.contains_key(k)? {
+                if !DB.open_tree("user_inns")?.contains_key(k)?
+                    && Role::from(claim.role) != Role::Admin
+                {
                     return Err(AppError::NotFound);
                 }
             }
