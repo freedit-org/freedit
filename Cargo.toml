@@ -17,10 +17,7 @@ captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
 fast2s = "0.3"
-futures-util = "0.3.29"
 http = "1.0.0"
-hyper = "1.1.0"
-hyper-util = "0.1.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
@@ -36,8 +33,6 @@ reqwest = { version = "0.11", default-features = false, features = ["rustls-tls"
 ring = { version = "0.17.5", default-features = false }
 rss = { version = "2.0", default-features = false }
 rust-stemmers = "1.2.0"
-rustls-pemfile = "2.0.0"
-rustls-pki-types = "1.0.1"
 serde = { version = "1.0", features = ["derive"] }
 sled = "0.34.7"
 snailquote = "0.3.1"
@@ -46,7 +41,6 @@ syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "defau
 tantivy = "0.21.0"
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tokio-rustls = "0.25.0"
 tower = { version = "0.4", features = ["timeout"] }
 tower-http = { version = "0.5.1", features = ["fs", "compression-br", "trace"] }
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }

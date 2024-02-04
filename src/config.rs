@@ -1,10 +1,8 @@
 use once_cell::sync::Lazy;
-use rustls_pemfile::{certs, private_key};
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string, File};
-use std::io::{BufReader, Write};
+use std::io::Write;
 use std::path::Path;
-use tokio_rustls::rustls::ServerConfig;
 use tracing::{info, warn};
 
 pub static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
@@ -19,8 +17,6 @@ pub struct Config {
     pub(crate) upload_path: String,
     pub(crate) tantivy_path: String,
     pub(crate) proxy: String,
-    cert: String,
-    key: String,
 }
 
 impl Config {
@@ -47,21 +43,6 @@ impl Config {
 
         config
     }
-
-    pub async fn tls_config(&self) -> Option<ServerConfig> {
-        let mut key_reader = BufReader::new(File::open(&CONFIG.key).ok()?);
-        let mut cert_reader = BufReader::new(File::open(&CONFIG.cert).ok()?);
-
-        let key = private_key(&mut key_reader).ok()??;
-        let certs = certs(&mut cert_reader)
-            .filter_map(|x| x.ok())
-            .collect::<Vec<_>>();
-
-        ServerConfig::builder()
-            .with_no_client_auth()
-            .with_single_cert(certs, key)
-            .ok()
-    }
 }
 
 impl Default for Config {
@@ -75,8 +56,6 @@ impl Default for Config {
             upload_path: "static/imgs/upload".into(),
             tantivy_path: "tantivy".into(),
             proxy: "".into(),
-            cert: "".into(),
-            key: "".into(),
         }
     }
 }

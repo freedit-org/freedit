@@ -2,18 +2,12 @@
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
 
-use axum::extract::Request;
 use chrono::Utc;
 use freedit::{
     router, AppError, CONFIG, DB, VERSION, {clear_invalid, cron_feed, Tan},
 };
-use futures_util::pin_mut;
-use hyper::body::Incoming;
-use hyper_util::rt::{TokioExecutor, TokioIo};
-use std::{fs, net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{fs, net::SocketAddr, path::PathBuf};
 use tokio::net::TcpListener;
-use tokio_rustls::TlsAcceptor;
-use tower::Service;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -85,40 +79,8 @@ async fn main() -> Result<(), AppError> {
     let addr: SocketAddr = CONFIG.addr.parse().unwrap();
     let listener = TcpListener::bind(addr).await.unwrap();
 
-    if let Some(tls_config) = CONFIG.tls_config().await {
-        let tls_acceptor = TlsAcceptor::from(Arc::new(tls_config));
-        info!("listening on https://{}", addr);
-        pin_mut!(listener);
-        loop {
-            let tower_service = app.clone();
-            let tls_acceptor = tls_acceptor.clone();
-            let (cnx, addr) = listener.accept().await.unwrap();
-            tokio::spawn(async move {
-                let Ok(stream) = tls_acceptor.accept(cnx).await else {
-                    error!("error during tls handshake connection from {}", addr);
-                    return;
-                };
-                let stream = TokioIo::new(stream);
-
-                let hyper_service =
-                    hyper::service::service_fn(move |request: Request<Incoming>| {
-                        tower_service.clone().call(request)
-                    });
-
-                let ret = hyper_util::server::conn::auto::Builder::new(TokioExecutor::new())
-                    .serve_connection_with_upgrades(stream, hyper_service)
-                    .await;
-
-                if let Err(err) = ret {
-                    error!("error serving connection from {}: {}", addr, err);
-                }
-            });
-        }
-    } else {
-        warn!("enable https failed, please check config toml cert and key");
-        info!("listening on http://{}", addr);
-        axum::serve(listener, app).await.unwrap();
-    }
+    info!("listening on http://{}", addr);
+    axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }
