@@ -87,11 +87,11 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        {% if inn.inn_type != "Private" %}
-                        <label class="radio"><input type="radio" name="inn_type" value="Public" required {% if inn.inn_type == "Public"  %} checked {% endif %} /> Public</label>
-                        <label class="radio"><input type="radio" name="inn_type" value="Apply" {% if inn.inn_type == "Apply"  %} checked {% endif %} /> Apply</label>
+                        {% if inn.inn_type != 10 %}
+                        <label class="radio"><input type="radio" name="inn_type" value=0 required {% if inn.inn_type == 0  %} checked {% endif %} /> Public</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=5 {% if inn.inn_type == 5  %} checked {% endif %} /> Apply</label>
                         {% else %}
-                        <label class="radio"><input type="radio" name="inn_type" value="Private" {% if inn.inn_type == "Private"  %} checked {% endif %} /> Private</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=10 {% if inn.inn_type == 10  %} checked {% endif %} /> Private</label>
                         {% endif %}
                     </div>
                 </div>

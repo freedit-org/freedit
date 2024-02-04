@@ -72,12 +72,12 @@
 //! | default             | "posts_count"       | N                    |
 //! | "posts"             | `pid`               | [`Post`]             |
 //! | "inn_posts"         | `iid#pid`           | `&[]`                |
-//! | "user_posts"        | `uid#pid`           | `iid#visibility`     |
+//! | "user_posts"        | `uid#pid`           | `iid#inn_type`       |
 //! | "tags"              | `tag#pid`           | `&[]`                |
 //! | "post_upvotes"      | `pid#uid`           | `&[]`                |
 //! | "post_downvotes"    | `pid#uid`           | `&[]`                |
-//! | "post_timeline_idx" | `iid#pid`           | `timestamp`          |
-//! | "post_timeline"     | `timestamp#iid#pid` | `visibility`         |
+//! | "post_timeline_idx" | `iid#pid`           | `timestamp#inn_type` |
+//! | "post_timeline"     | `timestamp#iid#pid` | `inn_type`           |
 //! | "post_pageviews"    | `pid`               | N                    |
 //! | "post_pins"         | `iid#pid`           | `&[]`                |
 //!
@@ -247,6 +247,26 @@ impl ToDoc for Solo {
     }
 }
 
+#[derive(PartialEq)]
+enum InnType {
+    Public = 0,
+    Apply = 5,
+    Private = 10,
+    Hidden = 20,
+}
+
+impl From<u8> for InnType {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => InnType::Public,
+            5 => InnType::Apply,
+            10 => InnType::Private,
+            20 => InnType::Hidden,
+            _ => InnType::Hidden,
+        }
+    }
+}
+
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Inn {
     iid: u32,
@@ -254,10 +274,17 @@ struct Inn {
     about: String,
     description: String,
     topics: Vec<String>,
-    inn_type: String,
+    inn_type: u8,
     early_birds: u32,
     created_at: i64,
     limit_edit_seconds: u32,
+}
+
+impl Inn {
+    fn is_accessible(&self) -> bool {
+        InnType::from(self.inn_type) == InnType::Public
+            || InnType::from(self.inn_type) == InnType::Apply
+    }
 }
 
 #[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug, Clone)]

@@ -728,11 +728,6 @@ pub(super) fn inn_feed_to_post(db: &Db, iid: u32, feed_id: u32, uid: u32) -> Res
         if !inn_items_tree.contains_key(inn_item_k)? {
             let inn: Inn = get_one(db, "inns", iid)?;
             let tag = format!("{}_feed", inn.inn_name);
-            let visibility = if inn.inn_type.as_str() == "Private" {
-                10
-            } else {
-                0
-            };
             let pid = incr_id(db, "posts_count")?;
             let item: Item = get_one(db, "items", item_id)?;
             let post = Post {
@@ -754,10 +749,11 @@ pub(super) fn inn_feed_to_post(db: &Db, iid: u32, feed_id: u32, uid: u32) -> Res
             let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
             db.open_tree("inn_posts")?.insert(k, &[])?;
 
-            inn_add_index(db, iid, pid, ts as u32, visibility)?;
+            inn_add_index(db, iid, pid, ts as u32, inn.inn_type)?;
 
             let k = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
-            let v = [&u32_to_ivec(iid), &u32_to_ivec(visibility)].concat();
+            let mut v = iid.to_be_bytes().to_vec();
+            v.push(inn.inn_type);
             db.open_tree("user_posts")?.insert(k, v)?;
 
             inn_items_tree.insert(inn_item_k, &[])?;

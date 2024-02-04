@@ -148,16 +148,19 @@ pub(crate) async fn admin_view(
                 "post_timeline_idx" => {
                     let id = u8_slice_to_u32(&k[0..4]);
                     let idx = u8_slice_to_u32(&k[4..8]);
-                    let v = ivec_to_u32(&v);
-                    ones.push(format!("id: {id}, idx: {idx}, target: {v}"));
+                    let timestamp = u8_slice_to_u32(&v[0..4]);
+                    let inn_type = v[4];
+                    ones.push(format!(
+                        "id: {id}, idx: {idx}, timestamp: {timestamp}, inn_type: {inn_type}"
+                    ));
                 }
                 "user_posts" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let pid = u8_slice_to_u32(&k[4..8]);
                     let iid = u8_slice_to_u32(&v[0..4]);
-                    let visibility = u8_slice_to_u32(&v[4..8]);
+                    let inn_type = v[4];
                     ones.push(format!(
-                        "uid: {uid},  iid: {iid}, pid: {pid}, visibility: {visibility}"
+                        "uid: {uid},  iid: {iid}, pid: {pid}, inn_type: {inn_type}"
                     ));
                 }
                 "post_comments_count" | "post_pageviews" => {
@@ -237,8 +240,8 @@ pub(crate) async fn admin_view(
                     let date = ts_to_date(timestamp);
                     let iid = u8_slice_to_u32(&k[4..8]);
                     let pid = u8_slice_to_u32(&k[8..12]);
-                    let visibility = u8_slice_to_u32(&v);
-                    ones.push(format!("{date} - {iid} - {pid} - {visibility}"));
+                    let inn_type = v[0];
+                    ones.push(format!("{date} - {iid} - {pid} - {inn_type}"));
                 }
                 "user_uploads" => {
                     let uid = u8_slice_to_u32(&k[0..4]);

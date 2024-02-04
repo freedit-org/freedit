@@ -9,7 +9,7 @@ use super::{
     get_ids_by_prefix, get_one, incr_id, into_response,
     meta_handler::{PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, NtType},
-    u32_to_ivec, u8_slice_to_u32, Claim, Inn, SiteConfig, User,
+    u32_to_ivec, u8_slice_to_u32, Claim, Inn, InnType, SiteConfig, User,
 };
 use crate::{config::CONFIG, error::AppError, DB};
 use ::rand::{thread_rng, Rng};
@@ -97,7 +97,7 @@ pub(crate) async fn user(
     for i in DB.open_tree("user_posts")?.scan_prefix(&uid_ivec) {
         let (_, v) = i?;
         // exclude private posts
-        if u8_slice_to_u32(&v[4..8]) != 10 {
+        if InnType::from(v[4]) != InnType::Private {
             user_posts_count += 1;
         }
     }
@@ -396,17 +396,16 @@ pub(crate) async fn user_list(
             }
             Some("inn") => {
                 let inn: Inn = get_one(&DB, "inns", id)?;
-                let need_apply = inn.inn_type != "Public";
-                info = (inn.iid, inn.inn_name, need_apply);
                 is_admin = false;
                 if let Some(ref claim) = claim {
                     is_admin = User::is_mod(&DB, claim.uid, inn.iid)?;
                 }
-
-                if inn.inn_type == "Private" && !is_admin {
-                } else {
+                if inn.is_accessible() || is_admin {
                     users = OutUserList::get_inn_users(&DB, id, params.role, &page_params)?;
                 }
+                let need_apply = InnType::from(inn.inn_type) == InnType::Apply
+                    || InnType::from(inn.inn_type) == InnType::Private;
+                info = (inn.iid, inn.inn_name, need_apply);
             }
             _ => return Ok(Redirect::to("/user/list").into_response()),
         }

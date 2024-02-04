@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Breaking
+
+inn_type: String -> u8
+
+```rust
+#[derive(Encode, Decode, Serialize, Debug)]
+struct Inn {
+    iid: u32,
+    inn_name: String,
+    about: String,
+    description: String,
+    topics: Vec<String>,
+    inn_type: u8, // change from String to u8
+    early_birds: u32,
+    created_at: i64,
+    limit_edit_seconds: u32,
+}
+```
+
+db tree:
+
+1. "user_posts", kv: `uid#pid => iid#visibility` -> `uid#pid => iid#inn_type`
+2. "post_timeline_idx", kv: `iid#pid => timestamp` -> `iid#pid => timestamp#inn_type`
+3. "post_timeline", kv: `timestamp#iid#pid => visibility` -> `iid#timestamp#pid => inn_type`
+
 ## [0.6.5] - 2024-02-04
 
 ### Fixed

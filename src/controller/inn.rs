@@ -23,7 +23,7 @@ use super::{
     meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
     user::{InnRole, Role},
-    Claim, Comment, Feed, FormPost, Inn, Post, PostContent, PostStatus, SiteConfig, User,
+    Claim, Comment, Feed, FormPost, Inn, InnType, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{error::AppError, DB};
 use askama::{filters::escape, Html, Template};
@@ -129,7 +129,7 @@ pub(crate) struct FormInn {
     description: String,
     #[validate(length(min = 1, max = 128))]
     topics: String,
-    inn_type: String,
+    inn_type: u8,
     early_birds: u32,
     limit_edit_seconds: u32,
 }
@@ -172,7 +172,8 @@ pub(crate) async fn mod_inn_post(
         .filter(|s| !s.is_empty())
         .collect();
 
-    if input.inn_type.as_str() == "Private" {
+    let inn_type = InnType::from(input.inn_type);
+    if inn_type == InnType::Private {
         topics.insert("private".into());
     } else {
         topics.retain(|t| t != "private")
@@ -205,15 +206,15 @@ pub(crate) async fn mod_inn_post(
         }
 
         let inn: Inn = get_one(&DB, "inns", iid)?;
-        if inn.inn_type.as_str() == "Private" && input.inn_type != "Private" {
+        let old_inn_type = InnType::from(inn.inn_type);
+        if old_inn_type == InnType::Private
+            && (inn_type == InnType::Public || inn_type == InnType::Apply)
+        {
             return Err(AppError::Unauthorized);
         }
-        if inn.inn_type.as_str() != "Private" && input.inn_type == "Private" {
-            return Err(AppError::Unauthorized);
-        }
-        if inn.inn_type.as_str() != "Private"
-            && input.inn_type != "Public"
-            && input.inn_type != "Apply"
+
+        if (old_inn_type == InnType::Public || old_inn_type == InnType::Apply)
+            && inn_type == InnType::Private
         {
             return Err(AppError::Unauthorized);
         }
@@ -261,7 +262,7 @@ pub(crate) async fn mod_inn_post(
         limit_edit_seconds: input.limit_edit_seconds,
     };
 
-    if inn.inn_type.as_str() == "Private" {
+    if InnType::from(inn.inn_type) == InnType::Private {
         DB.open_tree("inns_private")?.insert(&iid_ivec, &[])?;
     }
 
@@ -524,7 +525,7 @@ pub(crate) async fn edit_post(
             return Err(AppError::LockedOrHidden);
         }
 
-        if inn.inn_type.as_str() == "Private" {
+        if InnType::from(inn.inn_type) == InnType::Private {
             post.tags.push("private".into());
         }
 
@@ -540,7 +541,7 @@ pub(super) fn inn_add_index(
     iid: u32,
     pid: u32,
     timestamp: u32,
-    visibility: u32,
+    inn_type: u8,
 ) -> Result<(), AppError> {
     let tl_idx_tree = db.open_tree("post_timeline_idx")?;
     let tl_tree = db.open_tree("post_timeline")?;
@@ -549,33 +550,35 @@ pub(super) fn inn_add_index(
         .transaction(|(tl_idx, tl)| {
             let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
             let created_at_ivec = u32_to_ivec(timestamp);
-            tl_idx.insert(&*k, &created_at_ivec)?;
+            let mut v = timestamp.to_be_bytes().to_vec();
+            v.push(inn_type);
+            tl_idx.insert(&*k, v)?;
 
             let k = [&created_at_ivec, &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-            tl.insert(k, u32_to_ivec(visibility))?;
+            tl.insert(k, &[inn_type])?;
 
             Ok::<(), ConflictableTransactionError<AppError>>(())
         })
         .map_err(|e| AppError::Custom(format!("transaction error: {e}")))
 }
 
-fn inn_rm_index(db: &Db, iid: u32, pid: u32) -> Result<u32, AppError> {
+fn inn_rm_index(db: &Db, iid: u32, pid: u32) -> Result<u8, AppError> {
     let tl_idx_tree = db.open_tree("post_timeline_idx")?;
     let tl_tree = db.open_tree("post_timeline")?;
 
     (&tl_idx_tree, &tl_tree)
         .transaction(|(tl_idx, tl)| {
-            let mut visibility = 0;
+            let mut inn_type = 0;
 
             let k = [&u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
             if let Some(v) = tl_idx.remove(&*k)? {
-                let k = [&v, &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+                let k = [&v[0..4], &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
                 if let Some(v) = tl.remove(k)? {
-                    visibility = u8_slice_to_u32(&v);
+                    inn_type = v[0];
                 }
             }
 
-            Ok::<u32, ConflictableTransactionError<AppError>>(visibility)
+            Ok::<u8, ConflictableTransactionError<AppError>>(inn_type)
         })
         .map_err(|e| AppError::Custom(format!("transaction error: {e}")))
 }
@@ -627,10 +630,7 @@ pub(crate) async fn edit_post_post(
     let pid_ivec = u32_to_ivec(pid);
 
     let mut tags = vec![];
-    let mut visibility = 0;
-    if inn.inn_type.as_str() == "Private" {
-        visibility = 10;
-    } else {
+    if inn.is_accessible() {
         let tags_set: BTreeSet<String> = input
             .tags
             .split('#')
@@ -719,13 +719,13 @@ pub(crate) async fn edit_post_post(
     set_one(&DB, "posts", pid, &post)?;
 
     let iid_ivec = u32_to_ivec(iid);
-    let visibility_ivec = u32_to_ivec(visibility);
     if old_pid == 0 {
         let k = [&iid_ivec, &pid_ivec].concat();
         DB.open_tree("inn_posts")?.insert(k, &[])?;
 
         let k = [&u32_to_ivec(claim.uid), &pid_ivec].concat();
-        let v = [&iid_ivec, &visibility_ivec].concat();
+        let mut v = iid.to_be_bytes().to_vec();
+        v.push(inn.inn_type);
         DB.open_tree("user_posts")?.insert(k, v)?;
     }
 
@@ -733,11 +733,11 @@ pub(crate) async fn edit_post_post(
         inn_rm_index(&DB, iid, pid)?;
     }
 
-    inn_add_index(&DB, iid, pid, created_at as u32, visibility)?;
+    inn_add_index(&DB, iid, pid, created_at as u32, inn.inn_type)?;
     User::update_stats(&DB, claim.uid, "post")?;
     claim.update_last_write(&DB)?;
 
-    if inn.inn_type.as_str() != "Private" {
+    if inn.is_accessible() {
         DB.open_tree("tan")?.insert(format!("post{}", pid), &[])?;
     }
 
@@ -1018,7 +1018,7 @@ fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     let mut recommend_inns = Vec::new();
     for (iid, _) in maps.into_iter() {
         let inn: Inn = get_one(&DB, "inns", iid)?;
-        if inn.inn_type.as_str() != "Private" {
+        if inn.is_accessible() {
             recommend_inns.push((iid, inn.inn_name));
         }
         if recommend_inns.len() >= 3 {
@@ -1105,13 +1105,11 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
         description = site_config.description;
     } else {
         let inn: Inn = get_one(&DB, "inns", iid)?;
-        title = inn.inn_name;
         description = md2html(&inn.about);
-
-        if inn.inn_type != "Private" {
+        if inn.is_accessible() {
             index = get_pids_by_iids(&DB, &[iid], &page_params)?;
         }
-
+        title = inn.inn_name;
         for i in &inn.topics {
             categories.push(CategoryBuilder::default().term(i).build());
         }
@@ -1222,7 +1220,7 @@ fn get_out_post_list(db: &Db, index: &[u32]) -> Result<Vec<OutPostList>, AppErro
     Ok(post_lists)
 }
 
-/// get pids all, controlled by `visibility`, sorted by timestamp
+/// get pids all, controlled by `inn_type`, sorted by timestamp
 fn get_pids_all(
     db: &Db,
     joined_inns: &[u32],
@@ -1238,14 +1236,18 @@ fn get_pids_all(
         IterType::Iter(tree.iter())
     };
 
-    // kvpaire: timestamp#iid#pid = visibility
+    // kvpaire: timestamp#iid#pid = inn_type
     for i in iter {
         let (k, v) = i?;
         let id = u8_slice_to_u32(&k[4..8]);
         let out_id = u8_slice_to_u32(&k[8..12]);
 
-        let visibility = ivec_to_u32(&v);
-        if visibility == 0 || (visibility == 10 && joined_inns.contains(&id)) || is_site_admin {
+        let inn_type = InnType::from(v[0]);
+        if inn_type == InnType::Public
+            || inn_type == InnType::Apply
+            || (inn_type == InnType::Hidden && joined_inns.contains(&id))
+            || is_site_admin
+        {
             if count < page_params.anchor {
                 count += 1;
                 continue;
@@ -1271,7 +1273,7 @@ fn get_pids_by_iids(db: &Db, iids: &[u32], page_params: &ParamsPage) -> Result<V
         for i in db.open_tree("post_timeline_idx")?.scan_prefix(prefix) {
             let (k, v) = i?;
             let pid = u8_slice_to_u32(&k[4..8]);
-            let timestamp = ivec_to_u32(&v);
+            let timestamp = u8_slice_to_u32(&v[0..4]);
             pairs.push((pid, timestamp));
         }
     }
@@ -1285,7 +1287,7 @@ fn get_pids_by_iids(db: &Db, iids: &[u32], page_params: &ParamsPage) -> Result<V
     Ok(pids)
 }
 
-/// get pids by multi uids, controlled by `visibility`, sorted by timestamp
+/// get pids by multi uids, controlled by `inn_type`, sorted by timestamp
 fn get_pids_by_uids(
     db: &Db,
     uids: &[u32],
@@ -1296,13 +1298,16 @@ fn get_pids_by_uids(
     let mut pids = Vec::with_capacity(page_params.n);
     for uid in uids {
         let prefix = u32_to_ivec(*uid);
-        // kv_pair: uid#pid = iid#visibility
+        // kv_pair: uid#pid = iid#inn_type
         for i in db.open_tree("user_posts")?.scan_prefix(prefix) {
             let (k, v) = i?;
             let pid = u8_slice_to_u32(&k[4..8]);
             let iid = u8_slice_to_u32(&v[0..4]);
-            let visibility = u8_slice_to_u32(&v[4..8]);
-            if visibility == 0 || (visibility == 10 && joined_inns.contains(&iid)) || is_site_admin
+            let inn_type = InnType::from(v[4]);
+            if inn_type == InnType::Public
+                || inn_type == InnType::Apply
+                || (inn_type == InnType::Private && joined_inns.contains(&iid))
+                || is_site_admin
             {
                 pids.push(pid);
             }
@@ -1340,7 +1345,9 @@ pub(crate) async fn inn_join(
 
     match inn_users_tree.get(&inn_users_k)? {
         None => {
-            if inn.inn_type.as_str() != "Public" {
+            if InnType::from(inn.inn_type) == InnType::Apply
+                || InnType::from(inn.inn_type) == InnType::Private
+            {
                 // 1: applied, but pending
                 inn_users_tree.insert(&inn_users_k, &[1])?;
                 inn_apply_tree.insert(&inn_users_k, &[])?;
@@ -1439,7 +1446,7 @@ pub(crate) async fn post(
     let date = ts_to_date(post.created_at);
     let inn: Inn = get_one(&DB, "inns", post.iid)?;
 
-    if inn.inn_type.as_str() == "Private" {
+    if InnType::from(inn.inn_type) == InnType::Private {
         match claim.as_ref() {
             Some(claim) => {
                 let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
@@ -1770,8 +1777,8 @@ pub(crate) async fn comment_post(
 
     // only the fellow could update the timeline by adding comment
     if inn_role >= InnRole::Fellow {
-        let visibility = inn_rm_index(&DB, iid, pid)?;
-        inn_add_index(&DB, iid, pid, created_at as u32, visibility)?;
+        let inn_type = inn_rm_index(&DB, iid, pid)?;
+        inn_add_index(&DB, iid, pid, created_at as u32, inn_type)?;
     }
 
     // notify post author
@@ -1783,7 +1790,7 @@ pub(crate) async fn comment_post(
     claim.update_last_write(&DB)?;
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if inn.inn_type != "Private" {
+    if inn.is_accessible() {
         DB.open_tree("tan")?
             .insert(format!("comt{}/{}", pid, cid), &[])?;
     }
@@ -1838,7 +1845,7 @@ pub(crate) async fn comment_delete(
     let k = [&u32_to_ivec(pid), &u32_to_ivec(cid)].concat();
     DB.open_tree("post_comments")?.remove(k)?;
 
-    let visibility = inn_rm_index(&DB, iid, pid)?;
+    let inn_type = inn_rm_index(&DB, iid, pid)?;
     let latest_id = DB
         .open_tree("post_comments")?
         .scan_prefix(u32_to_ivec(pid))
@@ -1852,7 +1859,7 @@ pub(crate) async fn comment_delete(
         post.created_at
     };
 
-    inn_add_index(&DB, iid, pid, timestamp as u32, visibility)?;
+    inn_add_index(&DB, iid, pid, timestamp as u32, inn_type)?;
 
     DB.open_tree("tan")?
         .remove(format!("comt{}/{}", pid, cid))?;
@@ -2092,13 +2099,7 @@ pub(crate) async fn post_hide(
     {
         let k0 = [&u32_to_ivec(post.uid), &u32_to_ivec(pid)].concat();
         if let Some(v) = DB.open_tree("user_posts")?.get(k0)? {
-            inn_add_index(
-                &DB,
-                iid,
-                pid,
-                post.created_at as u32,
-                u8_slice_to_u32(&v[4..8]),
-            )?;
+            inn_add_index(&DB, iid, pid, post.created_at as u32, v[4])?;
         }
     }
 

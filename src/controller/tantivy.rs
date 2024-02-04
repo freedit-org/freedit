@@ -25,7 +25,7 @@ use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
-use crate::{config::CONFIG, error::AppError, DB};
+use crate::{config::CONFIG, controller::InnType, error::AppError, DB};
 
 use super::{
     db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
@@ -186,8 +186,8 @@ impl Tan {
         for i in &db.open_tree("user_posts")? {
             let (k, v) = i?;
             let pid = u8_slice_to_u32(&k[4..8]);
-            let visibility = u8_slice_to_u32(&v[4..8]);
-            if visibility == 0 {
+            let inn_type = InnType::from(v[4]);
+            if inn_type == InnType::Public || inn_type == InnType::Apply {
                 let post: Post = get_one(db, "posts", pid)?;
                 if post.status != PostStatus::HiddenByMod && post.status != PostStatus::HiddenByUser
                 {
