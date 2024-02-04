@@ -7,13 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.5-rc.2] - 2024-02-03
-
-### Fixed
-
-- solo bug fixed
-
-## [0.6.5-rc.1] - 2024-02-02
+## [0.6.5] - 2024-02-04
 
 ### Fixed
 
@@ -22,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - /admin/gallery
+- image delete
 - site admin could view all solos
 - site admin could delete solo
 - add notifications for post lock/hide/ comment hide...
@@ -38,7 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - site admin could hide/lock/pin posts and hide comments
 - notification pagination
 - fix js error
-
 
 ## [0.6.3] - 2023-11-24
 
@@ -315,9 +309,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.5-rc.2...HEAD
-[0.6.5-rc.2]: https://github.com/freedit-org/freedit/compare/v0.6.5-rc.1...v0.6.5-rc.2
-[0.6.5-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.4...v0.6.5-rc.1
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.5...HEAD
+[0.6.5]: https://github.com/freedit-org/freedit/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/freedit-org/freedit/compare/v0.6.2...v0.6.3
 [0.6.2]: https://github.com/freedit-org/freedit/compare/v0.6.1...v0.6.2
