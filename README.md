@@ -40,17 +40,6 @@ cd freedit && cargo build -r
 ./target/release/freedit
 ```
 
-## Enable https (Optional)
-
-Contents of certificate file and private key file must be in PEM format.
-
-In config.toml file
-
-```toml
-cert = 'cert-path'
-key = 'key-path'
-```
-
 ## Documentation
 
 * online doc: <https://freedit-org.github.io/freedit/freedit/index.html>
@@ -65,11 +54,6 @@ cargo doc --no-deps --open
 ```bash
 git clone https://github.com/freedit-org/freedit
 cd freedit && cargo run
-```
-
-integration testing
-```bash
-COOKIE=<cookie> cargo run --example mock
 ```
 
 ## Credits
