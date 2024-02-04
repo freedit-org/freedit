@@ -433,9 +433,16 @@ pub(crate) async fn inn_list(
 
     let mut out_inns = Vec::with_capacity(inns.len());
     for i in inns {
+        let icon = match InnType::from(i.inn_type) {
+            InnType::Public => "",
+            InnType::Private => "🔒 ",
+            InnType::Apply => "🙋 ",
+            InnType::Hidden => "💀 ",
+        };
+        let inn_name = format!("{} {}", icon, i.inn_name);
         let out_inn = OutInnList {
             iid: i.iid,
-            inn_name: i.inn_name,
+            inn_name,
             about: i.about,
             topics: i.topics,
         };
@@ -1012,7 +1019,13 @@ pub(crate) async fn inn(
 
     if iid > 0 {
         let inn: Inn = get_one(&DB, "inns", iid)?;
-        inn_name = inn.inn_name;
+        let icon = match InnType::from(inn.inn_type) {
+            InnType::Public => "",
+            InnType::Private => "🔒 ",
+            InnType::Apply => "🙋 ",
+            InnType::Hidden => "💀 ",
+        };
+        inn_name = format!("{} {}", icon, inn.inn_name);
         about = if InnType::from(inn.inn_type) == InnType::Hidden {
             "This inn is closed".into()
         } else {
