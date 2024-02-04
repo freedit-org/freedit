@@ -113,11 +113,11 @@
 //! | "pub_keys"            | `uid`            | `pub_key`          |
 //! | "user_messages"       | `uid#mid`        | `&[]`              |
 
-pub mod db_utils;
-pub mod feed;
-pub mod meta_handler;
-pub mod notification;
-pub mod tantivy;
+pub(super) mod db_utils;
+pub(super) mod feed;
+pub(super) mod meta_handler;
+pub(super) mod notification;
+pub(super) mod tantivy;
 
 pub(super) mod admin;
 pub(super) mod inn;
@@ -299,7 +299,7 @@ impl Inn {
 }
 
 #[derive(Encode, Decode, Serialize, PartialEq, PartialOrd, Debug, Clone)]
-pub enum PostStatus {
+pub(super) enum PostStatus {
     Normal,
     LockedByUser,
     HiddenByUser,
@@ -314,7 +314,7 @@ impl Display for PostStatus {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
-pub enum PostContent {
+pub(super) enum PostContent {
     Markdown(String),
     FeedItemId(u32),
 }
@@ -355,15 +355,15 @@ impl Display for PostContent {
 }
 
 #[derive(Encode, Decode, Serialize, Debug)]
-pub struct Post {
-    pub pid: u32,
-    pub uid: u32,
-    pub iid: u32,
-    pub title: String,
-    pub tags: Vec<String>,
-    pub content: PostContent,
-    pub created_at: i64,
-    pub status: PostStatus,
+struct Post {
+    pid: u32,
+    uid: u32,
+    iid: u32,
+    title: String,
+    tags: Vec<String>,
+    content: PostContent,
+    created_at: i64,
+    status: PostStatus,
 }
 
 impl ToDoc for Post {

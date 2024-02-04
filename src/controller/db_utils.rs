@@ -41,7 +41,7 @@ where
     get_one_by_key(db, tree_name, u32_to_ivec(id))
 }
 
-pub fn get_one_by_key<T, K>(db: &Db, tree_name: &str, key: K) -> Result<T, AppError>
+fn get_one_by_key<T, K>(db: &Db, tree_name: &str, key: K) -> Result<T, AppError>
 where
     T: Decode,
     K: AsRef<[u8]>,
@@ -62,7 +62,12 @@ where
     set_one_with_key(db, tree_name, u32_to_ivec(id), one)
 }
 
-pub fn set_one_with_key<T, K>(db: &Db, tree_name: &str, key: K, one: &T) -> Result<(), AppError>
+pub(super) fn set_one_with_key<T, K>(
+    db: &Db,
+    tree_name: &str,
+    key: K,
+    one: &T,
+) -> Result<(), AppError>
 where
     T: Encode,
     K: AsRef<[u8]>,
@@ -278,7 +283,7 @@ impl Iterator for IterType {
 /// ```ignore
 /// let new_user_id = incr_id(db, "users_count")?;
 /// ```
-pub fn incr_id<K>(tree: &Tree, key: K) -> Result<u32, AppError>
+pub(super) fn incr_id<K>(tree: &Tree, key: K) -> Result<u32, AppError>
 where
     K: AsRef<[u8]>,
 {
@@ -383,7 +388,7 @@ pub(super) fn generate_nanoid_ttl(seconds: i64) -> String {
 
 /// convert `u32` to [IVec]
 #[inline]
-pub fn u32_to_ivec(number: u32) -> IVec {
+pub(super) fn u32_to_ivec(number: u32) -> IVec {
     IVec::from(number.to_be_bytes().to_vec())
 }
 
@@ -401,12 +406,12 @@ pub fn u8_slice_to_u32(bytes: &[u8]) -> u32 {
 
 /// convert `i64` to [IVec]
 #[inline]
-pub fn i64_to_ivec(number: i64) -> IVec {
+pub(super) fn i64_to_ivec(number: i64) -> IVec {
     IVec::from(number.to_be_bytes().to_vec())
 }
 
 /// convert `&[u8]` to `i64`
 #[inline]
-pub fn u8_slice_to_i64(bytes: &[u8]) -> i64 {
+pub(super) fn u8_slice_to_i64(bytes: &[u8]) -> i64 {
     i64::from_be_bytes(bytes.try_into().unwrap())
 }

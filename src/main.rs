@@ -5,11 +5,7 @@
 use axum::extract::Request;
 use chrono::Utc;
 use freedit::{
-    app_router::router,
-    config::CONFIG,
-    controller::{db_utils::clear_invalid, feed::cron_feed, tantivy::Tan},
-    error::AppError,
-    DB, VERSION,
+    router, AppError, CONFIG, DB, VERSION, {clear_invalid, cron_feed, Tan},
 };
 use futures_util::pin_mut;
 use hyper::body::Incoming;

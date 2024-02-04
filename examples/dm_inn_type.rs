@@ -1,5 +1,5 @@
 use bincode::{Decode, Encode};
-use freedit::controller::db_utils::{get_one, ivec_to_u32, set_one, u8_slice_to_u32};
+use freedit::{get_one, ivec_to_u32, set_one, u8_slice_to_u32};
 use serde::Serialize;
 
 fn main() {

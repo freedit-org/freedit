@@ -33,7 +33,7 @@ pub(crate) struct NotifyParams {
 }
 
 #[repr(u8)]
-pub enum NtType {
+pub(super) enum NtType {
     PostComment = 1,
     PostMention = 2,
     SoloComment = 3,
@@ -443,7 +443,7 @@ struct InnNotification {
     uid: u32,
 }
 
-pub fn add_notification(
+pub(super) fn add_notification(
     db: &Db,
     uid: u32,
     nt_type: NtType,

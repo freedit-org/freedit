@@ -1,9 +1,16 @@
 #![doc = include_str!("../README.md")]
 
-pub mod app_router;
-pub mod config;
-pub mod controller;
-pub mod error;
+pub use app_router::router;
+pub use config::CONFIG;
+pub use controller::db_utils::{clear_invalid, get_one, ivec_to_u32, set_one, u8_slice_to_u32};
+pub use controller::{feed::cron_feed, tantivy::Tan};
+pub use error::AppError;
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+mod app_router;
+mod config;
+mod controller;
+mod error;
 
 use data_encoding::HEXLOWER;
 use once_cell::sync::Lazy;
@@ -16,9 +23,6 @@ use std::{
 };
 use tracing::info;
 
-use crate::config::CONFIG;
-
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 const GIT_COMMIT: &str = env!("GIT_COMMIT");
 
 /// Returns SHA256 of the current running executable.
