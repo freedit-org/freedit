@@ -9,14 +9,24 @@
 {% block content %}
 <div class="box">
     <div class="content">
-        <p class="title">Sending e2ee message to uid:{{receiver_id}}</p>
-        <p>Your keys and data are kept confidential by running cryptography operations in your browser using
-            <a href="https://www.w3.org/TR/WebCryptoAPI/" target="Web Crypto API">Web Crypto API</a> and
-            JavaScript is left unminified so you can verify page source.
-        </p>
-        <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
+        {% match pub_key %}
+        {% when Some(key) %}
+        <p class="title">Sending e2ee message to <a href="/user/{{receiver_id}}">{{receiver_name}}</a></p>
+        <article class="message is-info">
+            <div class="message-header">
+                <p>Info</p>
+            </div>
+            <div class="message-body">
+                <p>Your keys and data are kept confidential by running cryptography operations in your browser using
+                    <a href="https://www.w3.org/TR/WebCryptoAPI/" target="Web Crypto API">Web Crypto API</a> and
+                    JavaScript is left unminified so you can verify page source.
+                </p>
+                <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
+            </div>
+        </article>
+        
         <div class="field is-hidden">
-            <textarea id="public-key" readonly>{{pub_key}}</textarea>
+            <textarea id="public-key" readonly>{{key}}</textarea>
         </div>
 
         <div class="box">
@@ -35,7 +45,6 @@
                 </div>
             </fieldset>
         </div>
-
 
         <button id="button" class="button is-link">Encrypt Message</button>
         <div class="divider"></div>
@@ -68,6 +77,46 @@
                 </div>
             </fieldset>
         </form>
+
+        {% else %}
+        <p class="title">Sending message to <a href="/user/{{receiver_id}}">{{receiver_name}}</a></p>
+        <article class="message is-warning">
+            <div class="message-header">
+                <p>Warning</p>
+            </div>
+            <div class="message-body">
+                {{receiver_name}} does not have a public key so you can't send an end to end encrypted message. It's safe to transmit the message but site administrators can read it.
+            </div>
+        </article>
+
+        <form id="result" class="box" action="/message/{{receiver_id}}" method="post">
+            <fieldset>
+                <div class="field">
+                    <div class="is-normal">
+                        <label class="label" for="encrypted-text">Message</label>
+                    </div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                            <textarea id="encrypted-text" name="message" rows="10" class="textarea"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="field-label"></div>
+                    <div class="field-body">
+                        <div class="field">
+                            <div class="control">
+                                <button type="submit" form="result" class="button is-link">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+        {% endmatch %}
     </div>
 </div>
 

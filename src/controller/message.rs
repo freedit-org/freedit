@@ -21,8 +21,9 @@ use super::{
 #[template(path = "message.html", escape = "none")]
 struct PageMessage<'a> {
     page_data: PageData<'a>,
-    pub_key: String,
+    pub_key: Option<String>,
     receiver_id: u32,
+    receiver_name: String,
 }
 
 /// `GET /message/:uid`
@@ -42,18 +43,19 @@ pub(crate) async fn message(
         return Ok(Redirect::to("/key").into_response());
     }
 
-    let Some(pub_key) = DB.open_tree("pub_keys")?.get(u32_to_ivec(uid))? else {
-        return Err(AppError::Custom(
-            "User has not generated key pairs".to_string(),
-        ));
-    };
+    let pub_key = DB
+        .open_tree("pub_keys")?
+        .get(u32_to_ivec(uid))?
+        .map(|s| String::from_utf8_lossy(&s).to_string());
 
     let title = format!("Sending e2ee Message to {}", uid);
+    let user: User = get_one(&DB, "users", uid)?;
 
     let page_message = PageMessage {
         receiver_id: uid,
         page_data: PageData::new(&title, &site_config, Some(claim), false),
-        pub_key: String::from_utf8_lossy(&pub_key).to_string(),
+        pub_key,
+        receiver_name: user.username,
     };
 
     Ok(into_response(&page_message))
