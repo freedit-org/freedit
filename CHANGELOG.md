@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.7.0-rc.1 - 2024-02-04
+
+This is a breaking change, please backup the database first. Then stop the server and run [examples/dm_inn_type.rs](./examples/dm_inn_type.rs) for data migration.
+
+`cargo run --example dm_inn_type`
+
 ## Breaking
 
 inn_type: String -> u8
@@ -31,6 +37,11 @@ db tree:
 1. "user_posts", kv: `uid#pid => iid#visibility` -> `uid#pid => iid#inn_type`
 2. "post_timeline_idx", kv: `iid#pid => timestamp` -> `iid#pid => timestamp#inn_type`
 3. "post_timeline", kv: `timestamp#iid#pid => visibility` -> `iid#timestamp#pid => inn_type`
+
+### Added
+
+- Site admin could manage inn
+- Inn could be closed by mod
 
 ## [0.6.5] - 2024-02-04
 
@@ -334,7 +345,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.6.5...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.1...HEAD
+[0.7.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.5...v0.7.0-rc.1
 [0.6.5]: https://github.com/freedit-org/freedit/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/freedit-org/freedit/compare/v0.6.2...v0.6.3
