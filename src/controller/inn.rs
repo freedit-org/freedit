@@ -78,7 +78,7 @@ pub(crate) async fn mod_inn(
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    if Role::from(claim.role) < Role::Senior {
+    if Role::from(claim.role) < Role::Senior && Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -96,7 +96,7 @@ pub(crate) async fn mod_inn(
         let page_inn_create = PageInnCreate { page_data };
         Ok(into_response(&page_inn_create))
     } else {
-        if !User::is_mod(&DB, claim.uid, iid)? {
+        if !User::is_mod(&DB, claim.uid, iid)? && Role::from(claim.role) != Role::Admin {
             return Err(AppError::Unauthorized);
         }
 
@@ -201,7 +201,7 @@ pub(crate) async fn mod_inn_post(
             return Err(AppError::NameExists);
         }
 
-        if !User::is_mod(&DB, claim.uid, iid)? {
+        if !User::is_mod(&DB, claim.uid, iid)? && Role::from(claim.role) != Role::Admin {
             return Err(AppError::Unauthorized);
         }
 
@@ -1042,7 +1042,7 @@ pub(crate) async fn inn(
         username,
         inn_users_count,
         inns,
-        is_mod,
+        is_mod: is_mod || is_site_admin,
         recommend_users,
         counts,
     };
