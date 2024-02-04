@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## 0.7.0-rc.1 - 2024-02-04
+## [0.7.0-rc.1] - 2024-02-04
 
 This is a breaking change, please backup the database first. Then stop the server and run [examples/dm_inn_type.rs](./examples/dm_inn_type.rs) for data migration.
 
@@ -42,6 +42,7 @@ db tree:
 
 - Site admin could manage inn
 - Inn could be closed by mod
+- User could send non e2ee message
 
 ## [0.6.5] - 2024-02-04
 
