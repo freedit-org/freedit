@@ -247,7 +247,7 @@ impl ToDoc for Solo {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 enum InnType {
     Public = 0,
     Apply = 5,

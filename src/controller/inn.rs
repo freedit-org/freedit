@@ -152,7 +152,7 @@ pub(crate) async fn mod_inn_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    if Role::from(claim.role) < Role::Senior {
+    if Role::from(claim.role) < Role::Senior && Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
 
@@ -230,6 +230,35 @@ pub(crate) async fn mod_inn_post(
             let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
             batch_topics.remove(&*k);
         }
+
+        if old_inn_type != inn_type {
+            let tree = DB.open_tree("user_posts")?;
+            for i in tree.iter() {
+                let (k, mut v) = i?;
+                let iid = u8_slice_to_u32(&v[0..4]);
+                if iid == inn.iid {
+                    v[4] = inn_type as u8;
+                    tree.insert(k, v)?;
+                }
+            }
+
+            let tree = DB.open_tree("post_timeline_idx")?;
+            for i in tree.scan_prefix(u32_to_ivec(iid)) {
+                let (k, mut v) = i?;
+                v[4] = inn_type as u8;
+                tree.insert(k, v)?;
+            }
+
+            let tree = DB.open_tree("post_timeline")?;
+            for i in tree.iter() {
+                let (k, _) = i?;
+                let iid = u8_slice_to_u32(&k[4..8]);
+                if iid == inn.iid {
+                    let v = inn_type as u8;
+                    tree.insert(k, &[v])?;
+                }
+            }
+        }
     }
 
     let iid_ivec = u32_to_ivec(iid);
@@ -256,7 +285,7 @@ pub(crate) async fn mod_inn_post(
         about: clean_html(&input.about),
         description: clean_html(&input.description),
         topics,
-        inn_type: input.inn_type,
+        inn_type: inn_type as u8,
         early_birds: input.early_birds,
         created_at: Utc::now().timestamp(),
         limit_edit_seconds: input.limit_edit_seconds,
@@ -290,6 +319,11 @@ pub(crate) async fn mod_feed_post(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     if Role::from(claim.role) < Role::Senior {
         return Err(AppError::Unauthorized);
+    }
+
+    let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
     }
 
     if input.url.contains(&format!("inn/{iid}/feed")) {
@@ -368,8 +402,10 @@ pub(crate) async fn inn_list(
 
     if let Some(topic) = &params.topic {
         for i in get_ids_by_tag(&DB, "topics", topic, Some(&page_params))? {
-            if let Ok(inn) = get_one(&DB, "inns", i) {
-                inns.push(inn);
+            if let Ok(inn) = get_one::<Inn>(&DB, "inns", i) {
+                if InnType::from(inn.inn_type) != InnType::Hidden {
+                    inns.push(inn);
+                }
             }
         }
     } else if let Some(claim) = &claim {
@@ -382,8 +418,10 @@ pub(crate) async fn inn_list(
             }
         } else if params.filter.as_deref() == Some("joined") {
             for i in get_ids_by_prefix(&DB, "user_inns", uid_ivec, Some(&page_params))? {
-                if let Ok(inn) = get_one(&DB, "inns", i) {
-                    inns.push(inn);
+                if let Ok(inn) = get_one::<Inn>(&DB, "inns", i) {
+                    if InnType::from(inn.inn_type) != InnType::Hidden {
+                        inns.push(inn);
+                    }
                 }
             }
         } else {
@@ -466,10 +504,12 @@ pub(crate) async fn edit_post(
     let mut joined = Vec::with_capacity(joined_ids.len());
     for id in joined_ids {
         let inn: Inn = get_one(&DB, "inns", id)?;
-        let inn_role = InnRole::get(&DB, inn.iid, claim.uid)?;
-        if let Some(role) = inn_role {
-            if role >= InnRole::Intern {
-                joined.push((inn.inn_name, inn.iid));
+        if InnType::from(inn.inn_type) != InnType::Hidden {
+            let inn_role = InnRole::get(&DB, inn.iid, claim.uid)?;
+            if let Some(role) = inn_role {
+                if role >= InnRole::Intern {
+                    joined.push((inn.inn_name, inn.iid));
+                }
             }
         }
     }
@@ -621,6 +661,9 @@ pub(crate) async fn edit_post_post(
     }
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
 
     let pid = if old_pid == 0 {
         incr_id(&DB, "posts_count")?
@@ -970,7 +1013,11 @@ pub(crate) async fn inn(
     if iid > 0 {
         let inn: Inn = get_one(&DB, "inns", iid)?;
         inn_name = inn.inn_name;
-        about = inn.about;
+        about = if InnType::from(inn.inn_type) == InnType::Hidden {
+            "This inn is closed".into()
+        } else {
+            inn.about
+        };
         description = md2html(&inn.description);
     } else {
         inn_name = "No post".into();
@@ -1241,12 +1288,10 @@ fn get_pids_all(
         let (k, v) = i?;
         let id = u8_slice_to_u32(&k[4..8]);
         let out_id = u8_slice_to_u32(&k[8..12]);
-
         let inn_type = InnType::from(v[0]);
         if inn_type == InnType::Public
             || inn_type == InnType::Apply
-            || (inn_type == InnType::Hidden && joined_inns.contains(&id))
-            || is_site_admin
+            || (inn_type == InnType::Private && (joined_inns.contains(&id) || is_site_admin))
         {
             if count < page_params.anchor {
                 count += 1;
@@ -1274,7 +1319,10 @@ fn get_pids_by_iids(db: &Db, iids: &[u32], page_params: &ParamsPage) -> Result<V
             let (k, v) = i?;
             let pid = u8_slice_to_u32(&k[4..8]);
             let timestamp = u8_slice_to_u32(&v[0..4]);
-            pairs.push((pid, timestamp));
+            let inn_type = InnType::from(v[4]);
+            if inn_type != InnType::Hidden {
+                pairs.push((pid, timestamp));
+            }
         }
     }
     pairs.sort_unstable_by_key(|pair| pair.1);
@@ -1306,8 +1354,7 @@ fn get_pids_by_uids(
             let inn_type = InnType::from(v[4]);
             if inn_type == InnType::Public
                 || inn_type == InnType::Apply
-                || (inn_type == InnType::Private && joined_inns.contains(&iid))
-                || is_site_admin
+                || (inn_type == InnType::Private && (joined_inns.contains(&iid) || is_site_admin))
             {
                 pids.push(pid);
             }
@@ -1336,6 +1383,9 @@ pub(crate) async fn inn_join(
     };
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
 
     let user_inns_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
     let inn_users_k = [&u32_to_ivec(iid), &u32_to_ivec(claim.uid)].concat();
@@ -1445,6 +1495,9 @@ pub(crate) async fn post(
     let user: User = get_one(&DB, "users", post.uid)?;
     let date = ts_to_date(post.created_at);
     let inn: Inn = get_one(&DB, "inns", post.iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
 
     if InnType::from(inn.inn_type) == InnType::Private {
         match claim.as_ref() {
@@ -1686,6 +1739,11 @@ pub(crate) async fn comment_post(
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
+    let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
+
     let inn_role = InnRole::get(&DB, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
     if inn_role < InnRole::Limited {
         return Err(AppError::Unauthorized);
@@ -1789,7 +1847,6 @@ pub(crate) async fn comment_post(
     User::update_stats(&DB, claim.uid, "comment")?;
     claim.update_last_write(&DB)?;
 
-    let inn: Inn = get_one(&DB, "inns", iid)?;
     if inn.is_accessible() {
         DB.open_tree("tan")?
             .insert(format!("comt{}/{}", pid, cid), &[])?;
@@ -1914,6 +1971,11 @@ pub(crate) async fn post_upvote(
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
+    let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
+
     let post_upvotes_tree = DB.open_tree("post_upvotes")?;
     let k = [&u32_to_ivec(pid), &u32_to_ivec(claim.uid)].concat();
     if post_upvotes_tree.contains_key(&k)? {
@@ -1942,6 +2004,11 @@ pub(crate) async fn comment_upvote(
     ]
     .concat();
 
+    let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
+
     let comment_upvotes_tree = DB.open_tree("comment_upvotes")?;
     if comment_upvotes_tree.contains_key(&k)? {
         comment_upvotes_tree.remove(&k)?;
@@ -1962,6 +2029,10 @@ pub(crate) async fn post_downvote(
     let claim = cookie
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
+    let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
 
     let post_downvotes_tree = DB.open_tree("post_downvotes")?;
     let k = [&u32_to_ivec(pid), &u32_to_ivec(claim.uid)].concat();
@@ -2014,6 +2085,11 @@ pub(crate) async fn comment_downvote(
         &u32_to_ivec(claim.uid),
     ]
     .concat();
+
+    let inn: Inn = get_one(&DB, "inns", iid)?;
+    if InnType::from(inn.inn_type) == InnType::Hidden {
+        return Err(AppError::NotFound);
+    }
 
     let comment_downvotes_tree = DB.open_tree("comment_downvotes")?;
     if comment_downvotes_tree.contains_key(&k)? {
