@@ -25,7 +25,12 @@ use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
-use crate::{config::CONFIG, controller::InnType, error::AppError, DB};
+use crate::{
+    config::CONFIG,
+    controller::{InnType, SoloType},
+    error::AppError,
+    DB,
+};
 
 use super::{
     db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
@@ -210,7 +215,7 @@ impl Tan {
         for i in &db.open_tree("solos")? {
             let (_, v) = i?;
             let (solo, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
-            if solo.visibility == 0 {
+            if SoloType::from(solo.solo_type) == SoloType::Public {
                 batch.insert(format!("solo{}", solo.sid).as_bytes(), &[]);
             }
         }

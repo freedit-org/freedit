@@ -205,14 +205,14 @@ pub(crate) async fn admin_view(
                 "user_solos" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let sid = u8_slice_to_u32(&k[4..8]);
-                    let visibility = u8_slice_to_u32(&v);
-                    ones.push(format!("uid: {uid}, sid: {sid}, visibility: {visibility}"));
+                    let solo_type = u8_slice_to_u32(&v);
+                    ones.push(format!("uid: {uid}, sid: {sid}, solo_type: {solo_type}"));
                 }
                 "solo_timeline" => {
                     let sid = u8_slice_to_u32(&k[0..4]);
                     let uid = u8_slice_to_u32(&v[0..4]);
-                    let visibility = u8_slice_to_u32(&v[4..8]);
-                    ones.push(format!("sid: {sid}, uid: {uid}, visibility: {visibility}"));
+                    let solo_type = u8_slice_to_u32(&v[4..8]);
+                    ones.push(format!("sid: {sid}, uid: {uid}, solo_type: {solo_type}"));
                 }
                 "notifications" => {
                     let uid = u8_slice_to_u32(&k[0..4]);

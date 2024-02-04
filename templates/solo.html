@@ -80,9 +80,9 @@
         </div>
         
         <div class="media-right">
-            {% if solo.visibility == 20 %}
+            {% if solo.solo_type == 20 %}
                 {% include "icons/lock_square.svg" %}
-            {% else if solo.visibility == 10 %}
+            {% else if solo.solo_type == 10 %}
                 {% include "icons/lock.svg" %}
             {% else %}{% endif %}
         </div>
@@ -135,9 +135,9 @@
         </nav>
     </div>
     <div class="media-right">
-        {% if solo.visibility == 20 %}
+        {% if solo.solo_type == 20 %}
             {% include "icons/lock_square.svg" %}
-        {% else if solo.visibility == 10 %}
+        {% else if solo.solo_type == 10 %}
             {% include "icons/lock.svg" %}
         {% else %}{% endif %}
     </div>
@@ -159,10 +159,10 @@
                             <textarea name="content" class="textarea" required minlength="1" maxlength="950" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
                         </p>
                         <div class="select is-small">
-                            <select name="visibility" title="Who can see">
-                                <option value="Everyone" selected>Everyone</option>
-                                <option value="Following">Following</option>
-                                <option value="Just me">Just me</option>
+                            <select name="solo_type" title="Who can see">
+                                <option value="0" selected>Everyone</option>
+                                <option value="10">Following</option>
+                                <option value="20">Just me</option>
                             </select>
                         </div>
                     </div>

@@ -9,7 +9,7 @@ use super::{
     notification::{add_notification, mark_read, NtType},
     u32_to_ivec, u8_slice_to_u32,
     user::Role,
-    Claim, SiteConfig, Solo, User,
+    Claim, SiteConfig, Solo, SoloType, User,
 };
 use crate::{error::AppError, DB};
 use askama::Template;
@@ -32,7 +32,7 @@ use validator::Validate;
 pub(crate) struct FormSolo {
     #[validate(length(min = 1, max = 1000))]
     content: String,
-    visibility: String,
+    solo_type: u32,
     reply_to: u32,
 }
 
@@ -59,7 +59,7 @@ struct OutSolo {
     username: String,
     content: String,
     created_at: String,
-    visibility: u32,
+    solo_type: u32,
     like: bool,
     like_count: usize,
     reply_to: Option<u32>,
@@ -74,12 +74,13 @@ impl OutSolo {
         let date = ts_to_date(solo.created_at);
 
         let mut can_visit = false;
-        if solo.visibility == 0 {
+        let solo_type = SoloType::from(solo.solo_type);
+        if solo_type == SoloType::Public {
             can_visit = true;
         } else if let Some(uid) = current_uid {
             if uid == solo.uid || User::is_admin(db, uid)? {
                 can_visit = true;
-            } else if solo.visibility == 10 {
+            } else if solo_type == SoloType::Following {
                 let k = [&u32_to_ivec(solo.uid), &u32_to_ivec(uid)].concat();
                 if db.open_tree("user_followers")?.contains_key(k)? {
                     can_visit = true;
@@ -113,7 +114,7 @@ impl OutSolo {
             username: user.username,
             content: solo.content,
             created_at: date,
-            visibility: solo.visibility,
+            solo_type: solo.solo_type,
             like,
             like_count,
             reply_to: solo.reply_to,
@@ -125,10 +126,11 @@ impl OutSolo {
     }
 }
 
-fn can_visit_solo(visibility: u32, followers: &[u32], solo_uid: u32, current_uid: u32) -> bool {
-    visibility == 0
-        || (visibility == 10 && followers.contains(&solo_uid))
-        || (visibility == 20 && solo_uid == current_uid)
+fn can_visit_solo(solo_type: u32, followers: &[u32], solo_uid: u32, current_uid: u32) -> bool {
+    let solo_type = SoloType::from(solo_type);
+    solo_type == SoloType::Public
+        || (solo_type == SoloType::Following && followers.contains(&solo_uid))
+        || (solo_type == SoloType::Private && solo_uid == current_uid)
         || User::is_admin(&DB, current_uid).unwrap_or_default()
 }
 
@@ -324,11 +326,11 @@ fn get_all_solos(
         IterType::Iter(tree.iter())
     };
     for i in iter {
-        // kv_pair: sid = uid#visibility
+        // kv_pair: sid = uid#solo_type
         let (k, v) = i?;
         let solo_uid = u8_slice_to_u32(&v[0..4]);
-        let visibility = u8_slice_to_u32(&v[4..8]);
-        if can_visit_solo(visibility, followers, solo_uid, current_uid) {
+        let solo_type = u8_slice_to_u32(&v[4..8]);
+        if can_visit_solo(solo_type, followers, solo_uid, current_uid) {
             if count < page_params.anchor {
                 count += 1;
                 continue;
@@ -354,12 +356,12 @@ fn get_solos_by_uids(
     let user_solos_tree = db.open_tree("user_solos")?;
     for uid in uids {
         let prefix = u32_to_ivec(*uid);
-        // kv_pair: uid#sid = visibility
+        // kv_pair: uid#sid = solo_type
         for i in user_solos_tree.scan_prefix(prefix) {
             let (k, v) = i?;
             let sid = u8_slice_to_u32(&k[4..8]);
-            let visibility = u8_slice_to_u32(&v);
-            if can_visit_solo(visibility, followers, *uid, current_uid) {
+            let solo_type = u8_slice_to_u32(&v);
+            if can_visit_solo(solo_type, followers, *uid, current_uid) {
                 sids.push(sid);
             }
         }
@@ -387,13 +389,7 @@ pub(crate) async fn solo_post(
         return Err(AppError::WriteInterval);
     }
 
-    let visibility = match input.visibility.as_str() {
-        "Everyone" => 0,
-        "Following" => 10,
-        "Just me" => 20,
-        _ => unreachable!(),
-    };
-
+    let solo_type = SoloType::from(input.solo_type);
     let uid = claim.uid;
 
     let sid = incr_id(&DB, "solos_count")?;
@@ -425,7 +421,7 @@ pub(crate) async fn solo_post(
         reply_to = Some(input.reply_to)
     };
 
-    if visibility == 0 {
+    if solo_type == SoloType::Public {
         hashtags = extract_element(&content, 5, '#');
         if !hashtags.is_empty() {
             let hashtags_tree = DB.open_tree("hashtags")?;
@@ -473,7 +469,7 @@ pub(crate) async fn solo_post(
     let solo = Solo {
         sid,
         uid,
-        visibility,
+        solo_type: solo_type as u32,
         content: md2html(&content),
         hashtags,
         created_at,
@@ -484,16 +480,16 @@ pub(crate) async fn solo_post(
     set_one(&DB, "solos", sid, &solo)?;
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
     DB.open_tree("user_solos")?
-        .insert(k, &u32_to_ivec(visibility))?;
+        .insert(k, &u32_to_ivec(solo_type as u32))?;
 
-    // kv_pair: sid = uid#visibility
-    let v = [&u32_to_ivec(claim.uid), &u32_to_ivec(visibility)].concat();
+    // kv_pair: sid = uid#solo_type
+    let v = [&u32_to_ivec(claim.uid), &u32_to_ivec(solo_type as u32)].concat();
     DB.open_tree("solo_timeline")?.insert(&sid_ivec, v)?;
 
     User::update_stats(&DB, claim.uid, "solo")?;
     claim.update_last_write(&DB)?;
 
-    if visibility == 0 {
+    if solo_type == SoloType::Public {
         DB.open_tree("tan")?.insert(format!("solo{}", sid), &[])?;
     }
 

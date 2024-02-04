@@ -34,10 +34,10 @@
 //! |--------------------|---------------|------------------|
 //! | default            | "solos_count" | N                |
 //! | "solos"            | `sid`         | [`Solo`]         |
-//! | "user_solos"       | `uid#sid`     | `visibility` |
+//! | "user_solos"       | `uid#sid`     | `solo_type`      |
 //! | "user_solos_like"  | `uid#sid`     | `&[]`            |
 //! | "solo_users_like"  | `sid#uid`     | `&[]`            |
-//! | "solo_timeline"    | `sid`         | `uid#visibility` |
+//! | "solo_timeline"    | `sid`         | `uid#solo_type`  |
 //! | "hashtags"         | `hashtag#sid` | `&[]`            |
 //!
 //! ### session
@@ -217,18 +217,29 @@ impl User {
     }
 }
 
-/// solo
-///
-/// ## visibility
-/// * 20: Just me (private)
-/// * 10: Following
-/// * 0: Everyone
-///
+#[derive(PartialEq, Clone, Copy)]
+enum SoloType {
+    Public = 0,
+    Following = 10,
+    Private = 20,
+}
+
+impl From<u32> for SoloType {
+    fn from(value: u32) -> Self {
+        match value {
+            0 => SoloType::Public,
+            10 => SoloType::Following,
+            20 => SoloType::Private,
+            _ => SoloType::Private,
+        }
+    }
+}
+
 #[derive(Encode, Decode, Serialize, Debug)]
 struct Solo {
     sid: u32,
     uid: u32,
-    visibility: u32,
+    solo_type: u32,
     content: String,
     hashtags: Vec<String>,
     created_at: i64,

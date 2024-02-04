@@ -1,5 +1,5 @@
 /target
-/freedit.db
+/freedit.db*
 /certs
 /static/imgs
 .rustc_info.json
