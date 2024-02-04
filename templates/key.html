@@ -10,13 +10,21 @@
 <div class="box">
     <div class="content">
         <p class="title">Generate RSA Keys</p>
-        <p>Your keys and data are kept confidential by running cryptography operations in your browser using
-            <a href="https://www.w3.org/TR/WebCryptoAPI/" target="Web Crypto API">Web Crypto API</a> and
-            JavaScript is left unminified so you can verify page source.
-        </p>
-        <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
-        <p class="has-text-danger">You must keep Private Key yourself and upload public key.</p>
-        <p>You can generate key pair from <a href="https://github.com/galehouse5/rsa-webcrypto-tool">rsa-webcrypto-tool</a> and upload public key here.</p>
+        <article class="message is-warning">
+            <div class="message-header">
+                <p>Warning</p>
+            </div>
+            <div class="message-body">
+                <p>Your keys and data are kept confidential by running cryptography operations in your browser using
+                    <a href="https://www.w3.org/TR/WebCryptoAPI/" target="Web Crypto API">Web Crypto API</a> and
+                    JavaScript is left unminified so you can verify page source.
+                </p>
+                <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
+                <p class="has-text-danger">You must keep Private Key yourself and upload public key.</p>
+                <p>You can generate key pair from <a href="https://github.com/galehouse5/rsa-webcrypto-tool">rsa-webcrypto-tool</a> and upload public key here.</p>
+            </div>
+        </article>     
+       
         <button id="button" class="button is-link">Generate Keys</button>
         <div id="message"></div>
 

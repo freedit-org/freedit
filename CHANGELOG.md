@@ -13,7 +13,7 @@ This is a breaking change, please backup the database first. Then stop the serve
 
 `cargo run --example dm_inn_type`
 
-## Breaking
+### Breaking
 
 inn_type: String -> u8
 
