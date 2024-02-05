@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.0-rc.4] - 2024-02-05
+
+- buf fixed
+
 ## [0.7.0-rc.3] - 2024-02-04
 
 ### Removed
@@ -357,7 +362,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.3...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.4...HEAD
+[0.7.0-rc.4]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.3...v0.7.0-rc.4
 [0.7.0-rc.3]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.2...v0.7.0-rc.3
 [0.7.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.1...v0.7.0-rc.2
 [0.7.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.5...v0.7.0-rc.1

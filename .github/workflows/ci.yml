@@ -39,6 +39,7 @@ jobs:
         run: cargo test
       
       - name: Cargo fmt
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: cargo fmt -- --check
 
       - name: Cargo clippy
