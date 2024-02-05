@@ -11,7 +11,13 @@ on:
 jobs:
   cargo:
     name: Cargo test, clippy and doc
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+          - macos-latest
     permissions:
       contents: write
       security-events: write
@@ -24,7 +30,6 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          targets: x86_64-pc-windows-msvc,x86_64-unknown-linux-gnu,x86_64-apple-darwin,x86_64-pc-windows-gnu
           components: clippy, rustfmt
       
       - name: Setup cache
