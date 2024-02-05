@@ -97,7 +97,7 @@ pub(crate) async fn user(
     for i in DB.open_tree("user_posts")?.scan_prefix(&uid_ivec) {
         let (_, v) = i?;
         // exclude private posts
-        if InnType::from(v[4]) != InnType::Private {
+        if InnType::from(v[4]) == InnType::Public || InnType::from(v[4]) == InnType::Apply {
             user_posts_count += 1;
         }
     }
@@ -400,7 +400,7 @@ pub(crate) async fn user_list(
                 if let Some(ref claim) = claim {
                     is_admin = User::is_mod(&DB, claim.uid, inn.iid)?;
                 }
-                if inn.is_accessible() || is_admin {
+                if inn.is_open_access() || is_admin {
                     users = OutUserList::get_inn_users(&DB, id, params.role, &page_params)?;
                 }
                 let need_apply = InnType::from(inn.inn_type) == InnType::Apply

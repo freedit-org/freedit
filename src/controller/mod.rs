@@ -264,6 +264,7 @@ enum InnType {
     Apply = 5,
     Private = 10,
     Hidden = 20,
+    PrivateHidden = 30,
 }
 
 impl From<u8> for InnType {
@@ -273,6 +274,7 @@ impl From<u8> for InnType {
             5 => InnType::Apply,
             10 => InnType::Private,
             20 => InnType::Hidden,
+            30 => InnType::PrivateHidden,
             _ => InnType::Hidden,
         }
     }
@@ -292,9 +294,14 @@ struct Inn {
 }
 
 impl Inn {
-    fn is_accessible(&self) -> bool {
+    fn is_open_access(&self) -> bool {
         InnType::from(self.inn_type) == InnType::Public
             || InnType::from(self.inn_type) == InnType::Apply
+    }
+
+    fn is_closed(&self) -> bool {
+        InnType::from(self.inn_type) == InnType::Hidden
+            || InnType::from(self.inn_type) == InnType::PrivateHidden
     }
 }
 

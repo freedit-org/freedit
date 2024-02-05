@@ -39,7 +39,7 @@ pub enum AppError {
     NonLogin,
     #[error("You have been banned")]
     Banned,
-    #[error("The post has been locked or hidden")]
+    #[error("It has been locked or hidden")]
     LockedOrHidden,
     #[error(transparent)]
     ImageError(#[from] image::ImageError),

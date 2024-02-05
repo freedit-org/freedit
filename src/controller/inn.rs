@@ -207,16 +207,25 @@ pub(crate) async fn mod_inn_post(
 
         let inn: Inn = get_one(&DB, "inns", iid)?;
         let old_inn_type = InnType::from(inn.inn_type);
-        if old_inn_type == InnType::Private
-            && (inn_type == InnType::Public || inn_type == InnType::Apply)
+
+        if old_inn_type == InnType::Hidden
+            && (inn_type != InnType::Public && inn_type != InnType::Apply)
         {
-            return Err(AppError::Unauthorized);
+            return Err(AppError::Custom("Bad request".into()));
         }
 
         if (old_inn_type == InnType::Public || old_inn_type == InnType::Apply)
-            && inn_type == InnType::Private
+            && inn_type != InnType::Hidden
         {
-            return Err(AppError::Unauthorized);
+            return Err(AppError::Custom("Bad request".into()));
+        }
+
+        if old_inn_type == InnType::Private && (inn_type != InnType::PrivateHidden) {
+            return Err(AppError::Custom("Bad request".into()));
+        }
+
+        if old_inn_type == InnType::PrivateHidden && inn_type != InnType::Private {
+            return Err(AppError::Custom("Bad request".into()));
         }
 
         // remove the old inn name
@@ -322,8 +331,8 @@ pub(crate) async fn mod_feed_post(
     }
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     if input.url.contains(&format!("inn/{iid}/feed")) {
@@ -403,7 +412,7 @@ pub(crate) async fn inn_list(
     if let Some(topic) = &params.topic {
         for i in get_ids_by_tag(&DB, "topics", topic, Some(&page_params))? {
             if let Ok(inn) = get_one::<Inn>(&DB, "inns", i) {
-                if InnType::from(inn.inn_type) != InnType::Hidden {
+                if !inn.is_closed() {
                     inns.push(inn);
                 }
             }
@@ -419,7 +428,7 @@ pub(crate) async fn inn_list(
         } else if params.filter.as_deref() == Some("joined") {
             for i in get_ids_by_prefix(&DB, "user_inns", uid_ivec, Some(&page_params))? {
                 if let Ok(inn) = get_one::<Inn>(&DB, "inns", i) {
-                    if InnType::from(inn.inn_type) != InnType::Hidden {
+                    if !inn.is_closed() {
                         inns.push(inn);
                     }
                 }
@@ -437,7 +446,7 @@ pub(crate) async fn inn_list(
             InnType::Public => "",
             InnType::Private => "🔒 ",
             InnType::Apply => "🙋 ",
-            InnType::Hidden => "💀 ",
+            InnType::Hidden | InnType::PrivateHidden => "💀 ",
         };
         let inn_name = format!("{} {}", icon, i.inn_name);
         let out_inn = OutInnList {
@@ -511,7 +520,7 @@ pub(crate) async fn edit_post(
     let mut joined = Vec::with_capacity(joined_ids.len());
     for id in joined_ids {
         let inn: Inn = get_one(&DB, "inns", id)?;
-        if InnType::from(inn.inn_type) != InnType::Hidden {
+        if !inn.is_closed() {
             let inn_role = InnRole::get(&DB, inn.iid, claim.uid)?;
             if let Some(role) = inn_role {
                 if role >= InnRole::Intern {
@@ -668,8 +677,8 @@ pub(crate) async fn edit_post_post(
     }
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let pid = if old_pid == 0 {
@@ -680,7 +689,7 @@ pub(crate) async fn edit_post_post(
     let pid_ivec = u32_to_ivec(pid);
 
     let mut tags = vec![];
-    if inn.is_accessible() {
+    if inn.is_open_access() {
         let tags_set: BTreeSet<String> = input
             .tags
             .split('#')
@@ -787,7 +796,7 @@ pub(crate) async fn edit_post_post(
     User::update_stats(&DB, claim.uid, "post")?;
     claim.update_last_write(&DB)?;
 
-    if inn.is_accessible() {
+    if inn.is_open_access() {
         DB.open_tree("tan")?.insert(format!("post{}", pid), &[])?;
     }
 
@@ -1023,14 +1032,10 @@ pub(crate) async fn inn(
             InnType::Public => "",
             InnType::Private => "🔒 ",
             InnType::Apply => "🙋 ",
-            InnType::Hidden => "💀 ",
+            InnType::Hidden | InnType::PrivateHidden => "💀 ",
         };
         inn_name = format!("{} {}", icon, inn.inn_name);
-        about = if InnType::from(inn.inn_type) == InnType::Hidden {
-            "This inn is closed".into()
-        } else {
-            inn.about
-        };
+        about = inn.about;
         description = md2html(&inn.description);
     } else {
         inn_name = "No post".into();
@@ -1078,7 +1083,7 @@ fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     let mut recommend_inns = Vec::new();
     for (iid, _) in maps.into_iter() {
         let inn: Inn = get_one(&DB, "inns", iid)?;
-        if inn.is_accessible() {
+        if inn.is_open_access() {
             recommend_inns.push((iid, inn.inn_name));
         }
         if recommend_inns.len() >= 3 {
@@ -1166,7 +1171,7 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
     } else {
         let inn: Inn = get_one(&DB, "inns", iid)?;
         description = md2html(&inn.about);
-        if inn.is_accessible() {
+        if inn.is_open_access() {
             index = get_pids_by_iids(&DB, &[iid], &page_params)?;
         }
         title = inn.inn_name;
@@ -1333,7 +1338,7 @@ fn get_pids_by_iids(db: &Db, iids: &[u32], page_params: &ParamsPage) -> Result<V
             let pid = u8_slice_to_u32(&k[4..8]);
             let timestamp = u8_slice_to_u32(&v[0..4]);
             let inn_type = InnType::from(v[4]);
-            if inn_type != InnType::Hidden {
+            if inn_type != InnType::Hidden && inn_type != InnType::PrivateHidden {
                 pairs.push((pid, timestamp));
             }
         }
@@ -1396,8 +1401,8 @@ pub(crate) async fn inn_join(
     };
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let user_inns_k = [&u32_to_ivec(claim.uid), &u32_to_ivec(iid)].concat();
@@ -1508,8 +1513,8 @@ pub(crate) async fn post(
     let user: User = get_one(&DB, "users", post.uid)?;
     let date = ts_to_date(post.created_at);
     let inn: Inn = get_one(&DB, "inns", post.iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     if InnType::from(inn.inn_type) == InnType::Private {
@@ -1753,8 +1758,8 @@ pub(crate) async fn comment_post(
         .ok_or(AppError::NonLogin)?;
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let inn_role = InnRole::get(&DB, iid, claim.uid)?.ok_or(AppError::Unauthorized)?;
@@ -1860,7 +1865,7 @@ pub(crate) async fn comment_post(
     User::update_stats(&DB, claim.uid, "comment")?;
     claim.update_last_write(&DB)?;
 
-    if inn.is_accessible() {
+    if inn.is_open_access() {
         DB.open_tree("tan")?
             .insert(format!("comt{}/{}", pid, cid), &[])?;
     }
@@ -1985,8 +1990,8 @@ pub(crate) async fn post_upvote(
         .ok_or(AppError::NonLogin)?;
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let post_upvotes_tree = DB.open_tree("post_upvotes")?;
@@ -2018,8 +2023,8 @@ pub(crate) async fn comment_upvote(
     .concat();
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let comment_upvotes_tree = DB.open_tree("comment_upvotes")?;
@@ -2043,8 +2048,8 @@ pub(crate) async fn post_downvote(
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let post_downvotes_tree = DB.open_tree("post_downvotes")?;
@@ -2100,8 +2105,8 @@ pub(crate) async fn comment_downvote(
     .concat();
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
-    if InnType::from(inn.inn_type) == InnType::Hidden {
-        return Err(AppError::NotFound);
+    if inn.is_closed() {
+        return Err(AppError::LockedOrHidden);
     }
 
     let comment_downvotes_tree = DB.open_tree("comment_downvotes")?;
