@@ -42,15 +42,18 @@ jobs:
         run: cargo fmt -- --check
 
       - name: Cargo clippy
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: cargo clippy --all-targets --all-features --message-format=json > clippy_result.json
         continue-on-error: true
       
       - name: Install clippy-sarif sarif-fmt (require cargo)
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           cargo install clippy-sarif sarif-fmt
           cat clippy_result.json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
 
       - name: Upload analysis results to GitHub
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: rust-clippy-results.sarif
