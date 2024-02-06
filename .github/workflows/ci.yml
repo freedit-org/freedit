@@ -34,6 +34,7 @@ jobs:
         with:
           toolchain: stable
           components: clippy, rustfmt
+          target: ${{ matrix.target }}
       
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
