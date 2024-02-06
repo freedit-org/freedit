@@ -14,12 +14,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        - os: ubuntu-latest
-        - os: macos-latest
-        - os: windows-latest
-          target: stable-x86_64-pc-windows-msvc
-        - os: windows-latest
-          target: stable-x86_64-pc-windows-gnu
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
+          - os: windows-latest
+            target: stable-x86_64-pc-windows-msvc
+          - os: windows-latest
+            target: stable-x86_64-pc-windows-gnu
     permissions:
       contents: write
       security-events: write
