@@ -50,7 +50,7 @@ validator = { version = "0.16", features = ["derive"] }
 webpki-roots = "0.26.0"
 whichlang = "0.1.0"
 
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
+[target.'cfg(not(target_os = "windows"))'.dependencies]
 tikv-jemallocator = "0.5"
 
 [profile.release]
