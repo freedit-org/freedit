@@ -7,23 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0-rc.4] - 2024-02-05
-
-- buf fixed
-
-## [0.7.0-rc.3] - 2024-02-04
-
-### Removed
-
-- remove https
-
-## [0.7.0-rc.2] - 2024-02-04
-
-### Fixed
-
-- small bug fixed
-
-## [0.7.0-rc.1] - 2024-02-04
+## [0.7.0] - 2024-02-06
 
 This is a breaking change, please backup the database first. Then stop the server and run [examples/dm_inn_type.rs](./examples/dm_inn_type.rs) for data migration.
 
@@ -56,9 +40,17 @@ db tree:
 
 ### Added
 
-- Site admin could manage inn
-- Inn could be closed by mod
-- User could send non e2ee message
+- Make site admin happy
+- Add ci for windows and macos
+
+###  Removed
+
+- Remove https support
+
+### Fixed
+
+- build error for `x86_64-pc-windows-gnu`(#209)
+- ...
 
 ## [0.6.5] - 2024-02-04
 
@@ -362,11 +354,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.4...HEAD
-[0.7.0-rc.4]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.3...v0.7.0-rc.4
-[0.7.0-rc.3]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.2...v0.7.0-rc.3
-[0.7.0-rc.2]: https://github.com/freedit-org/freedit/compare/v0.7.0-rc.1...v0.7.0-rc.2
-[0.7.0-rc.1]: https://github.com/freedit-org/freedit/compare/v0.6.5...v0.7.0-rc.1
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/freedit-org/freedit/compare/v0.6.5...v0.7.0
 [0.6.5]: https://github.com/freedit-org/freedit/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4
 [0.6.3]: https://github.com/freedit-org/freedit/compare/v0.6.2...v0.6.3
