@@ -24,3 +24,12 @@ Disallow: /
 
 User-agent: MauiBot
 Disallow: /
+
+User-agent: Yandex
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: SummalyBot
+Disallow: /

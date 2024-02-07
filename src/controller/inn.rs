@@ -208,39 +208,27 @@ pub(crate) async fn mod_inn_post(
         let inn: Inn = get_one(&DB, "inns", iid)?;
         let old_inn_type = InnType::from(inn.inn_type);
 
-        if old_inn_type == InnType::Hidden
-            && (inn_type != InnType::Public && inn_type != InnType::Apply)
-        {
-            return Err(AppError::Custom("Bad request".into()));
-        }
-
-        if (old_inn_type == InnType::Public || old_inn_type == InnType::Apply)
-            && inn_type != InnType::Hidden
-        {
-            return Err(AppError::Custom("Bad request".into()));
-        }
-
-        if old_inn_type == InnType::Private && (inn_type != InnType::PrivateHidden) {
-            return Err(AppError::Custom("Bad request".into()));
-        }
-
-        if old_inn_type == InnType::PrivateHidden && inn_type != InnType::Private {
-            return Err(AppError::Custom("Bad request".into()));
-        }
-
-        // remove the old inn name
-        if inn_name != inn.inn_name {
-            let old_inn_name_key = inn.inn_name.replace(' ', "_").to_lowercase();
-            inn_names_tree.remove(old_inn_name_key)?;
-        }
-
-        // remove the old inn topics
-        for topic in inn.topics {
-            let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
-            batch_topics.remove(&*k);
-        }
-
         if old_inn_type != inn_type {
+            if old_inn_type == InnType::Hidden
+                && (inn_type != InnType::Public && inn_type != InnType::Apply)
+            {
+                return Err(AppError::Custom("Bad request".into()));
+            }
+
+            if (old_inn_type == InnType::Public || old_inn_type == InnType::Apply)
+                && inn_type != InnType::Hidden
+            {
+                return Err(AppError::Custom("Bad request".into()));
+            }
+
+            if old_inn_type == InnType::Private && (inn_type != InnType::PrivateHidden) {
+                return Err(AppError::Custom("Bad request".into()));
+            }
+
+            if old_inn_type == InnType::PrivateHidden && inn_type != InnType::Private {
+                return Err(AppError::Custom("Bad request".into()));
+            }
+
             let tree = DB.open_tree("user_posts")?;
             for i in tree.iter() {
                 let (k, mut v) = i?;
@@ -267,6 +255,18 @@ pub(crate) async fn mod_inn_post(
                     tree.insert(k, &[v])?;
                 }
             }
+        }
+
+        // remove the old inn name
+        if inn_name != inn.inn_name {
+            let old_inn_name_key = inn.inn_name.replace(' ', "_").to_lowercase();
+            inn_names_tree.remove(old_inn_name_key)?;
+        }
+
+        // remove the old inn topics
+        for topic in inn.topics {
+            let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
+            batch_topics.remove(&*k);
         }
     }
 

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2024-02-07
+
+### Fixed
+
+- fix <https://freedit.eu/post/1/211>
+
 ## [0.7.0] - 2024-02-06
 
 This is a breaking change, please backup the database first. Then stop the server and run [examples/dm_inn_type.rs](./examples/dm_inn_type.rs) for data migration.
@@ -354,7 +360,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.0...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/freedit-org/freedit/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/freedit-org/freedit/compare/v0.6.5...v0.7.0
 [0.6.5]: https://github.com/freedit-org/freedit/compare/v0.6.4...v0.6.5
 [0.6.4]: https://github.com/freedit-org/freedit/compare/v0.6.3...v0.6.4
