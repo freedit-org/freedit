@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
+// #![warn(clippy::unwrap_used)]
 
 use chrono::Utc;
 use freedit::{
