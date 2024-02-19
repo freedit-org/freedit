@@ -48,10 +48,11 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: cargo fmt -- --check
 
-      - name: typo
+      - name: typos check
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        uses: crate-ci/typos@master
-        run: typos
+        run: |
+          cargo install typos-cli
+          typos
         continue-on-error: true
 
       - name: Cargo clippy
