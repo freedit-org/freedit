@@ -731,7 +731,7 @@ pub(crate) async fn edit_post_post(
     }
 
     let mut content = input.content;
-    // extract @username or @uid notificaiton
+    // extract @username or @uid notification
     let notifications = extract_element(&content, 5, '@');
     for notification in &notifications {
         let (uid, username) = match notification.parse::<u32>() {
@@ -1608,7 +1608,7 @@ pub(crate) async fn post(
                             <p>Warning</p>
                         </div>
                         <div class="message-body">
-                            This post was published <b>{} days ago</b>. The infomation described in this article may have changed.
+                            This post was published <b>{} days ago</b>. The information described in this article may have changed.
                         </div>
                     </article>
                     "#,
@@ -1789,7 +1789,7 @@ pub(crate) async fn comment_post(
 
     let mut content = input.content;
 
-    // extract @username or @uid notificaiton
+    // extract @username or @uid notification
     let notifications = extract_element(&content, 5, '@');
     for notification in &notifications {
         let (uid, username) = match notification.parse::<u32>() {

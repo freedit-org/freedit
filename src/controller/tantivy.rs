@@ -110,10 +110,10 @@ pub(crate) async fn search(
         }
     }
 
-    let mut out_searchs = Vec::with_capacity(20);
+    let mut out_searches = Vec::with_capacity(20);
     for id in ids {
         if let Some(out) = OutSearch::get(&id, &DB) {
-            out_searchs.push(out);
+            out_searches.push(out);
         }
     }
 
@@ -126,7 +126,7 @@ pub(crate) async fn search(
     let page_data = PageData::new("Search", &site_config, claim, has_unread);
     let page_search = PageSearch {
         page_data,
-        outs: out_searchs,
+        outs: out_searches,
         search: input.search,
         offset,
         uid: input.uid,

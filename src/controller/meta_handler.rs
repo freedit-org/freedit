@@ -220,10 +220,10 @@ impl<'a> PageData<'a> {
 pub(super) fn get_referer(header: Option<TypedHeader<Referer>>) -> Option<String> {
     if let Some(TypedHeader(r)) = header {
         let referer = format!("{r:?}");
-        let trimed = referer
+        let trimmed = referer
             .trim_start_matches("Referer(\"")
             .trim_end_matches("\")");
-        Some(trimed.to_owned())
+        Some(trimmed.to_owned())
     } else {
         None
     }

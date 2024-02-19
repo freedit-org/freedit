@@ -435,7 +435,7 @@ pub(crate) async fn solo_post(
             content = content.replace(&format!("#{tag}"), &tag_link);
         }
 
-        // extract @username or @uid notificaiton
+        // extract @username or @uid notification
         let notifications = extract_element(&content, 5, '@');
         for notification in &notifications {
             let (uid, username) = match notification.parse::<u32>() {

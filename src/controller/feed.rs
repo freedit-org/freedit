@@ -809,7 +809,7 @@ pub(crate) async fn feed_subscribe(
         let feed_id_ivec = &k[(k.len() - 4)..];
         if u8_slice_to_u32(feed_id_ivec) == feed_id {
             if uid == claim.uid {
-                // user unsubsribe
+                // user unsubscribe
                 user_folder_tree.remove(k)?;
             } else {
                 // add other's feed

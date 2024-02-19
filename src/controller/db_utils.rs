@@ -314,7 +314,7 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
 ///
 /// # Note
 ///
-/// The tag length should be less than or equal to 25. And the results shoule be no more than `max_len`.
+/// The tag length should be less than or equal to 25. And the results should be no more than `max_len`.
 /// If no space is found after the `char`, the string will be ignored.
 ///
 /// # Examples
