@@ -5,7 +5,7 @@ use axum::{
     async_trait,
     body::Body,
     extract::{rejection::FormRejection, FromRequest, Request},
-    http::{self, HeaderMap, HeaderValue, Uri},
+    http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
     Form,
 };

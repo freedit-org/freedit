@@ -33,7 +33,6 @@ use atom_syndication::{
 };
 use axum::{
     extract::{Path, Query},
-    http,
     response::{IntoResponse, Redirect},
     Form,
 };
