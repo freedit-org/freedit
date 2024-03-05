@@ -46,7 +46,7 @@ tower-http = { version = "0.5.1", features = ["fs", "compression-br", "trace"] }
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 unicode-segmentation = "1"
-validator = { version = "0.16", features = ["derive"] }
+validator = { version = "0.17.0", features = ["derive"] }
 webpki-roots = "0.26.0"
 whichlang = "0.1.0"
 
