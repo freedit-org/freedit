@@ -460,7 +460,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db21780337b425f968a2c3efa842eeaa4fe53d2bcb1eb27d2877460a862fb0ab"
 dependencies = [
  "base64 0.13.1",
- "image",
+ "image 0.24.9",
  "lodepng",
  "rand",
  "serde_json",
@@ -872,7 +872,7 @@ dependencies = [
  "fast2s",
  "http 1.1.0",
  "identicon",
- "image",
+ "image 0.25.0",
  "img-parts",
  "indexmap",
  "jieba-rs",
@@ -1331,7 +1331,7 @@ name = "identicon"
 version = "0.2.1"
 source = "git+https://github.com/freedit-dev/identicon.git#44cb2bc0d58fd0029fe70acc5dc2057ba3bcecad"
 dependencies = [
- "image",
+ "image 0.24.9",
 ]
 
 [[package]]
@@ -1353,10 +1353,24 @@ dependencies = [
  "bytemuck",
  "byteorder",
  "color_quant",
- "gif",
- "jpeg-decoder",
  "num-traits",
  "png",
+]
+
+[[package]]
+name = "image"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9b4f005360d32e9325029b38ba47ebd7a56f3316df09249368939562d518645"
+dependencies = [
+ "bytemuck",
+ "byteorder",
+ "color_quant",
+ "gif",
+ "num-traits",
+ "png",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -1436,12 +1450,6 @@ checksum = "ab46a6e9526ddef3ae7f787c06f0f2600639ba80ea3eade3d8e670a2230f51d6"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "jpeg-decoder"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5d4a7da358eff58addd2877a45865158f0d78c911d43a5784ceb7bbf52833b0"
 
 [[package]]
 name = "js-sys"
@@ -3595,4 +3603,19 @@ checksum = "9e16efa8a874a0481a574084d34cc26fdb3b99627480f785888deb6386506656"
 dependencies = [
  "cc",
  "pkg-config",
+]
+
+[[package]]
+name = "zune-core"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f423a2c17029964870cfaabb1f13dfab7d092a62a29a89264f4d36990ca414a"
+
+[[package]]
+name = "zune-jpeg"
+version = "0.4.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec866b44a2a1fd6133d363f073ca1b179f438f99e7e5bfb1e33f7181facfe448"
+dependencies = [
+ "zune-core",
 ]

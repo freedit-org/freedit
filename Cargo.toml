@@ -19,7 +19,7 @@ data-encoding = "*"
 fast2s = "0.3"
 http = "1.0.0"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
-image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.6.8"
