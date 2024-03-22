@@ -769,7 +769,7 @@ pub(crate) async fn edit_post_post(
         iid,
         title: clean_html(&input.title),
         tags,
-        content: PostContent::Markdown(clean_html(&content)),
+        content: PostContent::Markdown(content),
         created_at,
         status: PostStatus::Normal,
     };
