@@ -115,6 +115,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
                     .into(),
                 ));
             }
+            Event::Html(html) => return Some(Event::Code(html)),
             other => return Some(other),
         };
 
@@ -133,7 +134,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
         let syntax = if let Some(syntax) = SYNTAX_SET.find_syntax_by_name(lang.as_ref()) {
             syntax
         } else {
-            SYNTAX_SET.find_syntax_by_extension("rs").unwrap()
+            SYNTAX_SET.find_syntax_by_extension("html").unwrap()
         };
 
         let res = highlighted_html_for_string(
