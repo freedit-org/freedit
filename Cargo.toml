@@ -1,6 +1,6 @@
 [package]
 name = "freedit"
-version = "0.7.2"
+version = "0.7.3-rc.1"
 edition = "2021"
 license = "MIT License"
 
