@@ -210,6 +210,7 @@ impl User {
             .unwrap()
             .and_hms_opt(0, 0, 0)
             .unwrap()
+            .and_utc()
             .timestamp();
         let key = format!("{expire:x}_{uid}_{stat_type}");
         incr_id(&db.open_tree("user_stats")?, key)?;

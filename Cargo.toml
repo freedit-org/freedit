@@ -19,7 +19,7 @@ data-encoding = "*"
 fast2s = "0.3"
 http = "1.0.0"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
-image = { version = "0.24", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.25.0", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.6.8"
@@ -29,7 +29,7 @@ nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.10.0", features = ["simd", "html"], default-features = false }
 rand = "0.8"
-reqwest = { version = "0.11", default-features = false, features = ["rustls-tls", "socks"] }
+reqwest = { version = "0.12.0", default-features = false, features = ["rustls-tls", "socks"] }
 ring = { version = "0.17.5", default-features = false }
 rss = { version = "2.0", default-features = false }
 rust-stemmers = "1.2.0"

@@ -1,11 +1,11 @@
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use once_cell::sync::Lazy;
 use pulldown_cmark::{html, CodeBlockKind, Event, Options, Tag};
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
 
 /// convert a `i64` timestamp to a date [`String`]
 pub(super) fn ts_to_date(timestamp: i64) -> String {
-    NaiveDateTime::from_timestamp_opt(timestamp, 0)
+    DateTime::from_timestamp(timestamp, 0)
         .unwrap()
         .format("%Y-%m-%d")
         .to_string()
