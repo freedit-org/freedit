@@ -123,7 +123,7 @@ pub(crate) async fn admin_view(
                 "posts" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{}", one)).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "post_comments" => {

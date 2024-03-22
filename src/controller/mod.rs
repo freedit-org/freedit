@@ -356,9 +356,22 @@ impl PostContent {
 impl Display for PostContent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PostContent::Markdown(c) => write!(f, "{c}"),
+            PostContent::Markdown(c) => {
+                let s = md2html(c);
+                write!(f, "{s}")
+            }
             PostContent::FeedItemId(id) => write!(f, "From item_id: {id}"),
         }
+    }
+}
+
+impl Display for Post {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "pid: {}, uid: {}, iid: {}, title: {}, tags: {:?}, content: {}, created_at: {}, status: {}",
+            self.pid, self.uid, self.iid, self.title, self.tags, self.content, self.created_at, self.status
+        )
     }
 }
 
