@@ -352,6 +352,16 @@ pub(crate) async fn admin_post(
     }
 
     let mut site_config = input;
+    site_config.spam_regex = match site_config.spam_regex {
+        Some(s) if !s.is_empty() => {
+            if let Err(e) = regex::Regex::new(&s) {
+                return Err(AppError::Custom(e.to_string()));
+            }
+            Some(s)
+        }
+        _ => None,
+    };
+
     site_config.site_name = clean_html(&site_config.site_name);
     site_config.domain = clean_html(&site_config.domain);
     site_config.description = clean_html(&site_config.description);
@@ -380,6 +390,7 @@ impl Default for SiteConfig {
             captcha_difficulty: "Easy".into(),
             captcha_name: "Lucy".into(),
             home_page: 0,
+            spam_regex: None,
         }
     }
 }
