@@ -214,6 +214,24 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="spam_regex">Spam regex</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        {% match site_config.spam_regex %}
+                        {% when Some(spam_regex) %}
+                        <textarea name="spam_regex" class="textarea" maxlength="2048" placeholder="{{spam_regex}}">{{spam_regex}}</textarea>
+                        {% else %}
+                        <textarea name="spam_regex" class="textarea" maxlength="2048"></textarea>
+                        {% endmatch %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">

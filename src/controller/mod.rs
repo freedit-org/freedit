@@ -490,6 +490,7 @@ pub(super) struct SiteConfig {
     captcha_difficulty: String,
     captcha_name: String,
     home_page: u8,
+    spam_regex: Option<String>,
 }
 
 impl SiteConfig {

@@ -384,6 +384,13 @@ pub(crate) async fn solo_post(
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
+    if let Some(spam_regex) = &site_config.spam_regex {
+        let re = regex::Regex::new(spam_regex).unwrap();
+        if re.is_match(&input.content) {
+            return Err(AppError::Custom("Spam detected".into()));
+        }
+    }
+
     let created_at = Utc::now().timestamp();
     if created_at - claim.last_write < site_config.solo_interval {
         return Err(AppError::WriteInterval);

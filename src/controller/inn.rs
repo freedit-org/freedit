@@ -655,6 +655,13 @@ pub(crate) async fn edit_post_post(
 
     let k: Vec<u8> = [&u32_to_ivec(claim.uid), input.title.as_bytes()].concat();
 
+    if let Some(spam_regex) = &site_config.spam_regex {
+        let re = regex::Regex::new(spam_regex).unwrap();
+        if re.is_match(&input.title) || re.is_match(&input.content) || re.is_match(&input.tags) {
+            return Err(AppError::Custom("Spam detected".into()));
+        }
+    }
+
     if delete_draft {
         DB.open_tree("drafts")?.remove(&k)?;
         return Ok(Redirect::to("/post/edit/0"));
@@ -1755,6 +1762,13 @@ pub(crate) async fn comment_post(
     let claim = cookie
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
+
+    if let Some(spam_regex) = &site_config.spam_regex {
+        let re = regex::Regex::new(spam_regex).unwrap();
+        if re.is_match(&input.content) {
+            return Err(AppError::Custom("Spam detected".into()));
+        }
+    }
 
     let inn: Inn = get_one(&DB, "inns", iid)?;
     if inn.is_closed() {
