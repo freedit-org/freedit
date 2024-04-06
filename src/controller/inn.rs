@@ -208,24 +208,32 @@ pub(crate) async fn mod_inn_post(
         let old_inn_type = InnType::from(inn.inn_type);
 
         if old_inn_type != inn_type {
-            if old_inn_type == InnType::Hidden
-                && (inn_type != InnType::Public && inn_type != InnType::Apply)
-            {
-                return Err(AppError::Custom("Bad request".into()));
-            }
-
-            if (old_inn_type == InnType::Public || old_inn_type == InnType::Apply)
-                && inn_type != InnType::Hidden
-            {
-                return Err(AppError::Custom("Bad request".into()));
-            }
-
-            if old_inn_type == InnType::Private && (inn_type != InnType::PrivateHidden) {
-                return Err(AppError::Custom("Bad request".into()));
-            }
-
-            if old_inn_type == InnType::PrivateHidden && inn_type != InnType::Private {
-                return Err(AppError::Custom("Bad request".into()));
+            match old_inn_type {
+                InnType::Apply => {
+                    if inn_type != InnType::Hidden && inn_type != InnType::Public {
+                        return Err(AppError::Custom("Inn type err".into()));
+                    }
+                }
+                InnType::Public => {
+                    if inn_type != InnType::Hidden && inn_type != InnType::Apply {
+                        return Err(AppError::Custom("Inn type err".into()));
+                    }
+                }
+                InnType::Hidden => {
+                    if inn_type != InnType::Public && inn_type != InnType::Apply {
+                        return Err(AppError::Custom("Inn type err".into()));
+                    }
+                }
+                InnType::Private => {
+                    if inn_type != InnType::PrivateHidden {
+                        return Err(AppError::Custom("Inn type err".into()));
+                    }
+                }
+                InnType::PrivateHidden => {
+                    if inn_type != InnType::Private {
+                        return Err(AppError::Custom("Inn type err".into()));
+                    }
+                }
             }
 
             let tree = DB.open_tree("user_posts")?;
