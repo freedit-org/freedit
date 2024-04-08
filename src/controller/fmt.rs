@@ -115,6 +115,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
                     .into(),
                 ));
             }
+            // for security reasons, we change all html tags to code blocks, but not `Event::InlineHtml` as @mention needs it
             Event::Html(html) => return Some(Event::Code(html)),
             other => return Some(other),
         };
