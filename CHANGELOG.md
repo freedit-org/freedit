@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3-rc.4] - 2024-04-08
+
+### Fixed
+
+- When you edit a post, it doesn’t use the markdown system but only HTML
 
 ## [0.7.3-rc.3] - 2024-04-06
 
@@ -383,7 +388,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.3-rc.3...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.3-rc.4...HEAD
+[0.7.3-rc.4]: https://github.com/freedit-org/freedit/compare/v0.7.3-rc.3...v0.7.3-rc.4
 [0.7.3-rc.3]: https://github.com/freedit-org/freedit/compare/v0.7.3-rc.2...v0.7.3-rc.3
 [0.7.3-rc.2]: https://github.com/freedit-org/freedit/compare/v0.7.3-rc.1...v0.7.3-rc.2
 [0.7.3-rc.1]: https://github.com/freedit-org/freedit/compare/v0.7.2...v0.7.3-rc.1

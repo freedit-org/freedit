@@ -854,7 +854,7 @@ dependencies = [
 
 [[package]]
 name = "freedit"
-version = "0.7.3-rc.3"
+version = "0.7.3-rc.4"
 dependencies = [
  "ammonia",
  "askama",
