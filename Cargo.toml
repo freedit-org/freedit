@@ -50,7 +50,7 @@ unicode-segmentation = "1"
 validator = { version = "0.18.0", features = ["derive"] }
 webpki-roots = "0.26.0"
 whichlang = "0.1.0"
-zstd-sys = "=2.0.9"
+zstd-sys = "=2.0.10"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 tikv-jemallocator = "0.5"
