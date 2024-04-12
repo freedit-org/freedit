@@ -135,7 +135,7 @@ use self::fmt::md2html;
 use self::tantivy::{ToDoc, FIELDS};
 use self::user::Role;
 use crate::{controller::meta_handler::into_response, error::AppError};
-use ::tantivy::Document;
+use ::tantivy::TantivyDocument;
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use chrono::{Days, Utc};
@@ -249,8 +249,8 @@ struct Solo {
 }
 
 impl ToDoc for Solo {
-    fn to_doc(&self, _id: Option<u32>) -> Document {
-        let mut doc = Document::default();
+    fn to_doc(&self, _id: Option<u32>) -> TantivyDocument {
+        let mut doc = TantivyDocument::default();
         doc.add_text(FIELDS.id, format!("solo{}", self.sid));
         doc.add_text(FIELDS.title, &self.content);
         doc.add_u64(FIELDS.uid, self.uid as u64);
@@ -375,8 +375,8 @@ struct Post {
 }
 
 impl ToDoc for Post {
-    fn to_doc(&self, _id: Option<u32>) -> Document {
-        let mut doc = Document::default();
+    fn to_doc(&self, _id: Option<u32>) -> TantivyDocument {
+        let mut doc = TantivyDocument::default();
         doc.add_text(FIELDS.id, format!("post{}", self.pid));
         doc.add_text(FIELDS.title, &self.title);
         doc.add_u64(FIELDS.uid, self.uid as u64);
@@ -412,8 +412,8 @@ struct Comment {
 }
 
 impl ToDoc for Comment {
-    fn to_doc(&self, _id: Option<u32>) -> Document {
-        let mut doc = Document::default();
+    fn to_doc(&self, _id: Option<u32>) -> TantivyDocument {
+        let mut doc = TantivyDocument::default();
         doc.add_text(FIELDS.id, format!("comt{}/{}", self.pid, self.cid));
         doc.add_text(FIELDS.title, &self.content);
         doc.add_u64(FIELDS.uid, self.uid as u64);
@@ -438,8 +438,8 @@ struct Item {
 }
 
 impl ToDoc for Item {
-    fn to_doc(&self, id: Option<u32>) -> Document {
-        let mut doc = Document::default();
+    fn to_doc(&self, id: Option<u32>) -> TantivyDocument {
+        let mut doc = TantivyDocument::default();
         doc.add_text(FIELDS.id, format!("item{}", id.unwrap()));
         doc.add_text(FIELDS.title, &self.title);
         doc.add_text(FIELDS.content, &self.content);

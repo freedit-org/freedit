@@ -15,11 +15,11 @@ use tantivy::{
     directory::MmapDirectory,
     query::QueryParser,
     schema::{
-        Field, IndexRecordOption, Schema, SchemaBuilder, TextFieldIndexing, TextOptions, FAST,
-        INDEXED, STORED, STRING,
+        Field, IndexRecordOption, Schema, SchemaBuilder, TextFieldIndexing, TextOptions, Value,
+        FAST, INDEXED, STORED, STRING,
     },
     tokenizer::{Token, TokenStream, Tokenizer},
-    Document, Index, IndexReader, IndexWriter,
+    Index, IndexReader, IndexWriter, TantivyDocument,
 };
 use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
@@ -104,8 +104,8 @@ pub(crate) async fn search(
             .unwrap_or_default();
 
         for (_score, doc_address) in top_docs {
-            let doc = searcher.doc(doc_address)?;
-            let id = doc.get_first(FIELDS.id).unwrap().as_text().unwrap();
+            let doc: TantivyDocument = searcher.doc(doc_address)?;
+            let id = doc.get_first(FIELDS.id).unwrap().as_str().unwrap();
             ids.insert(id.to_owned());
         }
     }
@@ -137,7 +137,7 @@ pub(crate) async fn search(
 }
 
 pub(super) trait ToDoc {
-    fn to_doc(&self, id: Option<u32>) -> Document;
+    fn to_doc(&self, id: Option<u32>) -> TantivyDocument;
 }
 
 static SEARCHER: Lazy<Searcher> = Lazy::new(|| Tan::get_searcher().unwrap());
@@ -299,7 +299,7 @@ impl Tan {
     }
 }
 
-fn extract_id(id: &str, db: &Db) -> Result<Document, AppError> {
+fn extract_id(id: &str, db: &Db) -> Result<TantivyDocument, AppError> {
     let ctype = &id[0..4];
     let ids: Vec<_> = id[4..].split('/').collect();
     let id1: u32 = ids[0].parse().unwrap();

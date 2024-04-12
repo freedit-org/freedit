@@ -8,7 +8,7 @@ license = "MIT License"
 ammonia = "4.0.0"
 askama = { version = "0.12", default-features = false }
 atom_syndication = "0.12"
-axum = { version = "0.7.5", features = ["http2", "form", "query", "multipart", "tokio"], default-features = false }
+axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "multipart", "tokio"], default-features = false }
 axum-extra = { version = "0.9.0", features = ["typed-header"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.3"
@@ -39,7 +39,7 @@ sled = "0.34.7"
 snailquote = "0.3.1"
 stop-words = "0.8.0"
 syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "default-themes", "html"], default-features = false }
-tantivy = "0.21.0"
+tantivy = "0.22.0"
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tower = { version = "0.4", features = ["timeout"] }
@@ -50,7 +50,6 @@ unicode-segmentation = "1"
 validator = { version = "0.18.0", features = ["derive"] }
 webpki-roots = "0.26.0"
 whichlang = "0.1.0"
-zstd-sys = "=2.0.9"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 tikv-jemallocator = "0.5"
