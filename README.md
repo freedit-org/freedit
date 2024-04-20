@@ -19,7 +19,6 @@ GitHub: <https://github.com/freedit-org/freedit>
 * Markdown support
 * inn: Subgroup like Subreddits
 * solo: Personal space like Twitter
-* https support
 * Online rss reader
 
 ## Usage
