@@ -22,7 +22,7 @@ identicon = { git = "https://github.com/freedit-dev/identicon.git", default-feat
 image = { version = "0.25.0", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
-jieba-rs = "0.6.8"
+jieba-rs = "0.7.0"
 latex2mathml = "0.2.3"
 mozjpeg = "0.10.4"
 nanoid = "0.4.0"
