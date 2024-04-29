@@ -291,7 +291,9 @@ pub(crate) async fn feed(
         let folder = if let Some(r) = feed_id_folder.get(&feed_id) {
             r.to_owned()
         } else {
-            "".to_owned()
+            active_folder
+                .clone()
+                .unwrap_or_else(|| "Default".to_owned())
         };
         let out_item = OutItem {
             item_id: i,
@@ -613,9 +615,11 @@ pub(super) async fn update(
         Ok(rss) => {
             for item in rss.items.into_iter().take(n) {
                 let source_item: SourceItem = item.try_into()?;
-
-                if item_links_tree.get(&source_item.link)?.is_none() {
-                    let item_id = incr_id(db, "items_count")?;
+                let item_id;
+                if let Some(v) = item_links_tree.get(&source_item.link)? {
+                    item_id = ivec_to_u32(&v);
+                } else {
+                    item_id = incr_id(db, "items_count")?;
                     let item = Item {
                         link: source_item.link,
                         title: clean_html(&source_item.title),
@@ -623,13 +627,12 @@ pub(super) async fn update(
                         updated: source_item.updated,
                         content: clean_html(&source_item.content),
                     };
-
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     set_one(db, "items", item_id, &item)?;
-
-                    item_ids.push((item_id, item.updated));
                     tan_tree.insert(format!("item{}", item_id), &[])?;
-                }
+                };
+
+                item_ids.push((item_id, source_item.updated));
             }
 
             Feed {
@@ -641,8 +644,11 @@ pub(super) async fn update(
             Ok(atom) => {
                 for entry in atom.entries.into_iter().take(n) {
                     let source_item: SourceItem = entry.into();
-                    if item_links_tree.get(&source_item.link)?.is_none() {
-                        let item_id = incr_id(db, "items_count")?;
+                    let item_id;
+                    if let Some(v) = item_links_tree.get(&source_item.link)? {
+                        item_id = ivec_to_u32(&v);
+                    } else {
+                        item_id = incr_id(db, "items_count")?;
                         let item = Item {
                             link: source_item.link,
                             title: clean_html(&source_item.title),
@@ -650,13 +656,12 @@ pub(super) async fn update(
                             updated: source_item.updated,
                             content: clean_html(&source_item.content),
                         };
-
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                         set_one(db, "items", item_id, &item)?;
-
-                        item_ids.push((item_id, item.updated));
                         tan_tree.insert(format!("item{}", item_id), &[])?;
                     };
+
+                    item_ids.push((item_id, source_item.updated));
                 }
 
                 Feed {
