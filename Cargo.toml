@@ -12,7 +12,7 @@ axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "mult
 axum-extra = { version = "0.9.0", features = ["typed-header"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.3"
-cached = { version = "0.50.0", default-features = false, features = ["proc_macro", "ahash"] }
+cached = { version = "0.51.1", default-features = false, features = ["proc_macro", "ahash"] }
 captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"

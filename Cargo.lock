@@ -430,9 +430,9 @@ checksum = "514de17de45fdb8dc022b1a7975556c53c86f9f0aa5f534b98977b171857c2c9"
 
 [[package]]
 name = "cached"
-version = "0.50.0"
+version = "0.51.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a7d38ed2761b8a13ce42bc44b09d5a052b88da2f9fead624c779f31ac0729a"
+checksum = "827444961d1a2335221ca1f6026127ab6f767bcec3bf88d19b18204265c595c3"
 dependencies = [
  "ahash 0.8.11",
  "cached_proc_macro",
