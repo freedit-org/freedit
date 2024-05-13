@@ -12,14 +12,14 @@ axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "mult
 axum-extra = { version = "0.9.0", features = ["typed-header"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.3"
-cached = { version = "0.50.0", default-features = false, features = ["proc_macro", "ahash"] }
+cached = { version = "0.51.1", default-features = false, features = ["proc_macro", "ahash"] }
 captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
 fast2s = "0.3"
 http = "1.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
-image = { version = "0.25.0", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.25.1", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.7.0"
