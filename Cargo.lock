@@ -183,7 +183,7 @@ dependencies = [
  "derive_builder 0.12.0",
  "diligent-date-parser",
  "never",
- "quick-xml",
+ "quick-xml 0.30.0",
 ]
 
 [[package]]
@@ -2051,6 +2051,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1004a344b30a54e2ee58d66a71b32d2db2feb0a31f9a2d302bf0536f15de2a33"
+dependencies = [
+ "encoding_rs",
+ "memchr",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2249,11 +2259,11 @@ dependencies = [
 
 [[package]]
 name = "rss"
-version = "2.0.7"
+version = "2.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7b2c77eb4450d7d5f98df52c381cd6c4e19b75dad9209a9530b85a44510219a"
+checksum = "2f374fd66bb795938b78c021db1662d43a8ffbc42ec1ac25429fc4833b732751"
 dependencies = [
- "quick-xml",
+ "quick-xml 0.31.0",
 ]
 
 [[package]]
