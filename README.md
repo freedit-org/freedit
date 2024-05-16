@@ -15,7 +15,7 @@ GitHub: <https://github.com/freedit-org/freedit>
 * Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled) 
 * No javascript at all, for safety maximization. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
 * e2ee private message
-* LaTex and Code highlighting support without JavaScript
+* Math and Code highlighting support without JavaScript
 * Markdown support
 * inn: Subgroup like Subreddits
 * solo: Personal space like Twitter

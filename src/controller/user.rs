@@ -751,7 +751,7 @@ pub(crate) async fn user_setting_post(
         username_tree.insert(username_key, u32_to_ivec(user.uid))?;
     }
 
-    user.username = username.to_owned();
+    user.username = username.to_string();
     user.about = clean_html(&input.about);
     user.url = clean_html(&input.url);
     DB.open_tree("home_pages")?
