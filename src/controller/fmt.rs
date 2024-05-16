@@ -95,7 +95,6 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let mut code = String::with_capacity(64);
         let lang = match self.parent.next()? {
             Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(lang))) => lang,
             Event::InlineMath(c) => {
@@ -123,6 +122,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
             other => return Some(other),
         };
 
+        let mut code = String::with_capacity(64);
         while let Some(Event::Text(text)) = self.parent.next() {
             code.push_str(&text);
         }
