@@ -57,7 +57,7 @@ const MATHML_TAGS: [&str; 31] = [
 // You should have received a copy of the GNU General Public License
 // along with cmark-syntax. If not, see <http://www.gnu.org/licenses/>
 pub(super) fn md2html(md: &str) -> String {
-    let parser = pulldown_cmark::Parser::new_ext(md, OPTIONS);
+    let parser = pulldown_cmark::Parser::new_ext(md, Options::all());
     let processed = SyntaxPreprocessor::new(parser);
     let mut html_output = String::with_capacity(md.len() * 2);
     html::push_html(&mut html_output, processed);
@@ -74,8 +74,6 @@ pub(super) fn clean_html(raw: &str) -> String {
         .to_string()
 }
 
-const OPTIONS: Options = Options::all();
-
 struct SyntaxPreprocessor<'a, I: Iterator<Item = Event<'a>>> {
     parent: I,
 }
@@ -86,9 +84,6 @@ impl<'a, I: Iterator<Item = Event<'a>>> SyntaxPreprocessor<'a, I> {
         Self { parent }
     }
 }
-
-static THEME_SET: Lazy<syntect::highlighting::ThemeSet> = Lazy::new(ThemeSet::load_defaults);
-static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 
 impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
     type Item = Event<'a>;
@@ -130,6 +125,9 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
         Some(Event::Html(code_highlighter(&code, &lang).into()))
     }
 }
+
+static THEME_SET: Lazy<syntect::highlighting::ThemeSet> = Lazy::new(ThemeSet::load_defaults);
+static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
 
 fn code_highlighter(code: &str, lang: &str) -> String {
     let syntax = if let Some(syntax) = SYNTAX_SET.find_syntax_by_name(lang) {
