@@ -129,9 +129,9 @@
             <li>
                 <div class="py-1">
                     {% match filter.as_deref() %} {% when Some(val) %}
-                        <a href="/feed/{{uid}}?filter={{val}}&active_folder={{active_folder}}&active_feed={{feed.feed_id}}">
+                        <a href="/feed/{{uid}}?filter={{val}}&active_folder={{folder.0}}&active_feed={{feed.feed_id}}">
                     {% else %}
-                        <a href="/feed/{{uid}}?&active_folder={{active_folder}}&active_feed={{feed.feed_id}}">
+                        <a href="/feed/{{uid}}?&active_folder={{folder.0}}&active_feed={{feed.feed_id}}">
                     {% endmatch %}
 
                     {% match feed.err %}{% when Some(e) %}
