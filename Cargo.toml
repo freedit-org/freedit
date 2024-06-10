@@ -48,7 +48,7 @@ tracing = { version = "0.1", features = ["release_max_level_info", "max_level_in
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 unicode-segmentation = "1"
 validator = { version = "0.18.0", features = ["derive"] }
-webpki-roots = "0.26.0"
+webpki-roots = "0.26.2"
 whichlang = "0.1.0"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
