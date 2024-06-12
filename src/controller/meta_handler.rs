@@ -2,12 +2,9 @@ use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{error::AppError, DB};
 use askama::Template;
 use axum::{
-    async_trait,
     body::Body,
-    extract::{rejection::FormRejection, FromRequest, Request},
     http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
-    Form,
 };
 use axum_extra::{
     headers::{Cookie, Referer},
@@ -15,9 +12,7 @@ use axum_extra::{
 };
 use http::{HeaderName, StatusCode};
 use once_cell::sync::Lazy;
-use serde::de::DeserializeOwned;
 use tracing::error;
-use validator::Validate;
 
 pub(super) fn into_response<T: Template>(t: &T) -> Response<Body> {
     match t.render() {
@@ -80,24 +75,6 @@ impl IntoResponse for AppError {
 pub(crate) async fn handler_404(uri: Uri) -> impl IntoResponse {
     error!("No route for {}", uri);
     AppError::NotFound
-}
-
-pub(crate) struct ValidatedForm<T>(pub(super) T);
-
-#[async_trait]
-impl<T, S> FromRequest<S> for ValidatedForm<T>
-where
-    T: DeserializeOwned + Validate,
-    S: Send + Sync,
-    Form<T>: FromRequest<S, Rejection = FormRejection>,
-{
-    type Rejection = AppError;
-
-    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
-        let Form(value) = Form::<T>::from_request(req, state).await?;
-        value.validate()?;
-        Ok(ValidatedForm(value))
-    }
 }
 
 pub(crate) async fn home(

@@ -26,6 +26,7 @@ use axum_extra::{
 };
 use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
+use garde::Validate;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
@@ -33,7 +34,6 @@ use sled::Db;
 use std::collections::{BTreeMap, HashMap};
 use std::{collections::HashSet, time::Duration};
 use tracing::error;
-use validator::Validate;
 
 struct SourceItem {
     link: String,
@@ -469,12 +469,13 @@ pub(crate) async fn feed_add(
 /// Form data: `/feed/add`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormFeedAdd {
-    #[validate(length(max = 256))]
+    #[garde(length(max = 256))]
     url: String,
-    #[validate(length(max = 256))]
+    #[garde(length(max = 256))]
     folder: String,
-    #[validate(length(max = 256))]
+    #[garde(length(max = 256))]
     new_folder: String,
+    #[garde(skip)]
     is_public: bool,
 }
 

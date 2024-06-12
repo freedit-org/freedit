@@ -7,7 +7,7 @@ use super::{
     },
     fmt::{clean_html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, into_response,
-    meta_handler::{PageData, ParamsPage, ValidatedForm},
+    meta_handler::{PageData, ParamsPage},
     notification::{add_notification, NtType},
     u32_to_ivec, u8_slice_to_u32, Claim, Inn, InnType, SiteConfig, User,
 };
@@ -20,10 +20,12 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use axum_extra::{headers::Cookie, TypedHeader};
+use axum_garde::WithValidation;
 use bincode::config::standard;
 use captcha::{CaptchaName, Difficulty};
 use chrono::Utc;
 use data_encoding::BASE64;
+use garde::Validate;
 use identicon::Identicon;
 use ring::{
     pbkdf2,
@@ -33,7 +35,6 @@ use serde::Deserialize;
 use sled::Db;
 use std::{cmp::Ordering, fmt::Display, num::NonZeroU32, time::Duration};
 use tokio::time::sleep;
-use validator::Validate;
 
 /// Page data: `user.html`
 #[derive(Template)]
@@ -581,12 +582,13 @@ pub(crate) async fn role_post(
 /// Form data: `/user/setting`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormUser {
-    #[validate(length(min = 1, max = 32))]
+    #[garde(length(min = 1, max = 32))]
     username: String,
-    #[validate(length(max = 1024))]
+    #[garde(length(max = 1024))]
     about: String,
-    #[validate(length(max = 256))]
+    #[garde(length(max = 256))]
     url: String,
+    #[garde(skip)]
     home_page: u8,
 }
 
@@ -667,12 +669,13 @@ pub(crate) async fn reset(
 
 /// Form data: `/user/setting`
 #[derive(Deserialize, Validate)]
+#[garde(allow_unvalidated)]
 pub(crate) struct FormReset {
     username: String,
     recovery_code: String,
-    #[validate(must_match(other = "password2", message = "Two passwords do not match"))]
+    #[garde(matches(password2))]
     password: String,
-    #[validate(length(min = 7))]
+    #[garde(length(min = 7))]
     password2: String,
 }
 
@@ -724,7 +727,7 @@ pub(crate) async fn remove_session(
 /// `POST /user/setting`
 pub(crate) async fn user_setting_post(
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormUser>,
+    WithValidation(input): WithValidation<Form<FormUser>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
@@ -765,17 +768,18 @@ pub(crate) async fn user_setting_post(
 /// Form data: `/user/setting`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormPassword {
+    #[garde(skip)]
     old_password: String,
-    #[validate(must_match(other = "password2", message = "Two passwords do not match"))]
+    #[garde(matches(password2))]
     password: String,
-    #[validate(length(min = 7))]
+    #[garde(length(min = 7))]
     password2: String,
 }
 
 /// `POST /user/password`
 pub(crate) async fn user_password_post(
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormPassword>,
+    WithValidation(input): WithValidation<Form<FormPassword>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
@@ -858,12 +862,13 @@ pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoRespo
 
 /// Form data: `/signup`
 #[derive(Deserialize, Validate)]
+#[garde(allow_unvalidated)]
 pub(crate) struct FormSignup {
-    #[validate(length(min = 1, max = 32))]
+    #[garde(length(min = 1, max = 32))]
     username: String,
-    #[validate(must_match(other = "password2", message = "Two passwords do not match"))]
+    #[garde(matches(password2))]
     password: String,
-    #[validate(length(min = 7))]
+    #[garde(length(min = 7))]
     password2: String,
     captcha_id: String,
     captcha_value: String,
@@ -915,7 +920,7 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
 
 /// `POST /signup`
 pub(crate) async fn signup_post(
-    ValidatedForm(input): ValidatedForm<FormSignup>,
+    WithValidation(input): WithValidation<Form<FormSignup>>,
 ) -> Result<impl IntoResponse, AppError> {
     let username = clean_html(&input.username);
     if !is_valid_name(&username) {
@@ -998,14 +1003,14 @@ struct PageShowRecovery<'a> {
 /// Form data: `/user/recovery`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormRecoverySet {
-    #[validate(length(min = 7))]
+    #[garde(length(min = 7))]
     password: String,
 }
 
 /// `POST /user/recovery`
 pub(crate) async fn user_recovery_code(
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormRecoverySet>,
+    WithValidation(input): WithValidation<Form<FormRecoverySet>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;

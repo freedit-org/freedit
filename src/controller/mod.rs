@@ -139,10 +139,10 @@ use ::tantivy::TantivyDocument;
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use chrono::{Days, Utc};
+use garde::Validate;
 use serde::{Deserialize, Serialize};
 use sled::Db;
 use std::fmt::Display;
-use validator::Validate;
 
 /// user
 ///
@@ -389,14 +389,17 @@ impl ToDoc for Post {
 /// Form data: `/inn/:iid/post/:pid` post create/edit page
 #[derive(Debug, Default, Deserialize, Validate, Encode, Decode)]
 pub(super) struct FormPost {
+    #[garde(skip)]
     iid: u32,
-    #[validate(length(min = 1, max = 256))]
+    #[garde(length(min = 1, max = 256))]
     title: String,
-    #[validate(length(min = 1, max = 128))]
+    #[garde(length(min = 1, max = 128))]
     tags: String,
-    #[validate(length(min = 1, max = 65535))]
+    #[garde(length(min = 1, max = 65535))]
     content: String,
+    #[garde(skip)]
     is_draft: Option<bool>,
+    #[garde(skip)]
     delete_draft: Option<bool>,
 }
 
@@ -451,32 +454,38 @@ impl ToDoc for Item {
 /// Go to source code to see default value: [SiteConfig::default()]
 #[derive(Serialize, Deserialize, Encode, Decode, Validate, Debug)]
 pub(super) struct SiteConfig {
-    #[validate(length(max = 64))]
+    #[garde(length(max = 64))]
     site_name: String,
     // domain only used for inn feed
+    #[garde(skip)]
     domain: String,
-    #[validate(length(max = 512))]
+    #[garde(length(max = 512))]
     description: String,
+    #[garde(skip)]
     read_only: bool,
-    #[validate(range(max = 32))]
+    #[garde(range(max = 32))]
     inn_mod_max: usize,
-    #[validate(range(max = 256))]
+    #[garde(range(max = 256))]
     title_max_length: usize,
-    #[validate(range(max = 65535))]
+    #[garde(range(max = 65535))]
     article_max_length: usize,
-    #[validate(range(max = 65535))]
+    #[garde(range(max = 65535))]
     comment_max_length: usize,
-    #[validate(range(max = 3600))]
+    #[garde(range(max = 3600))]
     solo_interval: i64,
-    #[validate(range(max = 3600))]
+    #[garde(range(max = 3600))]
     post_interval: i64,
-    #[validate(range(max = 3600))]
+    #[garde(range(max = 3600))]
     comment_interval: i64,
-    #[validate(range(max = 100))]
+    #[garde(range(max = 100))]
     per_page: usize,
+    #[garde(skip)]
     captcha_difficulty: String,
+    #[garde(skip)]
     captcha_name: String,
+    #[garde(skip)]
     home_page: u8,
+    #[garde(skip)]
     spam_regex: Option<String>,
 }
 
