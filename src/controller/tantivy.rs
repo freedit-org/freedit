@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
@@ -35,7 +35,7 @@ use crate::{
 use super::{
     db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
     fmt::ts_to_date,
-    meta_handler::{into_response, PageData},
+    meta_handler::PageData,
     Claim, Comment, Item, Post, PostStatus, SiteConfig, Solo, User,
 };
 

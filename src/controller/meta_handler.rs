@@ -1,8 +1,7 @@
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{error::AppError, DB};
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
-    body::Body,
     http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
 };
@@ -13,20 +12,6 @@ use axum_extra::{
 use http::{HeaderName, StatusCode};
 use once_cell::sync::Lazy;
 use tracing::error;
-
-pub(super) fn into_response<T: Template>(t: &T) -> Response<Body> {
-    match t.render() {
-        Ok(body) => {
-            let headers = [(
-                http::header::CONTENT_TYPE,
-                http::HeaderValue::from_static(T::MIME_TYPE),
-            )];
-
-            (headers, body).into_response()
-        }
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-}
 
 #[derive(Template)]
 #[template(path = "error.html", escape = "none")]

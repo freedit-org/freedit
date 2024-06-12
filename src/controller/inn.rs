@@ -20,13 +20,14 @@ use super::{
     feed::{inn_feed_to_post, update},
     fmt::{clean_html, md2html, ts_to_date},
     incr_id,
-    meta_handler::{into_response, PageData, ParamsPage},
+    meta_handler::{PageData, ParamsPage},
     notification::{add_notification, mark_read, NtType},
     user::{InnRole, Role},
     Claim, Comment, Feed, FormPost, Inn, InnType, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{error::AppError, DB};
 use askama::{filters::escape, Html, Template};
+use askama_axum::into_response;
 use atom_syndication::{
     CategoryBuilder, ContentBuilder, EntryBuilder, FeedBuilder, LinkBuilder, PersonBuilder, Text,
     WriteConfig,

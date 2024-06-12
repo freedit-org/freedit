@@ -1,4 +1,4 @@
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
@@ -11,7 +11,7 @@ use crate::{controller::fmt::clean_html, error::AppError, DB};
 
 use super::{
     db_utils::{get_one, incr_id, u32_to_ivec, u8_slice_to_u32},
-    meta_handler::{into_response, PageData},
+    meta_handler::PageData,
     notification::{add_notification, mark_read, NtType},
     Claim, SiteConfig, User,
 };
