@@ -6,14 +6,14 @@ use super::{
         is_valid_name, ivec_to_u32, set_one, set_one_with_key, IterType,
     },
     fmt::{clean_html, ts_to_date},
-    get_ids_by_prefix, get_one, incr_id, into_response,
+    get_ids_by_prefix, get_one, incr_id,
     meta_handler::{PageData, ParamsPage},
     notification::{add_notification, NtType},
     u32_to_ivec, u8_slice_to_u32, Claim, Inn, InnType, SiteConfig, User,
 };
 use crate::{config::CONFIG, error::AppError, DB};
 use ::rand::{thread_rng, Rng};
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
     extract::{Form, Path, Query},
     http::{header::SET_COOKIE, HeaderMap},

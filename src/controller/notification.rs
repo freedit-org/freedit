@@ -1,12 +1,12 @@
 use super::{
-    get_ids_by_prefix, get_one, incr_id, into_response,
+    get_ids_by_prefix, get_one, incr_id,
     meta_handler::PageData,
     u32_to_ivec, u8_slice_to_u32,
     user::{InnRole, Role},
     Claim, Comment, Inn, Post, SiteConfig, Solo, User,
 };
 use crate::{error::AppError, DB};
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;

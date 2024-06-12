@@ -4,7 +4,7 @@ use super::{
         IterType,
     },
     fmt::{md2html, ts_to_date},
-    get_ids_by_prefix, get_one, incr_id, into_response, ivec_to_u32,
+    get_ids_by_prefix, get_one, incr_id, ivec_to_u32,
     meta_handler::{get_referer, PageData, ParamsPage},
     notification::{add_notification, mark_read, NtType},
     u32_to_ivec, u8_slice_to_u32,
@@ -12,7 +12,7 @@ use super::{
     Claim, SiteConfig, Solo, SoloType, User,
 };
 use crate::{error::AppError, DB};
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},

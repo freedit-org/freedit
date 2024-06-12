@@ -5,7 +5,7 @@ use super::{
     },
     fmt::{clean_html, ts_to_date},
     inn::inn_add_index,
-    meta_handler::{get_referer, into_response, PageData, ParamsPage},
+    meta_handler::{get_referer, PageData, ParamsPage},
     Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{
@@ -14,7 +14,7 @@ use crate::{
     error::AppError,
     DB,
 };
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},

@@ -2,7 +2,6 @@ use super::{
     db_utils::{u8_slice_to_u32, IterType},
     incr_id,
     inn::ParamsTag,
-    into_response,
     meta_handler::{get_referer, PageData},
     notification::{add_notification, NtType},
     u32_to_ivec,
@@ -10,7 +9,7 @@ use super::{
     Claim, SiteConfig, User,
 };
 use crate::{config::CONFIG, error::AppError, DB};
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
     extract::{Multipart, Path, Query},
     response::{IntoResponse, Redirect},

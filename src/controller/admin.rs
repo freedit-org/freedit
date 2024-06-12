@@ -2,7 +2,7 @@ use super::{
     db_utils::{get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
     fmt::{clean_html, ts_to_date},
     inn::ParamsTag,
-    meta_handler::{into_response, PageData, ParamsPage},
+    meta_handler::{PageData, ParamsPage},
     user::Role,
     Claim, Feed, FormPost, Item, SiteConfig,
 };
@@ -11,7 +11,7 @@ use crate::{
     error::AppError,
     DB,
 };
-use askama::Template;
+use askama_axum::{into_response, Template};
 use axum::{
     extract::Query,
     response::{IntoResponse, Redirect},
