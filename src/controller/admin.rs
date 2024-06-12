@@ -2,7 +2,7 @@ use super::{
     db_utils::{get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32, IterType},
     fmt::{clean_html, ts_to_date},
     inn::ParamsTag,
-    meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
+    meta_handler::{into_response, PageData, ParamsPage},
     user::Role,
     Claim, Feed, FormPost, Item, SiteConfig,
 };
@@ -15,8 +15,10 @@ use askama::Template;
 use axum::{
     extract::Query,
     response::{IntoResponse, Redirect},
+    Form,
 };
 use axum_extra::{headers::Cookie, TypedHeader};
+use axum_garde::WithValidation;
 use bincode::config::standard;
 use serde::Deserialize;
 use snailquote::unescape;
@@ -343,7 +345,7 @@ pub(crate) async fn admin(
 /// `POST /admin`
 pub(crate) async fn admin_post(
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<SiteConfig>,
+    WithValidation(input): WithValidation<Form<SiteConfig>>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&DB, &cookie, &input).ok_or(AppError::NonLogin)?;
@@ -351,7 +353,7 @@ pub(crate) async fn admin_post(
         return Err(AppError::Unauthorized);
     }
 
-    let mut site_config = input;
+    let mut site_config = input.into_inner();
     site_config.spam_regex = match site_config.spam_regex {
         Some(s) if !s.is_empty() => {
             if let Err(e) = regex::Regex::new(&s) {

@@ -5,7 +5,7 @@ use super::{
     },
     fmt::{md2html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, into_response, ivec_to_u32,
-    meta_handler::{get_referer, PageData, ParamsPage, ValidatedForm},
+    meta_handler::{get_referer, PageData, ParamsPage},
     notification::{add_notification, mark_read, NtType},
     u32_to_ivec, u8_slice_to_u32,
     user::Role,
@@ -16,23 +16,27 @@ use askama::Template;
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
+    Form,
 };
 use axum_extra::{
     headers::{Cookie, Referer},
     TypedHeader,
 };
+use axum_garde::WithValidation;
 use chrono::Utc;
+use garde::Validate;
 use serde::Deserialize;
 use sled::Db;
 use tracing::warn;
-use validator::Validate;
 
 /// Form data: `/solo/user/:uid` solo create.
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormSolo {
-    #[validate(length(min = 1, max = 1000))]
+    #[garde(length(min = 1, max = 1000))]
     content: String,
+    #[garde(skip)]
     solo_type: u32,
+    #[garde(skip)]
     reply_to: u32,
 }
 
@@ -377,7 +381,7 @@ fn get_solos_by_uids(
 /// `POST /solo/user/:uid` solo page
 pub(crate) async fn solo_post(
     cookie: Option<TypedHeader<Cookie>>,
-    ValidatedForm(input): ValidatedForm<FormSolo>,
+    WithValidation(input): WithValidation<Form<FormSolo>>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
     let claim = cookie
@@ -396,6 +400,7 @@ pub(crate) async fn solo_post(
         return Err(AppError::WriteInterval);
     }
 
+    let input = input.into_inner();
     let solo_type = SoloType::from(input.solo_type);
     let uid = claim.uid;
 
