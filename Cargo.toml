@@ -19,7 +19,7 @@ captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
 fast2s = "0.3"
-garde = { version = "0.19.0", features = ["derive"] }
+garde = { version = "0.19.1", features = ["derive"] }
 http = "1.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.25.1", default-features = false, features = ["jpeg", "png", "gif"] }
