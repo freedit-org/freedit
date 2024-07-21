@@ -54,7 +54,7 @@ webpki-roots = "0.26"
 whichlang = "0.1.0"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-tikv-jemallocator = "0.5"
+tikv-jemallocator = "0.6"
 
 [profile.release]
 lto = "fat"
