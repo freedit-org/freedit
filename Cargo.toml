@@ -27,7 +27,7 @@ img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.7.0"
 latex2mathml = "0.2.3"
-mozjpeg = "0.10.4"
+mozjpeg = "0.10.9"
 nanoid = "0.4.0"
 once_cell = "*"
 pulldown-cmark = { version = "0.11.0", features = ["simd", "html"], default-features = false }
