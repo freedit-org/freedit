@@ -11,7 +11,7 @@ askama_axum = { version = "0.4.0", default-features = false }
 atom_syndication = "0.12"
 axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "multipart", "tokio"], default-features = false }
 axum-extra = { version = "0.9", features = ["typed-header"] }
-axum_garde = { version = "0.19.0", default-features = false, features = ["form"] }
+axum_garde = { version = "0.20.0", default-features = false, features = ["form"] }
 basic-toml = "*"
 bincode = "2.0.0-rc.3"
 cached = { version = "0.53", default-features = false, features = ["proc_macro", "ahash"] }
@@ -19,7 +19,7 @@ captcha = { version = "0.0", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
 fast2s = "0.3"
-garde = { version = "0.19.0", features = ["derive"] }
+garde = { version = "0.20.0", features = ["derive"] }
 http = "1.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.25.1", default-features = false, features = ["jpeg", "png", "gif"] }
