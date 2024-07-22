@@ -22,7 +22,7 @@ fast2s = "0.3"
 garde = { version = "0.20.0", features = ["derive"] }
 http = "1.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
-image = { version = "0.25.1", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.25.2", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.7.0"
