@@ -1,11 +1,11 @@
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, read_to_string, File};
 use std::io::Write;
 use std::path::Path;
+use std::sync::LazyLock;
 use tracing::{info, warn};
 
-pub static CONFIG: Lazy<Config> = Lazy::new(Config::load_config);
+pub static CONFIG: LazyLock<Config> = LazyLock::new(Config::load_config);
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {

@@ -492,7 +492,7 @@ pub(crate) async fn solo_post(
     set_one(&DB, "solos", sid, &solo)?;
     let k = [&u32_to_ivec(claim.uid), &sid_ivec].concat();
     DB.open_tree("user_solos")?
-        .insert(k, &u32_to_ivec(solo_type as u32))?;
+        .insert(k, u32_to_ivec(solo_type as u32))?;
 
     // kv_pair: sid = uid#solo_type
     let v = [&u32_to_ivec(claim.uid), &u32_to_ivec(solo_type as u32)].concat();

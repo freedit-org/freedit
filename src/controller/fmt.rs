@@ -1,5 +1,6 @@
+use std::sync::LazyLock;
+
 use chrono::DateTime;
-use once_cell::sync::Lazy;
 use pulldown_cmark::{html, CodeBlockKind, Event, Options, Tag};
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
 
@@ -126,8 +127,9 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
     }
 }
 
-static THEME_SET: Lazy<syntect::highlighting::ThemeSet> = Lazy::new(ThemeSet::load_defaults);
-static SYNTAX_SET: Lazy<SyntaxSet> = Lazy::new(SyntaxSet::load_defaults_newlines);
+static THEME_SET: LazyLock<syntect::highlighting::ThemeSet> =
+    LazyLock::new(ThemeSet::load_defaults);
+static SYNTAX_SET: LazyLock<SyntaxSet> = LazyLock::new(SyntaxSet::load_defaults_newlines);
 
 fn code_highlighter(code: &str, lang: &str) -> String {
     let syntax = if let Some(syntax) = SYNTAX_SET.find_syntax_by_name(lang) {

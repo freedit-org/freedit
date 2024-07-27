@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::LazyLock};
 
 use askama_axum::{into_response, Template};
 use axum::{extract::Query, response::IntoResponse};
@@ -6,7 +6,6 @@ use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};
-use once_cell::sync::Lazy;
 use rust_stemmers::{Algorithm, Stemmer};
 use serde::Deserialize;
 use sled::{Batch, Db};
@@ -140,8 +139,8 @@ pub(super) trait ToDoc {
     fn to_doc(&self, id: Option<u32>) -> TantivyDocument;
 }
 
-static SEARCHER: Lazy<Searcher> = Lazy::new(|| Tan::get_searcher().unwrap());
-pub(super) static FIELDS: Lazy<Fields> = Lazy::new(|| Tan::set_schema().1);
+static SEARCHER: LazyLock<Searcher> = LazyLock::new(|| Tan::get_searcher().unwrap());
+pub(super) static FIELDS: LazyLock<Fields> = LazyLock::new(|| Tan::set_schema().1);
 
 pub struct Tan {
     writer: IndexWriter,
@@ -437,8 +436,8 @@ impl TokenStream for MultiLingoTokenStream {
     }
 }
 
-static JIEBA: Lazy<Jieba> = Lazy::new(Jieba::new);
-static STEMMER_ENG: Lazy<Stemmer> = Lazy::new(|| Stemmer::create(Algorithm::English));
+static JIEBA: LazyLock<Jieba> = LazyLock::new(Jieba::new);
+static STEMMER_ENG: LazyLock<Stemmer> = LazyLock::new(|| Stemmer::create(Algorithm::English));
 
 fn pre_tokenize_text(text: &str) -> Vec<Token> {
     let mut tokens = Vec::with_capacity(text.len() / 4);
@@ -496,13 +495,13 @@ fn pre_tokenize_text(text: &str) -> Vec<Token> {
     tokens
 }
 
-static STOP_WORDS_ENG: Lazy<HashSet<String>> = Lazy::new(|| {
+static STOP_WORDS_ENG: LazyLock<HashSet<String>> = LazyLock::new(|| {
     stop_words::get(stop_words::LANGUAGE::English)
         .into_iter()
         .collect()
 });
 
-static STOP_WORDS_CMN: Lazy<HashSet<String>> = Lazy::new(|| {
+static STOP_WORDS_CMN: LazyLock<HashSet<String>> = LazyLock::new(|| {
     let mut set: HashSet<_> = stop_words::get(stop_words::LANGUAGE::Chinese)
         .into_iter()
         .collect();

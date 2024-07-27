@@ -27,12 +27,14 @@ use axum_extra::{
 use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
 use garde::Validate;
-use once_cell::sync::Lazy;
 use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
-use std::collections::{BTreeMap, HashMap};
 use std::{collections::HashSet, time::Duration};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::LazyLock,
+};
 use tracing::error;
 
 struct SourceItem {
@@ -479,7 +481,7 @@ pub(crate) struct FormFeedAdd {
     is_public: bool,
 }
 
-static CLIENT: Lazy<Client> = Lazy::new(|| {
+static CLIENT: LazyLock<Client> = LazyLock::new(|| {
     let mut client = reqwest::Client::builder().timeout(Duration::from_secs(6));
     if !CONFIG.proxy.is_empty() {
         let proxy = reqwest::Proxy::all(&CONFIG.proxy).unwrap();

@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{error::AppError, DB};
 use askama_axum::{into_response, Template};
@@ -10,7 +12,6 @@ use axum_extra::{
     TypedHeader,
 };
 use http::{HeaderName, StatusCode};
-use once_cell::sync::Lazy;
 use tracing::error;
 
 #[derive(Template)]
@@ -93,7 +94,7 @@ pub(crate) async fn home(
     Ok(Redirect::to(redirect))
 }
 
-static CSS: Lazy<String> = Lazy::new(|| {
+static CSS: LazyLock<String> = LazyLock::new(|| {
     // TODO: CSS minification
     let mut css = include_str!("../../static/css/bulma.min.css").to_string();
     css.push('\n');

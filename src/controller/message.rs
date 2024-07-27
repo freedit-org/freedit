@@ -86,7 +86,7 @@ pub(crate) async fn message_post(
     ]
     .concat();
 
-    DB.open_tree("messages")?.insert(&u32_to_ivec(mid), v)?;
+    DB.open_tree("messages")?.insert(u32_to_ivec(mid), v)?;
     add_notification(&DB, uid, NtType::Message, claim.uid, mid)?;
 
     let k = [&u32_to_ivec(uid), &u32_to_ivec(mid)].concat();

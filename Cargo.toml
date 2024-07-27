@@ -3,6 +3,7 @@ name = "freedit"
 version = "0.7.4-rc.1"
 edition = "2021"
 license = "MIT License"
+rust = "1.80.0"
 
 [dependencies]
 ammonia = "4.0.0"
@@ -29,7 +30,6 @@ jieba-rs = "0.7.0"
 latex2mathml = "0.2.3"
 mozjpeg = "0.10.9"
 nanoid = "0.4.0"
-once_cell = "*"
 pulldown-cmark = { version = "0.11.0", features = ["simd", "html"], default-features = false }
 rand = "0.8"
 regex = "1"

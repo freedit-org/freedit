@@ -43,13 +43,13 @@ use bincode::config::standard;
 use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
 use garde::Validate;
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
 use std::{
     collections::{BTreeSet, HashMap, HashSet},
     path::PathBuf,
+    sync::LazyLock,
 };
 
 /// Page data: `inn_create.html`
@@ -1154,7 +1154,7 @@ fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
     Ok(users)
 }
 
-static FEED_CONFIG: Lazy<WriteConfig> = Lazy::new(|| WriteConfig {
+static FEED_CONFIG: LazyLock<WriteConfig> = LazyLock::new(|| WriteConfig {
     write_document_declaration: false,
     indent_size: Some(2),
 });
