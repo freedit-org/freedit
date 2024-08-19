@@ -26,7 +26,7 @@ use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::Deserialize;
 use sled::Batch;
 use tokio::fs::{self, remove_file};
-use tracing::log::error;
+use tracing::error;
 
 #[derive(Deserialize)]
 pub(crate) struct UploadPicParams {
