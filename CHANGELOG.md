@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.4-rc.2] - 2024-08-23
+
+### Fixed
+
+- fix #27 favicon
+
 ## [0.7.4-rc.1] - 2024-05-27
 
 ### Fixed
@@ -392,7 +398,8 @@ Happy new year! 🎉🎉🎉
 
 ## [0.2.4] - 2022-12-01
 
-[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.4-rc.1...HEAD
+[unreleased]: https://github.com/freedit-org/freedit/compare/v0.7.4-rc.2...HEAD
+[0.7.4-rc.2]: https://github.com/freedit-org/freedit/compare/v0.7.4-rc.1...v0.7.4-rc.2
 [0.7.4-rc.1]: https://github.com/freedit-org/freedit/compare/v0.7.4-rc.0...v0.7.4-rc.1
 [0.7.4-rc.0]: https://github.com/freedit-org/freedit/compare/v0.7.3...v0.7.4-rc.0
 [0.7.3]: https://github.com/freedit-org/freedit/compare/v0.7.2...v0.7.3

@@ -1,9 +1,8 @@
 [package]
 name = "freedit"
-version = "0.7.4-rc.1"
+version = "0.7.4-rc.2"
 edition = "2021"
 license = "MIT License"
-rust = "1.80.0"
 
 [dependencies]
 ammonia = "4.0.0"
