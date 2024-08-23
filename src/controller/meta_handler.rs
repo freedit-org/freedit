@@ -119,6 +119,23 @@ pub(crate) async fn style() -> (HeaderMap, &'static str) {
     (headers, &CSS)
 }
 
+pub(crate) async fn favicon() -> (HeaderMap, &'static str) {
+    let mut headers = HeaderMap::new();
+
+    headers.insert(
+        HeaderName::from_static("content-type"),
+        HeaderValue::from_static("image/svg+xml"),
+    );
+    headers.insert(
+        HeaderName::from_static("cache-control"),
+        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
+    );
+
+    let favicon = include_str!("../../static/favicon.svg");
+
+    (headers, favicon)
+}
+
 pub(crate) async fn encryption_js() -> (HeaderMap, &'static str) {
     let mut headers = HeaderMap::new();
     headers.insert(

@@ -10,7 +10,7 @@ use crate::{
             post_upvote, preview, tag,
         },
         message::{inbox, key, key_post, message, message_post},
-        meta_handler::{encoding_js, encryption_js, handler_404, home, robots, style},
+        meta_handler::{encoding_js, encryption_js, favicon, handler_404, home, robots, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
@@ -114,6 +114,7 @@ pub async fn router() -> Router {
 
     let router_static = Router::new()
         .route("/static/style.css", get(style))
+        .route("/favicon.svg", get(favicon))
         .route("/robots.txt", get(robots))
         .route("/static/js/encryption-helper.js", get(encryption_js))
         .route("/static/js/encoding-helper.js", get(encoding_js))
