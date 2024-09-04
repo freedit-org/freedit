@@ -459,7 +459,7 @@ pub(super) struct SiteConfig {
     // domain only used for inn feed
     #[garde(skip)]
     domain: String,
-    #[garde(length(max = 512))]
+    #[garde(length(max = 5120))]
     description: String,
     #[garde(skip)]
     read_only: bool,
