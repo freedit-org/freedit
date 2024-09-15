@@ -61,7 +61,10 @@ impl TryFrom<rss::Item> for SourceItem {
             return Err(AppError::InvalidFeedLink);
         };
 
-        let content = rss.description.unwrap_or_default();
+        let content = rss.content.unwrap_or_else(|| {
+            rss.description
+                .unwrap_or_else(|| rss.itunes_ext.and_then(|e| e.summary).unwrap_or_default())
+        });
         let title = if let Some(title) = rss.title {
             title
         } else if content.len() > 100 {
