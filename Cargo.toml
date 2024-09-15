@@ -1,6 +1,6 @@
 [package]
 name = "freedit"
-version = "0.7.4-rc.2"
+version = "0.7.4-rc.3"
 edition = "2021"
 license = "MIT License"
 
@@ -22,12 +22,12 @@ fast2s = "0.3"
 garde = { version = "0.20.0", features = ["derive"] }
 http = "1.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
-image = { version = "0.25.1", default-features = false, features = ["jpeg", "png", "gif"] }
+image = { version = "0.25.2", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.7.0"
 latex2mathml = "0.2.3"
-mozjpeg = "0.10.9"
+mozjpeg = "0.10.10"
 nanoid = "0.4.0"
 pulldown-cmark = { version = "0.12.0", features = ["simd", "html"], default-features = false }
 rand = "0.8"
@@ -44,7 +44,7 @@ syntect = { version = "5", features = ["regex-fancy", "default-syntaxes", "defau
 tantivy = "0.22.0"
 thiserror = "1"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tower = { version = "0.5.0", features = ["timeout"] }
+tower = { version = "0.5.1", features = ["timeout"] }
 tower-http = { version = "0.5.1", features = ["fs", "compression-br", "trace"] }
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
