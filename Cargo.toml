@@ -9,7 +9,7 @@ ammonia = "4.0.0"
 askama = { version = "0.12", default-features = false }
 askama_axum = { version = "0.4.0", default-features = false }
 atom_syndication = "0.12"
-axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "multipart", "tokio"], default-features = false }
+axum = { version = "0.7.6", features = ["http1", "http2", "form", "query", "multipart", "tokio"], default-features = false }
 axum-extra = { version = "0.9", features = ["typed-header"] }
 axum_garde = { version = "0.20.0", default-features = false, features = ["form"] }
 basic-toml = "*"
