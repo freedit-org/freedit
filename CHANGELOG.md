@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- site discription length
+- site description length
 - rss item content
 
 ## [0.7.4-rc.2] - 2024-08-23
