@@ -25,8 +25,8 @@ use axum_extra::{
     TypedHeader,
 };
 use cached::proc_macro::cached;
-use chrono::{DateTime, Utc};
 use garde::Validate;
+use jiff::Timestamp;
 use reqwest::Client;
 use serde::Deserialize;
 use sled::Db;
@@ -48,13 +48,13 @@ impl TryFrom<rss::Item> for SourceItem {
     type Error = AppError;
     fn try_from(rss: rss::Item) -> Result<Self, Self::Error> {
         let updated = if let Some(ref pub_date) = rss.pub_date {
-            if let Ok(ts) = DateTime::parse_from_rfc2822(pub_date) {
-                ts.timestamp()
+            if let Ok(ts) = pub_date.parse::<Timestamp>() {
+                ts.as_second()
             } else {
-                Utc::now().timestamp()
+                Timestamp::now().as_second()
             }
         } else {
-            Utc::now().timestamp()
+            Timestamp::now().as_second()
         };
 
         let Some(link) = rss.link else {
@@ -791,7 +791,7 @@ pub(crate) async fn feed_star(
         if star_tree.contains_key(&k)? {
             star_tree.remove(&k)?;
         } else {
-            let now = Utc::now().timestamp();
+            let now = Timestamp::now().as_second();
             star_tree.insert(&k, i64_to_ivec(now))?;
         }
     }

@@ -23,8 +23,8 @@ use axum_extra::{
     TypedHeader,
 };
 use axum_garde::WithValidation;
-use chrono::Utc;
 use garde::Validate;
+use jiff::Timestamp;
 use serde::Deserialize;
 use sled::Db;
 use tracing::warn;
@@ -395,7 +395,7 @@ pub(crate) async fn solo_post(
         }
     }
 
-    let created_at = Utc::now().timestamp();
+    let created_at = Timestamp::now().as_second();
     if created_at - claim.last_write < site_config.solo_interval {
         return Err(AppError::WriteInterval);
     }

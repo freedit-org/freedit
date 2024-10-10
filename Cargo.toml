@@ -26,6 +26,7 @@ image = { version = "0.25.2", default-features = false, features = ["jpeg", "png
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = "0.7.0"
+jiff = { version = "0.1.13", default-features = false, features = ["std"] }
 latex2mathml = "0.2.3"
 mozjpeg = "0.10.10"
 nanoid = "0.4.0"

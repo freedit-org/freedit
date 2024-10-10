@@ -1,14 +1,14 @@
 use std::sync::LazyLock;
 
-use chrono::DateTime;
+use jiff::Timestamp;
 use pulldown_cmark::{html, CodeBlockKind, Event, Options, Tag};
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
 
 /// convert a `i64` timestamp to a date [`String`]
 pub(super) fn ts_to_date(timestamp: i64) -> String {
-    DateTime::from_timestamp(timestamp, 0)
+    Timestamp::from_second(timestamp)
         .unwrap()
-        .format("%Y-%m-%d")
+        .strftime("%Y-%m-%d")
         .to_string()
 }
 

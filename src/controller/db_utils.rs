@@ -1,7 +1,7 @@
 use super::meta_handler::ParamsPage;
 use crate::error::AppError;
 use bincode::{config::standard, Decode, Encode};
-use chrono::Utc;
+use jiff::Timestamp;
 use nanoid::nanoid;
 use sled::{Db, IVec, Iter, Tree};
 use std::iter::Rev;
@@ -18,7 +18,7 @@ pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
             .split_once('_')
             .and_then(|s| i64::from_str_radix(s.0, 16).ok());
         if let Some(time_stamp) = time_stamp {
-            if time_stamp < Utc::now().timestamp() {
+            if time_stamp < Timestamp::now().as_second() {
                 tree.remove(k)?;
             }
         }
@@ -382,7 +382,7 @@ pub(super) fn get_id_by_name(
 /// ```
 pub(super) fn generate_nanoid_ttl(seconds: i64) -> String {
     let nanoid = nanoid!();
-    let exp = Utc::now().timestamp() + seconds;
+    let exp = Timestamp::now().as_second() + seconds;
     format!("{exp:x}_{nanoid}")
 }
 

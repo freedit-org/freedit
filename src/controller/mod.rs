@@ -138,8 +138,8 @@ use crate::error::AppError;
 use ::tantivy::TantivyDocument;
 use bincode::config::standard;
 use bincode::{Decode, Encode};
-use chrono::{Days, Utc};
 use garde::Validate;
+use jiff::{RoundMode, Timestamp, TimestampRound, ToSpan, Unit};
 use serde::{Deserialize, Serialize};
 use sled::Db;
 use std::fmt::Display;
@@ -204,14 +204,16 @@ impl User {
     }
 
     fn update_stats(db: &Db, uid: u32, stat_type: &str) -> Result<(), AppError> {
-        let expire = Utc::now()
-            .date_naive()
-            .checked_add_days(Days::new(3))
+        let expire = Timestamp::now()
+            .round(
+                TimestampRound::new()
+                    .smallest(Unit::Day)
+                    .mode(RoundMode::Trunc),
+            )
             .unwrap()
-            .and_hms_opt(0, 0, 0)
+            .checked_add(3.day())
             .unwrap()
-            .and_utc()
-            .timestamp();
+            .as_second();
         let key = format!("{expire:x}_{uid}_{stat_type}");
         incr_id(&db.open_tree("user_stats")?, key)?;
         Ok(())

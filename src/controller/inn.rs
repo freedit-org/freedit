@@ -43,6 +43,7 @@ use bincode::config::standard;
 use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
 use garde::Validate;
+use jiff::Timestamp;
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
@@ -308,7 +309,7 @@ pub(crate) async fn mod_inn_post(
         topics,
         inn_type: inn_type as u8,
         early_birds: input.early_birds,
-        created_at: Utc::now().timestamp(),
+        created_at: Timestamp::now().as_second(),
         limit_edit_seconds: input.limit_edit_seconds,
     };
 
@@ -579,7 +580,7 @@ pub(crate) async fn edit_post(
         let mut post: Post = get_one(&DB, "posts", pid)?;
         let inn: Inn = get_one(&DB, "inns", post.iid)?;
 
-        if (post.created_at + (inn.limit_edit_seconds as i64) < Utc::now().timestamp())
+        if (post.created_at + (inn.limit_edit_seconds as i64) < Timestamp::now().as_second())
             && inn.limit_edit_seconds != 0
         {
             return Err(AppError::Unauthorized);
@@ -691,7 +692,7 @@ pub(crate) async fn edit_post_post(
         return Err(AppError::Unauthorized);
     }
 
-    let mut created_at = Utc::now().timestamp();
+    let mut created_at = Timestamp::now().as_second();
     if created_at - claim.last_write < site_config.post_interval {
         return Err(AppError::WriteInterval);
     }
@@ -1580,7 +1581,8 @@ pub(crate) async fn post(
 
         if is_author
             && (inn.limit_edit_seconds == 0
-                || post.created_at + (inn.limit_edit_seconds as i64) >= Utc::now().timestamp())
+                || post.created_at + (inn.limit_edit_seconds as i64)
+                    >= Timestamp::now().as_second())
         {
             can_edit = true;
         }
@@ -1619,7 +1621,7 @@ pub(crate) async fn post(
         PostStatus::HiddenByMod => "<p><i>Hidden by mod.</i></p>".into(),
         PostStatus::HiddenByUser => "<p><i>Hidden by user.</i></p>".into(),
         _ => {
-            let diff = (Utc::now().timestamp() - post.created_at) / 24 / 3600;
+            let diff = (Timestamp::now().as_second() - post.created_at) / 24 / 3600;
             if diff > 30 {
                 let mut content = format!(
                     r#"
@@ -1799,7 +1801,7 @@ pub(crate) async fn comment_post(
         return Err(AppError::NotFound);
     }
 
-    let created_at = Utc::now().timestamp();
+    let created_at = Timestamp::now().as_second();
     if created_at - claim.last_write < site_config.comment_interval {
         return Err(AppError::WriteInterval);
     }

@@ -23,10 +23,10 @@ use axum_extra::{headers::Cookie, TypedHeader};
 use axum_garde::WithValidation;
 use bincode::config::standard;
 use captcha::{CaptchaName, Difficulty};
-use chrono::Utc;
 use data_encoding::BASE64;
 use garde::Validate;
 use identicon::Identicon;
+use jiff::Timestamp;
 use ring::{
     pbkdf2,
     rand::{self, SecureRandom},
@@ -950,7 +950,7 @@ pub(crate) async fn signup_post(
     let avatar = format!("{}/{}.png", &CONFIG.avatars_path, uid);
     Identicon::new(&generate_salt()).image().save(avatar)?;
 
-    let created_at = Utc::now().timestamp();
+    let created_at = Timestamp::now().as_second();
     let role = if uid == 1 {
         Role::Admin
     } else {
@@ -1108,9 +1108,9 @@ impl Claim {
         let timestamp = session.split_once('_')?.0;
         let tree = &db.open_tree("sessions").ok()?;
         let timestamp = i64::from_str_radix(timestamp, 16).ok()?;
-        let now = Utc::now();
+        let now = Timestamp::now();
 
-        if timestamp < now.timestamp() {
+        if timestamp < now.as_second() {
             tree.remove(session).ok()?;
             return None;
         }
@@ -1129,7 +1129,7 @@ impl Claim {
     }
 
     pub(super) fn update_last_write(mut self, db: &Db) -> Result<(), AppError> {
-        self.last_write = Utc::now().timestamp();
+        self.last_write = Timestamp::now().as_second();
         set_one_with_key(db, "sessions", &self.session_id, &self)?;
 
         Ok(())
@@ -1157,7 +1157,7 @@ impl Claim {
             return Err(AppError::Banned);
         }
         let seconds = expire_seconds(expiry);
-        let now = Utc::now().timestamp();
+        let now = Timestamp::now().as_second();
         let session_id = generate_nanoid_ttl(seconds);
 
         let claim = Claim {
