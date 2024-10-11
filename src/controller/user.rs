@@ -22,7 +22,10 @@ use axum::{
 use axum_extra::{headers::Cookie, TypedHeader};
 use axum_garde::WithValidation;
 use bincode::config::standard;
-use captcha::{CaptchaName, Difficulty};
+use captcha::{
+    filters::{Cow, Noise, Wave},
+    Captcha, CaptchaName, Difficulty, Geometry,
+};
 use data_encoding::BASE64;
 use garde::Validate;
 use identicon::Identicon;
@@ -898,14 +901,14 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
         _ => unreachable!(),
     };
 
-    let captcha_name = match site_config.captcha_name.as_str() {
-        "Amelia" => CaptchaName::Amelia,
-        "Lucy" => CaptchaName::Lucy,
-        "Mila" => CaptchaName::Mila,
+    let captcha = match site_config.captcha_name.as_str() {
+        "Amelia" => captcha::by_name(captcha_difficulty, CaptchaName::Amelia),
+        "Lucy" => captcha::by_name(captcha_difficulty, CaptchaName::Lucy),
+        "Mila" => captcha::by_name(captcha_difficulty, CaptchaName::Mila),
+        "Digits" => captcha_digits(),
         _ => unreachable!(),
     };
 
-    let captcha = captcha::by_name(captcha_difficulty, captcha_name);
     let captcha_id = generate_nanoid_ttl(60);
     DB.open_tree("captcha")?
         .insert(&captcha_id, &*captcha.chars_as_string())?;
@@ -916,6 +919,26 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
         captcha_image: captcha.as_base64().unwrap(),
     };
     Ok(into_response(&page_signup))
+}
+
+/// Captcha with digits
+///
+/// From: https://github.com/daniel-e/captcha/blob/master/examples/captcha.rs
+fn captcha_digits() -> Captcha {
+    let mut c = Captcha::new();
+    c.set_chars(&['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);
+    c.add_chars(6)
+        .apply_filter(Noise::new(0.2))
+        .apply_filter(Wave::new(2.0, 20.0))
+        .view(220, 120)
+        .apply_filter(
+            Cow::new()
+                .min_radius(40)
+                .max_radius(50)
+                .circles(1)
+                .area(Geometry::new(40, 150, 50, 70)),
+        );
+    c
 }
 
 /// `POST /signup`
