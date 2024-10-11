@@ -107,6 +107,7 @@
     </div>
 </div>
 
+{% if comments.len() > 0 %}
 <div class="box">
     {% for comment in comments %}
     <article class="media" id="{{comment.cid}}">
@@ -175,6 +176,7 @@
     </article>
     {% endfor %}
 </div>
+{% endif %}
 
 {% if post.status.as_str() != "Normal" %}
 <div class="content">
