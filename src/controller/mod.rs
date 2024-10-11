@@ -139,7 +139,7 @@ use ::tantivy::TantivyDocument;
 use bincode::config::standard;
 use bincode::{Decode, Encode};
 use garde::Validate;
-use jiff::{RoundMode, Timestamp, TimestampRound, ToSpan, Unit};
+use jiff::{Timestamp, ToSpan};
 use serde::{Deserialize, Serialize};
 use sled::Db;
 use std::fmt::Display;
@@ -205,13 +205,7 @@ impl User {
 
     fn update_stats(db: &Db, uid: u32, stat_type: &str) -> Result<(), AppError> {
         let expire = Timestamp::now()
-            .round(
-                TimestampRound::new()
-                    .smallest(Unit::Day)
-                    .mode(RoundMode::Trunc),
-            )
-            .unwrap()
-            .checked_add(3.day())
+            .checked_add(72.hours())
             .unwrap()
             .as_second();
         let key = format!("{expire:x}_{uid}_{stat_type}");
