@@ -6,10 +6,10 @@ use super::{
     Claim, Comment, Inn, Post, SiteConfig, Solo, User,
 };
 use crate::{error::AppError, DB};
-use askama_axum::{into_response, Template};
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::{Db, IVec};
 use snailquote::unescape;

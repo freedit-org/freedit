@@ -11,7 +11,6 @@ use crate::{
     error::AppError,
     DB,
 };
-use askama_axum::{into_response, Template};
 use axum::{
     extract::Query,
     response::{IntoResponse, Redirect},
@@ -20,6 +19,7 @@ use axum::{
 use axum_extra::{headers::Cookie, TypedHeader};
 use axum_garde::WithValidation;
 use bincode::config::standard;
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use snailquote::unescape;
 

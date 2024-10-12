@@ -26,8 +26,6 @@ use super::{
     Claim, Comment, Feed, FormPost, Inn, InnType, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{error::AppError, DB};
-use askama::{filters::escape, Html, Template};
-use askama_axum::into_response;
 use atom_syndication::{
     CategoryBuilder, ContentBuilder, EntryBuilder, FeedBuilder, LinkBuilder, PersonBuilder, Text,
     WriteConfig,
@@ -44,6 +42,8 @@ use cached::proc_macro::cached;
 use chrono::{DateTime, Utc};
 use garde::Validate;
 use jiff::Timestamp;
+use rinja::filters::{escape, Html};
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
@@ -1613,7 +1613,7 @@ pub(crate) async fn post(
         PostStatus::HiddenByMod => "Hidden by mod.".into(),
         PostStatus::HiddenByUser => "Hidden by user.".into(),
         _ => match post.content {
-            PostContent::Markdown(ref content) => escape(Html, content).unwrap().to_string(),
+            PostContent::Markdown(ref content) => escape(content, Html).unwrap().to_string(),
             PostContent::FeedItemId(_) => "This post is auto-generated from RSS feed".into(),
         },
     };

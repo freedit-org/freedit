@@ -1,10 +1,10 @@
-use askama_axum::{into_response, Template};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
     Form,
 };
 use axum_extra::{headers::Cookie, TypedHeader};
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 
 use crate::{controller::fmt::clean_html, error::AppError, DB};

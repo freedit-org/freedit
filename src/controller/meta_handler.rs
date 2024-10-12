@@ -2,7 +2,6 @@ use std::sync::LazyLock;
 
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{error::AppError, DB};
-use askama_axum::{into_response, Template};
 use axum::{
     http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
@@ -12,6 +11,7 @@ use axum_extra::{
     TypedHeader,
 };
 use http::{HeaderName, StatusCode};
+use rinja_axum::{into_response, Template};
 use tracing::error;
 
 #[derive(Template)]

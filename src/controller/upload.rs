@@ -9,7 +9,6 @@ use super::{
     Claim, SiteConfig, User,
 };
 use crate::{config::CONFIG, error::AppError, DB};
-use askama_axum::{into_response, Template};
 use axum::{
     extract::{Multipart, Path, Query},
     response::{IntoResponse, Redirect},
@@ -23,6 +22,7 @@ use image::{imageops::FilterType, ImageFormat};
 use img_parts::{DynImage, ImageEXIF};
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::Batch;
 use tokio::fs::{self, remove_file};

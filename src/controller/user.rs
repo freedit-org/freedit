@@ -13,7 +13,6 @@ use super::{
 };
 use crate::{config::CONFIG, error::AppError, DB};
 use ::rand::{thread_rng, Rng};
-use askama_axum::{into_response, Template};
 use axum::{
     extract::{Form, Path, Query},
     http::{header::SET_COOKIE, HeaderMap},
@@ -34,6 +33,7 @@ use ring::{
     pbkdf2,
     rand::{self, SecureRandom},
 };
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::Db;
 use std::{cmp::Ordering, fmt::Display, num::NonZeroU32, time::Duration};

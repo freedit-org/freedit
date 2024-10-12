@@ -12,7 +12,6 @@ use super::{
     Claim, SiteConfig, Solo, SoloType, User,
 };
 use crate::{error::AppError, DB};
-use askama_axum::{into_response, Template};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
@@ -25,6 +24,7 @@ use axum_extra::{
 use axum_garde::WithValidation;
 use garde::Validate;
 use jiff::Timestamp;
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::Db;
 use tracing::warn;

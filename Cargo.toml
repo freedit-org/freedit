@@ -6,8 +6,6 @@ license = "MIT License"
 
 [dependencies]
 ammonia = "4.0.0"
-askama = { version = "0.12", default-features = false }
-askama_axum = { version = "0.4.0", default-features = false }
 atom_syndication = "0.12"
 axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "multipart", "tokio"], default-features = false }
 axum-extra = { version = "0.9", features = ["typed-header"] }
@@ -35,6 +33,8 @@ rand = "0.8"
 regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "socks"] }
 ring = { version = "0.17", default-features = false }
+rinja = { version = "0.3.4", default-features = false }
+rinja_axum = "0.3.4"
 rss = { version = "2.0", default-features = false }
 rust-stemmers = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }

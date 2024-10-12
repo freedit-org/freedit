@@ -14,7 +14,6 @@ use crate::{
     error::AppError,
     DB,
 };
-use askama_axum::{into_response, Template};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
@@ -28,6 +27,7 @@ use cached::proc_macro::cached;
 use garde::Validate;
 use jiff::Timestamp;
 use reqwest::Client;
+use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::Db;
 use std::{collections::HashSet, time::Duration};
