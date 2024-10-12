@@ -25,7 +25,7 @@ use axum_extra::{
 };
 use cached::proc_macro::cached;
 use garde::Validate;
-use jiff::Timestamp;
+use jiff::{fmt::rfc2822, Timestamp};
 use reqwest::Client;
 use rinja_axum::{into_response, Template};
 use serde::Deserialize;
@@ -35,7 +35,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     sync::LazyLock,
 };
-use tracing::error;
+use tracing::{error, warn};
 
 struct SourceItem {
     link: String,
@@ -48,9 +48,10 @@ impl TryFrom<rss::Item> for SourceItem {
     type Error = AppError;
     fn try_from(rss: rss::Item) -> Result<Self, Self::Error> {
         let updated = if let Some(ref pub_date) = rss.pub_date {
-            if let Ok(ts) = pub_date.parse::<Timestamp>() {
-                ts.as_second()
+            if let Ok(ts) = rfc2822::parse(pub_date) {
+                ts.timestamp().as_second()
             } else {
+                warn!("invalid pub_date: {}, rss: {:?}", pub_date, rss.link);
                 Timestamp::now().as_second()
             }
         } else {
@@ -273,7 +274,8 @@ pub(crate) async fn feed(
         }
     }
 
-    item_ids.sort_unstable_by(|a, b| a.1.cmp(&b.1));
+    item_ids.sort_unstable_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
+
     let n = site_config.per_page;
     let anchor = params.anchor.unwrap_or(0);
     let is_desc = params.is_desc.unwrap_or(true);
