@@ -3,10 +3,10 @@
 #![warn(clippy::pedantic)]
 // #![warn(clippy::unwrap_used)]
 
-use chrono::Utc;
 use freedit::{
     router, AppError, CONFIG, DB, VERSION, {clear_invalid, cron_feed, Tan},
 };
+use jiff::Timestamp;
 use std::{fs, net::SocketAddr, path::PathBuf};
 use tokio::net::TcpListener;
 use tracing::{error, info, warn};
@@ -89,7 +89,7 @@ fn create_snapshot(db: &sled::Db) {
     let checksum = db.checksum().unwrap();
     info!(%checksum);
 
-    let ts = Utc::now().format("%Y-%m-%d-%H-%M-%S");
+    let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
     let mut snapshot_path = PathBuf::from("snapshots");
     if !snapshot_path.exists() {
         fs::create_dir_all(&snapshot_path).unwrap();

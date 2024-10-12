@@ -1,0 +1,25 @@
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>{{ title }}</title>
+    <id>{{ domain }}/inn/{{ iid }}</id>
+    <updated>{{ updated }}</updated>
+    <link href="{{ domain }}/inn/{{ iid }}/atom.xml" rel="self" type="application/atom+xml"/>
+    <link href="{{ domain }}/inn/{{ iid }}/" rel="alternate" type="text/html"/>
+    <subtitle>{{ subtitle }}</subtitle>
+    {% for category in categories %}
+    <category term="{{ category }}" />
+    {% endfor %}
+    
+    {% for entry in entries %}
+    <entry>
+        <title>{{ entry.title }}</title>
+        <id>{{ domain }}/inn/{{ entry.iid }}/{{ entry.pid }}</id>
+        <updated>{{ entry.updated }}</updated>
+        <author>
+            <name>{{ entry.author.0 }}</name>
+            <uri>{{ domain }}/user/{{ entry.author.1 }}</uri>
+        </author>
+        <link href="{{ domain }}/post/{{entry.iid}}/{{entry.pid}}" rel="alternate" type="text/html"/>
+        <content>{{ entry.content|trim }}</content>
+    </entry>
+    {% endfor %}
+</feed>

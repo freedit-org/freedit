@@ -6,7 +6,7 @@ license = "MIT License"
 
 [dependencies]
 ammonia = "4.0.0"
-atom_syndication = "0.12"
+atom_syndication = { version = "0.12", default-features = false }
 axum = { version = "0.7.5", features = ["http1", "http2", "form", "query", "multipart", "tokio"], default-features = false }
 axum-extra = { version = "0.9", features = ["typed-header"] }
 axum_garde = { version = "0.20.0", default-features = false, features = ["form"] }
@@ -14,7 +14,6 @@ basic-toml = "*"
 bincode = "2.0.0-rc.3"
 cached = { version = "0.53", default-features = false, features = ["proc_macro", "ahash"] }
 captcha = { version = "0.0", default-features = false }
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
 data-encoding = "*"
 fast2s = "0.3"
 garde = { version = "0.20.0", features = ["derive"] }
@@ -23,7 +22,7 @@ identicon = { git = "https://github.com/freedit-dev/identicon.git", default-feat
 image = { version = "0.25.2", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
-jieba-rs = "0.7.0"
+jieba-rs = { git = "https://github.com/messense/jieba-rs.git", rev = "b39957e" }
 jiff = { version = "0.1.13", default-features = false, features = ["std"] }
 latex2mathml = "0.2.3"
 mozjpeg = "0.10.10"
