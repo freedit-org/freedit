@@ -626,6 +626,8 @@ pub(super) async fn update(
                 let item_id;
                 if let Some(v) = item_links_tree.get(&source_item.link)? {
                     item_id = ivec_to_u32(&v);
+                    let item: Item = get_one(db, "items", item_id)?;
+                    item_ids.push((item_id, item.updated));
                 } else {
                     item_id = incr_id(db, "items_count")?;
                     let item = Item {
@@ -638,9 +640,8 @@ pub(super) async fn update(
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     set_one(db, "items", item_id, &item)?;
                     tan_tree.insert(format!("item{}", item_id), &[])?;
+                    item_ids.push((item_id, source_item.updated));
                 };
-
-                item_ids.push((item_id, source_item.updated));
             }
 
             Feed {
@@ -655,6 +656,8 @@ pub(super) async fn update(
                     let item_id;
                     if let Some(v) = item_links_tree.get(&source_item.link)? {
                         item_id = ivec_to_u32(&v);
+                        let item: Item = get_one(db, "items", item_id)?;
+                        item_ids.push((item_id, item.updated));
                     } else {
                         item_id = incr_id(db, "items_count")?;
                         let item = Item {
@@ -667,9 +670,8 @@ pub(super) async fn update(
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                         set_one(db, "items", item_id, &item)?;
                         tan_tree.insert(format!("item{}", item_id), &[])?;
+                        item_ids.push((item_id, source_item.updated));
                     };
-
-                    item_ids.push((item_id, source_item.updated));
                 }
 
                 Feed {
