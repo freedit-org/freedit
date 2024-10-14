@@ -36,7 +36,7 @@ use ring::{
 use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 use sled::Db;
-use std::{cmp::Ordering, fmt::Display, num::NonZeroU32, time::Duration};
+use std::{cmp::Ordering, collections::HashMap, fmt::Display, num::NonZeroU32, time::Duration};
 use tokio::time::sleep;
 
 /// Page data: `user.html`
@@ -912,6 +912,10 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
     let captcha_id = generate_nanoid_ttl(60);
     DB.open_tree("captcha")?
         .insert(&captcha_id, &*captcha.chars_as_string())?;
+
+    let mut i18n = HashMap::new();
+    i18n.insert("sign_in", "Sign in");
+    i18n.insert("sign_up", "Sign up");
 
     let page_signup = PageSignup {
         page_data,
