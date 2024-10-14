@@ -14,10 +14,11 @@ use http::{HeaderName, StatusCode};
 use rinja_axum::{into_response, Template};
 use tracing::error;
 
-static I18N: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| {
+static I18N: LazyLock<HashMap<&str, HashMap<String, String>>> = LazyLock::new(|| {
     let mut i18n = HashMap::new();
-    i18n.insert("sign_in", "Sign in");
-    i18n.insert("sign_up", "Sign up");
+    let en = include_str!("../../i18n/en.toml");
+    let en = basic_toml::from_str::<HashMap<String, String>>(en).unwrap();
+    i18n.insert("en", en);
     i18n
 });
 
@@ -183,7 +184,7 @@ pub(super) struct PageData<'a> {
     pub(super) site_description: String,
     pub(super) claim: Option<Claim>,
     pub(super) has_unread: bool,
-    pub(super) i18n: HashMap<&'a str, &'a str>,
+    pub(super) i18n: HashMap<String, String>,
 }
 
 impl<'a> PageData<'a> {
@@ -194,7 +195,7 @@ impl<'a> PageData<'a> {
         has_unread: bool,
     ) -> Self {
         let site_description = md2html(&site_config.description);
-        let i18n = I18N.clone();
+        let i18n = I18N.get("en").unwrap().to_owned();
         Self {
             title,
             site_name: &site_config.site_name,
