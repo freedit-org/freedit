@@ -275,6 +275,7 @@ pub(crate) async fn feed(
     }
 
     item_ids.sort_unstable_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
+    item_ids.dedup_by(|a, b| a.0 == b.0);
 
     let n = site_config.per_page;
     let anchor = params.anchor.unwrap_or(0);
