@@ -31,7 +31,7 @@
                         {% when Some(5) %} Fellow
                         {% when Some(4) %} Intern
                         {% when Some(3) %} Limited
-                        {% when Some(2) %} Deny
+                        {% when Some(2) %} Rejected
                         {% when Some(1) %} Pending
                         {% else %} Inn Role {% endmatch %}
                     </span>
@@ -41,7 +41,7 @@
                 <div class="dropdown-content">
                     {% if info.2 %}
                     <a href="/user/list?filter=inn&id={{info.0}}&role=1" class="dropdown-item">Pending</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=2" class="dropdown-item">Deny</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=2" class="dropdown-item">Rejected</a>
                     {% endif %}
                     <a href="/user/list?filter=inn&id={{info.0}}&role=3" class="dropdown-item">Limited</a>
                     <a href="/user/list?filter=inn&id={{info.0}}&role=4" class="dropdown-item">Intern</a>
@@ -110,7 +110,7 @@
                                 <select name="role" required autocomplete="off">
                                     {% if info.2 %}
                                     <option {% if user.role == 1 %} selected {% endif %}>Pending</option>
-                                    <option {% if user.role == 2 %} selected {% endif %}>Deny</option>
+                                    <option {% if user.role == 2 %} selected {% endif %}>Rejected</option>
                                     {% endif %}
                                     <option {% if user.role == 3 %} selected {% endif %}>Limited</option>
                                     <option {% if user.role == 4 %} selected {% endif %}>Intern</option>
