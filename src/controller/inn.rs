@@ -4,7 +4,7 @@
 //! | role    | comment | post | update timeline | lock post | inn admin | protected | Note             |
 //! |---------|:-------:|:----:|:---------------:|:---------:|:---------:|:---------:|------------------|
 //! | Pending |         |      |                 |           |           |           | Apply or Private |
-//! | Deny    |         |      |                 |           |           |           | Apply or Private |
+//! | Rejected|         |      |                 |           |           |           | Apply or Private |
 //! | Limited | ✅      |      |                 |           |           |           |                  |
 //! | Intern  | ✅      | ✅   |                 |           |           |           |                  |
 //! | Fellow  | ✅      | ✅   | ✅              |           |           |           |                  |

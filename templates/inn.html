@@ -68,7 +68,7 @@
                     <button class="button is-success is-small is-rounded" title="You are limited to comment in this Inn">Limited</button>
                     <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded is-hidden-mobile is-danger">Exit</button></a>
                 {% else if inn_role == 2 %}
-                    <button class="button is-success is-small is-rounded" title="Your request to join this Inn has been denied">Denied</button>
+                    <button class="button is-success is-small is-rounded" title="Your request to join this Inn has been rejected">Rejected</button>
                 {% else if inn_role == 1 %}
                     <button class="button is-success is-small is-rounded">Pending</button>
                 {% else %}
@@ -200,7 +200,7 @@
         {% else if inn_role == 3 %}
             <button class="button is-fullwidth is-rounded" title="You are limited to comment in this Inn">Limited</button>
         {% else if inn_role == 2 %}
-            <button class="button is-fullwidth is-rounded" title="Your request to join this Inn has been denied">Denied</button>
+            <button class="button is-fullwidth is-rounded" title="Your request to join this Inn has been reject">Rejected</button>
         {% else if inn_role == 1 %}
             <button class="button is-fullwidth is-rounded">Pending</button>
         {% else %}

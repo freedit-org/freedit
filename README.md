@@ -10,6 +10,10 @@ Demo: <https://freedit.eu/>
 
 GitHub: <https://github.com/freedit-org/freedit>
 
+## Support
+
+XMR: 45JB1KbCM54gw7zDY8LzkDXjEibDgTspyKBzM8VWi8mL1gY3wCyzHsCSRGRsXBwGgdC6HX1EtJFoNYXZELnDQW8S7DRG8tL
+
 ## Features
 
 * Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled) 

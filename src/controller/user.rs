@@ -241,7 +241,7 @@ impl Display for Role {
 #[repr(u8)]
 pub(super) enum InnRole {
     Pending = 1,
-    Deny = 2,
+    Rejected = 2,
     Limited = 3,
     Intern = 4,
     Fellow = 5,
@@ -263,7 +263,7 @@ impl From<u8> for InnRole {
     fn from(value: u8) -> Self {
         match value {
             1 => InnRole::Pending,
-            2 => InnRole::Deny,
+            2 => InnRole::Rejected,
             3 => InnRole::Limited,
             4 => InnRole::Intern,
             5 => InnRole::Fellow,
@@ -516,7 +516,7 @@ pub(crate) async fn role_post(
                     DB.open_tree("inn_apply")?.insert(&inn_users_k, &[])?;
                     1
                 }
-                "Deny" => 2,
+                "Rejected" => 2,
                 "Limited" => 3,
                 "Intern" => 4,
                 "Fellow" => 5,
