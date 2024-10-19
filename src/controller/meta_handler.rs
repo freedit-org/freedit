@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::LazyLock};
+use std::sync::LazyLock;
 
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{error::AppError, DB};
@@ -13,14 +13,6 @@ use axum_extra::{
 use http::{HeaderName, StatusCode};
 use rinja_axum::{into_response, Template};
 use tracing::error;
-
-static I18N: LazyLock<HashMap<&str, HashMap<String, String>>> = LazyLock::new(|| {
-    let mut i18n = HashMap::new();
-    let en = include_str!("../../i18n/en.toml");
-    let en = basic_toml::from_str::<HashMap<String, String>>(en).unwrap();
-    i18n.insert("en", en);
-    i18n
-});
 
 #[derive(Template)]
 #[template(path = "error.html", escape = "none")]
@@ -184,7 +176,7 @@ pub(super) struct PageData<'a> {
     pub(super) site_description: String,
     pub(super) claim: Option<Claim>,
     pub(super) has_unread: bool,
-    pub(super) i18n: HashMap<String, String>,
+    pub(super) lang: &'a str,
 }
 
 impl<'a> PageData<'a> {
@@ -195,14 +187,13 @@ impl<'a> PageData<'a> {
         has_unread: bool,
     ) -> Self {
         let site_description = md2html(&site_config.description);
-        let i18n = I18N.get("en").unwrap().to_owned();
         Self {
             title,
             site_name: &site_config.site_name,
             site_description,
             claim,
             has_unread,
-            i18n,
+            lang: &site_config.lang,
         }
     }
 }

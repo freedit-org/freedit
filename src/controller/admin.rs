@@ -7,7 +7,7 @@ use super::{
     Claim, Feed, FormPost, Item, SiteConfig,
 };
 use crate::{
-    controller::{Comment, Inn, Post, Solo, User},
+    controller::{filters, Comment, Inn, Post, Solo, User},
     error::AppError,
     DB,
 };
@@ -393,6 +393,7 @@ impl Default for SiteConfig {
             captcha_name: "Lucy".into(),
             home_page: 0,
             spam_regex: None,
+            lang: "en".into(),
         }
     }
 }

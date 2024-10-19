@@ -483,6 +483,8 @@ pub(super) struct SiteConfig {
     home_page: u8,
     #[garde(skip)]
     spam_regex: Option<String>,
+    #[garde(length(max = 16))]
+    lang: String,
 }
 
 impl SiteConfig {
@@ -502,4 +504,35 @@ struct Claim {
     role: u8,
     last_write: i64,
     session_id: String,
+}
+
+mod filters {
+    use std::{collections::HashMap, sync::LazyLock};
+    use tracing::error;
+
+    static I18N: LazyLock<HashMap<(&str, &str), &str>> = LazyLock::new(|| {
+        let mut i18n = HashMap::new();
+        let en = include_str!("../../i18n/en.toml");
+        let en = basic_toml::from_str::<HashMap<&str, &str>>(en).unwrap();
+        for (k, v) in en.iter() {
+            i18n.insert(("en", *k), *v);
+        }
+
+        let zh_cn = include_str!("../../i18n/zh_cn.toml");
+        let zh_cn = basic_toml::from_str::<HashMap<&str, &str>>(zh_cn).unwrap();
+        for (k, v) in zh_cn.iter() {
+            i18n.insert(("zh_cn", *k), *v);
+        }
+        i18n
+    });
+
+    pub(super) fn l10n(s: &str, lang: &str) -> ::rinja::Result<&'static str> {
+        if let Some(v) = I18N.get(&(lang, s)) {
+            Ok(v)
+        } else {
+            let en = I18N.get(&("en", s)).unwrap();
+            error!("No translation for {} in {}", s, lang);
+            Ok(en)
+        }
+    }
 }
