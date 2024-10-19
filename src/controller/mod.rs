@@ -16,6 +16,7 @@
 //! | default          | "imgs_count"         | N                |
 //! | "home_pages"     | `uid`                | `u8`             |
 //! | "tan"            | `ctype#id`           | `&[]`            |
+//! | "lang"           | `uid`                | `lang`           |
 //!
 //! ### notification
 //! | tree            | key                   | value             |
@@ -504,6 +505,7 @@ struct Claim {
     role: u8,
     last_write: i64,
     session_id: String,
+    lang: Option<String>,
 }
 
 mod filters {
@@ -522,6 +524,12 @@ mod filters {
         let zh_cn = basic_toml::from_str::<HashMap<&str, &str>>(zh_cn).unwrap();
         for (k, v) in zh_cn.iter() {
             i18n.insert(("zh_cn", *k), *v);
+        }
+
+        let ja = include_str!("../../i18n/ja.toml");
+        let ja = basic_toml::from_str::<HashMap<&str, &str>>(ja).unwrap();
+        for (k, v) in ja.iter() {
+            i18n.insert(("ja", *k), *v);
         }
         i18n
     });

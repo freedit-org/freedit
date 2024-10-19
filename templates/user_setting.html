@@ -92,6 +92,26 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Language</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <div class="select">
+                            <select name="lang" required>
+                                <option {% if page_data.lang == "en" %} selected {% endif %} value="en">English</option>
+                                <option {% if page_data.lang == "zh_cn" %} selected {% endif %} value="zh_cn">中文</option>
+                                <option {% if page_data.lang == "ja" %} selected {% endif %} value="ja">日本語</option>
+                                <option {% if page_data.lang == "fr" %} selected {% endif %} value="fr">Français</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">

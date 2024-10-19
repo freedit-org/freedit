@@ -176,7 +176,7 @@ pub(super) struct PageData<'a> {
     pub(super) site_description: String,
     pub(super) claim: Option<Claim>,
     pub(super) has_unread: bool,
-    pub(super) lang: &'a str,
+    pub(super) lang: String,
 }
 
 impl<'a> PageData<'a> {
@@ -187,13 +187,19 @@ impl<'a> PageData<'a> {
         has_unread: bool,
     ) -> Self {
         let site_description = md2html(&site_config.description);
+        let lang = claim
+            .as_ref()
+            .and_then(|claim| claim.lang.as_ref())
+            .map(|lang| lang.to_owned())
+            .unwrap_or_else(|| site_config.lang.clone());
+
         Self {
             title,
             site_name: &site_config.site_name,
             site_description,
             claim,
             has_unread,
-            lang: &site_config.lang,
+            lang,
         }
     }
 }
