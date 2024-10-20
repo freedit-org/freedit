@@ -16,42 +16,42 @@
             <ul>
                 {% if page_data.claim.is_some() %}
                     {% match filter.as_deref() %} {% when Some with ("joined") %}
-                        <li><a href="/inn/0">All</a></li>
-                        <li class="is-active"><a href="/inn/0?filter=joined">Joined</a></li>
-                        <li><a href="/inn/0?filter=following">Following</a></li>
+                        <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
+                        <li class="is-active"><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
+                        <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                     {% when Some with ("following") %}
-                        <li><a href="/inn/0">All</a></li>
-                        <li><a href="/inn/0?filter=joined">Joined</a></li>
-                        <li class="is-active"><a href="/inn/0?filter=following">Following</a></li>
+                        <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
+                        <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
+                        <li class="is-active"><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                     {% when Some with (uid) %}
-                        <li><a href="/inn/0">All</a></li>
-                        <li><a href="/inn/0?filter=joined">Joined</a></li>
-                        <li><a href="/inn/0?filter=following">Following</a></li>
+                        <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
+                        <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
+                        <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                         {% match username %} {% when Some with (val) %}
                             <li class="is-active"><a href="/inn/0?filter={{uid}}">👤 {{val}}</a></li>
                         {% else %}{% endmatch %}
                     {% else %}
                         {% if iid > 0 %}
-                            <li><a href="/inn/0">All</a></li>
-                            <li><a href="/inn/0?filter=joined">Joined</a></li>
-                            <li><a href="/inn/0?filter=following">Following</a></li>
+                            <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
+                            <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
+                            <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                             <li class="is-active"><a href="/inn/{{iid}}">⚓ {{inn_name}}</a></li>
                         {% else %}
-                            <li class="is-active"><a href="/inn/0">All</a></li>
-                            <li><a href="/inn/0?filter=joined">Joined</a></li>
-                            <li><a href="/inn/0?filter=following">Following</a></li>
+                            <li class="is-active"><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
+                            <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
+                            <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                         {% endif %}
                     {% endmatch %}
                 {% else %}
                     {% match filter.as_deref() %}{% when Some with (uid) %}
-                        <li><a href="/inn/0">All</a></li>
+                        <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                         <li class="is-active"><a href="/inn/{{iid}}?filter={{uid}}">👤 {{uid}}</a></li>
                     {% else %}
                         {% if iid > 0 %}
-                            <li><a href="/inn/0">All</a></li>
+                            <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                             <li class="is-active"><a href="/inn/{{iid}}">⚓ {{inn_name}}</a></li>
                         {% else %}
-                            <li class="is-active"><a href="/inn/0">All</a></li>
+                            <li class="is-active"><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                         {% endif %}
                     {% endmatch %}
                 {% endif %}
@@ -62,20 +62,20 @@
         <div class="buttons">
             {% if iid > 0 %}
                 {% if inn_role >= 4 %}
-                    <a href="/post/edit/0?iid={{iid}}"><button class="button is-success is-small is-rounded">New Post</button></a>
-                    <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded is-hidden-mobile is-danger">Exit</button></a>
+                    <a href="/post/edit/0?iid={{iid}}"><button class="button is-success is-small is-rounded">{{ "new"|l10n(page_data.lang) }} Post</button></a>
+                    <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded is-hidden-mobile is-danger">{{ "exit"|l10n(page_data.lang) }}</button></a>
                 {% else if inn_role == 3 %}
                     <button class="button is-success is-small is-rounded" title="You are limited to comment in this Inn">Limited</button>
-                    <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded is-hidden-mobile is-danger">Exit</button></a>
+                    <a href="/inn/{{iid}}/join"><button class="button is-small is-rounded is-hidden-mobile is-danger">{{ "exit"|l10n(page_data.lang) }}</button></a>
                 {% else if inn_role == 2 %}
-                    <button class="button is-success is-small is-rounded" title="Your request to join this Inn has been rejected">Rejected</button>
+                    <button class="button is-success is-small is-rounded" title="Your request to join this Inn has been rejected">{{ "rejected"|l10n(page_data.lang) }}</button>
                 {% else if inn_role == 1 %}
-                    <button class="button is-success is-small is-rounded">Pending</button>
+                    <button class="button is-success is-small is-rounded">{{ "pending"|l10n(page_data.lang) }}</button>
                 {% else %}
-                    <a href="/inn/{{iid}}/join"><button class="button is-success is-small is-rounded">Join</button></a>
+                    <a href="/inn/{{iid}}/join"><button class="button is-success is-small is-rounded">{{ "join"|l10n(page_data.lang) }}</button></a>
                 {% endif %}
             {% else %}
-                <a href="/post/edit/0"><button class="button is-success is-small is-rounded">New Post</button></a>
+                <a href="/post/edit/0"><button class="button is-success is-small is-rounded">{{ "new"|l10n(page_data.lang) }} Post</button></a>
             {% endif %}
         </div>
     </div>
@@ -113,22 +113,22 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match filter.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-previous" href="/inn/{{iid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">Prev</a>
+            <a class="pagination-previous" href="/inn/{{iid}}?anchor={{anchor - n}}&is_desc={{is_desc}}&filter={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
         {% else %}
-            <a class="pagination-previous" href="/inn/{{iid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+            <a class="pagination-previous" href="/inn/{{iid}}?anchor={{anchor - n}}&is_desc={{is_desc}}">{{ "prev"|l10n(page_data.lang) }}</a>
         {% endmatch %}
     {% endif %}
 
     {% if posts.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
+        <a class="pagination-next" disabled >{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match filter.as_deref() %} {% when Some with (val) %}
-            <a class="pagination-next" href="/inn/{{iid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">Next</a>
+            <a class="pagination-next" href="/inn/{{iid}}?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{val}}">{{ "next"|l10n(page_data.lang) }}</a>
         {% else %}
-            <a class="pagination-next" href="/inn/{{iid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            <a class="pagination-next" href="/inn/{{iid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">{{ "next"|l10n(page_data.lang) }}</a>
         {% endmatch %}
     {% endif %}
 </nav>
@@ -200,7 +200,7 @@
         {% else if inn_role == 3 %}
             <button class="button is-fullwidth is-rounded" title="You are limited to comment in this Inn">Limited</button>
         {% else if inn_role == 2 %}
-            <button class="button is-fullwidth is-rounded" title="Your request to join this Inn has been reject">Rejected</button>
+            <button class="button is-fullwidth is-rounded" title="Your request to join this Inn has been rejected">Rejected</button>
         {% else if inn_role == 1 %}
             <button class="button is-fullwidth is-rounded">Pending</button>
         {% else %}

@@ -6,10 +6,10 @@
         {% for img in imgs %}
         <div id="delete_{{img.2}}" class="overlay">
             <div class="popup content">
-                <h3>Delete permanently?</h3>
+                <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
                 <a class="close" href="#">&times;</a>
-                <p>Are you sure you want to delete this image?</p>
-                <p><a href="/image/delete/{{img.0}}/{{img.1}}" class="button is-danger">Delete</a></p>
+                <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                <p><a href="/image/delete/{{img.0}}/{{img.1}}" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a></p>
                 <img src="/static/upload/{{img.2}}">
             </div>
         </div>
@@ -19,7 +19,7 @@
                     <a href="/gallery/{{img.0}}"><img src="/static/avatars/{{img.0}}.png"></a>
                 </p>
                 <a href="/static/upload/{{img.2}}" target="_blank"><img src="/static/upload/{{img.2}}"></a>
-                <a href="#delete_{{img.2}}" class="delete">Delete</a>
+                <a href="#delete_{{img.2}}" class="delete">{{ "delete"|l10n(page_data.lang) }}</a>
                 <figcaption>
                     <span class="tag">{{img.2}}</span>
                 </figcaption>
@@ -33,15 +33,15 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
-        <a class="pagination-previous" href="/admin/gallery?anchor={{anchor - n}}&is_desc={{is_desc}}">Prev</a>
+        <a class="pagination-previous" href="/admin/gallery?anchor={{anchor - n}}&is_desc={{is_desc}}">{{ "prev"|l10n(page_data.lang) }}</a>
     {% endif %}
 
     {% if imgs.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
+        <a class="pagination-next" disabled >{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
-        <a class="pagination-next" href="/admin/gallery?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+        <a class="pagination-next" href="/admin/gallery?anchor={{anchor + n}}&is_desc={{is_desc}}">{{ "next"|l10n(page_data.lang) }}</a>
     {% endif %}
 </nav>
 {% endblock %}

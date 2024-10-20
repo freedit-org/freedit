@@ -22,8 +22,8 @@
             <p class="title">{{item.title|truncate(100)}}</p>
             <p>📅 {{item.updated}} &nbsp;&nbsp; 
                 ⚓ {{item.feed_title}} &nbsp;&nbsp;
-                <a href="{{item.link}}">🌐 Source</a> &nbsp;&nbsp;
-                <a href="/feed/read/{{item.item_id}}?allow_img=true">🖼️ Load image</a>
+                <a href="{{item.link}}">🌐 {{ "source"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
+                <a href="/feed/read/{{item.item_id}}?allow_img=true">🖼️ {{ "load_image"|l10n(page_data.lang) }}</a>
             </p>
         </div>
     </div>

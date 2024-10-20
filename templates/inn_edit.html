@@ -16,9 +16,9 @@
                     <div class="control">
                         <input class="input" type="file" name="upload" required accept=".jpg, .jpeg, .png, .gif" placeholder="Upload image" />
                     </div>
-                    <p class="help">Please clear browser cache (ctrl + f5)</p>
+                    <p class="help"> {{ "avatar_help"|l10n(page_data.lang) }}</p>
                     <div class="control">
-                        <button type="submit" form="inn_icon" class="button is-link">Upload</button>
+                        <button type="submit" form="inn_icon" class="button is-link">{{ "upload"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>
@@ -30,12 +30,12 @@
     <fieldset>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="inn_name">Inn name</label>
+                <label class="label" for="inn_name">{{ "inn_name"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="inn_name" pattern="^\D.*" required maxlength="64" placeholder="Inn name" value="{{inn.inn_name}}" />
+                        <input class="input" type="text" name="inn_name" pattern="^\D.*" required maxlength="64" value="{{inn.inn_name}}" />
                     </div>
                 </div>
             </div>
@@ -43,12 +43,12 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="about">About</label>
+                <label class="label" for="about">{{ "about"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="about" required maxlength="512" placeholder="About" value="{{inn.about}}" />
+                        <input class="input" type="text" name="about" required maxlength="512" value="{{inn.about}}" />
                     </div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="description">Description</label>
+                <label class="label" for="description">{{ "description"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -69,12 +69,12 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="topics">topics</label>
+                <label class="label" for="topics">{{ "topics"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="topics" value='{{inn.topics|join("#")}}' required maxlength="128" placeholder="topics, separated by #" />
+                        <input class="input" type="text" name="topics" value='{{inn.topics|join("#")}}' required maxlength="128" placeholder='{{ "topics_help"|l10n(page_data.lang) }}' />
                     </div>
                 </div>
             </div>
@@ -82,29 +82,29 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="inn_type">Inn type</label>
+                <label class="label" for="inn_type">{{ "inn_type"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
                         {% if inn.inn_type == 0 %}
-                        <label class="radio"><input type="radio" name="inn_type" value=0 checked /> Public</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=5 /> Apply</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=20 /> Hidden</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=0 checked /> {{ "public"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=5 /> {{ "apply"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=20 /> {{ "hidden"|l10n(page_data.lang) }}</label>
                         {% else if inn.inn_type == 5 %}
-                        <label class="radio"><input type="radio" name="inn_type" value=0 /> Public</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=5 checked /> Apply</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=20 /> Hidden</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=0 /> {{ "public"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=5 checked /> {{ "apply"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=20 /> {{ "hidden"|l10n(page_data.lang) }}</label>
                         {% else if inn.inn_type == 20 %}
-                        <label class="radio"><input type="radio" name="inn_type" value=0 /> Public</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=5 /> Apply</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=20 checked /> Hidden</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=0 /> {{ "public"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=5 /> {{ "apply"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=20 checked /> {{ "hidden"|l10n(page_data.lang) }}</label>
                         {% else if inn.inn_type == 10 %}
-                        <label class="radio"><input type="radio" name="inn_type" value=10 checked /> Private</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=30 /> PrivateHidden</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=10 checked /> {{ "private"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=30 /> {{ "private_hidden"|l10n(page_data.lang) }}</label>
                         {% else if inn.inn_type == 30 %}
-                        <label class="radio"><input type="radio" name="inn_type" value=10 /> Private</label>
-                        <label class="radio"><input type="radio" name="inn_type" value=30 checked /> PrivateHidden</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=10 /> {{ "private"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value=30 checked /> {{ "private_hidden"|l10n(page_data.lang) }}</label>
                         {% endif %}
                     </div>
                 </div>
@@ -113,28 +113,28 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="early_birds">Early birds</label>
+                <label class="label" for="early_birds">{{ "early_birds"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
                         <input class="input" type="number" min="0" name="early_birds" value='{{inn.early_birds}}'  autocomplete="off" />
                     </div>
-                    <p class="help">An early bird will be <i>Fellow</i> automatically.</p>
+                    <p class="help">{{ "early_birds_help"|l10n(page_data.lang) }}</p>
                 </div>
             </div>
         </div>
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="limit_edit_seconds">Limit Edit Seconds</label>
+                <label class="label" for="limit_edit_seconds">{{ "limit_edit_seconds"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
                         <input class="input" type="number" min="0" name="limit_edit_seconds" value='{{inn.limit_edit_seconds}}' required autocomplete="off" />
                     </div>
-                    <p class="help">How long before users are blocked from editing? (set 0 to allow anytime)</p>
+                    <p class="help">{{ "limit_edit_seconds_help"|l10n(page_data.lang) }}</p>
                 </div>
             </div>
         </div>
@@ -144,7 +144,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="inn" class="button is-link">Save</button>
+                        <button type="submit" form="inn" class="button is-link">{{ "save"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>
@@ -156,14 +156,14 @@
     <fieldset>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="url">url</label>
+                <label class="label" for="url">Inn Feeds {{ "url"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="url" required maxlength="500" placeholder="rss or atom link" />
+                        <input class="input" type="text" name="url" required maxlength="500" placeholder='{{ "feed_url_help"|l10n(page_data.lang) }}' />
                     </div>
-                    <p class="help">Submit url again to unsubscribe.</p>
+                    <p class="help">{{ "inn_feed_help"|l10n(page_data.lang) }}</p>
                 </div>
             </div>
         </div>
@@ -173,7 +173,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="inn_feed" class="button is-link">Save</button>
+                        <button type="submit" form="inn_feed" class="button is-link">{{ "save"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>

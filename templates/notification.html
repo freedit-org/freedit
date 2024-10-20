@@ -81,15 +81,15 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
-        <a class="pagination-previous" href="/notification?anchor={{anchor - n}}">Prev</a>
+        <a class="pagination-previous" href="/notification?anchor={{anchor - n}}">{{ "prev"|l10n(page_data.lang) }}</a>
     {% endif %}
 
     {% if notifications.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
+        <a class="pagination-next" disabled >{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
-        <a class="pagination-next" href="/notification?anchor={{anchor + n}}">Next</a>
+        <a class="pagination-next" href="/notification?anchor={{anchor + n}}">{{ "next"|l10n(page_data.lang) }}</a>
     {% endif %}
 </nav>
 {% endblock %}

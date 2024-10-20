@@ -12,7 +12,11 @@ GitHub: <https://github.com/freedit-org/freedit>
 
 ## Support
 
-XMR: 45JB1KbCM54gw7zDY8LzkDXjEibDgTspyKBzM8VWi8mL1gY3wCyzHsCSRGRsXBwGgdC6HX1EtJFoNYXZELnDQW8S7DRG8tL
+Help support the development and maintenance of freedit. Your contributions are greatly appreciated!
+
+- Monero (XMR): `45JB1KbCM54gw7zDY8LzkDXjEibDgTspyKBzM8VWi8mL1gY3wCyzHsCSRGRsXBwGgdC6HX1EtJFoNYXZELnDQW8S7DRG8tL`
+
+All donations go towards hosting costs and continued development of freedit. Thank you for your support!
 
 ## Features
 

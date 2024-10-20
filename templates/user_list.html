@@ -159,37 +159,37 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match role %} {% when Some with (val) %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&role={{val}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&role={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% else %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% endmatch %}
     {% endif %}
 
     {% if users.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
+        <a class="pagination-next" disabled >{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match role %} {% when Some with (val) %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">Prev</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&role={{val}}">Next</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&role={{val}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% else %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">Next</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% endmatch %}
     {% endif %}

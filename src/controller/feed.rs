@@ -10,7 +10,7 @@ use super::{
 };
 use crate::{
     config::CONFIG,
-    controller::{incr_id, Feed, Item},
+    controller::{filters, incr_id, Feed, Item},
     error::AppError,
     DB,
 };

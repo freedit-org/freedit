@@ -94,22 +94,22 @@
 
 <nav class="pagination">
     {% if offset < 20 %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match uid %} {% when Some(uid) %} 
-        <a class="pagination-previous" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset-20}}">Prev</a>
+        <a class="pagination-previous" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset-20}}">{{ "prev"|l10n(page_data.lang) }}</a>
         {% else %}
-        <a class="pagination-previous" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset-20}}">Prev</a>
+        <a class="pagination-previous" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset-20}}">{{ "prev"|l10n(page_data.lang) }}</a>
         {% endmatch %}
     {% endif %}
 
     {% if outs.len() < 20 %}
-        <a class="pagination-next" disabled>Next</a>
+        <a class="pagination-next" disabled>{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match uid %} {% when Some(uid) %} 
-        <a class="pagination-next" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset+20}}">Next</a>
+        <a class="pagination-next" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset+20}}">{{ "next"|l10n(page_data.lang) }}</a>
         {% else %}
-        <a class="pagination-next" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset+20}}">Next</a>
+        <a class="pagination-next" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset+20}}">{{ "next"|l10n(page_data.lang) }}</a>
         {% endmatch %}
     {% endif %}
 </nav>

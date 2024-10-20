@@ -285,9 +285,9 @@ pub(crate) async fn admin_view(
                     ones.push(format!("{uid}: {}", v[0]));
                 }
                 "lang" => {
-                    let id = u8_slice_to_u32(&k);
+                    let uid = u8_slice_to_u32(&k);
                     let lang = String::from_utf8_lossy(&v);
-                    ones.push(format!("{id}: {lang}"));
+                    ones.push(format!("{uid}: {lang}"));
                 }
                 "tan" => {
                     let id = String::from_utf8_lossy(&k);

@@ -26,7 +26,7 @@ use whichlang::detect_language;
 
 use crate::{
     config::CONFIG,
-    controller::{InnType, SoloType},
+    controller::{filters, InnType, SoloType},
     error::AppError,
     DB,
 };
