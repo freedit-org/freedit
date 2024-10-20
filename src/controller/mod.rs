@@ -531,6 +531,12 @@ mod filters {
         for (k, v) in ja.iter() {
             i18n.insert(("ja", *k), *v);
         }
+
+        let fr = include_str!("../../i18n/fr.toml");
+        let fr = basic_toml::from_str::<HashMap<&str, &str>>(fr).unwrap();
+        for (k, v) in fr.iter() {
+            i18n.insert(("fr", *k), *v);
+        }
         i18n
     });
 

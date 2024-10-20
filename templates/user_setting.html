@@ -16,9 +16,9 @@
                     <div class="control">
                         <input class="input" type="file" name="upload" required accept=".jpg, .jpeg, .png, .gif" placeholder="Upload image" />
                     </div>
-                    <p class="help">Please clear browser cache (ctrl + f5)</p>
+                    <p class="help">{{ "avatar_help"|l10n(page_data.lang) }}</p>
                     <div class="control">
-                        <button type="submit" form="user_avatar" class="button is-link">Upload</button>
+                        <button type="submit" form="user_avatar" class="button is-link">{{ "upload"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>
@@ -56,12 +56,12 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label">About</label>
+                <label class="label">{{ "about"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                    <textarea name="about" class="textarea" maxlength="1024" placeholder="{{about}}">{{about}}</textarea>
+                    <textarea name="about" class="textarea" maxlength="1024" >{{about}}</textarea>
                     </div>
                 </div>
             </div>
@@ -69,7 +69,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label">Home page</label>
+                <label class="label">{{ "home_page"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -93,7 +93,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label">Language</label>
+                <label class="label">{{ "lang"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -116,7 +116,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="user_setting" class="button is-link">Save</button>
+                        <button type="submit" form="user_setting" class="button is-link">{{ "save"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>
@@ -154,7 +154,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label">Confirm</label>
+                <label class="label">{{ "confirm"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -170,7 +170,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="password" class="button is-link">Change</button>
+                        <button type="submit" form="password" class="button is-link">{{ "change"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>
