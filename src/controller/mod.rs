@@ -544,7 +544,9 @@ mod filters {
         if let Some(v) = I18N.get(&(lang, s)) {
             Ok(v)
         } else {
-            let en = I18N.get(&("en", s)).unwrap();
+            let Some(en) = I18N.get(&("en", s)) else {
+                panic!("No translation for {} in en", s);
+            };
             error!("No translation for {} in {}", s, lang);
             Ok(en)
         }

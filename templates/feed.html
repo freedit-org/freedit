@@ -6,7 +6,7 @@
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
                 {% match username %}{% when Some with (val) %}
-                    <li class="is-active"><a href="/feed/{{uid}}">{{val}}'s public feeds</a></li>
+                    <li class="is-active"><a href="/feed/{{uid}}">{{val}}'s feeds</a></li>
                 {% else %}
                     {% match filter.as_deref() %}{% when Some with ("star") %}
                     <li><a href="/feed/{{uid}}">{{ "all"|l10n(page_data.lang) }}</a></li>

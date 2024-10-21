@@ -29,18 +29,18 @@
                         <p class="control">
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
-                                    <option selected>Pending</option>
-                                    <option>Rejected</option>
-                                    <option>Limited</option>
-                                    <option>Intern</option>
-                                    <option>Fellow</option>
-                                    <option>Mod</option>
-                                    <option>Super</option>
+                                    <option selected>{{ "pending"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "rejected"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "limited"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "intern"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "fellow"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "mod"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "super"|l10n(page_data.lang) }}</option>
                                 </select>
                             </span>
                         </p>
                         <div class="control">
-                            <button type="submit" class="button is-success is-small">Save</button>
+                            <button type="submit" class="button is-success is-small">{{ "save"|l10n(page_data.lang) }}</button>
                         </div>
                     </div>
                 </fieldset>

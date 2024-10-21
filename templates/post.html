@@ -24,41 +24,41 @@
             <a href="/inn/{{post.iid}}">⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
             <a href="/user/{{post.uid}}">👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% if post.can_edit %}
-                <a href="/post/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
+                <a href="/post/edit/{{post.pid}}">{{ "edit"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
             {% endif %}
 
             {% if is_mod %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
                     {% match post.status.as_str() %} 
-                        {% when "LockedByMod" %} Unlock
-                        {% else %} lock
+                        {% when "LockedByMod" %} {{ "unlock"|l10n(page_data.lang) }}
+                        {% else %} {{ "lock"|l10n(page_data.lang) }}
                     {% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %} 
-                        {% when "HiddenByMod" %} Open
-                        {% else %} Hide
+                        {% when "HiddenByMod" %} {{ "unhide"|l10n(page_data.lang) }}
+                        {% else %} {{ "hide"|l10n(page_data.lang) }}
                     {% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/pin">
                     {% if post.is_pinned %}
-                        Unpin
+                        {{ "unpin"|l10n(page_data.lang) }}
                     {% else %}
-                        Pin
+                        {{ "pin"|l10n(page_data.lang) }}
                     {% endif %}
                 </a>
             {% else if is_author %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
                     {% match post.status.as_str() %} 
-                        {% when "LockedByUser" %} Unlock
-                        {% when "Normal" %} lock
+                        {% when "LockedByUser" %} {{ "unlock"|l10n(page_data.lang) }}
+                        {% when "Normal" %} {{ "lock"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %} 
-                        {% when "HiddenByUser" %} Open
-                        {% when "Normal" %} Hide
-                        {% when "LockedByUser" %} Hide
+                        {% when "HiddenByUser" %} {{ "unhide"|l10n(page_data.lang) }}
+                        {% when "Normal" %} {{ "hide"|l10n(page_data.lang) }}
+                        {% when "LockedByUser" %} {{ "hide"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
                 </a>
             {% endif %}
