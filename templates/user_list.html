@@ -181,7 +181,7 @@
     {% else %}
         {% match role %} {% when Some with (val) %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% else %}
             <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&role={{val}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% endmatch %}

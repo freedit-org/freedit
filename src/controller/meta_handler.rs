@@ -190,8 +190,7 @@ impl<'a> PageData<'a> {
         let lang = claim
             .as_ref()
             .and_then(|claim| claim.lang.as_ref())
-            .map(|lang| lang.to_owned())
-            .unwrap_or_else(|| site_config.lang.clone());
+            .map_or_else(|| site_config.lang.clone(), |lang| lang.to_owned());
 
         Self {
             title,
