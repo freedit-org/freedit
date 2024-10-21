@@ -6,16 +6,16 @@
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
                 {% match filter.as_deref() %} {% when Some with ("followers") %}
-                    <li><a href="/user/list">Users</a></li>
-                    <li class="is-active"><a href="/user/list?filter=followers&id={{info.0}}">followers</a></li>
+                    <li><a href="/user/list">{{ "users"|l10n(page_data.lang) }}</a></li>
+                    <li class="is-active"><a href="/user/list?filter=followers&id={{info.0}}">{{ "followers"|l10n(page_data.lang) }}</a></li>
                 {% when Some with ("following") %}
-                    <li><a href="/user/list">Users</a></li>
-                    <li class="is-active"><a href="/user/list?filter=following&id={{info.0}}">following</a></li>
+                    <li><a href="/user/list">{{ "users"|l10n(page_data.lang) }}</a></li>
+                    <li class="is-active"><a href="/user/list?filter=following&id={{info.0}}">{{ "following"|l10n(page_data.lang) }}</a></li>
                 {% when Some with ("inn") %}
-                    <li><a href="/user/list">Users</a></li>
+                    <li><a href="/user/list">{{ "users"|l10n(page_data.lang) }}</a></li>
                     <li class="is-active"><a href="/user/list?filter=inn&id={{info.0}}">⚓ {{info.1}}</a></li>
                 {% else %}
-                    <li class="is-active"><a href="/user/list">Users</a></li>
+                    <li class="is-active"><a href="/user/list">{{ "users"|l10n(page_data.lang) }}</a></li>
                 {% endmatch %}
             </ul>
         </div>
@@ -26,30 +26,30 @@
             <div class="dropdown-trigger">
                 <button class="button is-small is-rounded">
                     <span>
-                        {% match role %}{% when Some(10) %} Super
-                        {% when Some(7) %} Mod
-                        {% when Some(5) %} Fellow
-                        {% when Some(4) %} Intern
-                        {% when Some(3) %} Limited
-                        {% when Some(2) %} Deny
-                        {% when Some(1) %} Pending
-                        {% else %} Inn Role {% endmatch %}
+                        {% match role %}{% when Some(10) %} {{ "super"|l10n(page_data.lang) }}
+                        {% when Some(7) %} {{ "mod"|l10n(page_data.lang) }}
+                        {% when Some(5) %} {{ "fellow"|l10n(page_data.lang) }}
+                        {% when Some(4) %} {{ "intern"|l10n(page_data.lang) }}
+                        {% when Some(3) %} {{ "limited"|l10n(page_data.lang) }}
+                        {% when Some(2) %} {{ "rejected"|l10n(page_data.lang) }}
+                        {% when Some(1) %} {{ "pending"|l10n(page_data.lang) }}
+                        {% else %} Inn {{ "role"|l10n(page_data.lang) }} {% endmatch %}
                     </span>
                 </button>
             </div>
             <div class="dropdown-menu">
                 <div class="dropdown-content">
                     {% if info.2 %}
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=1" class="dropdown-item">Pending</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=2" class="dropdown-item">Deny</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=1" class="dropdown-item">{{ "pending"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=2" class="dropdown-item">{{ "rejected"|l10n(page_data.lang) }}</a>
                     {% endif %}
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=3" class="dropdown-item">Limited</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=4" class="dropdown-item">Intern</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=5" class="dropdown-item">Fellow</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=7" class="dropdown-item">Mod</a>
-                    <a href="/user/list?filter=inn&id={{info.0}}&role=10" class="dropdown-item">Super</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=3" class="dropdown-item">{{ "limited"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=4" class="dropdown-item">{{ "intern"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=5" class="dropdown-item">{{ "fellow"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=7" class="dropdown-item">{{ "mod"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}&role=10" class="dropdown-item">{{ "super"|l10n(page_data.lang) }}</a>
                     <hr class="dropdown-divider">
-                    <a href="/user/list?filter=inn&id={{info.0}}" class="dropdown-item">All</a>
+                    <a href="/user/list?filter=inn&id={{info.0}}" class="dropdown-item">{{ "all"|l10n(page_data.lang) }}</a>
                 </div>
             </div>
         </div>
@@ -58,22 +58,22 @@
             <div class="dropdown-trigger">
                 <button class="button is-small is-rounded">
                     <span>
-                        {% match role %}{% when Some(255) %} Admin
-                        {% when Some(100) %} Senior
-                        {% when Some(10) %} Standard
-                        {% when Some(0) %} Banned
-                        {% else %} Role {% endmatch %}
+                        {% match role %}{% when Some(255) %} {{ "admin"|l10n(page_data.lang) }}
+                        {% when Some(100) %} {{ "senior"|l10n(page_data.lang) }}
+                        {% when Some(10) %} {{ "standard"|l10n(page_data.lang) }}
+                        {% when Some(0) %} {{ "banned"|l10n(page_data.lang) }}
+                        {% else %} {{ "role"|l10n(page_data.lang) }} {% endmatch %}
                     </span>
                 </button>
             </div>
             <div class="dropdown-menu">
                 <div class="dropdown-content">
-                    <a href="/user/list?role=255" class="dropdown-item">Admin</a>
-                    <a href="/user/list?role=100" class="dropdown-item">Senior</a>
-                    <a href="/user/list?role=10" class="dropdown-item">Standard</a>
-                    <a href="/user/list?role=0" class="dropdown-item">Banned</a>
+                    <a href="/user/list?role=255" class="dropdown-item">{{ "admin"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?role=100" class="dropdown-item">{{ "senior"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?role=10" class="dropdown-item">{{ "standard"|l10n(page_data.lang) }}</a>
+                    <a href="/user/list?role=0" class="dropdown-item">{{ "banned"|l10n(page_data.lang) }}</a>
                     <hr class="dropdown-divider">
-                    <a href="/user/list" class="dropdown-item">All</a>
+                    <a href="/user/list" class="dropdown-item">{{ "all"|l10n(page_data.lang) }}</a>
                 </div>
             </div>
         </div>
@@ -109,19 +109,19 @@
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
                                     {% if info.2 %}
-                                    <option {% if user.role == 1 %} selected {% endif %}>Pending</option>
-                                    <option {% if user.role == 2 %} selected {% endif %}>Deny</option>
+                                    <option {% if user.role == 1 %} selected {% endif %}>{{ "pending"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 2 %} selected {% endif %}>{{ "rejected"|l10n(page_data.lang) }}</option>
                                     {% endif %}
-                                    <option {% if user.role == 3 %} selected {% endif %}>Limited</option>
-                                    <option {% if user.role == 4 %} selected {% endif %}>Intern</option>
-                                    <option {% if user.role == 5 %} selected {% endif %}>Fellow</option>
-                                    <option {% if user.role == 7 %} selected {% endif %}>Mod</option>
-                                    <option {% if user.role == 10 %} selected {% endif %}>Super</option>
+                                    <option {% if user.role == 3 %} selected {% endif %}>{{ "limited"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 4 %} selected {% endif %}>{{ "intern"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 5 %} selected {% endif %}>{{ "fellow"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 7 %} selected {% endif %}>{{ "mod"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 10 %} selected {% endif %}>{{ "super"|l10n(page_data.lang) }}</option>
                                 </select>
                             </span>
                         </p>
                         <div class="control">
-                            <button type="submit" class="button is-success is-small">Save</button>
+                            <button type="submit" class="button is-success is-small">{{ "save"|l10n(page_data.lang) }}</button>
                         </div>
                     </div>
                 </fieldset>
@@ -133,15 +133,15 @@
                         <p class="control">
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
-                                    <option {% if user.role == 255 %} selected {% endif %}>Admin</option>
-                                    <option {% if user.role == 100 %} selected {% endif %}>Senior</option>
-                                    <option {% if user.role == 10 %} selected {% endif %}>Standard</option>
-                                    <option {% if user.role == 0 %} selected {% endif %}>Banned</option>
+                                    <option {% if user.role == 255 %} selected {% endif %}>{{ "admin"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 100 %} selected {% endif %}>{{ "senior"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 10 %} selected {% endif %}>{{ "standard"|l10n(page_data.lang) }}</option>
+                                    <option {% if user.role == 0 %} selected {% endif %}>{{ "banned"|l10n(page_data.lang) }}</option>
                                 </select>
                             </span>
                         </p>
                         <div class="control">
-                            <button type="submit" class="button is-success is-small">Save</button>
+                            <button type="submit" class="button is-success is-small">{{ "save"|l10n(page_data.lang) }}</button>
                         </div>
                     </div>
                 </fieldset>
@@ -159,37 +159,37 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match role %} {% when Some with (val) %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&role={{val}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&role={{val}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% else %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}">Prev</a>
+            <a class="pagination-previous" href="/user/list?anchor={{anchor- n}}&is_desc={{is_desc}}">{{ "prev"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% endmatch %}
     {% endif %}
 
     {% if users.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
+        <a class="pagination-next" disabled >{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
         {% match role %} {% when Some with (val) %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">Prev</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}&role={{val}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&role={{val}}">Next</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&role={{val}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% else %}
             {% match filter %} {% when Some with (filter) %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">Next</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}&filter={{filter}}&id={{info.0}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% else %}
-            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+            <a class="pagination-next" href="/user/list?anchor={{anchor + n}}&is_desc={{is_desc}}">{{ "next"|l10n(page_data.lang) }}</a>
             {% endmatch %}
         {% endmatch %}
     {% endif %}

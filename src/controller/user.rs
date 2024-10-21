@@ -5,6 +5,7 @@ use super::{
         generate_nanoid_ttl, get_count, get_count_by_prefix, get_id_by_name, get_range,
         is_valid_name, ivec_to_u32, set_one, set_one_with_key, IterType,
     },
+    filters,
     fmt::{clean_html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id,
     meta_handler::{PageData, ParamsPage},
@@ -241,7 +242,7 @@ impl Display for Role {
 #[repr(u8)]
 pub(super) enum InnRole {
     Pending = 1,
-    Deny = 2,
+    Rejected = 2,
     Limited = 3,
     Intern = 4,
     Fellow = 5,
@@ -263,7 +264,7 @@ impl From<u8> for InnRole {
     fn from(value: u8) -> Self {
         match value {
             1 => InnRole::Pending,
-            2 => InnRole::Deny,
+            2 => InnRole::Rejected,
             3 => InnRole::Limited,
             4 => InnRole::Intern,
             5 => InnRole::Fellow,
@@ -516,7 +517,7 @@ pub(crate) async fn role_post(
                     DB.open_tree("inn_apply")?.insert(&inn_users_k, &[])?;
                     1
                 }
-                "Deny" => 2,
+                "Rejected" => 2,
                 "Limited" => 3,
                 "Intern" => 4,
                 "Fellow" => 5,
@@ -593,6 +594,8 @@ pub(crate) struct FormUser {
     url: String,
     #[garde(skip)]
     home_page: u8,
+    #[garde(skip)]
+    lang: String,
 }
 
 /// Page data: `user_setting.html`
@@ -619,8 +622,12 @@ pub(crate) async fn user_setting(
 
     let mut sessions = Vec::new();
     for i in DB.open_tree("sessions")?.iter() {
-        let (_, v) = i?;
-        let (claim2, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
+        let (k, v) = i?;
+        let Ok((claim2, _)): Result<(Claim, _), _> = bincode::decode_from_slice(&v, standard())
+        else {
+            DB.open_tree("sessions")?.remove(k)?;
+            continue;
+        };
         if claim2.uid == claim.uid {
             sessions.push(claim2.session_id);
         }
@@ -734,7 +741,7 @@ pub(crate) async fn user_setting_post(
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
-    let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
+    let mut claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
     let mut user: User = get_one(&DB, "users", claim.uid)?;
 
     let username = clean_html(&input.username);
@@ -762,6 +769,16 @@ pub(crate) async fn user_setting_post(
     user.url = clean_html(&input.url);
     DB.open_tree("home_pages")?
         .insert(u32_to_ivec(user.uid), &[input.home_page])?;
+
+    let lang = match input.lang.as_str() {
+        "en" | "zh_cn" | "ja" | "fr" => {
+            claim.update_lang(&DB, &input.lang)?;
+            &input.lang
+        }
+        _ => "en",
+    };
+
+    DB.open_tree("lang")?.insert(u32_to_ivec(user.uid), lang)?;
     set_one(&DB, "users", claim.uid, &user)?;
 
     let target = format!("/user/{}", claim.uid);
@@ -1158,6 +1175,21 @@ impl Claim {
         Ok(())
     }
 
+    pub(super) fn update_lang(&mut self, db: &Db, lang: &str) -> Result<(), AppError> {
+        let uid = self.uid;
+        let session_tree = db.open_tree("sessions")?;
+        for i in session_tree.iter() {
+            let (k, v) = i?;
+            let (mut claim, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
+            if claim.uid == uid {
+                claim.lang = Some(lang.to_string());
+                set_one_with_key(db, "sessions", k, &claim)?;
+            }
+        }
+
+        Ok(())
+    }
+
     fn update_role(db: &Db, uid: u32) -> Result<(), AppError> {
         let user: User = get_one(db, "users", uid)?;
 
@@ -1182,6 +1214,10 @@ impl Claim {
         let seconds = expire_seconds(expiry);
         let now = Timestamp::now().as_second();
         let session_id = generate_nanoid_ttl(seconds);
+        let lang = db
+            .open_tree("lang")?
+            .get(u32_to_ivec(user.uid))?
+            .map(|s| String::from_utf8_lossy(&s).to_string());
 
         let claim = Claim {
             uid: user.uid,
@@ -1189,6 +1225,7 @@ impl Claim {
             role: user.role,
             last_write: now,
             session_id: session_id.clone(),
+            lang,
         };
 
         set_one_with_key(db, "sessions", &session_id, &claim)?;

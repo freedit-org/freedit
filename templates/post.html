@@ -24,53 +24,53 @@
             <a href="/inn/{{post.iid}}">⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
             <a href="/user/{{post.uid}}">👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% if post.can_edit %}
-                <a href="/post/edit/{{post.pid}}">Edit</a> &nbsp;&nbsp;
+                <a href="/post/edit/{{post.pid}}">{{ "edit"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
             {% endif %}
 
             {% if is_mod %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
                     {% match post.status.as_str() %} 
-                        {% when "LockedByMod" %} Unlock
-                        {% else %} lock
+                        {% when "LockedByMod" %} {{ "unlock"|l10n(page_data.lang) }}
+                        {% else %} {{ "lock"|l10n(page_data.lang) }}
                     {% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %} 
-                        {% when "HiddenByMod" %} Open
-                        {% else %} Hide
+                        {% when "HiddenByMod" %} {{ "unhide"|l10n(page_data.lang) }}
+                        {% else %} {{ "hide"|l10n(page_data.lang) }}
                     {% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/pin">
                     {% if post.is_pinned %}
-                        Unpin
+                        {{ "unpin"|l10n(page_data.lang) }}
                     {% else %}
-                        Pin
+                        {{ "pin"|l10n(page_data.lang) }}
                     {% endif %}
                 </a>
             {% else if is_author %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
                     {% match post.status.as_str() %} 
-                        {% when "LockedByUser" %} Unlock
-                        {% when "Normal" %} lock
+                        {% when "LockedByUser" %} {{ "unlock"|l10n(page_data.lang) }}
+                        {% when "Normal" %} {{ "lock"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %} 
-                        {% when "HiddenByUser" %} Open
-                        {% when "Normal" %} Hide
-                        {% when "LockedByUser" %} Hide
+                        {% when "HiddenByUser" %} {{ "unhide"|l10n(page_data.lang) }}
+                        {% when "Normal" %} {{ "hide"|l10n(page_data.lang) }}
+                        {% when "LockedByUser" %} {{ "hide"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
                 </a>
             {% endif %}
             &nbsp;&nbsp;
             {% if can_delete %}
-                <a href="#delete_post">Delete</a>
+                <a href="#delete_post">{{ "delete"|l10n(page_data.lang) }}</a>
                 <div id="delete_post" class="overlay">
                     <div class="popup content">
-                        <h3>Delete permanently?</h3>
+                        <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
                         <a class="close" href="#">&times;</a>
-                        <p>Are you sure you want to delete this post?</p>
-                        <a href="/post/{{post.iid}}/{{post.pid}}/delete" class="button is-danger">Delete</a>
+                        <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                        <a href="/post/{{post.iid}}/{{post.pid}}/delete" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a>
                     </div>
                 </div>
             {% endif %}
@@ -195,7 +195,7 @@
         <nav class="level is-mobile">
             <div class="level-left">
                 <div class="level-item">
-                    <a href="/upload" class="button is-success is-rounded" target="_blank">upload</a>
+                    <a href="/upload" class="button is-success is-rounded" target="_blank">{{ "upload"|l10n(page_data.lang) }}</a>
                 </div>
             </div>
             <div class="level-right">
@@ -205,13 +205,13 @@
                             {% match page_data.claim %}
                             {% when Some with (val) %}
                                 {% if has_joined %}
-                                <button type="submit" class="button is-link is-rounded">Submit</button>
-                                <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">Preview</button>
+                                <button type="submit" class="button is-link is-rounded">{{ "submit"|l10n(page_data.lang) }}</button>
+                                <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">{{ "preview"|l10n(page_data.lang) }}</button>
                                 {% else %}
-                                <a href="/inn/{{post.iid}}/join" class="button is-success is-rounded">Join to comment</a>
+                                <a href="/inn/{{post.iid}}/join" class="button is-success is-rounded">{{ "join_to_comment"|l10n(page_data.lang) }}</a>
                                 {% endif %}
                             {% else %}
-                            <a class="button is-success is-rounded" href="/signin">Sign in to comment</a>
+                            <a class="button is-success is-rounded" href="/signin">{{ "sign_in_to_comment"|l10n(page_data.lang) }}</a>
                             {% endmatch %}
                         </div>
                     </div>
@@ -224,14 +224,14 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-    <a class="pagination-previous" disabled>Prev</a>
+    <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
-    <a class="pagination-previous" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor- n}}&is_desc={{is_desc}}">Prev</a>
+    <a class="pagination-previous" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor- n}}&is_desc={{is_desc}}">{{ "prev"|l10n(page_data.lang) }}</a>
     {% endif %}
     {% if comments.len() < n %}
-    <a class="pagination-next" disabled>Next</a>
+    <a class="pagination-next" disabled>{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
-    <a class="pagination-next" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">Next</a>
+    <a class="pagination-next" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">{{ "next"|l10n(page_data.lang) }}</a>
     {% endif %}
 </nav>
 

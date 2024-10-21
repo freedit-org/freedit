@@ -5,12 +5,12 @@
     <fieldset>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="inn_name">Inn name</label>
+                <label class="label" for="inn_name">{{ "inn_name"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="inn_name" pattern="^\D.*" required maxlength="64" placeholder="Inn name" />
+                        <input class="input" type="text" name="inn_name" pattern="^\D.*" required maxlength="64" />
                     </div>
                 </div>
             </div>
@@ -18,12 +18,12 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="about">About</label>
+                <label class="label" for="about">{{ "about"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="about" required maxlength="512" placeholder="About" />
+                        <input class="input" type="text" name="about" required maxlength="512" />
                     </div>
                 </div>
             </div>
@@ -31,7 +31,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="description">Description</label>
+                <label class="label" for="description">{{ "description"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -44,12 +44,12 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="topics">topics</label>
+                <label class="label" for="topics">{{ "topics"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input class="input" type="text" name="topics" maxlength="128" required placeholder="topics, separated by #" />
+                        <input class="input" type="text" name="topics" maxlength="128" required placeholder='{{ "topics_help"|l10n(page_data.lang) }}' />
                     </div>
                 </div>
             </div>
@@ -57,44 +57,44 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="inn_type">Inn type</label>
+                <label class="label" for="inn_type">{{ "inn_type"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <label class="radio"><input type="radio" name="inn_type" value="0" required />Public</label>
-                        <label class="radio"><input type="radio" name="inn_type" value="5" /> Apply</label>
-                        <label class="radio"><input type="radio" name="inn_type" value="10" /> Private</label>
+                        <label class="radio"><input type="radio" name="inn_type" value="0" required />{{ "public"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value="5" /> {{ "apply"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="inn_type" value="10" /> {{ "private"|l10n(page_data.lang) }}</label>
                     </div>
-                    <p class="help">The Private inn can not be changed to other type.</p>
+                    <p class="help">{{ "inn_type"|l10n(page_data.lang) }}</p>
                 </div>
             </div>
         </div>
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="early_birds">Early birds</label>
+                <label class="label" for="early_birds">{{ "early_birds"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
                         <input class="input" type="number" min="0" name="early_birds" required autocomplete="off" />
                     </div>
-                    <p class="help">An early bird will be <i>Fellow</i> automatically.</p>
+                    <p class="help">{{ "early_birds_help"|l10n(page_data.lang) }}</p>
                 </div>
             </div>
         </div>
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="limit_edit_seconds">Limit Edit Seconds</label>
+                <label class="label" for="limit_edit_seconds">{{ "limit_edit_seconds"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
                         <input class="input" type="number" min="0" name="limit_edit_seconds" required autocomplete="off" />
                     </div>
-                    <p class="help">How long before users are blocked from editing? (set 0 to allow anytime)</p>
+                    <p class="help">{{ "limit_edit_seconds_help"|l10n(page_data.lang) }}</p>
                 </div>
             </div>
         </div>
@@ -104,7 +104,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="inn" class="button is-link">Save</button>
+                        <button type="submit" form="inn" class="button is-link">{{ "save"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>

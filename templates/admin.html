@@ -5,7 +5,7 @@
     <fieldset>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="site_name">Sitename</label>
+                <label class="label" for="site_name">{{ "site_name"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -18,7 +18,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="domain">Domain</label>
+                <label class="label" for="domain">{{ "domain"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -31,7 +31,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="description">Description</label>
+                <label class="label" for="description">{{ "description"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -44,7 +44,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="read_only">Read only</label>
+                <label class="label" for="read_only">{{ "read_only"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -58,7 +58,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="inn_mod_max">Inn mod max</label>
+                <label class="label" for="inn_mod_max">{{ "inn_mod_max"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -71,7 +71,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="title_max_length">Title max length</label>
+                <label class="label" for="title_max_length">{{ "title_max_length"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -84,7 +84,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="article_max_length">Article max length</label>
+                <label class="label" for="article_max_length">{{ "article_max_length"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -97,7 +97,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="comment_max_length">Comment max length</label>
+                <label class="label" for="comment_max_length">{{ "comment_max_length"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -110,7 +110,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="solo_interval">Solo interval</label>
+                <label class="label" for="solo_interval">{{ "solo_interval"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -123,7 +123,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="post_interval">Post interval</label>
+                <label class="label" for="post_interval">{{ "post_interval"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -136,7 +136,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="comment_interval">Comment interval</label>
+                <label class="label" for="comment_interval">{{ "comment_interval"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -149,7 +149,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="per_page">Per page</label>
+                <label class="label" for="per_page">{{ "per_page"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -162,15 +162,15 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="captcha_difficulty">Captcha difficulty</label>
+                <label class="label" for="captcha_difficulty">{{ "captcha_difficulty"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
-                    <p class="help">About <a href="https://docs.rs/captcha/0.0.9/captcha/fn.by_name.html" target="_blank">captcha</a></p>
+                    <p class="help">{{"about"|l10n(page_data.lang)}} <a href="https://docs.rs/captcha/0.0.9/captcha/fn.by_name.html" target="_blank">{{ "captcha"|l10n(page_data.lang) }}</a></p>
                     <div class="control">
-                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Easy" {% if site_config.captcha_difficulty.as_str() == "Easy" %} checked {% endif %} autocomplete="off" /> Easy</label>
-                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Medium" {% if site_config.captcha_difficulty.as_str() == "Medium" %} checked {% endif %} autocomplete="off" /> Medium</label>
-                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Hard" {% if site_config.captcha_difficulty.as_str() == "Hard" %} checked {% endif %} autocomplete="off" /> Hard</label>
+                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Easy" {% if site_config.captcha_difficulty.as_str() == "Easy" %} checked {% endif %} autocomplete="off" /> {{ "easy"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Medium" {% if site_config.captcha_difficulty.as_str() == "Medium" %} checked {% endif %} autocomplete="off" /> {{ "medium"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="captcha_difficulty" value="Hard" {% if site_config.captcha_difficulty.as_str() == "Hard" %} checked {% endif %} autocomplete="off" /> {{ "hard"|l10n(page_data.lang) }} </label>
                     </div>
                 </div>
             </div>
@@ -178,7 +178,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="captcha_name">Captcha type</label>
+                <label class="label" for="captcha_name">{{ "captcha_name"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -194,19 +194,19 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="home_page">Default home page</label>
+                <label class="label" for="home_page">{{ "home_page"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
                         <div class="select">
                             <select name="home_page" required>
-                                <option {% if site_config.home_page ==0 %} selected {% endif %} value="0">Inn/All</option>
-                                <option {% if site_config.home_page ==2 %} selected {% endif %} value="2">Inn/Joined</option>
-                                <option {% if site_config.home_page ==3 %} selected {% endif %} value="3">Inn/Following</option>
-                                <option {% if site_config.home_page ==4 %} selected {% endif %} value="4">Solo/All</option>
-                                <option {% if site_config.home_page ==5 %} selected {% endif %} value="5">Solo/Following</option>
-                                <option {% if site_config.home_page ==6 %} selected {% endif %} value="6">Explore all ⚓ inns</option>
+                                <option {% if site_config.home_page ==0 %} selected {% endif %} value="0">Inn/{{ "all"|l10n(page_data.lang) }}</option>
+                                <option {% if site_config.home_page ==2 %} selected {% endif %} value="2">Inn/{{ "joined"|l10n(page_data.lang) }}</option>
+                                <option {% if site_config.home_page ==3 %} selected {% endif %} value="3">Inn/{{ "following"|l10n(page_data.lang) }}</option>
+                                <option {% if site_config.home_page ==4 %} selected {% endif %} value="4">Solo/{{ "all"|l10n(page_data.lang) }}</option>
+                                <option {% if site_config.home_page ==5 %} selected {% endif %} value="5">Solo/{{ "following"|l10n(page_data.lang) }}</option>
+                                <option {% if site_config.home_page ==6 %} selected {% endif %} value="6">Inn/{{ "list"|l10n(page_data.lang)}}</option>
                             </select>
                         </div>
                     </div>
@@ -216,7 +216,7 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label" for="spam_regex">Spam regex</label>
+                <label class="label" for="spam_regex">{{ "spam_regex"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
                 <div class="field">
@@ -233,11 +233,31 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="lang">{{ "lang"|l10n(page_data.lang) }}</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <div class="select">
+                            <select name="lang" required>
+                                <option {% if site_config.lang == "en" %} selected {% endif %} value="en">English</option>
+                                <option {% if site_config.lang == "fr" %} selected {% endif %} value="fr">Français</option>
+                                <option {% if site_config.lang == "ja" %} selected {% endif %} value="ja">日本語</option>
+                                <option {% if site_config.lang == "zh_cn" %} selected {% endif %} value="zh_cn">中文</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="admin" class="button is-link">Save</button>
+                        <button type="submit" form="admin" class="button is-link">{{ "save"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
             </div>

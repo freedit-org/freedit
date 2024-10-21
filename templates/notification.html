@@ -29,18 +29,18 @@
                         <p class="control">
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
-                                    <option selected>Pending</option>
-                                    <option>Deny</option>
-                                    <option>Limited</option>
-                                    <option>Intern</option>
-                                    <option>Fellow</option>
-                                    <option>Mod</option>
-                                    <option>Super</option>
+                                    <option selected>{{ "pending"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "rejected"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "limited"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "intern"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "fellow"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "mod"|l10n(page_data.lang) }}</option>
+                                    <option>{{ "super"|l10n(page_data.lang) }}</option>
                                 </select>
                             </span>
                         </p>
                         <div class="control">
-                            <button type="submit" class="button is-success is-small">Save</button>
+                            <button type="submit" class="button is-success is-small">{{ "save"|l10n(page_data.lang) }}</button>
                         </div>
                     </div>
                 </fieldset>
@@ -81,15 +81,15 @@
 
 <nav class="pagination">
     {% if anchor < n %}
-        <a class="pagination-previous" disabled>Prev</a>
+        <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
-        <a class="pagination-previous" href="/notification?anchor={{anchor - n}}">Prev</a>
+        <a class="pagination-previous" href="/notification?anchor={{anchor - n}}">{{ "prev"|l10n(page_data.lang) }}</a>
     {% endif %}
 
     {% if notifications.len() < n %}
-        <a class="pagination-next" disabled >Next</a>
+        <a class="pagination-next" disabled >{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
-        <a class="pagination-next" href="/notification?anchor={{anchor + n}}">Next</a>
+        <a class="pagination-next" href="/notification?anchor={{anchor + n}}">{{ "next"|l10n(page_data.lang) }}</a>
     {% endif %}
 </nav>
 {% endblock %}

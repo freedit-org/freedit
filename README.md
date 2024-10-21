@@ -10,6 +10,14 @@ Demo: <https://freedit.eu/>
 
 GitHub: <https://github.com/freedit-org/freedit>
 
+## Support
+
+Help support the development and maintenance of freedit. Your contributions are greatly appreciated!
+
+- Monero (XMR): `45JB1KbCM54gw7zDY8LzkDXjEibDgTspyKBzM8VWi8mL1gY3wCyzHsCSRGRsXBwGgdC6HX1EtJFoNYXZELnDQW8S7DRG8tL`
+
+All donations go towards hosting costs and continued development of freedit. Thank you for your support!
+
 ## Features
 
 * Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled) 

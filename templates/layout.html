@@ -83,8 +83,8 @@
                             </a>
                         {% else %}
                             <div class="buttons has-addons">
-                                <a href="/signin"><button class="button is-info is-small">Sign in</button></a>
-                                <a href="/signup"><button class="button is-success is-small">Sign up</button></a> 
+                                <a href="/signin"><button class="button is-info is-small">{{ "sign_in"|l10n(page_data.lang) }}</button></a>
+                                <a href="/signup"><button class="button is-success is-small">{{ "sign_up"|l10n(page_data.lang) }}</button></a> 
                             </div>
                         {% endmatch %}
                     {% endblock %}
@@ -106,7 +106,7 @@
                             <fieldset>
                                 <div class="field has-addons">
                                     <div class="control">
-                                        <input class="input" name="search" type="text" placeholder="Search">
+                                        <input class="input" name="search" type="text" placeholder='{{ "search"|l10n(page_data.lang) }}'>
                                     </div>
                                     <div class="control">
                                         <button type="submit" form="search" class="button">🔍</button>
@@ -119,16 +119,16 @@
                         {% if val.role == 255 %}
                             <div class="box">
                                 <a href="/admin">
-                                    <span class="tag is-info">Site setting</span>
+                                    <span class="tag is-info">{{ "site_settings"|l10n(page_data.lang) }}</span>
                                 </a>
                                 <a href="/admin/view">
-                                    <span class="tag is-info">Db view</span>
+                                    <span class="tag is-info">{{ "db_view"|l10n(page_data.lang) }}</span>
                                 </a>
                                 <a href="/admin/view?tree_name=user_stats">
-                                    <span class="tag is-info">Stats</span>
+                                    <span class="tag is-info">{{ "stats"|l10n(page_data.lang) }}</span>
                                 </a>
                                 <a href="/admin/gallery">
-                                    <span class="tag is-info">Gallery</span>
+                                    <span class="tag is-info">{{ "gallery"|l10n(page_data.lang) }}</span>
                                 </a>
                             </div>
                         {% endif %}

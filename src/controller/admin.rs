@@ -7,7 +7,7 @@ use super::{
     Claim, Feed, FormPost, Item, SiteConfig,
 };
 use crate::{
-    controller::{Comment, Inn, Post, Solo, User},
+    controller::{filters, Comment, Inn, Post, Solo, User},
     error::AppError,
     DB,
 };
@@ -284,6 +284,11 @@ pub(crate) async fn admin_view(
                     let uid = u8_slice_to_u32(&k);
                     ones.push(format!("{uid}: {}", v[0]));
                 }
+                "lang" => {
+                    let uid = u8_slice_to_u32(&k);
+                    let lang = String::from_utf8_lossy(&v);
+                    ones.push(format!("{uid}: {lang}"));
+                }
                 "tan" => {
                     let id = String::from_utf8_lossy(&k);
                     ones.push(format!("{id}: {:?}", v));
@@ -393,6 +398,7 @@ impl Default for SiteConfig {
             captcha_name: "Lucy".into(),
             home_page: 0,
             spam_regex: None,
+            lang: "en".into(),
         }
     }
 }

@@ -4,7 +4,7 @@
 //! | role    | comment | post | update timeline | lock post | inn admin | protected | Note             |
 //! |---------|:-------:|:----:|:---------------:|:---------:|:---------:|:---------:|------------------|
 //! | Pending |         |      |                 |           |           |           | Apply or Private |
-//! | Deny    |         |      |                 |           |           |           | Apply or Private |
+//! | Rejected|         |      |                 |           |           |           | Apply or Private |
 //! | Limited | ✅      |      |                 |           |           |           |                  |
 //! | Intern  | ✅      | ✅   |                 |           |           |           |                  |
 //! | Fellow  | ✅      | ✅   | ✅              |           |           |           |                  |
@@ -25,7 +25,7 @@ use super::{
     user::{InnRole, Role},
     Claim, Comment, Feed, FormPost, Inn, InnType, Post, PostContent, PostStatus, SiteConfig, User,
 };
-use crate::{error::AppError, DB};
+use crate::{controller::filters, error::AppError, DB};
 
 use axum::{
     extract::{Path, Query},

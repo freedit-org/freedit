@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
-use crate::{error::AppError, DB};
+use crate::{controller::filters, error::AppError, DB};
 use axum::{
     http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
@@ -176,6 +176,7 @@ pub(super) struct PageData<'a> {
     pub(super) site_description: String,
     pub(super) claim: Option<Claim>,
     pub(super) has_unread: bool,
+    pub(super) lang: String,
 }
 
 impl<'a> PageData<'a> {
@@ -186,12 +187,18 @@ impl<'a> PageData<'a> {
         has_unread: bool,
     ) -> Self {
         let site_description = md2html(&site_config.description);
+        let lang = claim
+            .as_ref()
+            .and_then(|claim| claim.lang.as_ref())
+            .map_or_else(|| site_config.lang.clone(), |lang| lang.to_owned());
+
         Self {
             title,
             site_name: &site_config.site_name,
             site_description,
             claim,
             has_unread,
+            lang,
         }
     }
 }

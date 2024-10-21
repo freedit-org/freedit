@@ -11,7 +11,7 @@ use super::{
     user::Role,
     Claim, SiteConfig, Solo, SoloType, User,
 };
-use crate::{error::AppError, DB};
+use crate::{controller::filters, error::AppError, DB};
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},

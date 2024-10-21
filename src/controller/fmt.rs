@@ -71,6 +71,13 @@ pub(super) fn clean_html(raw: &str) -> String {
         .add_allowed_classes("span", &["replytag"])
         .add_tag_attributes("pre", &["style"])
         .add_tag_attributes("span", &["style"])
+        // allow task list
+        .add_tags(&["input"])
+        .add_tag_attributes("input", &["type", "checked", "disabled"])
+        // allow footnotes
+        .add_allowed_classes("sup", &["footnote-reference", "footnote-definition-label"])
+        .add_allowed_classes("div", &["footnote-definition"])
+        .add_tag_attributes("div", &["id"])
         .clean(raw)
         .to_string()
 }

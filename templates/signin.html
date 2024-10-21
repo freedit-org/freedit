@@ -6,24 +6,24 @@
     <form id="signin" class="box" action="/signin" method="post">
         <fieldset>
             <div class="content">
-                <center><h1>Sign in</h1></center>
+                <center><h1>{{ "sign_in"|l10n(page_data.lang) }}</h1></center>
             </div>
             <div class="field">
                 <div class="control has-icons-left">
-                    <input name="username" class="input" type="text" title="username or user id" required placeholder="Username or user id" >
+                    <input name="username" class="input" type="text" title='{{ "uname_or_id"|l10n(page_data.lang) }}' required placeholder='{{ "uname_or_id"|l10n(page_data.lang) }}' >
                     <span class="icon is-left">👤</span>
                 </div>
             </div>
 
             <div class="field">
                 <div class="control has-icons-left">
-                    <input name="password" class="input" type="password" required placeholder="Password">
+                    <input name="password" class="input" type="password" required placeholder='{{ "password"|l10n(page_data.lang) }}'>
                     <span class="icon is-left">🔑</span>
                 </div>
             </div>
 
             <div class="field">
-                <label for="remember" class="label">Stay signed in</label>
+                <label for="remember" class="label">{{ "stay_logged_in"|l10n(page_data.lang) }}</label>
                 <div class="control">
                     <div class="select">
                         <select name="remember" required>
@@ -48,12 +48,11 @@
             <center>
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="signin" class="button is-link">Submit</button>
+                        <button type="submit" form="signin" class="button is-link">{{ "submit"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
-                <br>
-                <p>New to freedit? <a href="/signup">Sign up</a></p><br>
-                <p>Forgot password? <a href="/user/reset">Password reset</a></p>
+                <p class="has-text-centered"><a href="/signup">{{ "sign_up"|l10n(page_data.lang) }}</a></p>
+                <p class="has-text-centered"><a href="/user/reset">{{ "password_reset"|l10n(page_data.lang) }}</a></p>
             </center>
         </fieldset>
     </form>
