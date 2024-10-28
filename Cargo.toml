@@ -33,7 +33,7 @@ regex = "1"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "socks"] }
 ring = { version = "0.17", default-features = false }
 rinja = { version = "0.3.4", default-features = false }
-rinja_axum = "0.3.4"
+rinja_axum = { version = "0.3.4", default-features = false }
 rss = { version = "2.0", default-features = false }
 rust-stemmers = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -49,7 +49,6 @@ tower-http = { version = "0.6.1", features = ["fs", "compression-zstd", "trace"]
 tracing = { version = "0.1", features = ["release_max_level_info", "max_level_info"], default-features = false }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "smallvec"], default-features = false }
 unicode-segmentation = "1"
-webpki-roots = "0.26"
 whichlang = "0.1.0"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
