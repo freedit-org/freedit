@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
-use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
-use crate::{controller::filters, error::AppError, DB};
+use super::{fmt::md2html, Claim, SiteConfig, User};
+use crate::{controller::filters, error::AppError, get_one, DB};
 use axum::{
     http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
@@ -71,13 +71,10 @@ pub(crate) async fn home(
     let mut home_page_code = site_config.home_page;
 
     if let Some(claim) = claim {
-        if let Some(home_page) = DB.open_tree("home_pages")?.get(u32_to_ivec(claim.uid))? {
-            if let Some(code) = home_page.first() {
-                home_page_code = *code;
-                if home_page_code == 1 {
-                    return Ok(Redirect::to(&format!("/feed/{}", claim.uid)));
-                }
-            };
+        let user: User = get_one(&DB, "users", claim.uid)?;
+        home_page_code = user.home_page;
+        if home_page_code == 1 {
+            return Ok(Redirect::to(&format!("/feed/{}", claim.uid)));
         }
     }
 

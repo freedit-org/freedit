@@ -9,20 +9,14 @@
 //! | default          | "users_count"        | N                |
 //! | "users"          | `uid`                | [`User`]         |
 //! | "usernames"      | `username`           | `uid`            |
-//! | "user_following" | `uid#uid`            | `&[]`            |
-//! | "user_followers" | `uid#uid`            | `&[]`            |
-//! | "user_stats"     | `timestamp_uid_type` | N                |
+//! | "user_following" | `uid#uid`            |                  |
+//! | "user_followers" | `uid#uid`            |                  |
+//! | "user_stats"     | `timestamp#uid#type` | N                |
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
-//! | "home_pages"     | `uid`                | `u8`             |
-//! | "tan"            | `ctype#id`           | `&[]`            |
-//! | "lang"           | `uid`                | `lang`           |
-//!
-//! ### notification
-//! | tree            | key                   | value             |
-//! |-----------------|-----------------------|-------------------|
-//! | default         | "notifications_count" | N                 |
-//! | "notifications" | `uid#nid#nt_type`     | `id1#id2#is_read` |
+//! | "tan"            | `ctype#id`           |                  |
+//! | default          | "notifications_count"| N                 |
+//! | "notifications"  | `uid#nid#nt_type`    | `id1#id2#is_read` |
 //!
 //! ### captcha
 //!
@@ -36,10 +30,10 @@
 //! | default            | "solos_count" | N                |
 //! | "solos"            | `sid`         | [`Solo`]         |
 //! | "user_solos"       | `uid#sid`     | `solo_type`      |
-//! | "user_solos_like"  | `uid#sid`     | `&[]`            |
-//! | "solo_users_like"  | `sid#uid`     | `&[]`            |
+//! | "user_solos_like"  | `uid#sid`     |                  |
+//! | "solo_users_like"  | `sid#uid`     |                  |
 //! | "solo_timeline"    | `sid`         | `uid#solo_type`  |
-//! | "hashtags"         | `hashtag#sid` | `&[]`            |
+//! | "hashtags"         | `hashtag#sid` |                  |
 //!
 //! ### session
 //! | tree       | key                | value     |
@@ -57,39 +51,38 @@
 //! | default         | "inns_count"  | N                   |
 //! | "inns"          | `iid`         | [`Inn`]             |
 //! | "inn_names"     | `inn_name`    | `iid`               |
-//! | "topics"        | `topic#iid`   | `&[]`               |
-//! | "mod_inns"      | `uid#iid`     | `&[]`               |
-//! | "user_inns"     | `uid#iid`     | `&[]`               |
-//! | "inn_apply"     | `iid#uid`     | `&[]`               |
+//! | "topics"        | `topic#iid`   |                     |
+//! | "mod_inns"      | `uid#iid`     |                     |
+//! | "user_inns"     | `uid#iid`     |                     |
+//! | "inn_apply"     | `iid#uid`     |                     |
 //! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5/8/10]` |
-//! | "inns_private"  | `iid`         | `&[]`               |
-//! | "drafts"        | `uid`         | [`FormPost`]        |
+//! | "drafts"        | `uid#title`   | [`FormPost`]        |
 //! | "inn_feeds"     | `iid#feed_id` | `uid`               |
-//! | "inn_items"     | `iid#item_id` | `&[]`               |
+//! | "inn_items"     | `iid#item_id` |                     |
 //!
 //! ### post
 //! | tree                | key                 | value                |
 //! |-------------------- |---------------------|----------------------|
 //! | default             | "posts_count"       | N                    |
 //! | "posts"             | `pid`               | [`Post`]             |
-//! | "inn_posts"         | `iid#pid`           | `&[]`                |
+//! | "inn_posts"         | `iid#pid`           |                      |
 //! | "user_posts"        | `uid#pid`           | `iid#inn_type`       |
-//! | "tags"              | `tag#pid`           | `&[]`                |
-//! | "post_upvotes"      | `pid#uid`           | `&[]`                |
-//! | "post_downvotes"    | `pid#uid`           | `&[]`                |
+//! | "tags"              | `tag#pid`           |                      |
+//! | "post_upvotes"      | `pid#uid`           |                      |
+//! | "post_downvotes"    | `pid#uid`           |                      |
 //! | "post_timeline_idx" | `iid#pid`           | `timestamp#inn_type` |
 //! | "post_timeline"     | `timestamp#iid#pid` | `inn_type`           |
 //! | "post_pageviews"    | `pid`               | N                    |
-//! | "post_pins"         | `iid#pid`           | `&[]`                |
+//! | "post_pins"         | `iid#pid`           |                      |
 //!
 //! ### comment
 //! | tree                  | key                  | value       |
 //! |-----------------------|----------------------|-------------|
 //! | "post_comments_count" | `pid`                | N           |
 //! | "post_comments"       | `pid#cid`            | [`Comment`] |
-//! | "user_comments"       | `uid#pid#cid`        | `&[]`       |
-//! | "comment_upvotes"     | `pid#cid#uid`        | `&[]`       |
-//! | "comment_downvotes"   | `pid#cid#uid`        | `&[]`       |
+//! | "user_comments"       | `uid#pid#cid`        |             |
+//! | "comment_upvotes"     | `pid#cid#uid`        |             |
+//! | "comment_downvotes"   | `pid#cid#uid`        |             |
 //!
 //! ### rss
 //! | tree                  | key                  | value       |
@@ -103,16 +96,15 @@
 //! | "feed_links"          | `feed_link`          | `feed_id`   |
 //! | "item_links"          | `item_link`          | `item_id`   |
 //! | "items"               | `item_id`            | [`Item`]    |
-//! | "read"                | `uid#item_id`        | `&[]`       |
+//! | "read"                | `uid#item_id`        |             |
 //! | "star"                | `uid#item_id`        | `timestamp` |
 //!
 //! ### e2ee message
 //! | tree                  | key              | value              |
 //! |-----------------------|------------------|--------------------|
 //! | default               | "messages_count" | N                  |
-//! | "messages"            | `mid`            | `#uid#uid#message` |
-//! | "pub_keys"            | `uid`            | `pub_key`          |
-//! | "user_messages"       | `uid#mid`        | `&[]`              |
+//! | "messages"            | `mid`            | `message`          |
+//! | "user_messages"       | `uid#uid#mid`    |                    |
 
 pub(super) mod db_utils;
 pub(super) mod feed;
@@ -165,6 +157,9 @@ struct User {
     role: u8,
     url: String,
     about: String,
+    lang: Option<String>,
+    home_page: u8,
+    pub_key: Option<String>,
 }
 
 impl User {
@@ -299,6 +294,11 @@ impl Inn {
 
     fn is_closed(&self) -> bool {
         InnType::from(self.inn_type) == InnType::Hidden
+            || InnType::from(self.inn_type) == InnType::PrivateHidden
+    }
+
+    fn is_private(&self) -> bool {
+        InnType::from(self.inn_type) == InnType::Private
             || InnType::from(self.inn_type) == InnType::PrivateHidden
     }
 }

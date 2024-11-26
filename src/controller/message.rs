@@ -7,7 +7,7 @@ use axum_extra::{headers::Cookie, TypedHeader};
 use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 
-use crate::controller::filters;
+use crate::{controller::filters, set_one};
 use crate::{controller::fmt::clean_html, error::AppError, DB};
 
 use super::{
@@ -35,27 +35,18 @@ pub(crate) async fn message(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-
-    if DB
-        .open_tree("pub_keys")?
-        .get(u32_to_ivec(claim.uid))?
-        .is_none()
-    {
+    let user: User = get_one(&DB, "users", claim.uid)?;
+    if user.pub_key.is_none() {
         return Ok(Redirect::to("/key").into_response());
     }
 
-    let pub_key = DB
-        .open_tree("pub_keys")?
-        .get(u32_to_ivec(uid))?
-        .map(|s| String::from_utf8_lossy(&s).to_string());
+    let rcpt: User = get_one(&DB, "users", uid)?;
 
-    let title = format!("Sending e2ee Message to {}", uid);
-    let user: User = get_one(&DB, "users", uid)?;
-
+    let title = format!("Sending e2ee Message to {}", rcpt.username);
     let page_message = PageMessage {
         receiver_id: uid,
         page_data: PageData::new(&title, &site_config, Some(claim), false),
-        pub_key,
+        pub_key: rcpt.pub_key,
         receiver_name: user.username,
     };
 
@@ -112,12 +103,8 @@ pub(crate) async fn key(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-
-    let pub_key = DB
-        .open_tree("pub_keys")?
-        .get(u32_to_ivec(claim.uid))?
-        .map(|r| String::from_utf8_lossy(&r).to_string())
-        .unwrap_or_default();
+    let user: User = get_one(&DB, "users", claim.uid)?;
+    let pub_key = user.pub_key.unwrap_or_default();
 
     let page_key = PageKey {
         page_data: PageData::new("Generate Key Pairs", &site_config, Some(claim), false),
@@ -143,9 +130,9 @@ pub(crate) async fn key_post(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let pub_key = clean_html(&input.pub_key);
-
-    DB.open_tree("pub_keys")?
-        .insert(u32_to_ivec(claim.uid), pub_key.as_str())?;
+    let mut user: User = get_one(&DB, "users", claim.uid)?;
+    user.pub_key = Some(pub_key);
+    set_one(&DB, "users", claim.uid, &user)?;
 
     Ok(Redirect::to("/key"))
 }
