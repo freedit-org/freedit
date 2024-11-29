@@ -3,11 +3,13 @@
 #![warn(clippy::pedantic)]
 // #![warn(clippy::unwrap_used)]
 
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
+use std::{fs, net::SocketAddr, path::PathBuf};
+
 use freedit::{
     router, AppError, CONFIG, DB, VERSION, {clear_invalid, cron_feed, Tan},
 };
-use jiff::Timestamp;
-use std::{fs, net::SocketAddr, path::PathBuf};
 use tokio::net::TcpListener;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -27,9 +29,19 @@ async fn main() -> Result<(), AppError> {
     #[cfg(not(debug_assertions))]
     tokio::spawn(async move {
         loop {
-            create_snapshot(&DB);
+            let snapshot_path = PathBuf::from("snapshots");
+            // create snapshot dir if needed
+            if !snapshot_path.exists() {
+                fs::create_dir_all(&snapshot_path).unwrap();
+            }
+            // create a snapshot
+            create_snapshot(&snapshot_path, &DB);
+            // remove snapshots older than 48 hours
+            if let Err(e) = prune_snapshots(&snapshot_path) {
+                error!(%e, "error pruning snapshots");
+            }
             // snapshot every 30 mins
-            sleep_seconds(1800).await;
+            sleep_seconds(60 * 30).await;
         }
     });
 
@@ -91,21 +103,48 @@ async fn main() -> Result<(), AppError> {
 
 // TODO: TEST with https://github.com/hatoo/oha
 #[allow(dead_code)]
-fn create_snapshot(db: &sled::Db) {
+fn create_snapshot(snapshot_path: &PathBuf, db: &sled::Db) {
     let checksum = db.checksum().unwrap();
     info!(%checksum);
 
-    let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
-    let mut snapshot_path = PathBuf::from("snapshots");
-    if !snapshot_path.exists() {
-        fs::create_dir_all(&snapshot_path).unwrap();
-    }
-    snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
+    let timestamp = SystemTime::now()
+       .duration_since(UNIX_EPOCH)
+       .unwrap()
+       .as_secs();
+
+    let mut snapshot_path = snapshot_path.clone();
+    snapshot_path.push(format!("{VERSION}_{timestamp}_{checksum}"));
     let snapshot_cfg = sled::Config::default().path(&snapshot_path);
     let snapshot = snapshot_cfg.open().unwrap();
     snapshot.import(db.export());
     info!("create snapshot: {}", snapshot_path.display());
     drop(snapshot);
+}
+
+#[allow(dead_code)]
+fn prune_snapshots(snapshot_path: &PathBuf) -> Result<(), AppError> {
+    let contents = fs::read_dir(snapshot_path)?;
+    let now = SystemTime::now()
+       .duration_since(UNIX_EPOCH)
+       .unwrap()
+       .as_secs();
+
+    for name in contents {
+        let name = name?;
+        let file_name = name.file_name();
+        let file_name = file_name.to_string_lossy();
+        let split_contents: Vec<&str> = file_name.split('_').collect();
+        // timestamp is the second element
+        let ts = split_contents[1];
+        let snapshot_ts = ts.parse::<u64>().unwrap();
+        let diff = now - snapshot_ts;
+        // 48 hours
+        let max_age: u64 = 60 * 60 * 48;
+        if diff > max_age {
+            fs::remove_dir_all(name.path())?;
+        }
+    }
+    Ok(())
 }
 
 async fn sleep_seconds(seconds: u64) {
