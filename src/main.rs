@@ -112,13 +112,22 @@ fn create_snapshot(snapshot_path: &PathBuf, db: &sled::Db) {
        .unwrap()
        .as_secs();
 
-    let mut snapshot_path = snapshot_path.clone();
-    snapshot_path.push(format!("{VERSION}_{timestamp}_{checksum}"));
-    let snapshot_cfg = sled::Config::default().path(&snapshot_path);
+    // create a temporary directory for writing the snapshot
+    // we don't do this in the system tmpdir because it may
+    // be on a separate block device which makes atomic renames
+    // impossible
+    let mut tmp_path = snapshot_path.clone();
+    tmp_path.push(format!("tmp_{}", nanoid::nanoid!().to_string()));
+    let snapshot_cfg = sled::Config::default().path(&tmp_path);
     let snapshot = snapshot_cfg.open().unwrap();
     snapshot.import(db.export());
-    info!("create snapshot: {}", snapshot_path.display());
     drop(snapshot);
+
+    // atomically move the snapshot into place
+    let mut snapshot_path = snapshot_path.clone();
+    snapshot_path.push(format!("{VERSION}_{timestamp}_{checksum}"));
+    info!("create snapshot: {}", snapshot_path.display());
+    fs::rename(tmp_path, snapshot_path).unwrap();
 }
 
 #[allow(dead_code)]
@@ -133,6 +142,9 @@ fn prune_snapshots(snapshot_path: &PathBuf) -> Result<(), AppError> {
         let name = name?;
         let file_name = name.file_name();
         let file_name = file_name.to_string_lossy();
+        if file_name.starts_with("tmp_") {
+            continue;
+        }
         let split_contents: Vec<&str> = file_name.split('_').collect();
         // timestamp is the second element
         let ts = split_contents[1];
