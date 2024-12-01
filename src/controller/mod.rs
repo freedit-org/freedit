@@ -103,8 +103,8 @@
 //! | tree                  | key              | value              |
 //! |-----------------------|------------------|--------------------|
 //! | default               | "messages_count" | N                  |
-//! | "messages"            | `mid`            | `message`          |
-//! | "user_messages"       | `uid#uid#mid`    |                    |
+//! | "messages"            | `mid`            | `#uid#uid#message` |
+//! | "user_message"        | `uid#mid`    |                    |
 
 pub(super) mod db_utils;
 pub(super) mod feed;
