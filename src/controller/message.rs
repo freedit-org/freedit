@@ -3,7 +3,10 @@ use axum::{
     response::{IntoResponse, Redirect},
     Form,
 };
-use axum_extra::{headers::Cookie, TypedHeader};
+use axum_extra::{
+    headers::{Cookie, Referer},
+    TypedHeader,
+};
 use rinja_axum::{into_response, Template};
 use serde::Deserialize;
 
@@ -12,7 +15,7 @@ use crate::{controller::fmt::clean_html, error::AppError, DB};
 
 use super::{
     db_utils::{get_one, incr_id, u32_to_ivec, u8_slice_to_u32},
-    meta_handler::PageData,
+    meta_handler::{get_referer, PageData},
     notification::{add_notification, mark_read, NtType},
     Claim, SiteConfig, User,
 };
@@ -123,6 +126,7 @@ pub(crate) struct FormKey {
 /// `POST /key`
 pub(crate) async fn key_post(
     cookie: Option<TypedHeader<Cookie>>,
+    referer: Option<TypedHeader<Referer>>,
     Form(input): Form<FormKey>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
@@ -134,7 +138,12 @@ pub(crate) async fn key_post(
     user.pub_key = Some(pub_key);
     set_one(&DB, "users", claim.uid, &user)?;
 
-    Ok(Redirect::to("/key"))
+    let target = if let Some(referer) = get_referer(referer) {
+        referer
+    } else {
+        format!("/user/{}", claim.uid)
+    };
+    Ok(Redirect::to(&target))
 }
 
 /// Page data: `inbox.html`
