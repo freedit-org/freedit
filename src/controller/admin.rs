@@ -200,10 +200,6 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u32(&v);
                     ones.push(format!("name: {name}, id: {id}"));
                 }
-                "inns_private" => {
-                    let id = u8_slice_to_u32(&k);
-                    ones.push(format!("id: {id}"));
-                }
                 "user_solos" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let sid = u8_slice_to_u32(&k[4..8]);
@@ -264,7 +260,7 @@ pub(crate) async fn admin_view(
                     let one_fmt = unescape(&format!("{:?}", one)).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
-                "feed_errs" | "pub_keys" => {
+                "feed_errs" => {
                     let id = ivec_to_u32(&k);
                     let msg = String::from_utf8_lossy(&v);
                     ones.push(format!("{id}: {msg}"));
@@ -279,15 +275,6 @@ pub(crate) async fn admin_view(
                     let (one, _): (Item, usize) = bincode::decode_from_slice(&v, standard())?;
                     let one_fmt = unescape(&format!("{:?}", one)).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
-                }
-                "home_pages" => {
-                    let uid = u8_slice_to_u32(&k);
-                    ones.push(format!("{uid}: {}", v[0]));
-                }
-                "lang" => {
-                    let uid = u8_slice_to_u32(&k);
-                    let lang = String::from_utf8_lossy(&v);
-                    ones.push(format!("{uid}: {lang}"));
                 }
                 "tan" => {
                     let id = String::from_utf8_lossy(&k);
