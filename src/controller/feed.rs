@@ -680,7 +680,8 @@ pub(super) async fn update(
                     title: atom.title.to_string(),
                 }
             }
-            Err(_) => {
+            Err(e) => {
+                error!(?e);
                 return Err(AppError::InvalidFeedLink);
             }
         },

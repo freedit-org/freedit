@@ -1225,7 +1225,10 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
         entries.push(entry);
     }
 
-    let updated = entries[0].updated.clone();
+    let updated = entries
+        .first()
+        .map(|e| e.updated.clone())
+        .unwrap_or_default();
     let page_atom = PageAtom {
         domain: site_config.domain,
         title,
