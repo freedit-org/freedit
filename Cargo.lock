@@ -743,7 +743,7 @@ dependencies = [
 
 [[package]]
 name = "freedit"
-version = "0.7.5"
+version = "0.7.6-rc.0"
 dependencies = [
  "ammonia",
  "atom_syndication",
