@@ -50,7 +50,7 @@ const MATHML_TAGS: [&str; 31] = [
 
 /// convert latex and markdown to html.
 /// Inspired by [cmark-syntax](https://github.com/grego/cmark-syntax/blob/master/src/lib.rs)
-
+//
 // This file is part of cmark-syntax. This program comes with ABSOLUTELY NO WARRANTY;
 // This is free software, and you are welcome to redistribute it under the
 // conditions of the GNU General Public License version 3.0.
