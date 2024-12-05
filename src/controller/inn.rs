@@ -707,7 +707,7 @@ pub(crate) async fn edit_post_post(
             .tags
             .split('#')
             .map(clean_html)
-            .map(|s| s.trim().to_string())
+            .map(|s| s.replace('/', "-").trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
 
