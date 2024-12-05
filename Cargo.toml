@@ -17,15 +17,15 @@ captcha = { git = "https://github.com/freedit-dev/captcha.git", default-features
 data-encoding = "*"
 fast2s = "0.3"
 garde = { version = "0.20.0", features = ["derive"] }
-http = "1.1"
+http = "1.2.0"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.25.2", default-features = false, features = ["jpeg", "png", "gif"] }
 img-parts = "0.3.0"
 indexmap = "2"
 jieba-rs = { git = "https://github.com/messense/jieba-rs.git", rev = "b39957e" }
-jiff = { version = "0.1.13", default-features = false, features = ["std"] }
+jiff = { version = "0.1.15", default-features = false, features = ["std"] }
 latex2mathml = "0.2.3"
-mozjpeg = "0.10.10"
+mozjpeg = "0.10.11"
 nanoid = "0.4.0"
 pulldown-cmark = { version = "0.12.0", features = ["simd", "html"], default-features = false }
 rand = "0.8"
