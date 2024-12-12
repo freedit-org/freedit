@@ -1,0 +1,9 @@
+{
+    "engines": {
+        "node": ">=20"
+    },
+    "private": true,
+    "workspaces": [
+        "apps/client"
+    ]
+}

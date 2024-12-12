@@ -1,7 +1,16 @@
 .DS_Store
+.envrc
+.tool-versions
 
 apps/server/freedit.db*
-apps/server/static/imgs
 apps/server/config.toml
 certs
+freedit.db
+snapshots
+static/imgs
+tantivy
 target
+
+bun.lockb
+node_modules
+yarn.lock
