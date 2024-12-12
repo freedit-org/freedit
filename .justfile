@@ -20,6 +20,7 @@ dev:
     just dev-client &
     just dev-server
 
+[working-directory: 'apps/client']
 dev-client:
     bun vite dev
 
