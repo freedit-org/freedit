@@ -108,9 +108,9 @@ fn create_snapshot(snapshot_path: &PathBuf, db: &sled::Db) {
     info!(%checksum);
 
     let timestamp = SystemTime::now()
-       .duration_since(UNIX_EPOCH)
-       .unwrap()
-       .as_secs();
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
 
     // create a temporary directory for writing the snapshot
     // we don't do this in the system tmpdir because it may
@@ -134,9 +134,9 @@ fn create_snapshot(snapshot_path: &PathBuf, db: &sled::Db) {
 fn prune_snapshots(snapshot_path: &PathBuf) -> Result<(), AppError> {
     let contents = fs::read_dir(snapshot_path)?;
     let now = SystemTime::now()
-       .duration_since(UNIX_EPOCH)
-       .unwrap()
-       .as_secs();
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
 
     for name in contents {
         let name = name?;

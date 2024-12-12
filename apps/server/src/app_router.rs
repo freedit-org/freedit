@@ -26,10 +26,12 @@ use axum::{
     error_handling::HandleErrorLayer, extract::DefaultBodyLimit, handler::Handler,
     http::StatusCode, routing::get, BoxError, Router,
 };
+use http::header::HeaderValue;
 use std::time::Duration;
 use tower::{timeout::TimeoutLayer, ServiceBuilder};
 use tower_http::{
     compression::CompressionLayer,
+    cors::{Any, CorsLayer},
     services::ServeDir,
     trace::{DefaultMakeSpan, TraceLayer},
 };
@@ -38,15 +40,19 @@ use tracing::Level;
 const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
 
 pub async fn router() -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin(HeaderValue::from_static("http://localhost:5173"))
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     let middleware_stack = ServiceBuilder::new()
         .layer(HandleErrorLayer::new(|_: BoxError| async {
             StatusCode::REQUEST_TIMEOUT
         }))
         .layer(TimeoutLayer::new(Duration::from_secs(10)))
         .layer(CompressionLayer::new())
-        .layer(
-            TraceLayer::new_for_http().make_span_with(DefaultMakeSpan::new().level(Level::INFO)),
-        );
+        .layer(TraceLayer::new_for_http().make_span_with(DefaultMakeSpan::new().level(Level::INFO)))
+        .layer(cors);
 
     let router_db = Router::new()
         .route("/", get(home))
