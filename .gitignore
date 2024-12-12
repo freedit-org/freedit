@@ -13,4 +13,5 @@ target
 
 bun.lockb
 node_modules
+*.tsbuildinfo
 yarn.lock
