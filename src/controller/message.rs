@@ -4,7 +4,7 @@ use axum::{
     Form,
 };
 use axum_extra::{headers::Cookie, TypedHeader};
-use rinja_axum::{into_response, Template};
+use rinja::Template;
 use serde::Deserialize;
 
 use crate::controller::filters;
@@ -12,7 +12,7 @@ use crate::{controller::fmt::clean_html, error::AppError, DB};
 
 use super::{
     db_utils::{get_one, incr_id, u32_to_ivec, u8_slice_to_u32},
-    meta_handler::PageData,
+    meta_handler::{into_response, PageData},
     notification::{add_notification, mark_read, NtType},
     Claim, SiteConfig, User,
 };

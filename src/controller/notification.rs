@@ -1,6 +1,6 @@
 use super::{
     get_ids_by_prefix, get_one, incr_id,
-    meta_handler::PageData,
+    meta_handler::{into_response, PageData},
     u32_to_ivec, u8_slice_to_u32,
     user::{InnRole, Role},
     Claim, Comment, Inn, Post, SiteConfig, Solo, User,
@@ -9,7 +9,7 @@ use crate::{controller::filters, error::AppError, DB};
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
-use rinja_axum::{into_response, Template};
+use rinja::Template;
 use serde::Deserialize;
 use sled::{Db, IVec};
 use snailquote::unescape;

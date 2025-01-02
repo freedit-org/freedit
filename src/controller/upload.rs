@@ -2,7 +2,7 @@ use super::{
     db_utils::{u8_slice_to_u32, IterType},
     incr_id,
     inn::ParamsTag,
-    meta_handler::{get_referer, PageData},
+    meta_handler::{get_referer, into_response, PageData},
     notification::{add_notification, NtType},
     u32_to_ivec,
     user::{InnRole, Role},
@@ -22,7 +22,7 @@ use image::{imageops::FilterType, ImageFormat};
 use img_parts::{DynImage, ImageEXIF};
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
-use rinja_axum::{into_response, Template};
+use rinja::Template;
 use serde::Deserialize;
 use sled::Batch;
 use tokio::fs::{self, remove_file};

@@ -5,7 +5,7 @@ use super::{
     },
     fmt::{clean_html, ts_to_date},
     inn::inn_add_index,
-    meta_handler::{get_referer, PageData, ParamsPage},
+    meta_handler::{get_referer, into_response, PageData, ParamsPage},
     Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
 };
 use crate::{
@@ -24,10 +24,9 @@ use axum_extra::{
     TypedHeader,
 };
 use cached::proc_macro::cached;
-use garde::Validate;
 use jiff::{fmt::rfc2822, Timestamp};
 use reqwest::Client;
-use rinja_axum::{into_response, Template};
+use rinja::Template;
 use serde::Deserialize;
 use sled::Db;
 use std::{collections::HashSet, time::Duration};
@@ -36,6 +35,7 @@ use std::{
     sync::LazyLock,
 };
 use tracing::{error, warn};
+use validator::Validate;
 
 struct SourceItem {
     link: String,
@@ -477,13 +477,13 @@ pub(crate) async fn feed_add(
 /// Form data: `/feed/add`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormFeedAdd {
-    #[garde(length(max = 256))]
+    #[validate(length(max = 256))]
     url: String,
-    #[garde(length(max = 256))]
+    #[validate(length(max = 256))]
     folder: String,
-    #[garde(length(max = 256))]
+    #[validate(length(max = 256))]
     new_folder: String,
-    #[garde(skip)]
+    #[validate(skip)]
     is_public: bool,
 }
 

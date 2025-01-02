@@ -20,7 +20,7 @@ use super::{
     feed::{inn_feed_to_post, update},
     fmt::{clean_html, md2html, ts_to_date},
     incr_id,
-    meta_handler::{PageData, ParamsPage},
+    meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
     notification::{add_notification, mark_read, NtType},
     user::{InnRole, Role},
     Claim, Comment, Feed, FormPost, Inn, InnType, Post, PostContent, PostStatus, SiteConfig, User,
@@ -33,17 +33,18 @@ use axum::{
     Form,
 };
 use axum_extra::{headers::Cookie, TypedHeader};
-use axum_garde::WithValidation;
 use bincode::config::standard;
 use cached::proc_macro::cached;
-use garde::Validate;
 use jiff::Timestamp;
-use rinja::filters::{escape, Html};
-use rinja_axum::{into_response, Template};
+use rinja::{
+    filters::{escape, Html},
+    Template,
+};
 use serde::Deserialize;
 use sled::{transaction::ConflictableTransactionError, Transactional};
 use sled::{Batch, Db};
 use std::collections::{BTreeSet, HashMap, HashSet};
+use validator::Validate;
 
 /// Page data: `inn_create.html`
 #[derive(Template)]
@@ -115,19 +116,19 @@ pub(crate) async fn mod_inn(
 /// Form data: `/mod/:iid` inn create/edit page
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormInn {
-    #[garde(length(min = 1, max = 64))]
+    #[validate(length(min = 1, max = 64))]
     inn_name: String,
-    #[garde(length(min = 1, max = 512))]
+    #[validate(length(min = 1, max = 512))]
     about: String,
-    #[garde(length(min = 1, max = 65535))]
+    #[validate(length(min = 1, max = 65535))]
     description: String,
-    #[garde(length(min = 1, max = 128))]
+    #[validate(length(min = 1, max = 128))]
     topics: String,
-    #[garde(skip)]
+    #[validate(skip)]
     inn_type: u8,
-    #[garde(skip)]
+    #[validate(skip)]
     early_birds: u32,
-    #[garde(skip)]
+    #[validate(skip)]
     limit_edit_seconds: u32,
 }
 
@@ -137,7 +138,7 @@ pub(crate) struct FormInn {
 pub(crate) async fn mod_inn_post(
     cookie: Option<TypedHeader<Cookie>>,
     Path(mut iid): Path<u32>,
-    WithValidation(input): WithValidation<Form<FormInn>>,
+    ValidatedForm(input): ValidatedForm<FormInn>,
 ) -> Result<impl IntoResponse, AppError> {
     let inn_name = clean_html(&input.inn_name);
     if !is_valid_name(&inn_name) {
@@ -650,12 +651,11 @@ fn inn_rm_index(db: &Db, iid: u32, pid: u32) -> Result<u8, AppError> {
 pub(crate) async fn edit_post_post(
     cookie: Option<TypedHeader<Cookie>>,
     Path(old_pid): Path<u32>,
-    WithValidation(input): WithValidation<Form<FormPost>>,
+    ValidatedForm(input): ValidatedForm<FormPost>,
 ) -> Result<impl IntoResponse, AppError> {
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    let input = input.into_inner();
 
     let is_draft = input.is_draft.unwrap_or_default();
     let delete_draft = input.delete_draft.unwrap_or_default();
@@ -1746,7 +1746,7 @@ pub(crate) async fn post(
 /// Form data: `/inn/:iid/:pid/` comment create
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormComment {
-    #[garde(length(min = 1, max = 10000))]
+    #[validate(length(min = 1, max = 10000))]
     content: String,
 }
 
@@ -1754,13 +1754,12 @@ pub(crate) struct FormComment {
 pub(crate) async fn comment_post(
     cookie: Option<TypedHeader<Cookie>>,
     Path((iid, pid)): Path<(u32, u32)>,
-    WithValidation(input): WithValidation<Form<FormComment>>,
+    ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
     let claim = cookie
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
-    let input = input.into_inner();
 
     if let Some(spam_regex) = &site_config.spam_regex {
         let re = regex::Regex::new(spam_regex).unwrap();
@@ -1896,7 +1895,7 @@ struct PagePreview<'a> {
 
 /// `POST /preview`
 pub(crate) async fn preview(
-    WithValidation(input): WithValidation<Form<FormComment>>,
+    ValidatedForm(input): ValidatedForm<FormComment>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
     let page_data = PageData::new("preview", &site_config, None, false);

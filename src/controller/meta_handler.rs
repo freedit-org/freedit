@@ -3,16 +3,20 @@ use std::sync::LazyLock;
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{controller::filters, error::AppError, DB};
 use axum::{
+    extract::{rejection::FormRejection, FromRequest, Request},
     http::{HeaderMap, HeaderValue, Uri},
     response::{IntoResponse, Redirect, Response},
+    Form,
 };
 use axum_extra::{
     headers::{Cookie, Referer},
     TypedHeader,
 };
 use http::{HeaderName, StatusCode};
-use rinja_axum::{into_response, Template};
+use rinja::Template;
+use serde::de::DeserializeOwned;
 use tracing::error;
+use validator::Validate;
 
 #[derive(Template)]
 #[template(path = "error.html", escape = "none")]
@@ -220,4 +224,43 @@ pub(super) struct ParamsPage {
     pub(super) anchor: usize,
     pub(super) n: usize,
     pub(super) is_desc: bool,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct ValidatedForm<T>(pub T);
+
+impl<T, S> FromRequest<S> for ValidatedForm<T>
+where
+    T: DeserializeOwned + Validate,
+    S: Send + Sync,
+    Form<T>: FromRequest<S, Rejection = FormRejection>,
+{
+    type Rejection = AppError;
+
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        let Form(value) = Form::<T>::from_request(req, state).await?;
+        value.validate()?;
+        Ok(ValidatedForm(value))
+    }
+}
+
+/// Render a [`Template`] into a [`Response`], or render an error page.
+pub(crate) fn into_response<T: ?Sized + rinja::Template>(tmpl: &T) -> Response {
+    try_into_response(tmpl)
+        .map_err(|err| axum::response::ErrorResponse::from(err.to_string()))
+        .into_response()
+}
+
+/// Try to render a [`Template`] into a [`Response`].
+pub(crate) fn try_into_response<T: ?Sized + rinja::Template>(
+    tmpl: &T,
+) -> Result<Response, rinja::Error> {
+    let value = tmpl.render()?.into();
+    Response::builder()
+        .header(
+            http::header::CONTENT_TYPE,
+            http::header::HeaderValue::from_static(T::MIME_TYPE),
+        )
+        .body(value)
+        .map_err(|err| rinja::Error::Custom(err.into()))
 }
