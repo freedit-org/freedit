@@ -46,7 +46,7 @@ pub enum AppError {
     #[error("The site is under maintenance. It is read only at the moment")]
     ReadOnly,
     #[error(transparent)]
-    ValidationError(#[from] garde::Error),
+    ValidationError(#[from] validator::ValidationErrors),
     #[error(transparent)]
     AxumFormRejection(#[from] axum::extract::rejection::FormRejection),
     #[error("Invalid feed link")]

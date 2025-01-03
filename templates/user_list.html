@@ -109,14 +109,14 @@
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
                                     {% if info.2 %}
-                                    <option {% if user.role == 1 %} selected {% endif %}>{{ "pending"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 2 %} selected {% endif %}>{{ "rejected"|l10n(page_data.lang) }}</option>
+                                    <option value="Pending" {% if user.role == 1 %} selected {% endif %}>{{ "pending"|l10n(page_data.lang) }}</option>
+                                    <option value="Rejected" {% if user.role == 2 %} selected {% endif %}>{{ "rejected"|l10n(page_data.lang) }}</option>
                                     {% endif %}
-                                    <option {% if user.role == 3 %} selected {% endif %}>{{ "limited"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 4 %} selected {% endif %}>{{ "intern"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 5 %} selected {% endif %}>{{ "fellow"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 7 %} selected {% endif %}>{{ "mod"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 10 %} selected {% endif %}>{{ "super"|l10n(page_data.lang) }}</option>
+                                    <option value="Limited" {% if user.role == 3 %} selected {% endif %}>{{ "limited"|l10n(page_data.lang) }}</option>
+                                    <option value="Intern" {% if user.role == 4 %} selected {% endif %}>{{ "intern"|l10n(page_data.lang) }}</option>
+                                    <option value="Fellow" {% if user.role == 5 %} selected {% endif %}>{{ "fellow"|l10n(page_data.lang) }}</option>
+                                    <option value="Mod" {% if user.role == 7 %} selected {% endif %}>{{ "mod"|l10n(page_data.lang) }}</option>
+                                    <option value="Super" {% if user.role == 10 %} selected {% endif %}>{{ "super"|l10n(page_data.lang) }}</option>
                                 </select>
                             </span>
                         </p>
@@ -133,10 +133,10 @@
                         <p class="control">
                             <span class="select is-small">
                                 <select name="role" required autocomplete="off">
-                                    <option {% if user.role == 255 %} selected {% endif %}>{{ "admin"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 100 %} selected {% endif %}>{{ "senior"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 10 %} selected {% endif %}>{{ "standard"|l10n(page_data.lang) }}</option>
-                                    <option {% if user.role == 0 %} selected {% endif %}>{{ "banned"|l10n(page_data.lang) }}</option>
+                                    <option value="Admin" {% if user.role == 255 %} selected {% endif %}>{{ "admin"|l10n(page_data.lang) }}</option>
+                                    <option value="Senior" {% if user.role == 100 %} selected {% endif %}>{{ "senior"|l10n(page_data.lang) }}</option>
+                                    <option value="Standard" {% if user.role == 10 %} selected {% endif %}>{{ "standard"|l10n(page_data.lang) }}</option>
+                                    <option value="Banned" {% if user.role == 0 %} selected {% endif %}>{{ "banned"|l10n(page_data.lang) }}</option>
                                 </select>
                             </span>
                         </p>

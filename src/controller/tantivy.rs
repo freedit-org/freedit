@@ -5,7 +5,7 @@ use axum_extra::{headers::Cookie, TypedHeader};
 use bincode::config::standard;
 use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};
-use rinja_axum::{into_response, Template};
+use rinja::Template;
 use rust_stemmers::{Algorithm, Stemmer};
 use serde::Deserialize;
 use sled::{Batch, Db};
@@ -34,7 +34,7 @@ use crate::{
 use super::{
     db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
     fmt::ts_to_date,
-    meta_handler::PageData,
+    meta_handler::{into_response, PageData},
     Claim, Comment, Item, Post, PostStatus, SiteConfig, Solo, User,
 };
 
