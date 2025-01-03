@@ -44,12 +44,14 @@ struct SourceItem {
     content: String,
 }
 
+static P: rfc2822::DateTimeParser = rfc2822::DateTimeParser::new().relaxed_weekday(true);
+
 impl TryFrom<rss::Item> for SourceItem {
     type Error = AppError;
     fn try_from(rss: rss::Item) -> Result<Self, Self::Error> {
         let updated = if let Some(ref pub_date) = rss.pub_date {
-            if let Ok(ts) = rfc2822::parse(pub_date) {
-                ts.timestamp().as_second()
+            if let Ok(ts) = P.parse_timestamp(pub_date) {
+                ts.as_second()
             } else {
                 warn!("invalid pub_date: {}, rss: {:?}", pub_date, rss.link);
                 Timestamp::now().as_second()
