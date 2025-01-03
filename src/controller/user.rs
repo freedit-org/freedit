@@ -528,7 +528,7 @@ pub(crate) async fn role_post(
                     }
                     10
                 }
-                _ => unreachable!(),
+                _ => return Err(AppError::Unauthorized),
             };
 
             if old_inn_role != Some(inn_role.into()) {
@@ -564,7 +564,7 @@ pub(crate) async fn role_post(
                 "Senior" => 100,
                 "Standard" => 10,
                 "Banned" => 0,
-                _ => unreachable!(),
+                _ => return Err(AppError::Unauthorized),
             };
 
             if user.role != role {
@@ -915,7 +915,7 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
         "Easy" => Difficulty::Easy,
         "Medium" => Difficulty::Medium,
         "Hard" => Difficulty::Hard,
-        _ => unreachable!(),
+        _ => return Err(AppError::NotFound),
     };
 
     let captcha = match site_config.captcha_name.as_str() {
@@ -923,7 +923,7 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
         "Lucy" => captcha::by_name(captcha_difficulty, CaptchaName::Lucy),
         "Mila" => captcha::by_name(captcha_difficulty, CaptchaName::Mila),
         "Digits" => captcha_digits(),
-        _ => unreachable!(),
+        _ => return Err(AppError::NotFound),
     };
 
     let captcha_id = generate_nanoid_ttl(60);

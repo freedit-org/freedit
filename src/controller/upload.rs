@@ -62,7 +62,7 @@ pub(crate) async fn upload_pic_post(
             target = "/user/setting".to_string();
             format!("{}/{}.png", &CONFIG.avatars_path, claim.uid)
         }
-        _ => unreachable!(),
+        _ => return Err(AppError::NotFound),
     };
 
     if let Some(field) = multipart.next_field().await.unwrap() {
