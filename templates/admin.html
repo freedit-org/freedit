@@ -253,6 +253,19 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="tos_link">{{ "terms"|l10n(page_data.lang) }}</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        <input class="input" type="text" name="tos_link" required maxlength="256" value="{{ site_config.tos_link }}" placeholder="Terms and Conditions" autocomplete="off" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">

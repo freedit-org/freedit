@@ -901,6 +901,7 @@ struct PageSignup<'a> {
     page_data: PageData<'a>,
     captcha_id: String,
     captcha_image: String,
+    tos_link: &'a str,
 }
 
 /// `GET /signup`
@@ -934,6 +935,7 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
         page_data,
         captcha_id,
         captcha_image: captcha.as_base64().unwrap(),
+        tos_link: &site_config.tos_link,
     };
     Ok(into_response(&page_signup))
 }

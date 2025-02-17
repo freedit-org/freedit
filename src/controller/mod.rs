@@ -486,6 +486,7 @@ pub(super) struct SiteConfig {
     spam_regex: Option<String>,
     #[validate(length(max = 16))]
     lang: String,
+    tos_link: String,
 }
 
 impl SiteConfig {

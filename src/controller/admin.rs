@@ -372,6 +372,7 @@ pub(crate) async fn admin_post(
     site_config.description = clean_html(&site_config.description);
     site_config.captcha_difficulty = clean_html(&site_config.captcha_difficulty);
     site_config.captcha_name = clean_html(&site_config.captcha_name);
+    site_config.tos_link = clean_html(&site_config.tos_link);
 
     set_one_with_key(&DB, "__sled__default", "site_config", &site_config)?;
     Ok(Redirect::to("/admin"))
@@ -397,6 +398,7 @@ impl Default for SiteConfig {
             home_page: 0,
             spam_regex: None,
             lang: "en".into(),
+            tos_link: "https://en.wikipedia.org/wiki/WTFPL".into(),
         }
     }
 }
