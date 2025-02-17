@@ -13,7 +13,7 @@ use super::{
     u32_to_ivec, u8_slice_to_u32, Claim, Inn, InnType, SiteConfig, User,
 };
 use crate::{config::CONFIG, error::AppError, DB};
-use ::rand::{thread_rng, Rng};
+use ::rand::{rng, Rng};
 use axum::{
     extract::{Form, Path, Query},
     http::{header::SET_COOKIE, HeaderMap},
@@ -1079,14 +1079,14 @@ pub(crate) async fn user_recovery_code(
 }
 
 fn gen_password() -> String {
-    let mut rng = thread_rng();
-    let n: u8 = rng.gen_range(10..=24);
+    let mut rng = rng();
+    let n: u8 = rng.random_range(10..=24);
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                             abcdefghijklmnopqrstuvwxyz\
                             0123456789)(*&^%$#@!~";
     let password: String = (0..n)
         .map(|_| {
-            let idx = rng.gen_range(0..CHARSET.len());
+            let idx = rng.random_range(0..CHARSET.len());
             CHARSET[idx] as char
         })
         .collect();
