@@ -155,7 +155,7 @@ use validator::Validate;
 /// | Senior   | ✅        | ✅        |            |
 /// | Admin    | ✅        | ✅        | ✅         |
 
-#[derive(Default, Encode, Decode, Serialize, Debug)]
+#[derive(Default, Encode, Decode, Serialize)]
 struct User {
     uid: u32,
     username: String,
@@ -165,6 +165,15 @@ struct User {
     role: u8,
     url: String,
     about: String,
+}
+
+impl std::fmt::Debug for User {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,
+            "uid: {}, username: {}, password_hash: ******, recovery_hash is set: {}, created_at: {}, role: {}, url: {}, about: {} }}",
+            self.uid, self.username, self.recovery_hash.is_some(), self.created_at, self.role, self.url, self.about
+        )
+    }
 }
 
 impl User {

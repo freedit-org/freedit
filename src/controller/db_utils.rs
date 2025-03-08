@@ -36,14 +36,14 @@ pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
 /// ```
 pub fn get_one<T>(db: &Db, tree_name: &str, id: u32) -> Result<T, AppError>
 where
-    T: Decode,
+    T: Decode<()>,
 {
     get_one_by_key(db, tree_name, u32_to_ivec(id))
 }
 
 fn get_one_by_key<T, K>(db: &Db, tree_name: &str, key: K) -> Result<T, AppError>
 where
-    T: Decode,
+    T: Decode<()>,
     K: AsRef<[u8]>,
 {
     let v = db.open_tree(tree_name)?.get(key)?;
@@ -94,7 +94,7 @@ pub(super) fn get_batch<T, K>(
     page_params: &ParamsPage,
 ) -> Result<Vec<T>, AppError>
 where
-    T: Decode,
+    T: Decode<()>,
     K: AsRef<[u8]>,
 {
     let count = get_count(db, count_tree, key)?;
