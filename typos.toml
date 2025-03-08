@@ -1,5 +1,2 @@
-[default.extend-words]
-Fo = "Fo"
-Limite = "Limite"
-valide = "valide"
-adresse = "adresse"
+[files]
+extend-exclude = ["i18n/*.toml"]

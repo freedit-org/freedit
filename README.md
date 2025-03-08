@@ -10,17 +10,9 @@ Demo: <https://freedit.eu/>
 
 GitHub: <https://github.com/freedit-org/freedit>
 
-## Support
-
-Help support the development and maintenance of freedit. Your contributions are greatly appreciated!
-
-- Monero (XMR): `45JB1KbCM54gw7zDY8LzkDXjEibDgTspyKBzM8VWi8mL1gY3wCyzHsCSRGRsXBwGgdC6HX1EtJFoNYXZELnDQW8S7DRG8tL`
-
-All donations go towards hosting costs and continued development of freedit. Thank you for your support!
-
 ## Features
 
-* Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled) 
+* Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled)
 * No javascript at all, for safety maximization. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
 * e2ee private message
 * Math and Code highlighting support without JavaScript
