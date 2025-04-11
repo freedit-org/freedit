@@ -1,29 +1,31 @@
 //! ## [User] sign up/in/out, user profile/list controller
 
 use super::{
+    Claim, Inn, InnType, SiteConfig, User,
     db_utils::{
-        generate_nanoid_ttl, get_count, get_count_by_prefix, get_id_by_name, get_range,
-        is_valid_name, ivec_to_u32, set_one, set_one_with_key, IterType,
+        IterType, generate_nanoid_ttl, get_count, get_count_by_prefix, get_id_by_name, get_range,
+        is_valid_name, ivec_to_u32, set_one, set_one_with_key,
     },
     filters,
     fmt::{clean_html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id,
-    meta_handler::{into_response, PageData, ParamsPage, ValidatedForm},
-    notification::{add_notification, NtType},
-    u32_to_ivec, u8_slice_to_u32, Claim, Inn, InnType, SiteConfig, User,
+    meta_handler::{PageData, ParamsPage, ValidatedForm, into_response},
+    notification::{NtType, add_notification},
+    u8_slice_to_u32, u32_to_ivec,
 };
-use crate::{config::CONFIG, error::AppError, DB};
-use ::rand::{rng, Rng};
+use crate::{DB, config::CONFIG, error::AppError};
+use ::rand::{Rng, rng};
+use askama::Template;
 use axum::{
     extract::{Form, Path, Query},
-    http::{header::SET_COOKIE, HeaderMap},
+    http::{HeaderMap, header::SET_COOKIE},
     response::{IntoResponse, Redirect},
 };
-use axum_extra::{headers::Cookie, TypedHeader};
+use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
 use captcha::{
-    filters::{Cow, Noise, Wave},
     Captcha, CaptchaName, Difficulty, Geometry,
+    filters::{Cow, Noise, Wave},
 };
 use data_encoding::BASE64;
 use identicon::Identicon;
@@ -32,7 +34,6 @@ use ring::{
     pbkdf2,
     rand::{self, SecureRandom},
 };
-use rinja::Template;
 use serde::Deserialize;
 use sled::Db;
 use std::{cmp::Ordering, fmt::Display, num::NonZeroU32, time::Duration};

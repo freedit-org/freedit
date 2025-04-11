@@ -1,41 +1,41 @@
 use std::{collections::HashSet, sync::LazyLock};
 
+use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
-use axum_extra::{headers::Cookie, TypedHeader};
+use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
 use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};
-use rinja::Template;
 use rust_stemmers::{Algorithm, Stemmer};
 use serde::Deserialize;
 use sled::{Batch, Db};
 use tantivy::{
+    Index, IndexReader, IndexWriter, TantivyDocument,
     collector::TopDocs,
     directory::MmapDirectory,
     query::QueryParser,
     schema::{
-        Field, IndexRecordOption, Schema, SchemaBuilder, TextFieldIndexing, TextOptions, Value,
-        FAST, INDEXED, STORED, STRING,
+        FAST, Field, INDEXED, IndexRecordOption, STORED, STRING, Schema, SchemaBuilder,
+        TextFieldIndexing, TextOptions, Value,
     },
     tokenizer::{Token, TokenStream, Tokenizer},
-    Index, IndexReader, IndexWriter, TantivyDocument,
 };
 use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
 use crate::{
-    config::CONFIG,
-    controller::{filters, InnType, SoloType},
-    error::AppError,
     DB,
+    config::CONFIG,
+    controller::{InnType, SoloType, filters},
+    error::AppError,
 };
 
 use super::{
-    db_utils::{get_one, u32_to_ivec, u8_slice_to_u32},
-    fmt::ts_to_date,
-    meta_handler::{into_response, PageData},
     Claim, Comment, Item, Post, PostStatus, SiteConfig, Solo, User,
+    db_utils::{get_one, u8_slice_to_u32, u32_to_ivec},
+    fmt::ts_to_date,
+    meta_handler::{PageData, into_response},
 };
 
 struct OutSearch {

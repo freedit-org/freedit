@@ -1,15 +1,14 @@
 use super::{
-    get_ids_by_prefix, get_one, incr_id,
-    meta_handler::{into_response, PageData},
-    u32_to_ivec, u8_slice_to_u32,
+    Claim, Comment, Inn, Post, SiteConfig, Solo, User, get_ids_by_prefix, get_one, incr_id,
+    meta_handler::{PageData, into_response},
+    u8_slice_to_u32, u32_to_ivec,
     user::{InnRole, Role},
-    Claim, Comment, Inn, Post, SiteConfig, Solo, User,
 };
-use crate::{controller::filters, error::AppError, DB};
+use crate::{DB, controller::filters, error::AppError};
+use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
-use axum_extra::{headers::Cookie, TypedHeader};
+use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
-use rinja::Template;
 use serde::Deserialize;
 use sled::{Db, IVec};
 use snailquote::unescape;

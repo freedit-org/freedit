@@ -1,27 +1,27 @@
 use super::{
+    Claim, SiteConfig, Solo, SoloType, User,
     db_utils::{
-        extract_element, get_count_by_prefix, get_id_by_name, get_ids_by_tag, get_range, set_one,
-        IterType,
+        IterType, extract_element, get_count_by_prefix, get_id_by_name, get_ids_by_tag, get_range,
+        set_one,
     },
     fmt::{md2html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, ivec_to_u32,
-    meta_handler::{get_referer, into_response, PageData, ParamsPage, ValidatedForm},
-    notification::{add_notification, mark_read, NtType},
-    u32_to_ivec, u8_slice_to_u32,
+    meta_handler::{PageData, ParamsPage, ValidatedForm, get_referer, into_response},
+    notification::{NtType, add_notification, mark_read},
+    u8_slice_to_u32, u32_to_ivec,
     user::Role,
-    Claim, SiteConfig, Solo, SoloType, User,
 };
-use crate::{controller::filters, error::AppError, DB};
+use crate::{DB, controller::filters, error::AppError};
+use askama::Template;
 use axum::{
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
 };
 use axum_extra::{
-    headers::{Cookie, Referer},
     TypedHeader,
+    headers::{Cookie, Referer},
 };
 use jiff::Timestamp;
-use rinja::Template;
 use serde::Deserialize;
 use sled::Db;
 use tracing::warn;

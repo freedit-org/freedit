@@ -1,20 +1,20 @@
+use askama::Template;
 use axum::{
+    Form,
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
-    Form,
 };
-use axum_extra::{headers::Cookie, TypedHeader};
-use rinja::Template;
+use axum_extra::{TypedHeader, headers::Cookie};
 use serde::Deserialize;
 
 use crate::controller::filters;
-use crate::{controller::fmt::clean_html, error::AppError, DB};
+use crate::{DB, controller::fmt::clean_html, error::AppError};
 
 use super::{
-    db_utils::{get_one, incr_id, u32_to_ivec, u8_slice_to_u32},
-    meta_handler::{into_response, PageData},
-    notification::{add_notification, mark_read, NtType},
     Claim, SiteConfig, User,
+    db_utils::{get_one, incr_id, u8_slice_to_u32, u32_to_ivec},
+    meta_handler::{PageData, into_response},
+    notification::{NtType, add_notification, mark_read},
 };
 
 /// Page data: `message.html`

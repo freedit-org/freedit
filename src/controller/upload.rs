@@ -1,28 +1,28 @@
 use super::{
-    db_utils::{u8_slice_to_u32, IterType},
+    Claim, SiteConfig, User,
+    db_utils::{IterType, u8_slice_to_u32},
     incr_id,
     inn::ParamsTag,
-    meta_handler::{get_referer, into_response, PageData},
-    notification::{add_notification, NtType},
+    meta_handler::{PageData, get_referer, into_response},
+    notification::{NtType, add_notification},
     u32_to_ivec,
     user::{InnRole, Role},
-    Claim, SiteConfig, User,
 };
-use crate::{config::CONFIG, controller::filters, error::AppError, DB};
+use crate::{DB, config::CONFIG, controller::filters, error::AppError};
 use axum::{
     extract::{Multipart, Path, Query},
     response::{IntoResponse, Redirect},
 };
 use axum_extra::{
-    headers::{Cookie, Referer},
     TypedHeader,
+    headers::{Cookie, Referer},
 };
 use data_encoding::HEXLOWER;
-use image::{imageops::FilterType, ImageFormat};
+use image::{ImageFormat, imageops::FilterType};
 use img_parts::{DynImage, ImageEXIF};
 use mozjpeg::{ColorSpace, Compress, ScanMode};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
-use rinja::Template;
+use askama::Template;
 use serde::Deserialize;
 use sled::Batch;
 use tokio::fs::{self, remove_file};

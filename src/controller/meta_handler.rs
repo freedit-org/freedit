@@ -2,10 +2,11 @@ use std::sync::LazyLock;
 
 use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
 use crate::{controller::filters, error::AppError, DB};
+use askama::Template;
 use axum::{
     extract::{rejection::FormRejection, FromRequest, Request},
     http::{HeaderMap, HeaderValue, Uri},
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
     Form,
 };
 use axum_extra::{
@@ -13,7 +14,6 @@ use axum_extra::{
     TypedHeader,
 };
 use http::{HeaderName, StatusCode};
-use rinja::Template;
 use serde::de::DeserializeOwned;
 use tracing::error;
 use validator::Validate;
@@ -245,22 +245,9 @@ where
 }
 
 /// Render a [`Template`] into a [`Response`], or render an error page.
-pub(crate) fn into_response<T: ?Sized + rinja::Template>(tmpl: &T) -> Response {
-    try_into_response(tmpl)
-        .map_err(|err| axum::response::ErrorResponse::from(err.to_string()))
-        .into_response()
-}
-
-/// Try to render a [`Template`] into a [`Response`].
-pub(crate) fn try_into_response<T: ?Sized + rinja::Template>(
-    tmpl: &T,
-) -> Result<Response, rinja::Error> {
-    let value = tmpl.render()?.into();
-    Response::builder()
-        .header(
-            http::header::CONTENT_TYPE,
-            http::header::HeaderValue::from_static(T::MIME_TYPE),
-        )
-        .body(value)
-        .map_err(|err| rinja::Error::Custom(err.into()))
+pub(crate) fn into_response<T: ?Sized + askama::Template>(tmpl: &T) -> Response {
+    match tmpl.render() {
+        Ok(body) => Html(body).into_response(),
+        Err(e) => e.to_string().into_response(),
+    }
 }

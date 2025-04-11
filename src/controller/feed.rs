@@ -1,32 +1,32 @@
 use super::{
+    Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
     db_utils::{
-        get_ids_by_prefix, get_one, get_range, i64_to_ivec, ivec_to_u32, set_one, u32_to_ivec,
-        u8_slice_to_i64, u8_slice_to_u32,
+        get_ids_by_prefix, get_one, get_range, i64_to_ivec, ivec_to_u32, set_one, u8_slice_to_i64,
+        u8_slice_to_u32, u32_to_ivec,
     },
     fmt::{clean_html, ts_to_date},
     inn::inn_add_index,
-    meta_handler::{get_referer, into_response, PageData, ParamsPage},
-    Claim, Inn, Post, PostContent, PostStatus, SiteConfig, User,
+    meta_handler::{PageData, ParamsPage, get_referer, into_response},
 };
 use crate::{
-    config::CONFIG,
-    controller::{filters, incr_id, Feed, Item},
-    error::AppError,
     DB,
+    config::CONFIG,
+    controller::{Feed, Item, filters, incr_id},
+    error::AppError,
 };
+use askama::Template;
 use axum::{
+    Form,
     extract::{Path, Query},
     response::{IntoResponse, Redirect},
-    Form,
 };
 use axum_extra::{
-    headers::{Cookie, Referer},
     TypedHeader,
+    headers::{Cookie, Referer},
 };
 use cached::proc_macro::cached;
-use jiff::{fmt::rfc2822, Timestamp};
+use jiff::{Timestamp, fmt::rfc2822};
 use reqwest::Client;
-use rinja::Template;
 use serde::Deserialize;
 use sled::Db;
 use std::{collections::HashSet, time::Duration};
@@ -264,7 +264,7 @@ pub(crate) async fn feed(
             .collect();
     }
 
-    if let Some(ref filter) = &params.filter {
+    if let Some(filter) = &params.filter {
         if filter == "star" {
             if active_folder.is_some() {
                 item_ids.retain(|(i, _)| star_ids_set.contains(i));

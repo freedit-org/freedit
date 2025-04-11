@@ -130,10 +130,10 @@ pub(super) mod user;
 mod fmt;
 
 use self::db_utils::{
-    get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u32_to_ivec, u8_slice_to_u32,
+    get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u8_slice_to_u32, u32_to_ivec,
 };
 use self::fmt::md2html;
-use self::tantivy::{ToDoc, FIELDS};
+use self::tantivy::{FIELDS, ToDoc};
 use self::user::Role;
 use crate::error::AppError;
 use ::tantivy::TantivyDocument;
@@ -169,9 +169,16 @@ struct User {
 
 impl std::fmt::Debug for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,
+        write!(
+            f,
             "uid: {}, username: {}, password_hash: ******, recovery_hash is set: {}, created_at: {}, role: {}, url: {}, about: {} }}",
-            self.uid, self.username, self.recovery_hash.is_some(), self.created_at, self.role, self.url, self.about
+            self.uid,
+            self.username,
+            self.recovery_hash.is_some(),
+            self.created_at,
+            self.role,
+            self.url,
+            self.about
         )
     }
 }
@@ -386,7 +393,7 @@ impl ToDoc for Post {
         doc.add_text(FIELDS.id, format!("post{}", self.pid));
         doc.add_text(FIELDS.title, &self.title);
         doc.add_u64(FIELDS.uid, self.uid as u64);
-        doc.add_text(FIELDS.content, &self.content);
+        doc.add_text(FIELDS.content, self.content.to_string());
         doc.add_text(FIELDS.ctype, "post");
         doc
     }
@@ -550,7 +557,7 @@ mod filters {
         i18n
     });
 
-    pub(super) fn l10n(s: &str, lang: &str) -> ::rinja::Result<&'static str> {
+    pub(super) fn l10n(s: &str, lang: &str) -> ::askama::Result<&'static str> {
         if let Some(v) = I18N.get(&(lang, s)) {
             Ok(v)
         } else {
