@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
 use jiff::Timestamp;
-use pulldown_cmark::{html, CodeBlockKind, Event, Options, Tag};
+use pulldown_cmark::{CodeBlockKind, Event, Options, Tag, html};
 use syntect::{highlighting::ThemeSet, html::highlighted_html_for_string, parsing::SyntaxSet};
 
 /// convert a `i64` timestamp to a date [`String`]

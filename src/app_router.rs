@@ -23,11 +23,11 @@ use crate::{
     },
 };
 use axum::{
-    error_handling::HandleErrorLayer, extract::DefaultBodyLimit, handler::Handler,
-    http::StatusCode, routing::get, BoxError, Router,
+    BoxError, Router, error_handling::HandleErrorLayer, extract::DefaultBodyLimit,
+    handler::Handler, http::StatusCode, routing::get,
 };
 use std::time::Duration;
-use tower::{timeout::TimeoutLayer, ServiceBuilder};
+use tower::{ServiceBuilder, timeout::TimeoutLayer};
 use tower_http::{
     compression::CompressionLayer,
     services::ServeDir,

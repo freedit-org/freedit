@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fs::{self, read_to_string, File};
+use std::fs::{self, File, read_to_string};
 use std::io::Write;
 use std::path::Path;
 use std::sync::LazyLock;

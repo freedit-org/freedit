@@ -1,17 +1,17 @@
 use std::sync::LazyLock;
 
-use super::{db_utils::u32_to_ivec, fmt::md2html, Claim, SiteConfig};
-use crate::{controller::filters, error::AppError, DB};
+use super::{Claim, SiteConfig, db_utils::u32_to_ivec, fmt::md2html};
+use crate::{DB, controller::filters, error::AppError};
 use askama::Template;
 use axum::{
-    extract::{rejection::FormRejection, FromRequest, Request},
+    Form,
+    extract::{FromRequest, Request, rejection::FormRejection},
     http::{HeaderMap, HeaderValue, Uri},
     response::{Html, IntoResponse, Redirect, Response},
-    Form,
 };
 use axum_extra::{
-    headers::{Cookie, Referer},
     TypedHeader,
+    headers::{Cookie, Referer},
 };
 use http::{HeaderName, StatusCode};
 use serde::de::DeserializeOwned;

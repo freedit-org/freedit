@@ -4,7 +4,7 @@
 // #![warn(clippy::unwrap_used)]
 
 use freedit::{
-    router, AppError, CONFIG, DB, VERSION, {clear_invalid, cron_feed, Tan},
+    AppError, CONFIG, DB, VERSION, router, {Tan, clear_invalid, cron_feed},
 };
 use jiff::Timestamp;
 use std::{fs, net::SocketAddr, path::PathBuf};
