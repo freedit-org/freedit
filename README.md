@@ -1,7 +1,7 @@
 # freedit
 
 [![CI](https://github.com/freedit-org/freedit/actions/workflows/ci.yml/badge.svg)](https://github.com/freedit-org/freedit/actions/workflows/ci.yml)
-[![release](https://github.com/freedit-org/freedit/actions/workflows/release.yml/badge.svg)](https://github.com/freedit-org/freedit/releases)
+[![Release](https://img.shields.io/github/v/release/freedit-org/freedit.svg?sort=semver)](https://github.com/freedit-org/freedit/releases)
 [![Doc](https://img.shields.io/github/deployments/freedit-org/freedit/github-pages?label=doc)](https://freedit-org.github.io/freedit/freedit/index.html)
 
 The safest and lightest forum, powered by rust.
