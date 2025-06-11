@@ -557,7 +557,11 @@ mod filters {
         i18n
     });
 
-    pub(super) fn l10n(s: &str, lang: &str) -> ::askama::Result<&'static str> {
+    pub(super) fn l10n(
+        s: &str,
+        _: &dyn askama::Values,
+        lang: &str,
+    ) -> ::askama::Result<&'static str> {
         if let Some(v) = I18N.get(&(lang, s)) {
             Ok(v)
         } else {
