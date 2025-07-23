@@ -102,7 +102,23 @@ impl From<atom_syndication::Entry> for SourceItem {
         } else if let Some(summary) = atom.summary {
             summary.value
         } else {
-            String::new()
+            let mut desc = String::new();
+            // for YouTube podcast xml
+            for ext in atom.extensions().values() {
+                for extv in ext.values() {
+                    for m in extv {
+                        let c = m.children();
+                        if let Some(description) = c.get("description") {
+                            if let Some(fd) = description.first() {
+                                if let Some(d) = fd.value() {
+                                    desc = d.to_owned();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            desc
         };
 
         Self {
