@@ -104,7 +104,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
                 return Some(Event::Html(
                     latex2mathml::latex_to_mathml(&c, latex2mathml::DisplayStyle::Inline)
                         .unwrap_or_else(|e| {
-                            format!("Convert math {} failed, error: {}, check with https://osanshouo.github.io/latex2mathml-web/index.html", c, e, )
+                            format!("Convert math {c} failed, error: {e}, check with https://osanshouo.github.io/latex2mathml-web/index.html")
                         })
                         .into(),
                 ));
@@ -113,7 +113,7 @@ impl<'a, I: Iterator<Item = Event<'a>>> Iterator for SyntaxPreprocessor<'a, I> {
                 return Some(Event::Html(
                     latex2mathml::latex_to_mathml(&c, latex2mathml::DisplayStyle::Block)
                         .unwrap_or_else(|e| {
-                            format!("Convert math {} failed, error: {}, check with https://osanshouo.github.io/latex2mathml-web/index.html", c, e, )
+                            format!("Convert math {c} failed, error: {e}, check with https://osanshouo.github.io/latex2mathml-web/index.html")
                         })
                         .into(),
                 ));

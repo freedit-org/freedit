@@ -222,7 +222,7 @@ impl Tan {
         for i in &db.open_tree("items")? {
             let (k, _) = i?;
             let id = u8_slice_to_u32(&k);
-            batch.insert(format!("item{}", id).as_bytes(), &[]);
+            batch.insert(format!("item{id}").as_bytes(), &[]);
         }
 
         tan_tree.apply_batch(batch)?;
@@ -380,7 +380,7 @@ impl OutSearch {
             "item" => {
                 let item: Item = get_one(db, "items", id1).ok()?;
                 Some(Self {
-                    url: format!("/feed/read/{}", id1),
+                    url: format!("/feed/read/{id1}"),
                     title: item.title,
                     date: ts_to_date(item.updated),
                     uid: None,

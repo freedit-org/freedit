@@ -191,7 +191,7 @@ pub(crate) async fn image_delete(
     let target = if let Some(referer) = get_referer(referer) {
         referer
     } else {
-        format!("/gallery/{}", uid)
+        format!("/gallery/{uid}")
     };
     Ok(Redirect::to(&target))
 }

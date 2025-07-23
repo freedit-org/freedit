@@ -49,7 +49,7 @@ pub(crate) async fn message(
         .get(u32_to_ivec(uid))?
         .map(|s| String::from_utf8_lossy(&s).to_string());
 
-    let title = format!("Sending e2ee Message to {}", uid);
+    let title = format!("Sending e2ee Message to {uid}");
     let user: User = get_one(&DB, "users", uid)?;
 
     let page_message = PageMessage {
@@ -93,7 +93,7 @@ pub(crate) async fn message_post(
     let k = [&u32_to_ivec(uid), &u32_to_ivec(mid)].concat();
     DB.open_tree("user_message")?.insert(k, &[])?;
 
-    let redirect = format!("/user/{}", uid);
+    let redirect = format!("/user/{uid}");
     Ok(Redirect::to(&redirect))
 }
 

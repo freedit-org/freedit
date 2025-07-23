@@ -499,7 +499,7 @@ pub(crate) async fn solo_post(
     claim.update_last_write(&DB)?;
 
     if solo_type == SoloType::Public {
-        DB.open_tree("tan")?.insert(format!("solo{}", sid), &[])?;
+        DB.open_tree("tan")?.insert(format!("solo{sid}"), &[])?;
     }
 
     let target = if input.reply_to > 0 {
@@ -584,7 +584,7 @@ pub(crate) async fn solo_delete(
     let k = [&u32_to_ivec(solo.uid), &sid_ivec].concat();
     DB.open_tree("user_solos")?.remove(k)?;
 
-    DB.open_tree("tan")?.remove(format!("solo{}", sid))?;
+    DB.open_tree("tan")?.remove(format!("solo{sid}"))?;
 
     if solo.uid != claim.uid {
         add_notification(&DB, solo.uid, NtType::SoloDelete, claim.uid, solo.sid)?;

@@ -103,32 +103,32 @@ pub(crate) async fn admin_view(
                 "users" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "solos" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "inns" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Inn, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "posts" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Post, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "post_comments" => {
                     let pid = u8_slice_to_u32(&k[0..4]);
                     let cid = u8_slice_to_u32(&k[4..8]);
                     let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("pid: {pid}, cid: {cid}, comment: {one_fmt}",));
                 }
                 "user_comments" => {
@@ -257,7 +257,7 @@ pub(crate) async fn admin_view(
                 "feeds" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Feed, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "feed_errs" | "pub_keys" => {
@@ -273,7 +273,7 @@ pub(crate) async fn admin_view(
                 "items" => {
                     let key = ivec_to_u32(&k);
                     let (one, _): (Item, usize) = bincode::decode_from_slice(&v, standard())?;
-                    let one_fmt = unescape(&format!("{:?}", one)).unwrap();
+                    let one_fmt = unescape(&format!("{one:?}")).unwrap();
                     ones.push(format!("{key}: {one_fmt}"));
                 }
                 "home_pages" => {
@@ -287,7 +287,7 @@ pub(crate) async fn admin_view(
                 }
                 "tan" => {
                     let id = String::from_utf8_lossy(&k);
-                    ones.push(format!("{id}: {:?}", v));
+                    ones.push(format!("{id}: {v:?}"));
                 }
                 "messages" => {
                     let mid = u8_slice_to_u32(&k);

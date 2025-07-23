@@ -234,7 +234,7 @@ impl From<u8> for Role {
 
 impl Display for Role {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -277,7 +277,7 @@ impl From<u8> for InnRole {
 
 impl Display for InnRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -943,7 +943,7 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
 
 /// Captcha with digits
 ///
-/// From: https://github.com/daniel-e/captcha/blob/master/examples/captcha.rs
+/// From: <https://github.com/daniel-e/captcha/blob/master/examples/captcha.rs>
 fn captcha_digits() -> Captcha {
     let mut c = Captcha::new();
     c.set_chars(&['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']);

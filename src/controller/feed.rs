@@ -662,7 +662,7 @@ pub(super) async fn update(
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     set_one(db, "items", item_id, &item)?;
-                    tan_tree.insert(format!("item{}", item_id), &[])?;
+                    tan_tree.insert(format!("item{item_id}"), &[])?;
                     item_ids.push((item_id, source_item.updated));
                 };
             }
@@ -692,7 +692,7 @@ pub(super) async fn update(
                         };
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                         set_one(db, "items", item_id, &item)?;
-                        tan_tree.insert(format!("item{}", item_id), &[])?;
+                        tan_tree.insert(format!("item{item_id}"), &[])?;
                         item_ids.push((item_id, source_item.updated));
                     };
                 }

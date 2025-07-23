@@ -330,7 +330,7 @@ pub(super) enum PostStatus {
 
 impl Display for PostStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -566,9 +566,9 @@ mod filters {
             Ok(v)
         } else {
             let Some(en) = I18N.get(&("en", s)) else {
-                panic!("No translation for {} in en", s);
+                panic!("No translation for {s} in en");
             };
-            error!("No translation for {} in {}", s, lang);
+            error!("No translation for {s} in {lang}");
             Ok(en)
         }
     }

@@ -811,7 +811,7 @@ pub(crate) async fn edit_post_post(
     claim.update_last_write(&DB)?;
 
     if inn.is_open_access() {
-        DB.open_tree("tan")?.insert(format!("post{}", pid), &[])?;
+        DB.open_tree("tan")?.insert(format!("post{pid}"), &[])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -1613,11 +1613,10 @@ pub(crate) async fn post(
                             <p>Warning</p>
                         </div>
                         <div class="message-body">
-                            This post was published <b>{} days ago</b>. The information described in this article may have changed.
+                            This post was published <b>{diff} days ago</b>. The information described in this article may have changed.
                         </div>
                     </article>
-                    "#,
-                    diff
+                    "#
                 );
                 content.push_str(&post.content.to_html(&DB)?);
                 content
@@ -1879,7 +1878,7 @@ pub(crate) async fn comment_post(
 
     if inn.is_open_access() {
         DB.open_tree("tan")?
-            .insert(format!("comt{}/{}", pid, cid), &[])?;
+            .insert(format!("comt{pid}/{cid}"), &[])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -1948,8 +1947,7 @@ pub(crate) async fn comment_delete(
 
     inn_add_index(&DB, iid, pid, timestamp as u32, inn_type)?;
 
-    DB.open_tree("tan")?
-        .remove(format!("comt{}/{}", pid, cid))?;
+    DB.open_tree("tan")?.remove(format!("comt{pid}/{cid}"))?;
 
     let target = format!("/post/{pid}/{cid}");
     Ok(Redirect::to(&target))
