@@ -11,7 +11,7 @@ use super::{
 use crate::{
     DB,
     config::CONFIG,
-    controller::{Feed, Item, filters, incr_id},
+    controller::{Feed, Item, Podcast, filters, incr_id},
     error::AppError,
 };
 use askama::Template;
@@ -34,7 +34,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     sync::LazyLock,
 };
-use tracing::{error, warn};
+use tracing::{error, info, warn};
 use validator::Validate;
 
 struct SourceItem {
@@ -42,6 +42,7 @@ struct SourceItem {
     title: String,
     updated: i64,
     content: String,
+    podcast: Option<Podcast>,
 }
 
 static P: rfc2822::DateTimeParser = rfc2822::DateTimeParser::new().relaxed_weekday(true);
@@ -80,11 +81,28 @@ impl TryFrom<rss::Item> for SourceItem {
             content.clone()
         };
 
+        let mut podcast: Option<Podcast> = None;
+        if let Some(closure) = rss.enclosure {
+            let enclosure_url = closure.url;
+            let enclosure_length = closure.length;
+            let enclosure_mime_type = closure.mime_type;
+            let pod = Podcast {
+                enclosure_url,
+                enclosure_length,
+                enclosure_mime_type,
+                srt: false,
+                audio_downloaded: false,
+                exts: HashMap::new(),
+            };
+            podcast = Some(pod);
+        }
+
         Ok(Self {
             link,
             title,
             updated,
             content,
+            podcast,
         })
     }
 }
@@ -126,6 +144,7 @@ impl From<atom_syndication::Entry> for SourceItem {
             title: atom.title.to_string(),
             updated,
             content,
+            podcast: None,
         }
     }
 }
@@ -389,6 +408,7 @@ struct OutItemRead {
     updated: String,
     content: String,
     is_starred: bool,
+    podcast: Option<Podcast>,
 }
 
 /// Page data: `feed.html`
@@ -431,6 +451,7 @@ pub(crate) async fn feed_read(
         updated: ts_to_date(item.updated),
         content: item.content,
         is_starred,
+        podcast: item.podcast,
     };
     if let Some(ref claim) = claim {
         let k = [&u32_to_ivec(claim.uid), &u32_to_ivec(item_id)].concat();
@@ -510,7 +531,7 @@ static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_P
 static CLIENT: LazyLock<Client> = LazyLock::new(|| {
     let mut client = reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
-        .timeout(Duration::from_secs(6));
+        .timeout(Duration::from_secs(60));
     if !CONFIG.proxy.is_empty() {
         let proxy = reqwest::Proxy::all(&CONFIG.proxy).unwrap();
         client = client.proxy(proxy);
@@ -660,6 +681,7 @@ pub(super) async fn update(
                         feed_title: clean_html(&rss.title),
                         updated: source_item.updated,
                         content: clean_html(&content),
+                        podcast: source_item.podcast,
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     set_one(db, "items", item_id, &item)?;
@@ -684,12 +706,14 @@ pub(super) async fn update(
                         item_ids.push((item_id, item.updated));
                     } else {
                         item_id = incr_id(db, "items_count")?;
+                        let content = source_item.content.replace("\n", "</br>");
                         let item = Item {
                             link: source_item.link,
                             title: clean_html(&source_item.title),
                             feed_title: clean_html(&atom.title),
                             updated: source_item.updated,
-                            content: clean_html(&source_item.content),
+                            content: clean_html(&content),
+                            podcast: source_item.podcast,
                         };
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                         set_one(db, "items", item_id, &item)?;
@@ -754,6 +778,51 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
         let uid = u8_slice_to_u32(&v);
 
         inn_feed_to_post(db, iid, feed_id, uid)?;
+    }
+
+    Ok(())
+}
+
+pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
+    for i in db.open_tree("items")?.iter().rev().take(2000) {
+        let (k, _) = i?;
+        let item_id = u8_slice_to_u32(&k);
+        let mut item: Item = get_one(db, "items", item_id)?;
+        if let Some(podcast) = &item.podcast {
+            if !podcast.audio_downloaded && !podcast.enclosure_url.is_empty() {
+                match CLIENT.get(&podcast.enclosure_url).send().await {
+                    Ok(audio) if audio.status().is_success() => {
+                        let audio_bytes = audio.bytes().await?;
+                        let path = std::path::PathBuf::from(&CONFIG.podcast_path);
+                        let ext = podcast.enclosure_url.split('.').last().unwrap_or("mp3");
+                        let filename = format!("{item_id}.{ext}");
+                        let audio_path = path.join(&filename);
+
+                        std::fs::write(&audio_path, &audio_bytes)?;
+                        item.podcast = Some(Podcast {
+                            enclosure_url: podcast.enclosure_url.clone(),
+                            enclosure_length: podcast.enclosure_length.clone(),
+                            enclosure_mime_type: podcast.enclosure_mime_type.clone(),
+                            srt: false,
+                            audio_downloaded: true,
+                            exts: podcast.exts.clone(),
+                        });
+
+                        set_one(db, "items", item_id, &item)?;
+                        info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
+                    }
+                    Err(e) => {
+                        warn!("failed to download audio for item {item_id}, error: {e}");
+                    }
+                    Ok(resp) => {
+                        warn!(
+                            "failed to download audio for item {item_id}, status: {}",
+                            resp.status()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     Ok(())

@@ -2,7 +2,9 @@
     max-width: 350px;
 }
 
-nav, section, footer {
+nav,
+section,
+footer {
     max-width: 1100px;
     margin: 0 auto;
 }
@@ -11,9 +13,13 @@ nav {
     height: 48px;
 }
 
-@media screen and (max-device-width: 769px){
-    main { padding-right: 0!important;}
-    aside { padding-left: 0!important;}
+@media screen and (max-device-width: 769px) {
+    main {
+        padding-right: 0 !important;
+    }
+    aside {
+        padding-left: 0 !important;
+    }
 }
 
 #notification-indicator {
@@ -33,7 +39,7 @@ nav {
 }
 
 .divider {
-    margin: 1.5rem 0 0
+    margin: 1.5rem 0 0;
 }
 
 .section {
@@ -44,11 +50,11 @@ nav {
 }
 
 .tabs.is-toggle a {
-    background-color: white
+    background-color: white;
 }
 
-.pagination>a {
-    background-color: white
+.pagination > a {
+    background-color: white;
 }
 
 .pagination {
@@ -97,7 +103,7 @@ nav {
 }
 
 .popup .close:hover {
-    color: #06D85F;
+    color: #06d85f;
 }
 
 pre {
@@ -109,7 +115,7 @@ pre {
 
 p {
     word-wrap: break-word;
-    text-align: justify
+    text-align: justify;
 }
 
 details summary {
@@ -120,18 +126,18 @@ details summary {
     display: inline-block;
     line-height: 1;
     font-weight: 700;
-    font-size: .7rem;
+    font-size: 0.7rem;
     background: #e8e8e8;
-    padding: .5833em .833em .5833em .5em;
-    border-radius: .28571429rem;
+    padding: 0.5833em 0.833em 0.5833em 0.5em;
+    border-radius: 0.28571429rem;
 }
 
 .replytag img {
     height: 2.1666em;
     display: inline-block;
     vertical-align: top;
-    margin: -.5833em .5em -.5833em -.5em;
-    border-radius: .28571429rem 0 0 .28571429rem;
+    margin: -0.5833em 0.5em -0.5833em -0.5em;
+    border-radius: 0.28571429rem 0 0 0.28571429rem;
 }
 
 .replytag a {
@@ -139,3 +145,30 @@ details summary {
     color: rgba(62, 212, 70, 0.6);
 }
 
+#transcript-wrapper {
+    max-height: 400px;
+    margin: 0 auto;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    text-align: justify;
+}
+
+#transcript {
+    line-height: 1.8;
+    font-size: 1.2rem;
+}
+
+.audio-player {
+    position: sticky;
+    top: 0;
+    padding: 10px;
+    z-index: 100;
+}
+
+audio {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    box-sizing: border-box;
+}

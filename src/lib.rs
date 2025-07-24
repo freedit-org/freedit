@@ -3,7 +3,7 @@
 pub use app_router::router;
 pub use config::CONFIG;
 pub use controller::db_utils::{clear_invalid, get_one, ivec_to_u32, set_one, u8_slice_to_u32};
-pub use controller::{feed::cron_feed, tantivy::Tan};
+pub use controller::{feed::cron_download_audio, feed::cron_feed, tantivy::Tan};
 pub use error::AppError;
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

@@ -4,7 +4,7 @@
 // #![warn(clippy::unwrap_used)]
 
 use freedit::{
-    AppError, CONFIG, DB, VERSION, router, {Tan, clear_invalid, cron_feed},
+    AppError, CONFIG, DB, VERSION, router, {Tan, clear_invalid, cron_download_audio, cron_feed},
 };
 use jiff::Timestamp;
 use std::{fs, net::SocketAddr, path::PathBuf};
@@ -46,6 +46,9 @@ async fn main() -> Result<(), AppError> {
                 error!(%e);
             }
             if let Err(e) = clear_invalid(&DB, "user_stats").await {
+                error!(%e);
+            }
+            if let Err(e) = cron_download_audio(&DB).await {
                 error!(%e);
             }
             sleep_seconds(3600 * 4).await;

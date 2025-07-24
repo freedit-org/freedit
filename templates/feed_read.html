@@ -1,13 +1,13 @@
-{% extends "layout.html" %} 
+{% extends "layout.html" %}
 
 {% block csp %}
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';
     img-src 'self' *.freedit.eu
     {% if allow_img %}
-         data: https:; 
+         data: https:;
     {% endif %}
     script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
-    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'self'; manifest-src 'none'; worker-src 'none';">
 {% endblock %}
 
 {% block tabs %}
@@ -20,7 +20,7 @@
     <div class="media-content">
         <div class="content">
             <p class="title">{{item.title|truncate(100)}}</p>
-            <p>📅 {{item.updated}} &nbsp;&nbsp; 
+            <p>📅 {{item.updated}} &nbsp;&nbsp;
                 ⚓ {{item.feed_title}} &nbsp;&nbsp;
                 <a href="{{item.link}}">🌐 {{ "source"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
                 <a href="/feed/read/{{item.item_id}}?allow_img=true">🖼️ {{ "load_image"|l10n(page_data.lang) }}</a>
@@ -33,8 +33,35 @@
         </a>
     </div>
 </div>
+
 <div class="box content">
+    {% match item.podcast %} {% when Some(val) %}
+        {% if val.audio_downloaded %}
+            <div id="transcript-wrapper">
+                <div id="transcript">Loading transcript..</div>
+            </div>
+            </br>
+        {% endif %}
+    {% else %} {% endmatch %}
+
     {{item.content}}
 </div>
 
+{% endblock %}
+
+{% block box %}
+    {% match item.podcast %} {% when Some(val) %}
+        {% if val.audio_downloaded %}
+            <div class="box audio-player">
+                <audio
+                    src="/static/podcasts/{{ item.item_id }}.mp3"
+                    id="audio"
+                    controls
+                    data-audio-url="/static/podcasts/{{ item.item_id }}.mp3"
+                    data-srt-url="/static/podcasts/{{ item.item_id }}.srt">
+                </audio>
+            </div>
+            <script src="/static/js/transcript.js"></script>
+        {% endif %}
+    {% else %} {% endmatch %}
 {% endblock %}
