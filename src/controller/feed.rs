@@ -788,25 +788,22 @@ pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
         let (k, _) = i?;
         let item_id = u8_slice_to_u32(&k);
         let mut item: Item = get_one(db, "items", item_id)?;
-        if let Some(podcast) = &item.podcast {
+        if let Some(ref podcast) = item.podcast {
             if !podcast.audio_downloaded && !podcast.enclosure_url.is_empty() {
                 match CLIENT.get(&podcast.enclosure_url).send().await {
                     Ok(audio) if audio.status().is_success() => {
                         let audio_bytes = audio.bytes().await?;
                         let path = std::path::PathBuf::from(&CONFIG.podcast_path);
-                        let ext = podcast.enclosure_url.split('.').last().unwrap_or("mp3");
+                        let ext = podcast
+                            .enclosure_url
+                            .split('.')
+                            .next_back()
+                            .unwrap_or("mp3");
                         let filename = format!("{item_id}.{ext}");
                         let audio_path = path.join(&filename);
 
                         std::fs::write(&audio_path, &audio_bytes)?;
-                        item.podcast = Some(Podcast {
-                            enclosure_url: podcast.enclosure_url.clone(),
-                            enclosure_length: podcast.enclosure_length.clone(),
-                            enclosure_mime_type: podcast.enclosure_mime_type.clone(),
-                            srt: false,
-                            audio_downloaded: true,
-                            exts: podcast.exts.clone(),
-                        });
+                        item.podcast.as_mut().unwrap().audio_downloaded = true;
 
                         set_one(db, "items", item_id, &item)?;
                         info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
