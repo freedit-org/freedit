@@ -142,6 +142,7 @@ use bincode::{Decode, Encode};
 use jiff::{Timestamp, ToSpan};
 use serde::{Deserialize, Serialize};
 use sled::Db;
+use std::collections::HashMap;
 use std::fmt::Display;
 use validator::Validate;
 
@@ -451,6 +452,17 @@ struct Item {
     feed_title: String,
     updated: i64,
     content: String,
+    podcast: Option<Podcast>,
+}
+
+#[derive(Encode, Decode, Debug)]
+struct Podcast {
+    enclosure_url: String,
+    enclosure_length: String,
+    enclosure_mime_type: String,
+    audio_downloaded: bool,
+    srt: bool,
+    exts: HashMap<String, String>,
 }
 
 impl ToDoc for Item {

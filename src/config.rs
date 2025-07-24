@@ -16,6 +16,7 @@ pub struct Config {
     pub(crate) inn_icons_path: String,
     pub(crate) upload_path: String,
     pub(crate) tantivy_path: String,
+    pub(crate) podcast_path: String,
     pub(crate) proxy: String,
 }
 
@@ -40,6 +41,7 @@ impl Config {
         check_path(&config.inn_icons_path);
         check_path(&config.upload_path);
         check_path(&config.tantivy_path);
+        check_path(&config.podcast_path);
 
         config
     }
@@ -54,6 +56,7 @@ impl Default for Config {
             avatars_path: "static/imgs/avatars".into(),
             inn_icons_path: "static/imgs/inn_icons".into(),
             upload_path: "static/imgs/upload".into(),
+            podcast_path: "static/podcasts".into(),
             tantivy_path: "tantivy".into(),
             proxy: "".into(),
         }

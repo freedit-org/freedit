@@ -7,4 +7,5 @@
 config.toml
 /snapshots
 /tantivy
+/static/podcasts
 .DS_Store

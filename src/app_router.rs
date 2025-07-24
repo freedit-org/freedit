@@ -10,7 +10,9 @@ use crate::{
             post_upvote, preview, tag,
         },
         message::{inbox, key, key_post, message, message_post},
-        meta_handler::{encoding_js, encryption_js, favicon, handler_404, home, robots, style},
+        meta_handler::{
+            encoding_js, encryption_js, favicon, handler_404, home, robots, style, transcript_js,
+        },
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
@@ -118,9 +120,11 @@ pub async fn router() -> Router {
         .route("/robots.txt", get(robots))
         .route("/static/js/encryption-helper.js", get(encryption_js))
         .route("/static/js/encoding-helper.js", get(encoding_js))
+        .route("/static/js/transcript.js", get(transcript_js))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
-        .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path));
+        .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path))
+        .nest_service("/static/podcasts", ServeDir::new(&CONFIG.podcast_path));
 
     let app = router_static.merge(router_db);
     app.layer(middleware_stack).fallback(handler_404)
