@@ -53,9 +53,18 @@ function parseSRT(srt) {
       start,
       end,
       word: wordMatch[1],
-      fullText: text.replace(/<\/?.*?>/g, ""),
+      fullText: sanitizeText(text),
     });
   }
+}
+
+function sanitizeText(input) {
+  let previous;
+  do {
+    previous = input;
+    input = input.replace(/<\/?.*?>/g, "");
+  } while (input !== previous);
+  return input;
 }
 
 function renderTranscript() {
