@@ -90,7 +90,6 @@ impl TryFrom<rss::Item> for SourceItem {
                 enclosure_url,
                 enclosure_length,
                 enclosure_mime_type,
-                srt: false,
                 audio_downloaded: false,
                 exts: HashMap::new(),
             };
@@ -784,12 +783,21 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
 }
 
 pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
+    const MAX_FILE_SIZE: u64 = 300 * 1024 * 1024; // 300 MB
     for i in db.open_tree("items")?.iter().rev().take(2000) {
         let (k, _) = i?;
         let item_id = u8_slice_to_u32(&k);
         let mut item: Item = get_one(db, "items", item_id)?;
         if let Some(ref podcast) = item.podcast {
             if !podcast.audio_downloaded && !podcast.enclosure_url.is_empty() {
+                if !podcast.enclosure_length.is_empty() {
+                    if let Ok(size) = podcast.enclosure_length.parse::<u64>() {
+                        if size > MAX_FILE_SIZE {
+                            warn!("Skipping item {item_id}: file too large ({size} bytes)");
+                            continue;
+                        }
+                    }
+                }
                 match CLIENT.get(&podcast.enclosure_url).send().await {
                     Ok(audio) if audio.status().is_success() => {
                         let audio_bytes = audio.bytes().await?;
