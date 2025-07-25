@@ -37,7 +37,7 @@ use tower_http::{
 use tracing::Level;
 
 const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
-static JS_DIR: Dir = include_dir!("static/js");
+static _JS_DIR: Dir = include_dir!("static/js");
 
 pub async fn router() -> Router {
     let middleware_stack = ServiceBuilder::new()
@@ -118,7 +118,7 @@ pub async fn router() -> Router {
         .route("/static/style.css", get(style))
         .route("/favicon.svg", get(favicon))
         .route("/robots.txt", get(robots))
-        .nest_service("/static/js", ServeDir::new(JS_DIR.path()))
+        .nest_service("/static/js", ServeDir::new("static/js"))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
         .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path))
