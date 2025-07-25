@@ -1,11 +1,4 @@
 /target
-/freedit.db*
-/certs
-/static/imgs
-.rustc_info.json
-.rustdoc_fingerprint.json
 config.toml
-/snapshots
-/tantivy
-/static/podcasts
 .DS_Store
+/data

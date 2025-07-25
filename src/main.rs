@@ -93,7 +93,7 @@ fn create_snapshot(db: &sled::Db) {
     info!(%checksum);
 
     let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
-    let mut snapshot_path = PathBuf::from("snapshots");
+    let mut snapshot_path = PathBuf::from(&CONFIG.snapshots_path);
     if !snapshot_path.exists() {
         fs::create_dir_all(&snapshot_path).unwrap();
     }

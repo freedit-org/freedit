@@ -17,6 +17,7 @@ pub struct Config {
     pub(crate) upload_path: String,
     pub(crate) tantivy_path: String,
     pub(crate) podcast_path: String,
+    pub snapshots_path: String,
     pub(crate) proxy: String,
 }
 
@@ -42,6 +43,7 @@ impl Config {
         check_path(&config.upload_path);
         check_path(&config.tantivy_path);
         check_path(&config.podcast_path);
+        check_path(&config.snapshots_path);
 
         config
     }
@@ -50,14 +52,15 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            db: "freedit.db".into(),
+            db: "data/freedit.db".into(),
             addr: "127.0.0.1:3001".into(),
             rebuild_index: None,
-            avatars_path: "static/imgs/avatars".into(),
-            inn_icons_path: "static/imgs/inn_icons".into(),
-            upload_path: "static/imgs/upload".into(),
-            podcast_path: "static/podcasts".into(),
-            tantivy_path: "tantivy".into(),
+            avatars_path: "data/imgs/avatars".into(),
+            inn_icons_path: "data/imgs/inn_icons".into(),
+            upload_path: "data/imgs/upload".into(),
+            podcast_path: "data/podcasts".into(),
+            tantivy_path: "data/tantivy".into(),
+            snapshots_path: "data/snapshots".into(),
             proxy: "".into(),
         }
     }
