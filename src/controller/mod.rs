@@ -14,9 +14,7 @@
 //! | "user_stats"     | `timestamp#uid#type` | N                |
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
-//! | "home_pages"     | `uid`                | `u8`             |
 //! | "tan"            | `ctype#id`           | `&[]`            |
-//! | "lang"           | `uid`                | `lang`           |
 //!
 //! ### notification
 //! | tree            | key                   | value             |
@@ -110,7 +108,6 @@
 //! |-----------------------|------------------|--------------------|
 //! | default               | "messages_count" | N                  |
 //! | "messages"            | `mid`            | `#uid#uid#message` |
-//! | "pub_keys"            | `uid`            | `pub_key`          |
 //! | "user_messages"       | `uid#mid`        | `&[]`              |
 
 pub(super) mod db_utils;
@@ -165,20 +162,28 @@ struct User {
     role: u8,
     url: String,
     about: String,
+    lang: Option<String>,
+    home_page: u8,
+    pub_key: Option<String>,
 }
 
 impl std::fmt::Debug for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "uid: {}, username: {}, password_hash: ******, recovery_hash is set: {}, created_at: {}, role: {}, url: {}, about: {} }}",
+            "uid: {}, username: {}, password_hash: ******, recovery_hash is set: {}, 
+            created_at: {}, role: {}, url: {}, about: {},
+            lang: {}, home_page: {}, pub_key: {}",
             self.uid,
             self.username,
             self.recovery_hash.is_some(),
             self.created_at,
             self.role,
             self.url,
-            self.about
+            self.about,
+            self.lang.as_deref().unwrap_or("N/A"),
+            self.home_page,
+            self.pub_key.as_deref().unwrap_or("N/A")
         )
     }
 }

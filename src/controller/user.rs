@@ -633,11 +633,6 @@ pub(crate) async fn user_setting(
         }
     }
 
-    let home_page = DB
-        .open_tree("home_pages")?
-        .get(u32_to_ivec(claim.uid))?
-        .map_or(0, |hp| hp[0]);
-
     let has_unread = User::has_unread(&DB, claim.uid)?;
     let page_user_setting = PageUserSetting {
         uid: claim.uid,
@@ -646,7 +641,7 @@ pub(crate) async fn user_setting(
         about: user.about,
         url: user.url,
         sessions,
-        home_page,
+        home_page: user.home_page,
     };
 
     Ok(into_response(&page_user_setting))
@@ -768,18 +763,16 @@ pub(crate) async fn user_setting_post(
     user.username = username.to_string();
     user.about = clean_html(&input.about);
     user.url = clean_html(&input.url);
-    DB.open_tree("home_pages")?
-        .insert(u32_to_ivec(user.uid), &[input.home_page])?;
+    user.home_page = input.home_page;
 
-    let lang = match input.lang.as_str() {
+    match input.lang.as_str() {
         "en" | "zh_cn" | "ja" | "fr" => {
             claim.update_lang(&DB, &input.lang)?;
-            &input.lang
+            user.lang = Some(input.lang.clone());
         }
-        _ => "en",
+        _ => {}
     };
 
-    DB.open_tree("lang")?.insert(u32_to_ivec(user.uid), lang)?;
     set_one(&DB, "users", claim.uid, &user)?;
 
     let target = format!("/user/{}", claim.uid);
@@ -1220,10 +1213,6 @@ impl Claim {
         let seconds = expire_seconds(expiry);
         let now = Timestamp::now().as_second();
         let session_id = generate_nanoid_ttl(seconds);
-        let lang = db
-            .open_tree("lang")?
-            .get(u32_to_ivec(user.uid))?
-            .map(|s| String::from_utf8_lossy(&s).to_string());
 
         let claim = Claim {
             uid: user.uid,
@@ -1231,7 +1220,7 @@ impl Claim {
             role: user.role,
             last_write: now,
             session_id: session_id.clone(),
-            lang,
+            lang: user.lang,
         };
 
         set_one_with_key(db, "sessions", &session_id, &claim)?;
