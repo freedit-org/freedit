@@ -461,7 +461,6 @@ struct Podcast {
     enclosure_length: String,
     enclosure_mime_type: String,
     audio_downloaded: bool,
-    srt: bool,
     exts: HashMap<String, String>,
 }
 
