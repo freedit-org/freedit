@@ -196,10 +196,6 @@ pub(crate) async fn admin_view(
                     let id = u8_slice_to_u32(&v);
                     ones.push(format!("name: {name}, id: {id}"));
                 }
-                "inns_private" => {
-                    let id = u8_slice_to_u32(&k);
-                    ones.push(format!("id: {id}"));
-                }
                 "user_solos" => {
                     let uid = u8_slice_to_u32(&k[0..4]);
                     let sid = u8_slice_to_u32(&k[4..8]);

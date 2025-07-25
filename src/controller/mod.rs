@@ -62,7 +62,6 @@
 //! | "user_inns"     | `uid#iid`     | `&[]`               |
 //! | "inn_apply"     | `iid#uid`     | `&[]`               |
 //! | "inn_users"     | `iid#uid`     | `&[1/2/3/4/5/8/10]` |
-//! | "inns_private"  | `iid`         | `&[]`               |
 //! | "drafts"        | `uid`         | [`FormPost`]        |
 //! | "inn_feeds"     | `iid#feed_id` | `uid`               |
 //! | "inn_items"     | `iid#item_id` | `&[]`               |
@@ -316,6 +315,11 @@ impl Inn {
 
     fn is_closed(&self) -> bool {
         InnType::from(self.inn_type) == InnType::Hidden
+            || InnType::from(self.inn_type) == InnType::PrivateHidden
+    }
+
+    fn is_private(&self) -> bool {
+        InnType::from(self.inn_type) == InnType::Private
             || InnType::from(self.inn_type) == InnType::PrivateHidden
     }
 }

@@ -307,10 +307,6 @@ pub(crate) async fn mod_inn_post(
         limit_edit_seconds: input.limit_edit_seconds,
     };
 
-    if InnType::from(inn.inn_type) == InnType::Private {
-        DB.open_tree("inns_private")?.insert(&iid_ivec, &[])?;
-    }
-
     set_one(&DB, "inns", iid, &inn)?;
     inn_names_tree.insert(inn_name_key, iid_ivec)?;
 
@@ -982,10 +978,8 @@ pub(crate) async fn inn(
             if iid == 0 {
                 index = get_pids_all(&DB, joined_inns, &page_params, is_site_admin)?;
             } else {
-                if DB
-                    .open_tree("inns_private")?
-                    .contains_key(u32_to_ivec(iid))?
-                {
+                let inn: Inn = get_one(&DB, "inns", iid)?;
+                if inn.is_private() {
                     if joined_inns.contains(&iid) || is_site_admin {
                         index = get_pids_by_iids(&DB, &[iid], &page_params)?;
                     }
