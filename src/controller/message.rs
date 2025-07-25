@@ -36,10 +36,6 @@ pub(crate) async fn message(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
-    let user: User = get_one(&DB, "users", claim.uid)?;
-    if user.pub_key.is_none() {
-        return Ok(Redirect::to("/key").into_response());
-    }
 
     let rcpt: User = get_one(&DB, "users", uid)?;
     let title = format!("Sending e2ee Message to {}", rcpt.username);
@@ -48,7 +44,7 @@ pub(crate) async fn message(
         receiver_id: uid,
         page_data: PageData::new(&title, &site_config, Some(claim), false),
         pub_key: rcpt.pub_key,
-        receiver_name: user.username,
+        receiver_name: rcpt.username,
     };
 
     Ok(into_response(&page_message))
