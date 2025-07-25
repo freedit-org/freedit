@@ -47,7 +47,7 @@ cd freedit && cargo build -r
 
 * generate local documentation:
 ```bash
-cargo doc --no-deps --open
+cargo doc --no-deps --document-private-items --open
 ```
 
 ## Development

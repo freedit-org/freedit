@@ -673,13 +673,12 @@ pub(super) async fn update(
                     item_ids.push((item_id, item.updated));
                 } else {
                     item_id = incr_id(db, "items_count")?;
-                    let content = source_item.content.replace("\n", "</br>");
                     let item = Item {
                         link: source_item.link,
                         title: clean_html(&source_item.title),
                         feed_title: clean_html(&rss.title),
                         updated: source_item.updated,
-                        content: clean_html(&content),
+                        content: clean_html(&source_item.content),
                         podcast: source_item.podcast,
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
@@ -705,13 +704,12 @@ pub(super) async fn update(
                         item_ids.push((item_id, item.updated));
                     } else {
                         item_id = incr_id(db, "items_count")?;
-                        let content = source_item.content.replace("\n", "</br>");
                         let item = Item {
                             link: source_item.link,
                             title: clean_html(&source_item.title),
                             feed_title: clean_html(&atom.title),
                             updated: source_item.updated,
-                            content: clean_html(&content),
+                            content: clean_html(&source_item.content),
                             podcast: source_item.podcast,
                         };
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;

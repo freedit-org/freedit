@@ -11,7 +11,7 @@
 //! | "usernames"      | `username`           | `uid`            |
 //! | "user_following" | `uid#uid`            | `&[]`            |
 //! | "user_followers" | `uid#uid`            | `&[]`            |
-//! | "user_stats"     | `timestamp_uid_type` | N                |
+//! | "user_stats"     | `timestamp#uid#type` | N                |
 //! | "user_uploads"   | `uid#img_id`         | `image_hash.ext` |
 //! | default          | "imgs_count"         | N                |
 //! | "home_pages"     | `uid`                | `u8`             |
