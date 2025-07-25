@@ -10,9 +10,7 @@ use crate::{
             post_upvote, preview, tag,
         },
         message::{inbox, key, key_post, message, message_post},
-        meta_handler::{
-            encoding_js, encryption_js, favicon, handler_404, home, robots, style, transcript_js,
-        },
+        meta_handler::{favicon, handler_404, home, robots, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
@@ -28,6 +26,7 @@ use axum::{
     BoxError, Router, error_handling::HandleErrorLayer, extract::DefaultBodyLimit,
     handler::Handler, http::StatusCode, routing::get,
 };
+use include_dir::{Dir, include_dir};
 use std::time::Duration;
 use tower::{ServiceBuilder, timeout::TimeoutLayer};
 use tower_http::{
@@ -38,6 +37,7 @@ use tower_http::{
 use tracing::Level;
 
 const UPLOAD_LIMIT: usize = 20 * 1024 * 1024;
+static JS_DIR: Dir = include_dir!("static/js");
 
 pub async fn router() -> Router {
     let middleware_stack = ServiceBuilder::new()
@@ -118,9 +118,7 @@ pub async fn router() -> Router {
         .route("/static/style.css", get(style))
         .route("/favicon.svg", get(favicon))
         .route("/robots.txt", get(robots))
-        .route("/static/js/encryption-helper.js", get(encryption_js))
-        .route("/static/js/encoding-helper.js", get(encoding_js))
-        .route("/static/js/transcript.js", get(transcript_js))
+        .nest_service("/static/js", ServeDir::new(JS_DIR.path()))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
         .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path))

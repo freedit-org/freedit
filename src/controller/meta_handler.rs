@@ -101,7 +101,6 @@ pub(crate) async fn home(
 }
 
 static CSS: LazyLock<String> = LazyLock::new(|| {
-    // TODO: CSS minification
     let mut css = include_str!("../../static/css/bulma.min.css").to_string();
     css.push('\n');
     css.push_str(include_str!("../../static/css/bulma-list.css"));
@@ -140,51 +139,6 @@ pub(crate) async fn favicon() -> (HeaderMap, &'static str) {
     let favicon = include_str!("../../static/favicon.svg");
 
     (headers, favicon)
-}
-
-pub(crate) async fn encryption_js() -> (HeaderMap, &'static str) {
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        HeaderName::from_static("content-type"),
-        HeaderValue::from_static("text/javascript"),
-    );
-    headers.insert(
-        HeaderName::from_static("cache-control"),
-        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
-    );
-    let js = include_str!("../../static/js/encryption-helper.js");
-
-    (headers, js)
-}
-
-pub(crate) async fn encoding_js() -> (HeaderMap, &'static str) {
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        HeaderName::from_static("content-type"),
-        HeaderValue::from_static("text/javascript"),
-    );
-    headers.insert(
-        HeaderName::from_static("cache-control"),
-        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
-    );
-    let js = include_str!("../../static/js/encoding-helper.js");
-
-    (headers, js)
-}
-
-pub(crate) async fn transcript_js() -> (HeaderMap, &'static str) {
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        HeaderName::from_static("content-type"),
-        HeaderValue::from_static("text/javascript"),
-    );
-    headers.insert(
-        HeaderName::from_static("cache-control"),
-        HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
-    );
-    let js = include_str!("../../static/js/transcript.js");
-
-    (headers, js)
 }
 
 pub(crate) async fn robots() -> &'static str {
