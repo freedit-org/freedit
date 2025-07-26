@@ -800,12 +800,7 @@ pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
                     Ok(audio) if audio.status().is_success() => {
                         let audio_bytes = audio.bytes().await?;
                         let path = std::path::PathBuf::from(&CONFIG.podcast_path);
-                        let ext = podcast
-                            .enclosure_url
-                            .split('.')
-                            .next_back()
-                            .unwrap_or("mp3");
-                        let filename = format!("{item_id}.{ext}");
+                        let filename = format!("{item_id}.mp3");
                         let audio_path = path.join(&filename);
 
                         std::fs::write(&audio_path, &audio_bytes)?;
