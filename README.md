@@ -41,6 +41,14 @@ cd freedit && cargo build -r
 ./target/release/freedit
 ```
 
+## FAQ
+
+### How to generate podcast srt file?
+
+OpenAI [whisper](https://github.com/openai/whisper) is used.
+
+* Usage: `whisper ~/podcasts/1.mp3 --word_timestamps True  --highlight_words True -f srt`
+
 ## Documentation
 
 * online doc: <https://freedit-org.github.io/freedit/freedit/index.html>
