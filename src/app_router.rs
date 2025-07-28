@@ -10,7 +10,7 @@ use crate::{
             post_upvote, preview, tag,
         },
         message::{inbox, key, key_post, message, message_post},
-        meta_handler::{favicon, handler_404, home, robots, style},
+        meta_handler::{favicon, handler_404, home, robots, serve_embedded_js, style},
         notification::notification,
         solo::{solo, solo_delete, solo_like, solo_list, solo_post},
         tantivy::search,
@@ -118,7 +118,7 @@ pub async fn router() -> Router {
         .route("/static/style.css", get(style))
         .route("/favicon.svg", get(favicon))
         .route("/robots.txt", get(robots))
-        .nest_service("/static/js", ServeDir::new("static/js"))
+        .route("/static/js/{filename}", get(serve_embedded_js))
         .nest_service("/static/avatars", ServeDir::new(&CONFIG.avatars_path))
         .nest_service("/static/inn_icons", ServeDir::new(&CONFIG.inn_icons_path))
         .nest_service("/static/upload", ServeDir::new(&CONFIG.upload_path))

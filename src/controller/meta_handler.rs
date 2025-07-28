@@ -10,7 +10,7 @@ use crate::{
 use askama::Template;
 use axum::{
     Form,
-    extract::{FromRequest, Request, rejection::FormRejection},
+    extract::{FromRequest, Path, Request, rejection::FormRejection},
     http::{HeaderMap, HeaderValue, Uri},
     response::{Html, IntoResponse, Redirect, Response},
 };
@@ -19,6 +19,7 @@ use axum_extra::{
     headers::{Cookie, Referer},
 };
 use http::{HeaderName, StatusCode};
+use include_dir::{Dir, include_dir};
 use serde::de::DeserializeOwned;
 use tracing::error;
 use validator::Validate;
@@ -139,6 +140,25 @@ pub(crate) async fn favicon() -> (HeaderMap, &'static str) {
     let favicon = include_str!("../../static/favicon.svg");
 
     (headers, favicon)
+}
+
+static STATIC_JS_DIR: Dir = include_dir!("static/js");
+
+pub(crate) async fn serve_embedded_js(Path(filename): Path<String>) -> impl IntoResponse {
+    if let Some(file) = STATIC_JS_DIR.get_file(&filename) {
+        let body = file.contents();
+
+        let mut headers = HeaderMap::new();
+        headers.insert("Content-Type", "application/javascript".parse().unwrap());
+        headers.insert(
+            HeaderName::from_static("cache-control"),
+            HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
+        );
+
+        (headers, body).into_response()
+    } else {
+        (StatusCode::NOT_FOUND, "File not found").into_response()
+    }
 }
 
 pub(crate) async fn robots() -> &'static str {
