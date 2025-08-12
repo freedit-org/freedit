@@ -101,7 +101,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: 'github-pages'
       - name: Deploy to GitHub Pages
