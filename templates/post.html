@@ -2,7 +2,7 @@
 
 {% block csp %}
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
-  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none';
   font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
 {% endblock %}
 
@@ -189,7 +189,7 @@
         <div class="field">
             <label class="label" for="content">New comment</label>
             <div class="control">
-                <textarea class="textarea" name="content" {% if !has_joined %} disabled {% endif %} required maxlength="10000" placeholder="comment, markdown supported" /></textarea>
+                <div id="editor" class="editor-container textarea"></div>
             </div>
         </div>
         <nav class="level is-mobile">
@@ -234,5 +234,9 @@
     <a class="pagination-next" href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor + n}}&is_desc={{is_desc}}">{{ "next"|l10n(page_data.lang) }}</a>
     {% endif %}
 </nav>
+
+{% if has_joined %}
+<script src="/static/js/overtype.min.js"></script>
+{% endif %}
 
 {% endblock %}
