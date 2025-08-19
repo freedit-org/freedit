@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::{str::FromStr, sync::LazyLock};
 
 use super::{Claim, SiteConfig, fmt::md2html};
 use crate::{
@@ -16,9 +16,9 @@ use axum::{
 };
 use axum_extra::{
     TypedHeader,
-    headers::{Cookie, Referer},
+    headers::{ContentType, Cookie, Referer},
 };
-use http::{HeaderName, StatusCode};
+use http::{HeaderName, StatusCode, header};
 use include_dir::{Dir, include_dir};
 use serde::de::DeserializeOwned;
 use tracing::error;
@@ -241,4 +241,20 @@ pub(crate) fn into_response<T: ?Sized + askama::Template>(tmpl: &T) -> Response 
         Ok(body) => Html(body).into_response(),
         Err(e) => e.to_string().into_response(),
     }
+}
+
+/// Render a [`Template`] into a [`Response`] with a specific content type.
+/// If the content type is invalid, it defaults to `text/html`.
+pub(crate) fn into_response_with_content_type<T: ?Sized + askama::Template>(
+    tmpl: &T,
+    content_type: &str,
+) -> Response {
+    let content_type = ContentType::from_str(content_type).unwrap_or_else(|_| ContentType::html());
+    let body = tmpl.render().unwrap_or_else(|e| e.to_string());
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        content_type.to_string().parse().unwrap(),
+    );
+    (headers, body).into_response()
 }

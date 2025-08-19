@@ -25,7 +25,11 @@ use super::{
     notification::{NtType, add_notification, mark_read},
     user::{InnRole, Role},
 };
-use crate::{DB, controller::filters, error::AppError};
+use crate::{
+    DB,
+    controller::{filters, meta_handler::into_response_with_content_type},
+    error::AppError,
+};
 use std::time::Duration;
 
 use askama::{
@@ -1233,7 +1237,10 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
         entries,
     };
 
-    Ok(into_response(&page_atom))
+    Ok(into_response_with_content_type(
+        &page_atom,
+        "application/atom+xml",
+    ))
 }
 
 /// get [OutPostList] from pids
