@@ -12,6 +12,14 @@
         {% match pub_key %}
         {% when Some(key) %}
         <p class="title">Sending e2ee message to <a href="/user/{{receiver_id}}">{{receiver_name}}</a></p>
+                <noscript>
+            <article class="message is-danger">
+                <div class="message-body">
+                    <p>JavaScript is required to send e2ee message.</p>
+                </div>
+            </article>
+            <br>
+        </noscript>
         <article class="message is-info">
             <div class="message-header">
                 <p>Info</p>
