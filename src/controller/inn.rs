@@ -414,10 +414,10 @@ pub(crate) async fn inn_list(
 
     if let Some(topic) = &params.topic {
         for i in get_ids_by_tag(&DB, "topics", topic, Some(&page_params))? {
-            if let Ok(inn) = get_one::<Inn>(&DB, "inns", i) {
-                if !inn.is_closed() {
-                    inns.push(inn);
-                }
+            if let Ok(inn) = get_one::<Inn>(&DB, "inns", i)
+                && !inn.is_closed()
+            {
+                inns.push(inn);
             }
         }
     } else if let Some(claim) = &claim {
@@ -430,10 +430,10 @@ pub(crate) async fn inn_list(
             }
         } else if params.filter.as_deref() == Some("joined") {
             for i in get_ids_by_prefix(&DB, "user_inns", uid_ivec, Some(&page_params))? {
-                if let Ok(inn) = get_one::<Inn>(&DB, "inns", i) {
-                    if !inn.is_closed() {
-                        inns.push(inn);
-                    }
+                if let Ok(inn) = get_one::<Inn>(&DB, "inns", i)
+                    && !inn.is_closed()
+                {
+                    inns.push(inn);
                 }
             }
         } else {
@@ -525,10 +525,10 @@ pub(crate) async fn edit_post(
         let inn: Inn = get_one(&DB, "inns", id)?;
         if !inn.is_closed() {
             let inn_role = InnRole::get(&DB, inn.iid, claim.uid)?;
-            if let Some(role) = inn_role {
-                if role >= InnRole::Intern {
-                    joined.push((inn.inn_name, inn.iid));
-                }
+            if let Some(role) = inn_role
+                && role >= InnRole::Intern
+            {
+                joined.push((inn.inn_name, inn.iid));
             }
         }
     }
@@ -997,12 +997,11 @@ pub(crate) async fn inn(
 
     let out_post_list = get_out_post_list(&DB, &index)?;
     let mut inn_role = 0;
-    if let Some(ref claim) = claim {
-        if iid > 0 {
-            if let Ok(Some(role)) = InnRole::get(&DB, iid, claim.uid) {
-                inn_role = role as u8;
-            }
-        }
+    if let Some(ref claim) = claim
+        && iid > 0
+        && let Ok(Some(role)) = InnRole::get(&DB, iid, claim.uid)
+    {
+        inn_role = role as u8;
     }
 
     let inn_users_count = if iid > 0 {
@@ -1829,16 +1828,15 @@ pub(crate) async fn comment_post(
 
     let reply_to = extract_element(&content, 5, '#');
     let mut reply_to_cid = None;
-    if !reply_to.is_empty() {
-        if let Ok(reply_cid) = reply_to[0].parse::<u32>() {
-            if reply_cid < cid {
-                let reply_link = format!("[{}](/post/{}/{}#{})", reply_to[0], iid, pid, reply_cid);
-                let from = format!("#{reply_cid}");
-                let to = format!("#{reply_link}");
-                content = content.replace(&from, &to);
-                reply_to_cid = Some(reply_cid);
-            }
-        }
+    if !reply_to.is_empty()
+        && let Ok(reply_cid) = reply_to[0].parse::<u32>()
+        && reply_cid < cid
+    {
+        let reply_link = format!("[{}](/post/{}/{}#{})", reply_to[0], iid, pid, reply_cid);
+        let from = format!("#{reply_cid}");
+        let to = format!("#{reply_link}");
+        content = content.replace(&from, &to);
+        reply_to_cid = Some(reply_cid);
     }
 
     let comment = Comment {

@@ -17,10 +17,10 @@ pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
         let time_stamp = k_str
             .split_once('_')
             .and_then(|s| i64::from_str_radix(s.0, 16).ok());
-        if let Some(time_stamp) = time_stamp {
-            if time_stamp < Timestamp::now().as_second() {
-                tree.remove(k)?;
-            }
+        if let Some(time_stamp) = time_stamp
+            && time_stamp < Timestamp::now().as_second()
+        {
+            tree.remove(k)?;
         }
     }
     Ok(())

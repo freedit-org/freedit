@@ -77,17 +77,17 @@ pub(crate) async fn search(
     let search = input.search.trim();
 
     let mut query = search.to_owned();
-    if let Some(ref uid) = input.uid {
-        if !uid.is_empty() {
-            query.push_str(" uid:");
-            query.push_str(uid);
-        };
+    if let Some(ref uid) = input.uid
+        && !uid.is_empty()
+    {
+        query.push_str(" uid:");
+        query.push_str(uid);
     }
-    if let Some(ref ctype) = input.ctype {
-        if ctype != "all" {
-            query.push_str(" ctype:");
-            query.push_str(ctype);
-        }
+    if let Some(ref ctype) = input.ctype
+        && ctype != "all"
+    {
+        query.push_str(" ctype:");
+        query.push_str(ctype);
     };
 
     let mut ids = IndexSet::with_capacity(20);
