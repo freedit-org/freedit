@@ -3,6 +3,7 @@ name = "freedit"
 version = "0.8.3"
 edition = "2024"
 license = "MIT License"
+rust-version = "1.88.0"
 
 [dependencies]
 ammonia = "4.1.1"

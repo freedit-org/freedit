@@ -189,7 +189,19 @@
         <div class="field">
             <label class="label" for="content">New comment</label>
             <div class="control">
-                <div id="editor" class="editor-container textarea"></div>
+                <div id="editor" class="editor-container textarea" hidden></div>
+                <noscript>
+                    <style>
+                        #editor { display: none !important; }
+                    </style>
+                    <textarea class="textarea" name="content" 
+                            {% if !has_joined %} disabled {% endif %} 
+                            required maxlength="10000" 
+                            placeholder="comment, markdown supported"></textarea>
+                    <p class="help">
+                        JavaScript is required for rich editing; falling back to plain textarea.
+                    </p>
+                </noscript>
             </div>
         </div>
         <nav class="level is-mobile">

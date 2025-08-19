@@ -84,7 +84,16 @@
                 <fieldset>
                     <div class="field">
                         <p class="control">
-                            <div id="editor" class="editor-container textarea"></div>
+                            <div id="editor" class="editor-container textarea" hidden></div>
+                            <noscript>
+                                <style>
+                                    #editor { display: none !important; }
+                                </style>
+                                <textarea name="content" class="textarea" required minlength="1" maxlength="1000" placeholder="Markdowm supported"></textarea>
+                                <p class="help">
+                                    JavaScript is required for rich editing; falling back to plain textarea.
+                                </p>
+                            </noscript>
                         </p>
                         <div class="select is-small">
                             <select name="solo_type" title="Who can see">
