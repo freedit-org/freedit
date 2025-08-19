@@ -14,14 +14,15 @@ GitHub: <https://github.com/freedit-org/freedit>
 
 ## Features
 
-* Easy to deploy: one binary to run, using embedded database [sled](https://github.com/spacejam/sled)
-* No javascript at all, for safety maximization. ([Why javascript is evil](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
-* e2ee private message
-* Math and Code highlighting support without JavaScript
-* Markdown support
-* inn: Subgroup like Subreddits
-* solo: Personal space like Twitter
-* Online rss reader
+- **Single-binary deployment** – easy to run with an embedded [sled](https://github.com/spacejam/sled) database.  
+- **Works without JavaScript** – fully functional and secure even with JavaScript disabled. ([Why avoiding JavaScript matters](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))  
+- **End-to-end encrypted private messages** – only sender and recipient can read.  
+- **Math & code highlighting** – rich formatting without JavaScript.  
+- **Markdown support** – write in clean, readable syntax.  
+- **Inn** – group spaces, like Subreddits.  
+- **Solo** – personal microblogging, like Twitter.  
+- **Online RSS reader** – follow and read feeds in one place.  
+- **Podcast support** – subscribe and listen directly through the platform.  
 
 ## Usage
 
