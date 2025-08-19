@@ -2,7 +2,7 @@
 
 {% block csp %}
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
-  img-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; object-src 'none';
+  img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none';
   font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
 {% endblock %}
 
@@ -84,7 +84,7 @@
                 <fieldset>
                     <div class="field">
                         <p class="control">
-                            <textarea name="content" class="textarea" required minlength="1" maxlength="1000" placeholder="Writing is thinking on paper. Write anything down...Now!"></textarea>
+                            <div id="editor" class="editor-container textarea"></div>
                         </p>
                         <div class="select is-small">
                             <select name="solo_type" title="Who can see">
@@ -214,4 +214,6 @@
         {{page_data.site_description}}
     </div>
 </div>
+
+<script src="/static/js/overtype.min.js"></script>
 {% endblock %}

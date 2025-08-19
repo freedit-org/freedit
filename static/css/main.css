@@ -172,3 +172,7 @@ audio {
     display: block;
     box-sizing: border-box;
 }
+
+.editor-container {
+    height: 300px;
+}
