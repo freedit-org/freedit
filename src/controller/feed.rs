@@ -125,12 +125,11 @@ impl From<atom_syndication::Entry> for SourceItem {
                 for extv in ext.values() {
                     for m in extv {
                         let c = m.children();
-                        if let Some(description) = c.get("description") {
-                            if let Some(fd) = description.first() {
-                                if let Some(d) = fd.value() {
-                                    desc = d.to_owned();
-                                }
-                            }
+                        if let Some(description) = c.get("description")
+                            && let Some(fd) = description.first()
+                            && let Some(d) = fd.value()
+                        {
+                            desc = d.to_owned();
                         }
                     }
                 }
@@ -262,19 +261,20 @@ pub(crate) async fn feed(
         let out_feed = OutFeed::new(&DB, feed.feed_id, feed.is_public)?;
         e.push(out_feed);
 
-        if let Some(ref active_folder) = active_folder {
-            if active_folder != &feed.folder && !active_folder.is_empty() {
-                continue;
-            }
+        if let Some(ref active_folder) = active_folder
+            && active_folder != &feed.folder
+            && !active_folder.is_empty()
+        {
+            continue;
         }
 
-        if let Some(active_feed) = params.active_feed {
-            if active_feed != 0 {
-                if active_feed != feed.feed_id {
-                    continue;
-                }
-                active_folder = Some(feed.folder)
+        if let Some(active_feed) = params.active_feed
+            && active_feed != 0
+        {
+            if active_feed != feed.feed_id {
+                continue;
             }
+            active_folder = Some(feed.folder)
         }
 
         feed_ids.push(feed.feed_id);
@@ -786,38 +786,38 @@ pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
         let (k, _) = i?;
         let item_id = u8_slice_to_u32(&k);
         let mut item: Item = get_one(db, "items", item_id)?;
-        if let Some(ref podcast) = item.podcast {
-            if !podcast.audio_downloaded && !podcast.enclosure_url.is_empty() {
-                if !podcast.enclosure_length.is_empty() {
-                    if let Ok(size) = podcast.enclosure_length.parse::<u64>() {
-                        if size > MAX_FILE_SIZE {
-                            warn!("Skipping item {item_id}: file too large ({size} bytes)");
-                            continue;
-                        }
-                    }
+        if let Some(ref podcast) = item.podcast
+            && !podcast.audio_downloaded
+            && !podcast.enclosure_url.is_empty()
+        {
+            if !podcast.enclosure_length.is_empty()
+                && let Ok(size) = podcast.enclosure_length.parse::<u64>()
+                && size > MAX_FILE_SIZE
+            {
+                warn!("Skipping item {item_id}: file too large ({size} bytes)");
+                continue;
+            }
+            match CLIENT.get(&podcast.enclosure_url).send().await {
+                Ok(audio) if audio.status().is_success() => {
+                    let audio_bytes = audio.bytes().await?;
+                    let path = std::path::PathBuf::from(&CONFIG.podcast_path);
+                    let filename = format!("{item_id}.mp3");
+                    let audio_path = path.join(&filename);
+
+                    std::fs::write(&audio_path, &audio_bytes)?;
+                    item.podcast.as_mut().unwrap().audio_downloaded = true;
+
+                    set_one(db, "items", item_id, &item)?;
+                    info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
                 }
-                match CLIENT.get(&podcast.enclosure_url).send().await {
-                    Ok(audio) if audio.status().is_success() => {
-                        let audio_bytes = audio.bytes().await?;
-                        let path = std::path::PathBuf::from(&CONFIG.podcast_path);
-                        let filename = format!("{item_id}.mp3");
-                        let audio_path = path.join(&filename);
-
-                        std::fs::write(&audio_path, &audio_bytes)?;
-                        item.podcast.as_mut().unwrap().audio_downloaded = true;
-
-                        set_one(db, "items", item_id, &item)?;
-                        info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
-                    }
-                    Err(e) => {
-                        warn!("failed to download audio for item {item_id}, error: {e}");
-                    }
-                    Ok(resp) => {
-                        warn!(
-                            "failed to download audio for item {item_id}, status: {}",
-                            resp.status()
-                        );
-                    }
+                Err(e) => {
+                    warn!("failed to download audio for item {item_id}, error: {e}");
+                }
+                Ok(resp) => {
+                    warn!(
+                        "failed to download audio for item {item_id}, status: {}",
+                        resp.status()
+                    );
                 }
             }
         }

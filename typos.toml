@@ -1,2 +1,2 @@
 [files]
-extend-exclude = ["i18n/*.toml","static/js/*.js"]
+extend-exclude = ["i18n/*.toml","static/js/*.min.js"]

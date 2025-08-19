@@ -705,14 +705,14 @@ pub(crate) async fn reset_post(
     };
 
     let mut user: User = get_one(&DB, "users", uid)?;
-    if let Some(ref recovery_hash) = user.recovery_hash {
-        if check_password(&input.recovery_code, recovery_hash) {
-            user.password_hash = generate_password_hash(&input.password);
-            set_one(&DB, "users", uid, &user)?;
+    if let Some(ref recovery_hash) = user.recovery_hash
+        && check_password(&input.recovery_code, recovery_hash)
+    {
+        user.password_hash = generate_password_hash(&input.password);
+        set_one(&DB, "users", uid, &user)?;
 
-            return Ok(Redirect::to("/signin").into_response());
-        };
-    }
+        return Ok(Redirect::to("/signin").into_response());
+    };
 
     Err(AppError::NotFound)
 }
@@ -749,10 +749,10 @@ pub(crate) async fn user_setting_post(
     let username_key = username.replace(' ', "_").to_lowercase();
 
     let username_tree = DB.open_tree("usernames")?;
-    if let Some(v) = username_tree.get(&username_key)? {
-        if ivec_to_u32(&v) != claim.uid {
-            return Err(AppError::NameExists);
-        }
+    if let Some(v) = username_tree.get(&username_key)?
+        && ivec_to_u32(&v) != claim.uid
+    {
+        return Err(AppError::NameExists);
     }
 
     if user.username != username {

@@ -184,25 +184,23 @@ pub(crate) async fn solo_list(
 
     match params.filter.as_deref() {
         Some("Following") => {
-            if let Some(ref claim) = claim {
-                if let Ok(uids) =
+            if let Some(ref claim) = claim
+                && let Ok(uids) =
                     get_ids_by_prefix(&DB, "user_following", u32_to_ivec(claim.uid), None)
-                {
-                    index = get_solos_by_uids(&DB, &uids, &followers, current_uid, &page_params)?;
-                };
+            {
+                index = get_solos_by_uids(&DB, &uids, &followers, current_uid, &page_params)?;
             }
         }
         Some("Like") => {
-            if let Some(ref claim) = claim {
-                if let Ok(sids) =
+            if let Some(ref claim) = claim
+                && let Ok(sids) =
                     get_ids_by_prefix(&DB, "user_solos_like", u32_to_ivec(claim.uid), None)
-                {
-                    let (start, end) = get_range(sids.len(), &page_params);
-                    index = sids[start - 1..end].to_vec();
-                    if is_desc {
-                        index.reverse();
-                    }
-                };
+            {
+                let (start, end) = get_range(sids.len(), &page_params);
+                index = sids[start - 1..end].to_vec();
+                if is_desc {
+                    index.reverse();
+                }
             }
         }
         _ => {
@@ -285,14 +283,14 @@ pub(crate) async fn solo(
         }
     }
 
-    if let Some(nid) = params.nid {
-        if let Some(ref claim) = claim {
-            let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
-            let tree = DB.open_tree("notifications")?;
-            for i in tree.scan_prefix(prefix) {
-                let (k, _) = i?;
-                tree.update_and_fetch(k, mark_read)?;
-            }
+    if let Some(nid) = params.nid
+        && let Some(ref claim) = claim
+    {
+        let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
+        let tree = DB.open_tree("notifications")?;
+        for i in tree.scan_prefix(prefix) {
+            let (k, _) = i?;
+            tree.update_and_fetch(k, mark_read)?;
         }
     }
 
