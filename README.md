@@ -14,15 +14,15 @@ GitHub: <https://github.com/freedit-org/freedit>
 
 ## Features
 
-- **Single-binary deployment** – easy to run with an embedded [sled](https://github.com/spacejam/sled) database.  
-- **Works without JavaScript** – fully functional and secure even with JavaScript disabled. ([Why avoiding JavaScript matters](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))  
-- **End-to-end encrypted private messages** – only sender and recipient can read.  
-- **Math & code highlighting** – rich formatting without JavaScript.  
-- **Markdown support** – write in clean, readable syntax.  
-- **Inn** – group spaces, like Subreddits.  
-- **Solo** – personal microblogging, like Twitter.  
-- **Online RSS reader** – follow and read feeds in one place.  
-- **Podcast support** – subscribe and listen directly through the platform.  
+- **Single-binary deployment** – easy to run with an embedded [sled](https://github.com/spacejam/sled) database.
+- **Works without JavaScript** – fully functional and secure even with JavaScript disabled. ([Why avoiding JavaScript matters](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
+- **End-to-end encrypted private messages** – only sender and recipient can read.
+- **Math & code highlighting** – rich formatting without JavaScript.
+- **Markdown support** – write in clean, readable syntax.
+- **Inn** – group spaces, like Subreddits.
+- **Solo** – personal microblogging, like Twitter.
+- **Online RSS reader** – follow and read feeds in one place.
+- **Podcast support** – subscribe and listen directly through the platform.
 
 ## Usage
 
@@ -71,3 +71,4 @@ cd freedit && cargo run
 * icon: <https://iconoir.com/>
 * CSS framework: <https://bulma.io/>
 * Rust crates: [Cargo.toml](https://github.com/freedit-org/freedit/blob/main/Cargo.toml)
+* Markdown editor: [overtype](https://github.com/panphora/overtype)
