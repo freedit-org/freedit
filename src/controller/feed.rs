@@ -25,6 +25,7 @@ use axum_extra::{
     headers::{Cookie, Referer},
 };
 use cached::proc_macro::cached;
+use infer::is_audio;
 use jiff::{Timestamp, fmt::rfc2822};
 use reqwest::Client;
 use serde::Deserialize;
@@ -800,15 +801,24 @@ pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
             match CLIENT.get(&podcast.enclosure_url).send().await {
                 Ok(audio) if audio.status().is_success() => {
                     let audio_bytes = audio.bytes().await?;
-                    let path = std::path::PathBuf::from(&CONFIG.podcast_path);
-                    let filename = format!("{item_id}.mp3");
-                    let audio_path = path.join(&filename);
+                    if is_audio(&audio_bytes)
+                        && let Some(file_type) = infer::get(&audio_bytes)
+                    {
+                        let path = std::path::PathBuf::from(&CONFIG.podcast_path);
+                        let filename = format!("{item_id}.{}", file_type.extension());
+                        let audio_path = path.join(&filename);
 
-                    std::fs::write(&audio_path, &audio_bytes)?;
-                    item.podcast.as_mut().unwrap().audio_downloaded = true;
+                        std::fs::write(&audio_path, &audio_bytes)?;
+                        item.podcast.as_mut().unwrap().audio_downloaded = true;
 
-                    set_one(db, "items", item_id, &item)?;
-                    info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
+                        set_one(db, "items", item_id, &item)?;
+                        info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
+                    } else {
+                        item.podcast = None;
+
+                        set_one(db, "items", item_id, &item)?;
+                        warn!("The enclosure_url is not audio file.");
+                    }
                 }
                 Err(e) => {
                     warn!("failed to download audio for item {item_id}, error: {e}");
