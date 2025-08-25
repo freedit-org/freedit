@@ -59,7 +59,7 @@ rust-stemmers = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
 sled = "0.34.7"
 snailquote = "0.3.1"
-stop-words = "0.8.1"
+stop-words = "0.9.0"
 syntect = { version = "5", features = [
     "regex-fancy",
     "default-syntaxes",
