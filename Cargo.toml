@@ -59,14 +59,14 @@ rust-stemmers = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
 sled = "0.34.7"
 snailquote = "0.3.1"
-stop-words = "0.8.1"
+stop-words = "0.9"
 syntect = { version = "5", features = [
     "regex-fancy",
     "default-syntaxes",
     "default-themes",
     "html",
 ], default-features = false }
-tantivy = "0.24.2"
+tantivy = "0.25"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tower = { version = "0.5.2", features = ["timeout"] }
