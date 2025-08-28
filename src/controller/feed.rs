@@ -810,6 +810,7 @@ pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
 
                         std::fs::write(&audio_path, &audio_bytes)?;
                         item.podcast.as_mut().unwrap().audio_downloaded = true;
+                        item.podcast.as_mut().unwrap().enclosure_url = filename;
 
                         set_one(db, "items", item_id, &item)?;
                         info!("downloaded audio for item {item_id}, saved to {audio_path:?}");
