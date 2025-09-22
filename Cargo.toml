@@ -6,7 +6,7 @@ license = "MIT License"
 rust-version = "1.88.0"
 
 [dependencies]
-ammonia = "4.1.1"
+ammonia = "4.1.2"
 askama = "0.14.0"
 atom_syndication = { version = "0.12", default-features = false }
 axum = { version = "0.8.4", features = [
