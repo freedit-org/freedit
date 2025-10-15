@@ -9,7 +9,7 @@ rust-version = "1.88.0"
 ammonia = "4.1.2"
 askama = "0.14.0"
 atom_syndication = { version = "0.12", default-features = false }
-axum = { version = "0.8.4", features = [
+axum = { version = "0.8.6", features = [
     "http1",
     "http2",
     "form",
@@ -17,7 +17,7 @@ axum = { version = "0.8.4", features = [
     "multipart",
     "tokio",
 ], default-features = false }
-axum-extra = { version = "0.10.1", features = ["typed-header"] }
+axum-extra = { version = "0.10.3", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
 cached = { version = "0.56", default-features = false, features = [
