@@ -404,15 +404,15 @@ pub(crate) async fn solo_post(
     let mut content = input.content;
     let mut hashtags = Vec::new();
 
-    let replied_uesr;
+    let replied_user;
     let reply_to;
     if input.reply_to == 0 {
-        replied_uesr = None;
+        replied_user = None;
         reply_to = None;
     } else {
         let mut solo_replied: Solo = get_one(&DB, "solos", input.reply_to)?;
         solo_replied.replies.push(sid);
-        replied_uesr = Some(solo_replied.uid);
+        replied_user = Some(solo_replied.uid);
         set_one(&DB, "solos", input.reply_to, &solo_replied)?;
 
         if solo_replied.uid != uid {
@@ -467,7 +467,7 @@ pub(crate) async fn solo_post(
             content = content.replace(&from, &to);
 
             // notify user to be mentioned in comment
-            if uid != claim.uid && replied_uesr != Some(uid) {
+            if uid != claim.uid && replied_user != Some(uid) {
                 add_notification(&DB, uid, NtType::SoloMention, sid, 0)?;
             }
         }
