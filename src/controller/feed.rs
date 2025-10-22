@@ -783,7 +783,7 @@ pub async fn cron_feed(db: &Db) -> Result<(), AppError> {
 
 pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
     const MAX_FILE_SIZE: u64 = 300 * 1024 * 1024; // 300 MB
-    for i in db.open_tree("items")?.iter().rev().take(2000) {
+    for i in db.open_tree("items")?.iter().rev() {
         let (k, _) = i?;
         let item_id = u8_slice_to_u32(&k);
         let mut item: Item = get_one(db, "items", item_id)?;
