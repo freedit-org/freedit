@@ -798,9 +798,20 @@ pub async fn cron_download_audio(db: &Db) -> Result<(), AppError> {
                 warn!("Skipping item {item_id}: file too large ({size} bytes)");
                 continue;
             }
-            match CLIENT.get(&podcast.enclosure_url).send().await {
+            match CLIENT
+                .get(&podcast.enclosure_url)
+                .timeout(Duration::from_secs(600))
+                .send()
+                .await
+            {
                 Ok(audio) if audio.status().is_success() => {
-                    let audio_bytes = audio.bytes().await?;
+                    let audio_bytes = match audio.bytes().await {
+                        Ok(audio_bytes) => audio_bytes,
+                        Err(e) => {
+                            warn!("failed to download audio for item {item_id}, error: {e}");
+                            continue;
+                        }
+                    };
                     if is_audio(&audio_bytes)
                         && let Some(file_type) = infer::get(&audio_bytes)
                     {
