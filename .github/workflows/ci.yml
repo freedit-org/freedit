@@ -6,8 +6,8 @@ on:
       - main
   pull_request:
     branches:
-      - '**'
-      
+      - "**"
+
 jobs:
   cargo:
     name: Cargo test, clippy and doc
@@ -37,13 +37,13 @@ jobs:
           toolchain: stable
           components: clippy, rustfmt
           target: ${{ matrix.target }}
-      
+
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
 
       - name: Cargo test
         run: cargo test --target ${{ matrix.target }}
-      
+
       - name: Cargo fmt
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: cargo fmt -- --check
@@ -58,7 +58,7 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: cargo clippy --all-targets --all-features --message-format=json > clippy_result.json
         continue-on-error: true
-      
+
       - name: Install clippy-sarif sarif-fmt (require cargo)
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
@@ -83,7 +83,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest'}}
         uses: actions/upload-pages-artifact@v4
         with:
-          path: 'target/doc'
+          path: "target/doc"
 
   Deploy:
     needs: cargo
@@ -103,7 +103,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v6
         with:
-          name: 'github-pages'
+          name: "github-pages"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

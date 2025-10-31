@@ -548,7 +548,7 @@ pub(crate) async fn feed_add_post(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let (feed, item_ids) = update(&form.url, &DB, 20).await?;
+    let (feed, item_ids) = update(&form.url, &DB, 30).await?;
     let feed_links_tree = DB.open_tree("feed_links")?;
     let user_folders_tree = DB.open_tree("user_folders")?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
@@ -617,7 +617,7 @@ pub(crate) async fn feed_update(
         let feed_items_tree = feed_items_tree.clone();
 
         let h = tokio::spawn(async move {
-            match update(&feed.link, &DB, 20).await {
+            match update(&feed.link, &DB, 30).await {
                 Ok((_, item_ids)) => {
                     for (item_id, ts) in item_ids {
                         let k = [&u32_to_ivec(feed_id), &u32_to_ivec(item_id)].concat();
