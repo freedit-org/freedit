@@ -17,7 +17,7 @@ axum = { version = "0.8.6", features = [
     "multipart",
     "tokio",
 ], default-features = false }
-axum-extra = { version = "0.10.3", features = ["typed-header"] }
+axum-extra = { version = "0.12.1", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
 cached = { version = "0.56", default-features = false, features = [
