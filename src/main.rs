@@ -3,9 +3,7 @@
 #![warn(clippy::pedantic)]
 // #![warn(clippy::unwrap_used)]
 
-use freedit::{
-    AppError, CONFIG, DB, router, {Tan, clear_invalid, cron_feed},
-};
+use freedit::{AppError, CONFIG, DB, Tan, clear_invalid, cron_download_audio, cron_feed, router};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::{error, info, warn};
@@ -46,9 +44,9 @@ async fn main() -> Result<(), AppError> {
             if let Err(e) = clear_invalid(&DB, "user_stats").await {
                 error!(%e);
             }
-            // if let Err(e) = cron_download_audio(&DB).await {
-            //     error!(%e);
-            // }
+            if let Err(e) = cron_download_audio(&DB).await {
+                error!(%e);
+            }
             sleep_seconds(3600 * 4).await;
         }
     });
