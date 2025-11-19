@@ -59,7 +59,7 @@ pub(crate) async fn admin_view(
     let is_desc = params.is_desc.unwrap_or(true);
 
     let mut tree_names = Vec::with_capacity(64);
-    for i in DB.list_keyspaces() {
+    for i in DB.list_partitions() {
         let name = String::from_utf8_lossy(i.as_bytes());
         tree_names.push(name.to_string());
     }
@@ -71,7 +71,7 @@ pub(crate) async fn admin_view(
         .unwrap_or_else(|| "__sled__default".to_owned());
 
     if tree_names.contains(&tree_name) {
-        let tree = DB.keyspace(&tree_name, Default::default())?;
+        let tree = DB.open_partition(&tree_name, Default::default())?;
         let iter: Box<dyn Iterator<Item = _>> = if is_desc {
             Box::new(tree.inner().iter().rev())
         } else {
@@ -87,7 +87,7 @@ pub(crate) async fn admin_view(
                 break;
             }
 
-            let (k, v) = i.into_inner()?;
+            let (k, v) = i?;
             match tree_name.as_str() {
                 "__sled__default" => {
                     let key = String::from_utf8_lossy(&k);
@@ -418,9 +418,9 @@ pub(crate) async fn admin_gallery(
     let n = 12;
 
     let mut imgs = Vec::new();
-    let ks = DB.keyspace("user_uploads", Default::default())?;
+    let ks = DB.open_partition("user_uploads", Default::default())?;
     for i in ks.inner().iter() {
-        let (k, v) = i.into_inner()?;
+        let (k, v) = i?;
         let uid = u8_slice_to_u32(&k[0..4]);
         let img_id = u8_slice_to_u32(&k[4..8]);
         let img = String::from_utf8_lossy(&v).to_string();

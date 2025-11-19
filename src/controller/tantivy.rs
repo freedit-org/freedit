@@ -4,7 +4,7 @@ use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
-use fjall::TxDatabase;
+use fjall::TransactionalKeyspace;
 use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};
 use rust_stemmers::{Algorithm, Stemmer};
@@ -169,7 +169,7 @@ impl Tan {
     /// id should be `post123` `comt45/1` `solo123` or `item123`
     ///
     /// It just add doc to tantivy, not commit.
-    pub fn add_doc(&mut self, id: &str, db: &TxDatabase) -> Result<(), AppError> {
+    pub fn add_doc(&mut self, id: &str, db: &TransactionalKeyspace) -> Result<(), AppError> {
         let doc = extract_id(id, db)?;
         self.writer.add_document(doc)?;
 
@@ -181,19 +181,19 @@ impl Tan {
         Ok(())
     }
 
-    pub fn rebuild_index(&mut self, db: &TxDatabase) -> Result<(), AppError> {
-        let tan_tree = db.keyspace("tan", Default::default())?;
+    pub fn rebuild_index(&mut self, db: &TransactionalKeyspace) -> Result<(), AppError> {
+        let tan_tree = db.open_partition("tan", Default::default())?;
         for i in tan_tree.inner().iter() {
-            let k = i.key()?;
+            let (k, _) = i?;
             tan_tree.remove(k)?;
         }
 
         for i in db
-            .keyspace("user_posts", Default::default())?
+            .open_partition("user_posts", Default::default())?
             .inner()
             .iter()
         {
-            let (k, v) = i.into_inner()?;
+            let (k, v) = i?;
             let pid = u8_slice_to_u32(&k[4..8]);
             let inn_type = InnType::from(v[4]);
             if inn_type == InnType::Public || inn_type == InnType::Apply {
@@ -202,11 +202,11 @@ impl Tan {
                 {
                     tan_tree.insert(format!("post{}", post.pid).as_bytes(), &[])?;
                     for i in db
-                        .keyspace("post_comments", Default::default())?
+                        .open_partition("post_comments", Default::default())?
                         .inner()
                         .prefix(&k[4..8])
                     {
-                        let v = i.value()?;
+                        let (_, v) = i?;
                         let (comment, _): (Comment, usize) =
                             bincode::decode_from_slice(&v, standard())?;
                         if !comment.is_hidden {
@@ -220,16 +220,24 @@ impl Tan {
             }
         }
 
-        for i in db.keyspace("solos", Default::default())?.inner().iter() {
-            let v = i.value()?;
+        for i in db
+            .open_partition("solos", Default::default())?
+            .inner()
+            .iter()
+        {
+            let (_, v) = i?;
             let (solo, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
             if SoloType::from(solo.solo_type) == SoloType::Public {
                 tan_tree.insert(format!("solo{}", solo.sid).as_bytes(), &[])?;
             }
         }
 
-        for i in db.keyspace("items", Default::default())?.inner().iter() {
-            let k = i.key()?;
+        for i in db
+            .open_partition("items", Default::default())?
+            .inner()
+            .iter()
+        {
+            let (k, _) = i?;
             let id = u8_slice_to_u32(&k);
             tan_tree.insert(format!("item{id}").as_bytes(), &[])?;
         }
@@ -239,12 +247,12 @@ impl Tan {
         info!("All search index deleted");
 
         for (idx, i) in db
-            .keyspace("tan", Default::default())?
+            .open_partition("tan", Default::default())?
             .inner()
             .iter()
             .enumerate()
         {
-            let k = i.key()?;
+            let (k, _) = i?;
             let id = String::from_utf8_lossy(&k);
             self.add_doc(&id, db)?;
             if idx % 500 == 0 {
@@ -310,7 +318,7 @@ impl Tan {
     }
 }
 
-fn extract_id(id: &str, db: &TxDatabase) -> Result<TantivyDocument, AppError> {
+fn extract_id(id: &str, db: &TransactionalKeyspace) -> Result<TantivyDocument, AppError> {
     let ctype = &id[0..4];
     let ids: Vec<_> = id[4..].split('/').collect();
     let id1: u32 = ids[0].parse().unwrap();
@@ -323,7 +331,7 @@ fn extract_id(id: &str, db: &TxDatabase) -> Result<TantivyDocument, AppError> {
             let id2: u32 = ids[1].parse().unwrap();
             let k = [u32_to_ivec(id1), u32_to_ivec(id2)].concat();
             let v = db
-                .keyspace("post_comments", Default::default())?
+                .open_partition("post_comments", Default::default())?
                 .get(k)?
                 .ok_or(AppError::NotFound)?;
             let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
@@ -342,7 +350,7 @@ fn extract_id(id: &str, db: &TxDatabase) -> Result<TantivyDocument, AppError> {
 }
 
 impl OutSearch {
-    fn get(id: &str, db: &TxDatabase) -> Option<Self> {
+    fn get(id: &str, db: &TransactionalKeyspace) -> Option<Self> {
         let ctype = &id[0..4];
         let ids: Vec<_> = id[4..].split('/').collect();
         let id1: u32 = ids[0].parse().unwrap();
@@ -362,7 +370,7 @@ impl OutSearch {
                 let id2: u32 = ids[1].parse().unwrap();
                 let k = [u32_to_ivec(id1), u32_to_ivec(id2)].concat();
                 let v = db
-                    .keyspace("post_comments", Default::default())
+                    .open_partition("post_comments", Default::default())
                     .ok()?
                     .get(k)
                     .ok()??;
