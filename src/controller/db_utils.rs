@@ -216,7 +216,6 @@ pub(super) fn get_ids_by_prefix(
     } else {
         for i in iter {
             let k = i.value()?;
-            dbg!(&prefix.as_ref());
             let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u32(id));
         }
