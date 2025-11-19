@@ -814,14 +814,15 @@ pub async fn cron_feed(db: &TransactionalKeyspace) -> Result<(), AppError> {
 
 pub async fn cron_download_audio(db: &TransactionalKeyspace) -> Result<(), AppError> {
     const MAX_FILE_SIZE: u64 = 300 * 1024 * 1024; // 300 MB
-    for i in db
-        .open_partition("items", Default::default())?
-        .inner()
-        .iter()
-        .rev()
-    {
+    let ks = db.inner().open_partition("items", Default::default())?;
+    let mut item_ids = vec![];
+    for i in ks.iter().rev() {
         let (k, _) = i?;
         let item_id = u8_slice_to_u32(&k);
+        item_ids.push(item_id);
+    }
+
+    for item_id in item_ids {
         let mut item: Item = get_one(db, "items", item_id)?;
         if let Some(ref podcast) = item.podcast
             && !podcast.audio_downloaded
