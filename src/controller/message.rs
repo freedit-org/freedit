@@ -75,11 +75,13 @@ pub(crate) async fn message_post(
     ]
     .concat();
 
-    DB.open_tree("messages")?.insert(u32_to_ivec(mid), v)?;
+    DB.keyspace("messages", Default::default())?
+        .insert(u32_to_ivec(mid), v)?;
     add_notification(&DB, uid, NtType::Message, claim.uid, mid)?;
 
-    let k = [&u32_to_ivec(uid), &u32_to_ivec(mid)].concat();
-    DB.open_tree("user_message")?.insert(k, &[])?;
+    let k = [u32_to_ivec(uid), u32_to_ivec(mid)].concat();
+    DB.keyspace("user_message", Default::default())?
+        .insert(k, &[])?;
 
     let redirect = format!("/user/{uid}");
     Ok(Redirect::to(&redirect))
@@ -162,7 +164,7 @@ pub(crate) async fn inbox(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let v = DB
-        .open_tree("messages")?
+        .keyspace("messages", Default::default())?
         .get(u32_to_ivec(mid))?
         .ok_or(AppError::NotFound)?;
 
@@ -175,11 +177,11 @@ pub(crate) async fn inbox(
     let message = String::from_utf8_lossy(&v[8..]).to_string();
 
     if let Some(nid) = params.nid {
-        let tree = DB.open_tree("notifications")?;
-        let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
-        for i in tree.scan_prefix(prefix) {
-            let (k, _) = i?;
-            tree.update_and_fetch(k, mark_read)?;
+        let tree = DB.keyspace("notifications", Default::default())?;
+        let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
+        for i in tree.inner().prefix(prefix) {
+            let k = i.key()?;
+            tree.update_fetch(k, mark_read)?;
         }
     }
 

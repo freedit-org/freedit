@@ -3,13 +3,13 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum AppError {
     // 5XX
-    #[error("Sled db error: {}", .0)]
-    SledError(#[from] sled::Error),
+    #[error("Fjall db error: {}", .0)]
+    FjallError(#[from] fjall::Error),
     #[error("Bincode encode error: {}", .0)]
     BincodeEnError(#[from] bincode::error::EncodeError),
     #[error("Bincode decode error: {}", .0)]
     BincodeDeError(#[from] bincode::error::DecodeError),
-    #[error(transparent)]
+    #[error("utf8 error: {}", .0)]
     Utf8Error(#[from] std::str::Utf8Error),
     #[error(transparent)]
     IoError(#[from] std::io::Error),

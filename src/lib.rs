@@ -13,8 +13,8 @@ mod controller;
 mod error;
 
 use data_encoding::HEXLOWER;
+use fjall::TxDatabase;
 use ring::digest::{Context, Digest, SHA256};
-use sled::Db;
 use std::sync::LazyLock;
 use std::{
     env,
@@ -50,14 +50,13 @@ static CURRENT_SHA256: LazyLock<String> = LazyLock::new(|| {
     HEXLOWER.encode(digest.as_ref())
 });
 
-pub static DB: LazyLock<Db> = LazyLock::new(|| {
+pub static DB: LazyLock<TxDatabase> = LazyLock::new(|| {
     info!("sha256: {}", *CURRENT_SHA256);
     info!(VERSION);
     info!(GIT_COMMIT);
 
     let db_url = &CONFIG.db;
-    let config = sled::Config::default().path(db_url);
-    let db = config.open().unwrap();
+    let db = TxDatabase::builder(&db_url).open().unwrap();
     info!(%db_url);
     db
 });

@@ -9,9 +9,10 @@ use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
+use fjall::TxDatabase;
 use serde::Deserialize;
-use sled::{Db, IVec};
 use snailquote::unescape;
+use std::io::Read;
 
 /// notification.html
 #[derive(Template)]
@@ -79,8 +80,15 @@ struct Notification {
 
 /// work for [set_merge_operator](https://docs.rs/sled/latest/sled/struct.Db.html#method.set_merge_operator):
 /// update notification code to read.
-pub(super) fn mark_read(old: Option<&[u8]>) -> Option<Vec<u8>> {
-    old.map(|bytes| [&bytes[0..8], &[1u8]].concat())
+// pub(super) fn mark_read(old: Option<&fjall::Slice>) -> Option<Vec<u8>> {
+//     old.map(|bytes| [&bytes[0..8], &[1u8]].concat())
+// }
+pub(super) fn mark_read<'a>(old: Option<&'a fjall::Slice>) -> Option<fjall::Slice> {
+    old.map(|slice| {
+        let b: Vec<u8> = slice.bytes().flatten().collect();
+        let new_v = [&b[0..8], &[1u8]].concat();
+        fjall::Slice::from(new_v)
+    })
 }
 
 /// `GET /notification`
@@ -98,33 +106,33 @@ pub(crate) async fn notification(
         .ok_or(AppError::NonLogin)?;
 
     let prefix = u32_to_ivec(claim.uid);
-    let tree = DB.open_tree("notifications")?;
+    let tree = DB.keyspace("notifications", Default::default())?;
 
     let anchor = params.anchor.unwrap_or(0);
     let n = site_config.per_page;
     if let Some(op_type) = params.op_type {
         match op_type.as_str() {
             "mark_batch" => {
-                for (idx, i) in tree.scan_prefix(&prefix).enumerate() {
+                for (idx, i) in tree.inner().prefix(&prefix).enumerate() {
                     if idx < anchor {
                         continue;
                     }
                     if idx >= n + anchor {
                         break;
                     }
-                    let (key, _) = i?;
-                    tree.update_and_fetch(key, mark_read)?;
+                    let key = i.key()?;
+                    tree.update_fetch(key, mark_read)?;
                 }
             }
             "delete_batch" => {
-                for (idx, i) in tree.scan_prefix(&prefix).enumerate() {
+                for (idx, i) in tree.inner().prefix(&prefix).enumerate() {
                     if idx < anchor {
                         continue;
                     }
                     if idx >= n + anchor {
                         break;
                     }
-                    let (key, value) = i?;
+                    let (key, value) = i.into_inner()?;
                     // Delete notification if it is read
                     if value[8] == 1 {
                         tree.remove(key)?;
@@ -133,18 +141,18 @@ pub(crate) async fn notification(
             }
             "mark" => {
                 if let Some(nid) = params.nid {
-                    let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
-                    for i in tree.scan_prefix(prefix) {
-                        let (k, _) = i?;
-                        tree.update_and_fetch(k, mark_read)?;
+                    let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
+                    for i in tree.inner().prefix(prefix) {
+                        let k = i.key()?;
+                        tree.update_fetch(k, mark_read)?;
                     }
                 }
             }
             "delete" => {
                 if let Some(nid) = params.nid {
-                    let prefix = [&u32_to_ivec(claim.uid), &u32_to_ivec(nid)].concat();
-                    for i in tree.scan_prefix(prefix) {
-                        let (k, _) = i?;
+                    let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
+                    for i in tree.inner().prefix(prefix) {
+                        let k = i.key()?;
                         tree.remove(k)?;
                     }
                 }
@@ -154,7 +162,7 @@ pub(crate) async fn notification(
     }
 
     let mut notifications = Vec::with_capacity(n);
-    for (idx, i) in tree.scan_prefix(&prefix).rev().enumerate() {
+    for (idx, i) in tree.inner().prefix(&prefix).rev().enumerate() {
         if idx < anchor {
             continue;
         }
@@ -163,14 +171,17 @@ pub(crate) async fn notification(
         }
 
         // uid#nid#nt_type = id1#id2#is_read
-        let (key, value) = i?;
+        let (key, value) = i.into_inner()?;
         let nid = u8_slice_to_u32(&key[4..8]);
         let is_read = value[8] == 1;
 
         let nt_type: NtType = key[8].into();
         match nt_type {
             NtType::PostComment => {
-                if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
+                if let Some(v) = &DB
+                    .keyspace("post_comments", Default::default())?
+                    .get(&value[0..8])?
+                {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                     let post: Post = get_one(&DB, "posts", comment.pid)?;
                     let user: User = get_one(&DB, "users", comment.uid)?;
@@ -187,13 +198,13 @@ pub(crate) async fn notification(
                     };
                     notifications.push(notification);
                 } else {
-                    tree.remove(&key)?;
+                    tree.remove(key)?;
                 };
             }
             NtType::PostMention => {
                 let pid = u8_slice_to_u32(&value[0..4]);
                 let Ok(post) = get_one::<Post>(&DB, "posts", pid) else {
-                    tree.remove(&key)?;
+                    tree.remove(key)?;
                     continue;
                 };
                 let user: User = get_one(&DB, "users", post.uid)?;
@@ -211,7 +222,10 @@ pub(crate) async fn notification(
                 notifications.push(notification);
             }
             NtType::CommentMention => {
-                if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
+                if let Some(v) = &DB
+                    .keyspace("post_comments", Default::default())?
+                    .get(&value[0..8])?
+                {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                     let post: Post = get_one(&DB, "posts", comment.pid)?;
                     let user: User = get_one(&DB, "users", comment.uid)?;
@@ -228,7 +242,7 @@ pub(crate) async fn notification(
                     };
                     notifications.push(notification);
                 } else {
-                    tree.remove(&key)?;
+                    tree.remove(key)?;
                 };
             }
             NtType::PostHide => {
@@ -268,7 +282,10 @@ pub(crate) async fn notification(
                 notifications.push(notification);
             }
             NtType::CommentHide => {
-                if let Some(v) = &DB.open_tree("post_comments")?.get(&value[0..8])? {
+                if let Some(v) = &DB
+                    .keyspace("post_comments", Default::default())?
+                    .get(&value[0..8])?
+                {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
                     let post: Post = get_one(&DB, "posts", comment.pid)?;
                     let content1 = format!(
@@ -284,7 +301,7 @@ pub(crate) async fn notification(
                     };
                     notifications.push(notification);
                 } else {
-                    tree.remove(&key)?;
+                    tree.remove(key)?;
                 };
             }
             NtType::SoloComment => {
@@ -305,7 +322,7 @@ pub(crate) async fn notification(
                     };
                     notifications.push(notification);
                 } else {
-                    tree.remove(&key)?;
+                    tree.remove(key)?;
                 };
             }
             NtType::SoloMention => {
@@ -325,7 +342,7 @@ pub(crate) async fn notification(
                     };
                     notifications.push(notification);
                 } else {
-                    tree.remove(&key)?;
+                    tree.remove(key)?;
                 };
             }
             NtType::SoloDelete => {
@@ -410,8 +427,12 @@ pub(crate) async fn notification(
     let mut inn_notifications = Vec::new();
     let mod_inns = get_ids_by_prefix(&DB, "mod_inns", prefix, None)?;
     for i in mod_inns {
-        for i in DB.open_tree("inn_apply")?.scan_prefix(u32_to_ivec(i)) {
-            let (k, _) = i?;
+        for i in DB
+            .keyspace("inn_apply", Default::default())?
+            .inner()
+            .prefix(u32_to_ivec(i))
+        {
+            let k = i.key()?;
             let inn_notification = InnNotification {
                 iid: u8_slice_to_u32(&k[0..4]),
                 uid: u8_slice_to_u32(&k[4..]),
@@ -443,21 +464,17 @@ struct InnNotification {
 }
 
 pub(super) fn add_notification(
-    db: &Db,
+    db: &TxDatabase,
     uid: u32,
     nt_type: NtType,
     id1: u32,
     id2: u32,
 ) -> Result<(), AppError> {
-    let nid = incr_id(db, "notifications_count")?;
-    let k = [
-        &u32_to_ivec(uid),
-        &u32_to_ivec(nid),
-        &IVec::from(&[nt_type as u8]),
-    ]
-    .concat();
-    let v = [&u32_to_ivec(id1), &u32_to_ivec(id2), &IVec::from(&[0])].concat();
-    db.open_tree("notifications")?.insert(k, v)?;
+    let nid = incr_id(&db, "notifications_count")?;
+    let k = [u32_to_ivec(uid), u32_to_ivec(nid), vec![nt_type as u8]].concat();
+    let v = [u32_to_ivec(id1), u32_to_ivec(id2), vec![0u8]].concat();
+    db.keyspace("notifications", Default::default())?
+        .insert(k, v)?;
 
     Ok(())
 }

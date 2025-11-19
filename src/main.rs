@@ -24,9 +24,8 @@ async fn main() -> Result<(), AppError> {
         .init();
 
     // only create snapshot in release mode
-    #[cfg(not(debug_assertions))]
-    create_snapshot(&DB);
-
+    // #[cfg(not(debug_assertions))]
+    // create_snapshot(&DB);
     tokio::spawn(async move {
         loop {
             if let Err(e) = clear_invalid(&DB, "captcha").await {
@@ -60,20 +59,22 @@ async fn main() -> Result<(), AppError> {
         if CONFIG.rebuild_index == Some(true) {
             tan.rebuild_index(&DB).unwrap();
         }
-        let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
-        while let Some(event) = (&mut subscriber).await {
-            let (k, op_type) = match event {
-                sled::Event::Insert { key, value: _ } => (key, "add"),
-                sled::Event::Remove { key } => (key, "delete"),
-            };
-            let id = String::from_utf8_lossy(&k);
+        // let tan_ks = DB.keyspace("tan", Default::default()).unwrap();
 
-            if op_type == "add" {
-                tan.add_doc(&id, &DB).unwrap();
-            }
+        // let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
+        // while let Some(event) = (&mut subscriber).await {
+        //     let (k, op_type) = match event {
+        //         sled::Event::Insert { key, value: _ } => (key, "add"),
+        //         sled::Event::Remove { key } => (key, "delete"),
+        //     };
+        //     let id = String::from_utf8_lossy(&k);
 
-            tan.commit().unwrap();
-        }
+        //     if op_type == "add" {
+        //         tan.add_doc(&id, &DB).unwrap();
+        //     }
+
+        //     tan.commit().unwrap();
+        // }
     });
 
     let app = router().await;
@@ -86,24 +87,20 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 
-// TODO: TEST with https://github.com/hatoo/oha
-#[allow(dead_code)]
-fn create_snapshot(db: &sled::Db) {
-    let checksum = db.checksum().unwrap();
-    info!(%checksum);
-
-    let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
-    let mut snapshot_path = PathBuf::from(&CONFIG.snapshots_path);
-    if !snapshot_path.exists() {
-        fs::create_dir_all(&snapshot_path).unwrap();
-    }
-    snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
-    let snapshot_cfg = sled::Config::default().path(&snapshot_path);
-    let snapshot = snapshot_cfg.open().unwrap();
-    snapshot.import(db.export());
-    info!("create snapshot: {}", snapshot_path.display());
-    drop(snapshot);
-}
+// #[allow(dead_code)]
+// fn create_snapshot(db: &fjall::Keyspace) {
+//     let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
+//     let mut snapshot_path = PathBuf::from(&CONFIG.snapshots_path);
+//     if !snapshot_path.exists() {
+//         fs::create_dir_all(&snapshot_path).unwrap();
+//     }
+//     snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
+//     let snapshot_cfg = sled::Config::default().path(&snapshot_path);
+//     let snapshot = snapshot_cfg.open().unwrap();
+//     snapshot.import(db.export());
+//     info!("create snapshot: {}", snapshot_path.display());
+//     drop(snapshot);
+// }
 
 async fn sleep_seconds(seconds: u64) {
     tokio::time::sleep(std::time::Duration::from_secs(seconds)).await;
