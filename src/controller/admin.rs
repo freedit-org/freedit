@@ -1,6 +1,6 @@
 use super::{
     Claim, Feed, FormPost, Item, SiteConfig,
-    db_utils::{IterType, get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32},
+    db_utils::{get_range, ivec_to_u32, set_one_with_key, u8_slice_to_u32},
     fmt::{clean_html, ts_to_date},
     inn::ParamsTag,
     meta_handler::{PageData, ParamsPage, ValidatedForm, into_response},
@@ -59,8 +59,8 @@ pub(crate) async fn admin_view(
     let is_desc = params.is_desc.unwrap_or(true);
 
     let mut tree_names = Vec::with_capacity(64);
-    for i in DB.tree_names() {
-        let name = String::from_utf8_lossy(&i);
+    for i in DB.list_keyspaces() {
+        let name = String::from_utf8_lossy(i.as_bytes());
         tree_names.push(name.to_string());
     }
     tree_names.sort_unstable();
@@ -71,11 +71,11 @@ pub(crate) async fn admin_view(
         .unwrap_or_else(|| "__sled__default".to_owned());
 
     if tree_names.contains(&tree_name) {
-        let tree = DB.open_tree(&tree_name)?;
-        let iter = if is_desc {
-            IterType::Rev(tree.iter().rev())
+        let tree = DB.keyspace(&tree_name, Default::default())?;
+        let iter: Box<dyn Iterator<Item = _>> = if is_desc {
+            Box::new(tree.inner().iter().rev())
         } else {
-            IterType::Iter(tree.iter())
+            Box::new(tree.inner().iter())
         };
 
         for (idx, i) in iter.enumerate() {
@@ -87,7 +87,7 @@ pub(crate) async fn admin_view(
                 break;
             }
 
-            let (k, v) = i?;
+            let (k, v) = i.into_inner()?;
             match tree_name.as_str() {
                 "__sled__default" => {
                     let key = String::from_utf8_lossy(&k);
@@ -418,8 +418,9 @@ pub(crate) async fn admin_gallery(
     let n = 12;
 
     let mut imgs = Vec::new();
-    for i in &DB.open_tree("user_uploads")? {
-        let (k, v) = i?;
+    let ks = DB.keyspace("user_uploads", Default::default())?;
+    for i in ks.inner().iter() {
+        let (k, v) = i.into_inner()?;
         let uid = u8_slice_to_u32(&k[0..4]);
         let img_id = u8_slice_to_u32(&k[4..8]);
         let img = String::from_utf8_lossy(&v).to_string();

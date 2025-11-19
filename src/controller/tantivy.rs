@@ -4,11 +4,11 @@ use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
+use fjall::TxDatabase;
 use indexmap::IndexSet;
 use jieba_rs::{Jieba, TokenizeMode};
 use rust_stemmers::{Algorithm, Stemmer};
 use serde::Deserialize;
-use sled::{Batch, Db};
 use tantivy::{
     Index, IndexReader, IndexWriter, TantivyDocument,
     collector::TopDocs,
@@ -169,7 +169,7 @@ impl Tan {
     /// id should be `post123` `comt45/1` `solo123` or `item123`
     ///
     /// It just add doc to tantivy, not commit.
-    pub fn add_doc(&mut self, id: &str, db: &Db) -> Result<(), AppError> {
+    pub fn add_doc(&mut self, id: &str, db: &TxDatabase) -> Result<(), AppError> {
         let doc = extract_id(id, db)?;
         self.writer.add_document(doc)?;
 
@@ -181,58 +181,70 @@ impl Tan {
         Ok(())
     }
 
-    pub fn rebuild_index(&mut self, db: &Db) -> Result<(), AppError> {
-        let tan_tree = &db.open_tree("tan")?;
-        tan_tree.clear()?;
+    pub fn rebuild_index(&mut self, db: &TxDatabase) -> Result<(), AppError> {
+        let tan_tree = db.keyspace("tan", Default::default())?;
+        for i in tan_tree.inner().iter() {
+            let k = i.key()?;
+            tan_tree.remove(k)?;
+        }
 
-        let mut batch = Batch::default();
-
-        for i in &db.open_tree("user_posts")? {
-            let (k, v) = i?;
+        for i in db
+            .keyspace("user_posts", Default::default())?
+            .inner()
+            .iter()
+        {
+            let (k, v) = i.into_inner()?;
             let pid = u8_slice_to_u32(&k[4..8]);
             let inn_type = InnType::from(v[4]);
             if inn_type == InnType::Public || inn_type == InnType::Apply {
                 let post: Post = get_one(db, "posts", pid)?;
                 if post.status != PostStatus::HiddenByMod && post.status != PostStatus::HiddenByUser
                 {
-                    batch.insert(format!("post{}", post.pid).as_bytes(), &[]);
-                    for i in db.open_tree("post_comments")?.scan_prefix(&k[4..8]) {
-                        let (_, v) = i?;
+                    tan_tree.insert(format!("post{}", post.pid).as_bytes(), &[])?;
+                    for i in db
+                        .keyspace("post_comments", Default::default())?
+                        .inner()
+                        .prefix(&k[4..8])
+                    {
+                        let v = i.value()?;
                         let (comment, _): (Comment, usize) =
                             bincode::decode_from_slice(&v, standard())?;
                         if !comment.is_hidden {
-                            batch.insert(
+                            tan_tree.insert(
                                 format!("comt{}/{}", comment.pid, comment.cid).as_bytes(),
                                 &[],
-                            );
+                            )?;
                         }
                     }
                 }
             }
         }
 
-        for i in &db.open_tree("solos")? {
-            let (_, v) = i?;
+        for i in db.keyspace("solos", Default::default())?.inner().iter() {
+            let v = i.value()?;
             let (solo, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
             if SoloType::from(solo.solo_type) == SoloType::Public {
-                batch.insert(format!("solo{}", solo.sid).as_bytes(), &[]);
+                tan_tree.insert(format!("solo{}", solo.sid).as_bytes(), &[])?;
             }
         }
 
-        for i in &db.open_tree("items")? {
-            let (k, _) = i?;
+        for i in db.keyspace("items", Default::default())?.inner().iter() {
+            let k = i.key()?;
             let id = u8_slice_to_u32(&k);
-            batch.insert(format!("item{id}").as_bytes(), &[]);
+            tan_tree.insert(format!("item{id}").as_bytes(), &[])?;
         }
-
-        tan_tree.apply_batch(batch)?;
 
         self.writer.delete_all_documents()?;
         self.commit()?;
         info!("All search index deleted");
 
-        for (idx, i) in db.open_tree("tan")?.into_iter().enumerate() {
-            let (k, _) = i?;
+        for (idx, i) in db
+            .keyspace("tan", Default::default())?
+            .inner()
+            .iter()
+            .enumerate()
+        {
+            let k = i.key()?;
             let id = String::from_utf8_lossy(&k);
             self.add_doc(&id, db)?;
             if idx % 500 == 0 {
@@ -298,7 +310,7 @@ impl Tan {
     }
 }
 
-fn extract_id(id: &str, db: &Db) -> Result<TantivyDocument, AppError> {
+fn extract_id(id: &str, db: &TxDatabase) -> Result<TantivyDocument, AppError> {
     let ctype = &id[0..4];
     let ids: Vec<_> = id[4..].split('/').collect();
     let id1: u32 = ids[0].parse().unwrap();
@@ -309,9 +321,9 @@ fn extract_id(id: &str, db: &Db) -> Result<TantivyDocument, AppError> {
         }
         "comt" => {
             let id2: u32 = ids[1].parse().unwrap();
-            let k = [&u32_to_ivec(id1), &u32_to_ivec(id2)].concat();
+            let k = [u32_to_ivec(id1), u32_to_ivec(id2)].concat();
             let v = db
-                .open_tree("post_comments")?
+                .keyspace("post_comments", Default::default())?
                 .get(k)?
                 .ok_or(AppError::NotFound)?;
             let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
@@ -330,7 +342,7 @@ fn extract_id(id: &str, db: &Db) -> Result<TantivyDocument, AppError> {
 }
 
 impl OutSearch {
-    fn get(id: &str, db: &Db) -> Option<Self> {
+    fn get(id: &str, db: &TxDatabase) -> Option<Self> {
         let ctype = &id[0..4];
         let ids: Vec<_> = id[4..].split('/').collect();
         let id1: u32 = ids[0].parse().unwrap();
@@ -348,8 +360,12 @@ impl OutSearch {
             }
             "comt" => {
                 let id2: u32 = ids[1].parse().unwrap();
-                let k = [&u32_to_ivec(id1), &u32_to_ivec(id2)].concat();
-                let v = db.open_tree("post_comments").ok()?.get(k).ok()??;
+                let k = [u32_to_ivec(id1), u32_to_ivec(id2)].concat();
+                let v = db
+                    .keyspace("post_comments", Default::default())
+                    .ok()?
+                    .get(k)
+                    .ok()??;
                 let (comment, _): (Comment, usize) =
                     bincode::decode_from_slice(&v, standard()).ok()?;
                 let post: Post = get_one(db, "posts", id1).ok()?;

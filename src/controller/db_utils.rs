@@ -1,18 +1,17 @@
 use super::meta_handler::ParamsPage;
 use crate::error::AppError;
 use bincode::{Decode, Encode, config::standard};
+use fjall::{Slice, TxDatabase, TxKeyspace};
 use jiff::Timestamp;
 use nanoid::nanoid;
-use sled::{Db, IVec, Iter, Tree};
-use std::iter::Rev;
 
 /// Cron job: Scan all the keys in the `Tree` regularly and remove the expired ones.
 ///
 /// The keys must be the format of `timestamp_id`.
-pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
-    let tree = db.open_tree(tree_name)?;
-    for i in tree.iter() {
-        let (k, _) = i?;
+pub async fn clear_invalid(db: &TxDatabase, tree_name: &str) -> Result<(), AppError> {
+    let tree = db.keyspace(tree_name, Default::default())?;
+    for item in tree.inner().iter() {
+        let k = item.value()?;
         let k_str = std::str::from_utf8(&k)?;
         let time_stamp = k_str
             .split_once('_')
@@ -34,20 +33,20 @@ pub async fn clear_invalid(db: &Db, tree_name: &str) -> Result<(), AppError> {
 /// // get the user whose uid is 3.
 /// let user:User = get_one(&db, "users", 3)?;
 /// ```
-pub fn get_one<T>(db: &Db, tree_name: &str, id: u32) -> Result<T, AppError>
+pub fn get_one<T>(db: &TxDatabase, tree_name: &str, id: u32) -> Result<T, AppError>
 where
     T: Decode<()>,
 {
     get_one_by_key(db, tree_name, u32_to_ivec(id))
 }
 
-fn get_one_by_key<T, K>(db: &Db, tree_name: &str, key: K) -> Result<T, AppError>
+fn get_one_by_key<T, K>(db: &TxDatabase, tree_name: &str, key: K) -> Result<T, AppError>
 where
     T: Decode<()>,
     K: AsRef<[u8]>,
 {
-    let v = db.open_tree(tree_name)?.get(key)?;
-    if let Some(v) = v {
+    let tree = db.keyspace(tree_name, Default::default())?;
+    if let Some(v) = tree.get(key)? {
         let (one, _): (T, usize) = bincode::decode_from_slice(&v, standard())?;
         Ok(one)
     } else {
@@ -55,7 +54,7 @@ where
     }
 }
 
-pub fn set_one<T>(db: &Db, tree_name: &str, id: u32, one: &T) -> Result<(), AppError>
+pub fn set_one<T>(db: &TxDatabase, tree_name: &str, id: u32, one: &T) -> Result<(), AppError>
 where
     T: Encode,
 {
@@ -63,17 +62,18 @@ where
 }
 
 pub(super) fn set_one_with_key<T, K>(
-    db: &Db,
+    db: &TxDatabase,
     tree_name: &str,
     key: K,
     one: &T,
 ) -> Result<(), AppError>
 where
     T: Encode,
-    K: AsRef<[u8]>,
+    K: Into<fjall::Slice>,
 {
     let encoded = bincode::encode_to_vec(one, standard())?;
-    db.open_tree(tree_name)?.insert(key, encoded)?;
+    let tree = db.keyspace(tree_name, Default::default())?;
+    tree.insert(key, encoded)?;
     Ok(())
 }
 
@@ -87,7 +87,7 @@ where
 /// let inns: Vec<Inn> = get_batch(&db, "default", "inns_count", "inns", &page_params)?;
 /// ```
 pub(super) fn get_batch<T, K>(
-    db: &Db,
+    db: &TxDatabase,
     count_tree: &str,
     key: K,
     tree: &str,
@@ -141,14 +141,16 @@ pub(super) fn get_range(count: usize, page_params: &ParamsPage) -> (usize, usize
 }
 
 /// get the count `N`
-pub(super) fn get_count<K>(db: &Db, count_tree: &str, key: K) -> Result<usize, AppError>
+pub(super) fn get_count<K>(db: &TxDatabase, count_tree: &str, key: K) -> Result<usize, AppError>
 where
     K: AsRef<[u8]>,
 {
     let count = if count_tree == "default" {
-        db.get(key)?
+        let tree = db.keyspace("default", Default::default())?;
+        tree.get(key)?
     } else {
-        db.open_tree(count_tree)?.get(key)?
+        let tree = db.keyspace(count_tree, Default::default())?;
+        tree.get(key)?
     };
     let count = match count {
         Some(count) => ivec_to_u32(&count),
@@ -164,11 +166,16 @@ where
 /// ```ignore
 /// // get the third comment's upvotes of the post 1.
 /// // key: pid#cid#uid
-/// let prefix = [&u32_to_ivec(1), &u32_to_ivec(3)].concat();
+/// let prefix = [u32_to_ivec(1), u32_to_ivec(3)].concat();
 /// let upvotes = get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
 /// ```
-pub(super) fn get_count_by_prefix(db: &Db, tree: &str, prefix: &[u8]) -> Result<usize, AppError> {
-    Ok(db.open_tree(tree)?.scan_prefix(prefix).count())
+pub(super) fn get_count_by_prefix(
+    db: &TxDatabase,
+    tree: &str,
+    prefix: &[u8],
+) -> Result<usize, AppError> {
+    let partition = db.keyspace(tree, Default::default())?;
+    Ok(partition.inner().prefix(prefix).count())
 }
 
 /// get batch ids by scanning the prefix of the key with the format of `prefix#id`
@@ -180,18 +187,20 @@ pub(super) fn get_count_by_prefix(db: &Db, tree: &str, prefix: &[u8]) -> Result<
 /// user_iins = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None).unwrap();
 /// ```
 pub(super) fn get_ids_by_prefix(
-    db: &Db,
+    db: &TxDatabase,
     tree: &str,
     prefix: impl AsRef<[u8]>,
     page_params: Option<&ParamsPage>,
 ) -> Result<Vec<u32>, AppError> {
     let mut res = vec![];
-    let iter = db.open_tree(tree)?.scan_prefix(&prefix);
+    let partition = db.keyspace(tree, Default::default())?;
+    let iter = partition.inner().prefix(&prefix);
+
     if let Some(page_params) = page_params {
-        let iter = if page_params.is_desc {
-            IterType::Rev(iter.rev())
+        let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
+            Box::new(iter.rev())
         } else {
-            IterType::Iter(iter)
+            Box::new(iter)
         };
         for (idx, i) in iter.enumerate() {
             if idx < page_params.anchor {
@@ -200,13 +209,13 @@ pub(super) fn get_ids_by_prefix(
             if idx >= page_params.anchor + page_params.n {
                 break;
             }
-            let (k, _) = i?;
+            let k = i.key()?;
             let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u32(id));
         }
     } else {
         for i in iter {
-            let (k, _) = i?;
+            let k = i.value()?;
             let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u32(id));
         }
@@ -217,18 +226,19 @@ pub(super) fn get_ids_by_prefix(
 
 /// get batch ids by scanning the prefix of the tag with the format of `tag#id`
 pub(super) fn get_ids_by_tag(
-    db: &Db,
+    db: &TxDatabase,
     tree: &str,
     tag: &str,
     page_params: Option<&ParamsPage>,
 ) -> Result<Vec<u32>, AppError> {
     let mut res = vec![];
-    let iter = db.open_tree(tree)?.scan_prefix(tag);
+    let partition = db.keyspace(tree, Default::default())?;
+    let iter = partition.inner().prefix(tag);
     if let Some(page_params) = page_params {
-        let iter = if page_params.is_desc {
-            IterType::Rev(iter.rev())
+        let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
+            Box::new(iter.rev())
         } else {
-            IterType::Iter(iter)
+            Box::new(iter)
         };
         for (idx, i) in iter.enumerate() {
             if idx < page_params.anchor {
@@ -237,7 +247,7 @@ pub(super) fn get_ids_by_tag(
             if idx >= page_params.anchor + page_params.n {
                 break;
             }
-            let (k, _) = i?;
+            let k = i.key()?;
             let len = k.len();
             let str = String::from_utf8_lossy(&k[0..len - 4]);
             if tag == str {
@@ -247,7 +257,7 @@ pub(super) fn get_ids_by_tag(
         }
     } else {
         for i in iter {
-            let (k, _) = i?;
+            let k = i.value()?;
             let len = k.len();
             let str = String::from_utf8_lossy(&k[0..len - 4]);
             if tag == str {
@@ -260,43 +270,36 @@ pub(super) fn get_ids_by_tag(
     Ok(res)
 }
 
-pub(super) enum IterType {
-    Iter(Iter),
-    Rev(Rev<Iter>),
-}
-
-impl Iterator for IterType {
-    type Item = Result<(IVec, IVec), sled::Error>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            IterType::Iter(iter) => iter.next(),
-            IterType::Rev(iter) => iter.next(),
-        }
-    }
-}
-
 /// Update the counter and return the new id. It is contiguous if every id is used.
 ///
 /// # Examples
 ///
 /// ```ignore
-/// let new_user_id = incr_id(db, "users_count")?;
+/// let new_user_id = incr_id(&db.keyspace("users_count", Default::default())?, "key")?;
 /// ```
-pub(super) fn incr_id<K>(tree: &Tree, key: K) -> Result<u32, AppError>
+pub(super) fn incr_id<K>(db: &TxDatabase, key: K) -> Result<u32, AppError>
 where
-    K: AsRef<[u8]>,
+    K: Into<fjall::Slice>,
 {
-    let ivec = tree.update_and_fetch(key, increment)?.unwrap();
-    Ok(ivec_to_u32(&ivec))
+    let tree = db.keyspace("default", Default::default())?;
+    let result = tree.update_fetch(key, increment)?;
+    Ok(ivec_to_u32(&result.unwrap()))
+}
+
+pub(super) fn ks_incr_id<K>(ks: &TxKeyspace, key: K) -> Result<u32, AppError>
+where
+    K: Into<fjall::Slice>,
+{
+    let result = ks.update_fetch(key, increment)?;
+    Ok(ivec_to_u32(&result.unwrap()))
 }
 
 /// work for [update_and_fetch](https://docs.rs/sled/latest/sled/struct.Db.html#method.update_and_fetch):
 /// increment 1.
-fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
+fn increment(old: Option<&Slice>) -> Option<Slice> {
     let number = match old {
         Some(bytes) => {
-            let array: [u8; 4] = bytes.try_into().unwrap();
+            let array: [u8; 4] = bytes.as_ref().try_into().unwrap();
             let number = u32::from_be_bytes(array);
             if let Some(new) = number.checked_add(1) {
                 new
@@ -306,8 +309,7 @@ fn increment(old: Option<&[u8]>) -> Option<Vec<u8>> {
         }
         None => 1,
     };
-
-    Some(number.to_be_bytes().to_vec())
+    Some(number.to_be_bytes().into())
 }
 
 /// extract element from string
@@ -360,13 +362,12 @@ pub(super) fn is_valid_name(name: &str) -> bool {
 
 /// get id by name
 pub(super) fn get_id_by_name(
-    db: &Db,
+    db: &TxDatabase,
     tree_name: &str,
     name: &str,
 ) -> Result<Option<u32>, AppError> {
-    let v = db
-        .open_tree(tree_name)?
-        .get(name.replace(' ', "_").to_lowercase())?;
+    let tree = db.keyspace(tree_name, Default::default())?;
+    let v = tree.get(name.replace(' ', "_").to_lowercase())?;
     Ok(v.map(|v| ivec_to_u32(&v)))
 }
 
@@ -386,16 +387,16 @@ pub(super) fn generate_nanoid_ttl(seconds: i64) -> String {
     format!("{exp:x}_{nanoid}")
 }
 
-/// convert `u32` to [IVec]
+/// convert `u32` to bytes
 #[inline]
-pub(super) fn u32_to_ivec(number: u32) -> IVec {
-    IVec::from(number.to_be_bytes().to_vec())
+pub(super) fn u32_to_ivec(number: u32) -> Vec<u8> {
+    number.to_be_bytes().to_vec()
 }
 
-/// convert [IVec] to u32
+/// convert bytes to u32
 #[inline]
-pub fn ivec_to_u32(iv: &IVec) -> u32 {
-    u32::from_be_bytes(iv.to_vec().as_slice().try_into().unwrap())
+pub fn ivec_to_u32(iv: &[u8]) -> u32 {
+    u32::from_be_bytes(iv.try_into().unwrap())
 }
 
 /// convert `&[u8]` to `u32`
@@ -404,10 +405,10 @@ pub fn u8_slice_to_u32(bytes: &[u8]) -> u32 {
     u32::from_be_bytes(bytes.try_into().unwrap())
 }
 
-/// convert `i64` to [IVec]
+/// convert `i64` to bytes
 #[inline]
-pub(super) fn i64_to_ivec(number: i64) -> IVec {
-    IVec::from(number.to_be_bytes().to_vec())
+pub(super) fn i64_to_ivec(number: i64) -> Vec<u8> {
+    number.to_be_bytes().to_vec()
 }
 
 /// convert `&[u8]` to `i64`

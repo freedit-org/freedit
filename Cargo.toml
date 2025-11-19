@@ -3,13 +3,12 @@ name = "freedit"
 version = "0.8.8"
 edition = "2024"
 license = "MIT License"
-rust-version = "1.88.0"
 
 [dependencies]
 ammonia = "4.1.2"
 askama = "0.14.0"
 atom_syndication = { version = "0.12", default-features = false }
-axum = { version = "0.8.6", features = [
+axum = { version = "0.8.7", features = [
     "http1",
     "http2",
     "form",
@@ -17,7 +16,7 @@ axum = { version = "0.8.6", features = [
     "multipart",
     "tokio",
 ], default-features = false }
-axum-extra = { version = "0.10.3", features = ["typed-header"] }
+axum-extra = { version = "0.12.2", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
 cached = { version = "0.56", default-features = false, features = [
@@ -27,6 +26,7 @@ cached = { version = "0.56", default-features = false, features = [
 captcha = { git = "https://github.com/freedit-dev/captcha.git", default-features = false }
 data-encoding = "2.9"
 fast2s = "0.3"
+fjall = { git = "https://github.com/fjall-rs/fjall.git", branch = "3.0.0"}
 http = "1.3.1"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.25.8", default-features = false, features = [
@@ -57,7 +57,6 @@ ring = { version = "0.17", default-features = false }
 rss = { version = "2.0", default-features = false }
 rust-stemmers = "1.2.0"
 serde = { version = "1.0", features = ["derive"] }
-sled = "0.34.7"
 snailquote = "0.3.1"
 stop-words = "0.9"
 syntect = { version = "5", features = [
@@ -86,6 +85,9 @@ tracing-subscriber = { version = "0.3", features = [
 unicode-segmentation = "1"
 validator = { version = "0.20.0", features = ["derive"] }
 whichlang = "0.1.1"
+
+[patch.crates-io]
+lsm-tree = { git = "https://github.com/fjall-rs/lsm-tree.git", branch = "main" }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 tikv-jemallocator = "0.6"
