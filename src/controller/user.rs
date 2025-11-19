@@ -28,7 +28,7 @@ use captcha::{
     filters::{Cow, Noise, Wave},
 };
 use data_encoding::BASE64;
-use fjall::TxDatabase;
+use fjall::TransactionalKeyspace;
 use identicon::Identicon;
 use jiff::Timestamp;
 use ring::{
@@ -91,11 +91,11 @@ pub(crate) async fn user(
 
     let mut user_solos_count = 0;
     for i in DB
-        .keyspace("user_solos", Default::default())?
+        .open_partition("user_solos", Default::default())?
         .inner()
         .prefix(&uid_ivec)
     {
-        let v = i.value()?;
+        let (_, v) = i?;
         // only count public solos
         if u8_slice_to_u32(&v) == 0 {
             user_solos_count += 1;
@@ -104,11 +104,11 @@ pub(crate) async fn user(
 
     let mut user_posts_count = 0;
     for i in DB
-        .keyspace("user_posts", Default::default())?
+        .open_partition("user_posts", Default::default())?
         .inner()
         .prefix(&uid_ivec)
     {
-        let v = i.value()?;
+        let (_, v) = i?;
         // exclude private posts
         if InnType::from(v[4]) == InnType::Public || InnType::from(v[4]) == InnType::Apply {
             user_posts_count += 1;
@@ -117,11 +117,11 @@ pub(crate) async fn user(
 
     let mut user_feeds_count = 0;
     for i in DB
-        .keyspace("user_folders", Default::default())?
+        .open_partition("user_folders", Default::default())?
         .inner()
         .prefix(&uid_ivec)
     {
-        let v = i.value()?;
+        let (_, v) = i?;
         // only count public feeds
         if v[0] == 1 {
             user_feeds_count += 1;
@@ -136,7 +136,7 @@ pub(crate) async fn user(
         if claim.uid != uid {
             let following_k = [u32_to_ivec(claim.uid), uid_ivec].concat();
             Some(
-                DB.keyspace("user_following", Default::default())?
+                DB.open_partition("user_following", Default::default())?
                     .contains_key(following_k)?,
             )
         } else {
@@ -187,8 +187,8 @@ pub(crate) async fn user_follow(
     let following_k = [u32_to_ivec(claim.uid), u32_to_ivec(uid)].concat();
     let followers_k = [u32_to_ivec(uid), u32_to_ivec(claim.uid)].concat();
 
-    let user_following_tree = DB.keyspace("user_following", Default::default())?;
-    let user_followers_tree = DB.keyspace("user_followers", Default::default())?;
+    let user_following_tree = DB.open_partition("user_following", Default::default())?;
+    let user_followers_tree = DB.open_partition("user_followers", Default::default())?;
 
     if user_following_tree.contains_key(&following_k)? {
         user_following_tree.remove(&following_k)?;
@@ -266,10 +266,14 @@ pub(super) enum InnRole {
 }
 
 impl InnRole {
-    pub(super) fn get(db: &TxDatabase, iid: u32, uid: u32) -> Result<Option<Self>, AppError> {
+    pub(super) fn get(
+        db: &TransactionalKeyspace,
+        iid: u32,
+        uid: u32,
+    ) -> Result<Option<Self>, AppError> {
         let inn_users_k = [u32_to_ivec(iid), u32_to_ivec(uid)].concat();
         Ok(db
-            .keyspace("inn_users", Default::default())?
+            .open_partition("inn_users", Default::default())?
             .get(inn_users_k)?
             .map(|role| role.to_vec()[0].into()))
     }
@@ -307,7 +311,11 @@ impl OutUserList {
         }
     }
 
-    fn get_from_uids(db: &TxDatabase, index: Vec<u32>, n: usize) -> Result<Vec<Self>, AppError> {
+    fn get_from_uids(
+        db: &TransactionalKeyspace,
+        index: Vec<u32>,
+        n: usize,
+    ) -> Result<Vec<Self>, AppError> {
         let mut users = Vec::with_capacity(n);
         for i in index {
             let user: User = get_one(db, "users", i)?;
@@ -320,13 +328,13 @@ impl OutUserList {
     }
 
     fn get_inn_users(
-        db: &TxDatabase,
+        db: &TransactionalKeyspace,
         iid: u32,
         role: Option<u8>,
         page_params: &ParamsPage,
     ) -> Result<Vec<Self>, AppError> {
         let mut users = Vec::with_capacity(page_params.n);
-        let keyspace = db.keyspace("inn_users", Default::default())?;
+        let keyspace = db.open_partition("inn_users", Default::default())?;
         let iter = keyspace.inner().prefix(u32_to_ivec(iid));
         let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
             Box::new(iter.rev())
@@ -339,7 +347,7 @@ impl OutUserList {
                 continue;
             }
 
-            let (k, v) = i.into_inner()?;
+            let (k, v) = i?;
             if let Some(role) = role {
                 if v[0] == role {
                     let uid = u8_slice_to_u32(&k[4..]);
@@ -433,7 +441,7 @@ pub(crate) async fn user_list(
     } else {
         info = (0, "all".to_owned(), false);
         if let Some(role) = params.role {
-            let keyspace = DB.keyspace("users", Default::default())?;
+            let keyspace = DB.open_partition("users", Default::default())?;
             let iter = keyspace.inner().iter();
             let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
                 Box::new(iter.rev())
@@ -445,7 +453,7 @@ pub(crate) async fn user_list(
                     continue;
                 }
 
-                let v = i.value()?;
+                let (_, v) = i?;
                 let (user, _): (User, usize) = bincode::decode_from_slice(&v, standard())?;
                 if user.role == role {
                     let user_desc = Role::from(user.role).to_string();
@@ -525,14 +533,14 @@ pub(crate) async fn role_post(
                 }
 
                 if old == &InnRole::Pending && form.role != "Pending" {
-                    DB.keyspace("inn_apply", Default::default())?
+                    DB.open_partition("inn_apply", Default::default())?
                         .remove(&inn_users_k)?;
                 }
             }
 
             let inn_role: u8 = match form.role.as_str() {
                 "Pending" => {
-                    DB.keyspace("inn_apply", Default::default())?
+                    DB.open_partition("inn_apply", Default::default())?
                         .insert(&inn_users_k, &[])?;
                     1
                 }
@@ -552,23 +560,23 @@ pub(crate) async fn role_post(
             };
 
             if old_inn_role != Some(inn_role.into()) {
-                DB.keyspace("inn_users", Default::default())?
+                DB.open_partition("inn_users", Default::default())?
                     .insert(&inn_users_k, &[inn_role])?;
 
                 let user_inns_k = [u32_to_ivec(uid), u32_to_ivec(id)].concat();
                 if inn_role >= 3 {
-                    DB.keyspace("user_inns", Default::default())?
+                    DB.open_partition("user_inns", Default::default())?
                         .insert(&user_inns_k, &[])?;
                 } else {
-                    DB.keyspace("user_inns", Default::default())?
+                    DB.open_partition("user_inns", Default::default())?
                         .remove(&user_inns_k)?;
                 }
 
                 if inn_role >= 7 {
-                    DB.keyspace("mod_inns", Default::default())?
+                    DB.open_partition("mod_inns", Default::default())?
                         .insert(&user_inns_k, &[])?;
                 } else {
-                    DB.keyspace("mod_inns", Default::default())?
+                    DB.open_partition("mod_inns", Default::default())?
                         .remove(&user_inns_k)?;
                 }
 
@@ -644,11 +652,16 @@ pub(crate) async fn user_setting(
     let user: User = get_one(&DB, "users", claim.uid)?;
 
     let mut sessions = Vec::new();
-    for i in DB.keyspace("sessions", Default::default())?.inner().iter() {
-        let (k, v) = i.into_inner()?;
+    for i in DB
+        .open_partition("sessions", Default::default())?
+        .inner()
+        .iter()
+    {
+        let (k, v) = i?;
         let Ok((claim2, _)): Result<(Claim, _), _> = bincode::decode_from_slice(&v, standard())
         else {
-            DB.keyspace("sessions", Default::default())?.remove(k)?;
+            DB.open_partition("sessions", Default::default())?
+                .remove(k)?;
             continue;
         };
         if claim2.uid == claim.uid {
@@ -749,7 +762,7 @@ pub(crate) async fn remove_session(
     let site_config = SiteConfig::get(&DB)?;
     Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    DB.keyspace("sessions", Default::default())?
+    DB.open_partition("sessions", Default::default())?
         .remove(session_id)?;
     Ok(Redirect::to("/user/setting"))
 }
@@ -772,7 +785,7 @@ pub(crate) async fn user_setting_post(
     let username = username.trim();
     let username_key = username.replace(' ', "_").to_lowercase();
 
-    let username_tree = DB.keyspace("usernames", Default::default())?;
+    let username_tree = DB.open_partition("usernames", Default::default())?;
     if let Some(v) = username_tree.get(&username_key)?
         && ivec_to_u32(&v) != claim.uid
     {
@@ -948,7 +961,7 @@ pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
     };
 
     let captcha_id = generate_nanoid_ttl(60);
-    DB.keyspace("captcha", Default::default())?
+    DB.open_partition("captcha", Default::default())?
         .insert(&captcha_id, &*captcha.chars_as_string())?;
 
     let page_signup = PageSignup {
@@ -993,11 +1006,11 @@ pub(crate) async fn signup_post(
     }
 
     let captcha_char = DB
-        .keyspace("captcha", Default::default())?
+        .open_partition("captcha", Default::default())?
         .get(&input.captcha_id)?
         .ok_or(AppError::CaptchaError)?;
     let captcha_char = String::from_utf8(captcha_char.to_vec()).unwrap();
-    DB.keyspace("captcha", Default::default())?
+    DB.open_partition("captcha", Default::default())?
         .remove(&input.captcha_id)?;
     if captcha_char != input.captcha_value {
         return Err(AppError::CaptchaError);
@@ -1005,7 +1018,7 @@ pub(crate) async fn signup_post(
 
     let username = username.trim();
     let username_key = username.replace(' ', "_").to_lowercase();
-    let usernames_tree = DB.keyspace("usernames", Default::default())?;
+    let usernames_tree = DB.open_partition("usernames", Default::default())?;
     if usernames_tree.contains_key(&username_key)? {
         return Err(AppError::NameExists);
     }
@@ -1047,7 +1060,7 @@ pub(crate) async fn signout(
     if let Some(cookie) = cookie {
         let session = cookie.get(COOKIE_NAME);
         if let Some(session) = session {
-            DB.keyspace("sessions", Default::default())?
+            DB.open_partition("sessions", Default::default())?
                 .remove(session)?;
         }
     }
@@ -1167,13 +1180,13 @@ impl Claim {
     /// ### user pageviews data
     /// Keep three day pageviews data. For privacy, the hour and minute has been striped, just date kept.
     pub(super) fn get(
-        db: &TxDatabase,
+        db: &TransactionalKeyspace,
         TypedHeader(cookie): &TypedHeader<Cookie>,
         site_config: &SiteConfig,
     ) -> Option<Self> {
         let session = cookie.get(COOKIE_NAME)?;
         let timestamp = session.split_once('_')?.0;
-        let tree = &db.keyspace("sessions", Default::default()).ok()?;
+        let tree = &db.open_partition("sessions", Default::default()).ok()?;
         let timestamp = i64::from_str_radix(timestamp, 16).ok()?;
         let now = Timestamp::now();
 
@@ -1195,18 +1208,22 @@ impl Claim {
         Some(claim)
     }
 
-    pub(super) fn update_last_write(mut self, db: &TxDatabase) -> Result<(), AppError> {
+    pub(super) fn update_last_write(mut self, db: &TransactionalKeyspace) -> Result<(), AppError> {
         self.last_write = Timestamp::now().as_second();
         set_one_with_key(db, "sessions", &self.session_id, &self)?;
 
         Ok(())
     }
 
-    pub(super) fn update_lang(&mut self, db: &TxDatabase, lang: &str) -> Result<(), AppError> {
+    pub(super) fn update_lang(
+        &mut self,
+        db: &TransactionalKeyspace,
+        lang: &str,
+    ) -> Result<(), AppError> {
         let uid = self.uid;
-        let session_tree = db.keyspace("sessions", Default::default())?;
+        let session_tree = db.open_partition("sessions", Default::default())?;
         for i in session_tree.inner().iter() {
-            let (k, v) = i.into_inner()?;
+            let (k, v) = i?;
             let (mut claim, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
             if claim.uid == uid {
                 claim.lang = Some(lang.to_string());
@@ -1217,12 +1234,12 @@ impl Claim {
         Ok(())
     }
 
-    fn update_role(db: &TxDatabase, uid: u32) -> Result<(), AppError> {
+    fn update_role(db: &TransactionalKeyspace, uid: u32) -> Result<(), AppError> {
         let user: User = get_one(db, "users", uid)?;
 
-        let session_tree = db.keyspace("sessions", Default::default())?;
+        let session_tree = db.open_partition("sessions", Default::default())?;
         for i in session_tree.inner().iter() {
-            let (k, v) = i.into_inner()?;
+            let (k, v) = i?;
             let (mut claim, _): (Claim, _) = bincode::decode_from_slice(&v, standard())?;
             if claim.uid == uid {
                 claim.role = user.role;
@@ -1234,7 +1251,11 @@ impl Claim {
     }
 
     /// generate a Claim from user and store it in session tree, then return a cookie with a session id.
-    fn generate_cookie(db: &TxDatabase, user: User, expiry: &str) -> Result<String, AppError> {
+    fn generate_cookie(
+        db: &TransactionalKeyspace,
+        user: User,
+        expiry: &str,
+    ) -> Result<String, AppError> {
         if user.role == 0 {
             return Err(AppError::Banned);
         }

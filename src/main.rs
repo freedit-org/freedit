@@ -4,10 +4,9 @@
 // #![warn(clippy::unwrap_used)]
 
 use freedit::{
-    AppError, CONFIG, DB, VERSION, router, {Tan, clear_invalid, cron_download_audio, cron_feed},
+    AppError, CONFIG, DB, router, {Tan, clear_invalid, cron_feed},
 };
-use jiff::Timestamp;
-use std::{fs, net::SocketAddr, path::PathBuf};
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -47,9 +46,9 @@ async fn main() -> Result<(), AppError> {
             if let Err(e) = clear_invalid(&DB, "user_stats").await {
                 error!(%e);
             }
-            if let Err(e) = cron_download_audio(&DB).await {
-                error!(%e);
-            }
+            // if let Err(e) = cron_download_audio(&DB).await {
+            //     error!(%e);
+            // }
             sleep_seconds(3600 * 4).await;
         }
     });
@@ -59,7 +58,7 @@ async fn main() -> Result<(), AppError> {
         if CONFIG.rebuild_index == Some(true) {
             tan.rebuild_index(&DB).unwrap();
         }
-        // let tan_ks = DB.keyspace("tan", Default::default()).unwrap();
+        // let tan_ks = DB.open_partition("tan", Default::default()).unwrap();
 
         // let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
         // while let Some(event) = (&mut subscriber).await {

@@ -25,7 +25,7 @@ use axum_extra::{
     headers::{Cookie, Referer},
 };
 use cached::proc_macro::cached;
-use fjall::{KeyspaceCreateOptions, TxDatabase};
+use fjall::TransactionalKeyspace;
 use infer::is_audio;
 use jiff::{Timestamp, fmt::rfc2822};
 use reqwest::Client;
@@ -173,10 +173,10 @@ struct OutFeed {
 }
 
 impl OutFeed {
-    fn new(db: &TxDatabase, feed_id: u32, is_public: bool) -> Result<Self, AppError> {
+    fn new(db: &TransactionalKeyspace, feed_id: u32, is_public: bool) -> Result<Self, AppError> {
         let feed: Feed = get_one(db, "feeds", feed_id)?;
         let err = db
-            .keyspace("feed_errs", Default::default())?
+            .open_partition("feed_errs", Default::default())?
             .get(u32_to_ivec(feed_id))?
             .map(|v| String::from_utf8_lossy(&v).into_owned());
         Ok(OutFeed {
@@ -239,11 +239,11 @@ pub(crate) async fn feed(
     let mut folders = vec![];
     let mut feed_id_folder = HashMap::new();
     for i in DB
-        .keyspace("user_folders", Default::default())?
+        .open_partition("user_folders", Default::default())?
         .inner()
         .prefix(u32_to_ivec(uid))
     {
-        let (k, v) = i.into_inner()?;
+        let (k, v) = i?;
         let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
         let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
         feed_id_folder.insert(feed_id, folder.clone());
@@ -383,11 +383,11 @@ pub(crate) async fn feed(
 #[cached(result = true)]
 fn get_feed_id(item_id: u32) -> Result<u32, AppError> {
     for i in DB
-        .keyspace("feed_items", Default::default())?
+        .open_partition("feed_items", Default::default())?
         .inner()
         .iter()
     {
-        let k = i.key()?;
+        let (k, _) = i?;
         let item_id2 = u8_slice_to_u32(&k[4..8]);
         if item_id == item_id2 {
             let feed_id = u8_slice_to_u32(&k[0..4]);
@@ -397,14 +397,18 @@ fn get_feed_id(item_id: u32) -> Result<u32, AppError> {
     Err(AppError::NotFound)
 }
 
-fn get_item_ids_and_ts(db: &TxDatabase, tree: &str, id: u32) -> Result<Vec<(u32, i64)>, AppError> {
+fn get_item_ids_and_ts(
+    db: &TransactionalKeyspace,
+    tree: &str,
+    id: u32,
+) -> Result<Vec<(u32, i64)>, AppError> {
     let mut res = vec![];
     for i in db
-        .keyspace(tree, KeyspaceCreateOptions::default())?
+        .open_partition(tree, Default::default())?
         .inner()
         .prefix(u32_to_ivec(id))
     {
-        let (k, v) = i.into_inner()?;
+        let (k, v) = i?;
         let item_id = u8_slice_to_u32(&k[4..8]);
         let ts = u8_slice_to_i64(&v);
         res.push((item_id, ts))
@@ -450,7 +454,8 @@ pub(crate) async fn feed_read(
     let item: Item = get_one(&DB, "items", item_id)?;
     let is_starred = if let Some(ref claim) = claim {
         let k = [u32_to_ivec(claim.uid), u32_to_ivec(item_id)].concat();
-        DB.keyspace("star", Default::default())?.contains_key(k)?
+        DB.open_partition("star", Default::default())?
+            .contains_key(k)?
     } else {
         false
     };
@@ -467,7 +472,8 @@ pub(crate) async fn feed_read(
     };
     if let Some(ref claim) = claim {
         let k = [u32_to_ivec(claim.uid), u32_to_ivec(item_id)].concat();
-        DB.keyspace("read", Default::default())?.insert(k, &[])?;
+        DB.open_partition("read", Default::default())?
+            .insert(k, &[])?;
     }
 
     let allow_img = params.allow_img.unwrap_or_default();
@@ -506,11 +512,11 @@ pub(crate) async fn feed_add(
 
     let mut folders = HashSet::new();
     for i in DB
-        .keyspace("user_folders", Default::default())?
+        .open_partition("user_folders", Default::default())?
         .inner()
         .prefix(u32_to_ivec(claim.uid))
     {
-        let k = i.key()?;
+        let (k, _) = i?;
         let folder = String::from_utf8_lossy(&k[4..(k.len() - 4)]).to_string();
         folders.insert(folder);
     }
@@ -561,13 +567,13 @@ pub(crate) async fn feed_add_post(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let (feed, item_ids) = update(&form.url, &DB, 30).await?;
-    let feed_links_tree = DB.keyspace("feed_links", Default::default())?;
-    let user_folders_tree = DB.keyspace("user_folders", Default::default())?;
+    let feed_links_tree = DB.open_partition("feed_links", Default::default())?;
+    let user_folders_tree = DB.open_partition("user_folders", Default::default())?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
         let id = ivec_to_u32(&v);
         // change folder(remove the old record)
         for i in user_folders_tree.inner().prefix(u32_to_ivec(claim.uid)) {
-            let k = i.key()?;
+            let (k, _) = i?;
             if u8_slice_to_u32(&k[k.len() - 4..]) == id {
                 user_folders_tree.remove(k)?;
             }
@@ -577,7 +583,7 @@ pub(crate) async fn feed_add_post(
         incr_id(&DB, "feeds_count")?
     };
 
-    let feed_items_tree = DB.keyspace("feed_items", Default::default())?;
+    let feed_items_tree = DB.open_partition("feed_items", Default::default())?;
     let feed_id_ivec = u32_to_ivec(feed_id);
     for (id, ts) in item_ids {
         let k = [feed_id_ivec.clone(), u32_to_ivec(id)].concat();
@@ -616,14 +622,14 @@ pub(crate) async fn feed_update(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let feed_items_tree = DB.keyspace("feed_items", Default::default())?;
+    let feed_items_tree = DB.open_partition("feed_items", Default::default())?;
     let mut handers = vec![];
     for i in DB
-        .keyspace("user_folders", Default::default())?
+        .open_partition("user_folders", Default::default())?
         .inner()
         .prefix(u32_to_ivec(claim.uid))
     {
-        let k = i.key()?;
+        let (k, _) = i?;
         let feed_id = u8_slice_to_u32(&k[k.len() - 4..]);
         let feed: Feed = get_one(&DB, "feeds", feed_id)?;
         let feed_items_tree = feed_items_tree.clone();
@@ -636,8 +642,7 @@ pub(crate) async fn feed_update(
                         if let Err(e) = feed_items_tree.insert(k, i64_to_ivec(ts)) {
                             error!(?e);
                         };
-                        if let Ok(tree) = DB.keyspace("feed_errs", KeyspaceCreateOptions::default())
-                        {
+                        if let Ok(tree) = DB.open_partition("feed_errs", Default::default()) {
                             let _ = tree.remove(u32_to_ivec(feed_id));
                         }
                     }
@@ -645,7 +650,7 @@ pub(crate) async fn feed_update(
                 Err(e) => {
                     error!("update {} failed, error: {e}", feed.title);
                     if let Err(e) = DB
-                        .keyspace("feed_errs", KeyspaceCreateOptions::default())
+                        .open_partition("feed_errs", Default::default())
                         .and_then(|t| t.insert(u32_to_ivec(feed_id), &*e.to_string()))
                     {
                         error!(?e);
@@ -668,13 +673,13 @@ pub(crate) async fn feed_update(
 
 pub(super) async fn update(
     url: &str,
-    db: &TxDatabase,
+    db: &TransactionalKeyspace,
     n: usize,
 ) -> Result<(Feed, Vec<(u32, i64)>), AppError> {
     let content = CLIENT.get(url).send().await?.bytes().await?;
 
-    let item_links_tree = db.keyspace("item_links", Default::default())?;
-    let tan_tree = db.keyspace("tan", Default::default())?;
+    let item_links_tree = db.open_partition("item_links", Default::default())?;
+    let tan_tree = db.open_partition("tan", Default::default())?;
 
     let mut item_ids = vec![];
     let feed = match rss::Channel::read_from(&content[..]) {
@@ -749,30 +754,30 @@ pub(super) async fn update(
     Ok((feed, item_ids))
 }
 
-pub async fn cron_feed(db: &TxDatabase) -> Result<(), AppError> {
+pub async fn cron_feed(db: &TransactionalKeyspace) -> Result<(), AppError> {
     let mut set = HashSet::new();
     for i in db
-        .keyspace("user_folders", KeyspaceCreateOptions::default())?
+        .open_partition("user_folders", Default::default())?
         .inner()
         .iter()
     {
-        let k = i.key()?;
+        let (k, _) = i?;
         let feed_id = u8_slice_to_u32(&k[(k.len() - 4)..]);
         set.insert(feed_id);
     }
 
     for i in db
-        .keyspace("inn_feeds", KeyspaceCreateOptions::default())?
+        .open_partition("inn_feeds", Default::default())?
         .inner()
         .iter()
     {
-        let k = i.key()?;
+        let (k, _) = i?;
         let feed_id = u8_slice_to_u32(&k[4..8]);
         set.insert(feed_id);
     }
 
-    let feed_items_tree = db.keyspace("feed_items", Default::default())?;
-    let feed_errs_tree = db.keyspace("feed_errs", Default::default())?;
+    let feed_items_tree = db.open_partition("feed_items", Default::default())?;
+    let feed_errs_tree = db.open_partition("feed_errs", Default::default())?;
     for id in set {
         if let Ok(feed) = get_one::<Feed>(db, "feeds", id) {
             match update(&feed.link, db, 5).await {
@@ -792,11 +797,11 @@ pub async fn cron_feed(db: &TxDatabase) -> Result<(), AppError> {
     }
 
     for i in db
-        .keyspace("inn_feeds", KeyspaceCreateOptions::default())?
+        .open_partition("inn_feeds", Default::default())?
         .inner()
         .iter()
     {
-        let (k, v) = i.into_inner()?;
+        let (k, v) = i?;
         let iid = u8_slice_to_u32(&k[0..4]);
         let feed_id = u8_slice_to_u32(&k[4..8]);
         let uid = u8_slice_to_u32(&v);
@@ -807,15 +812,15 @@ pub async fn cron_feed(db: &TxDatabase) -> Result<(), AppError> {
     Ok(())
 }
 
-pub async fn cron_download_audio(db: &TxDatabase) -> Result<(), AppError> {
+pub async fn cron_download_audio(db: &TransactionalKeyspace) -> Result<(), AppError> {
     const MAX_FILE_SIZE: u64 = 300 * 1024 * 1024; // 300 MB
     for i in db
-        .keyspace("items", Default::default())?
+        .open_partition("items", Default::default())?
         .inner()
         .iter()
         .rev()
     {
-        let k = i.key()?;
+        let (k, _) = i?;
         let item_id = u8_slice_to_u32(&k);
         let mut item: Item = get_one(db, "items", item_id)?;
         if let Some(ref podcast) = item.podcast
@@ -881,12 +886,12 @@ pub async fn cron_download_audio(db: &TxDatabase) -> Result<(), AppError> {
 
 /// convert inn feed items to post
 pub(super) fn inn_feed_to_post(
-    db: &TxDatabase,
+    db: &TransactionalKeyspace,
     iid: u32,
     feed_id: u32,
     uid: u32,
 ) -> Result<(), AppError> {
-    let inn_items_tree = db.keyspace("inn_items", Default::default())?;
+    let inn_items_tree = db.open_partition("inn_items", Default::default())?;
     let item_ids = get_item_ids_and_ts(db, "feed_items", feed_id)?;
     for (item_id, ts) in item_ids.into_iter().rev().take(5) {
         let inn_item_k = &[u32_to_ivec(iid), u32_to_ivec(item_id)].concat();
@@ -909,11 +914,11 @@ pub(super) fn inn_feed_to_post(
             set_one(db, "posts", pid, &post)?;
 
             let tag_k = [tag.as_bytes(), &u32_to_ivec(pid)].concat();
-            db.keyspace("tags", Default::default())?
+            db.open_partition("tags", Default::default())?
                 .insert(tag_k, &[])?;
 
             let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
-            db.keyspace("inn_posts", Default::default())?
+            db.open_partition("inn_posts", Default::default())?
                 .insert(k, &[])?;
 
             inn_add_index(db, iid, pid, ts as u32, inn.inn_type)?;
@@ -921,7 +926,7 @@ pub(super) fn inn_feed_to_post(
             let k = [u32_to_ivec(post.uid), u32_to_ivec(pid)].concat();
             let mut v = iid.to_be_bytes().to_vec();
             v.push(inn.inn_type);
-            db.keyspace("user_posts", Default::default())?
+            db.open_partition("user_posts", Default::default())?
                 .insert(k, v)?;
 
             inn_items_tree.insert(inn_item_k, &[])?;
@@ -943,11 +948,11 @@ pub(crate) async fn feed_star(
 
     let item_id_ivec = u32_to_ivec(item_id);
     if DB
-        .keyspace("items", Default::default())?
+        .open_partition("items", Default::default())?
         .contains_key(&item_id_ivec)?
     {
         let k = [u32_to_ivec(claim.uid), item_id_ivec].concat();
-        let star_tree = DB.keyspace("star", Default::default())?;
+        let star_tree = DB.open_partition("star", Default::default())?;
         if star_tree.contains_key(&k)? {
             star_tree.remove(&k)?;
         } else {
@@ -973,10 +978,10 @@ pub(crate) async fn feed_subscribe(
     let cookie = cookie.ok_or(AppError::NonLogin)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let user_folder_tree = DB.keyspace("user_folders", Default::default())?;
+    let user_folder_tree = DB.open_partition("user_folders", Default::default())?;
 
     for i in user_folder_tree.inner().prefix(u32_to_ivec(uid)) {
-        let k = i.value()?;
+        let (k, _) = i?;
         let feed_id_ivec = &k[(k.len() - 4)..];
         if u8_slice_to_u32(feed_id_ivec) == feed_id {
             if uid == claim.uid {

@@ -136,7 +136,7 @@ use crate::error::AppError;
 use ::tantivy::TantivyDocument;
 use bincode::config::standard;
 use bincode::{Decode, Encode};
-use fjall::{KeyspaceCreateOptions, TxDatabase};
+use fjall::TransactionalKeyspace;
 use jiff::{Timestamp, ToSpan};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -190,25 +190,25 @@ impl std::fmt::Debug for User {
 }
 
 impl User {
-    fn is_mod(db: &TxDatabase, uid: u32, iid: u32) -> Result<bool, AppError> {
+    fn is_mod(db: &TransactionalKeyspace, uid: u32, iid: u32) -> Result<bool, AppError> {
         let k = [u32_to_ivec(uid), u32_to_ivec(iid)].concat();
         Ok(db
-            .keyspace("mod_inns", Default::default())?
+            .open_partition("mod_inns", Default::default())?
             .contains_key(k)?)
     }
 
-    fn is_admin(db: &TxDatabase, uid: u32) -> Result<bool, AppError> {
+    fn is_admin(db: &TransactionalKeyspace, uid: u32) -> Result<bool, AppError> {
         let user: User = get_one(db, "users", uid)?;
         Ok(Role::from(user.role) == Role::Admin)
     }
 
     /// check if the user has unread notifications
-    fn has_unread(db: &TxDatabase, uid: u32) -> Result<bool, AppError> {
+    fn has_unread(db: &TransactionalKeyspace, uid: u32) -> Result<bool, AppError> {
         let prefix = u32_to_ivec(uid);
-        let keyspace = db.keyspace("notifications", Default::default())?;
+        let keyspace = db.open_partition("notifications", Default::default())?;
         let iter = keyspace.inner().prefix(&prefix);
         for i in iter {
-            let v = i.value()?;
+            let (_, v) = i?;
             if v[8] == 0 {
                 return Ok(true);
             }
@@ -217,7 +217,7 @@ impl User {
         let mod_inns = get_ids_by_prefix(db, "mod_inns", &prefix, None)?;
         for i in mod_inns {
             if db
-                .keyspace("inn_apply", Default::default())?
+                .open_partition("inn_apply", Default::default())?
                 .inner()
                 .prefix(u32_to_ivec(i))
                 .next()
@@ -230,13 +230,13 @@ impl User {
         Ok(false)
     }
 
-    fn update_stats(db: &TxDatabase, uid: u32, stat_type: &str) -> Result<(), AppError> {
+    fn update_stats(db: &TransactionalKeyspace, uid: u32, stat_type: &str) -> Result<(), AppError> {
         let expire = Timestamp::now()
             .checked_add(72.hours())
             .unwrap()
             .as_second();
         let key = format!("{expire:x}_{uid}_{stat_type}");
-        ks_incr_id(&db.keyspace("user_stats", Default::default())?, key)?;
+        ks_incr_id(&db.open_partition("user_stats", Default::default())?, key)?;
         Ok(())
     }
 }
@@ -356,7 +356,7 @@ pub(super) enum PostContent {
 }
 
 impl PostContent {
-    fn to_html(&self, db: &TxDatabase) -> Result<String, AppError> {
+    fn to_html(&self, db: &TransactionalKeyspace) -> Result<String, AppError> {
         match self {
             PostContent::Markdown(md) => Ok(md2html(md)),
             PostContent::FeedItemId(id) => {
@@ -532,8 +532,8 @@ pub(super) struct SiteConfig {
 
 impl SiteConfig {
     /// get [SiteConfig]
-    fn get(db: &TxDatabase) -> Result<SiteConfig, AppError> {
-        let default_ks = &db.keyspace("default", KeyspaceCreateOptions::default())?;
+    fn get(db: &TransactionalKeyspace) -> Result<SiteConfig, AppError> {
+        let default_ks = db.open_partition("default", Default::default())?;
         let site_config = default_ks.get("default").unwrap();
         if let Some(site_config) = site_config {
             let (site_config, _): (SiteConfig, usize) =
