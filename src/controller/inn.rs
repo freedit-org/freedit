@@ -189,9 +189,9 @@ pub(crate) async fn mod_inn_post(
     let mut topics: Vec<_> = topics.into_iter().collect();
     topics.truncate(5);
 
-    let inn_names_ks = DB.keyspace("inn_names", Default::default())?;
-    let mut tx = DB.write_tx();
-    let topics_ks = DB.keyspace("topics", Default::default())?;
+    let inn_names_ks = DB.inner().keyspace("inn_names", Default::default())?;
+    let mut batch = DB.inner().batch();
+    let topics_ks = DB.inner().keyspace("topics", Default::default())?;
     // create new inn
     if iid == 0 {
         // check if inn name exists
@@ -244,32 +244,34 @@ pub(crate) async fn mod_inn_post(
                 }
             }
 
-            let user_posts_ks = DB.keyspace("user_posts", Default::default())?;
-            for i in user_posts_ks.inner().iter() {
+            let user_posts_ks = DB.inner().keyspace("user_posts", Default::default())?;
+            for i in user_posts_ks.iter() {
                 let (k, v) = i.into_inner()?;
                 let iid = u8_slice_to_u32(&v[0..4]);
                 if iid == inn.iid {
                     let mut new_v: Vec<u8> = v.bytes().flatten().collect();
                     new_v[4] = inn_type as u8;
-                    tx.insert(&user_posts_ks, k, &new_v);
+                    batch.insert(&user_posts_ks, k, &new_v);
                 }
             }
 
-            let post_timeline_idx_ks = DB.keyspace("post_timeline_idx", Default::default())?;
-            for i in post_timeline_idx_ks.inner().prefix(u32_to_ivec(iid)) {
+            let post_timeline_idx_ks = DB
+                .inner()
+                .keyspace("post_timeline_idx", Default::default())?;
+            for i in post_timeline_idx_ks.prefix(u32_to_ivec(iid)) {
                 let (k, v) = i.into_inner()?;
                 let mut new_v: Vec<u8> = v.bytes().flatten().collect();
                 new_v[4] = inn_type as u8;
-                tx.insert(&post_timeline_idx_ks, k, new_v);
+                batch.insert(&post_timeline_idx_ks, k, new_v);
             }
 
-            let post_timeline_ks = DB.keyspace("post_timeline", Default::default())?;
-            for i in post_timeline_ks.inner().iter() {
+            let post_timeline_ks = DB.inner().keyspace("post_timeline", Default::default())?;
+            for i in post_timeline_ks.iter() {
                 let k = i.key()?;
                 let iid = u8_slice_to_u32(&k[4..8]);
                 if iid == inn.iid {
                     let v = inn_type as u8;
-                    tx.insert(&post_timeline_ks, k, &[v]);
+                    batch.insert(&post_timeline_ks, k, &[v]);
                 }
             }
         }
@@ -277,13 +279,13 @@ pub(crate) async fn mod_inn_post(
         // remove the old inn name
         if inn_name != inn.inn_name {
             let old_inn_name_key = inn.inn_name.replace(' ', "_").to_lowercase();
-            tx.remove(&inn_names_ks, old_inn_name_key);
+            batch.remove(&inn_names_ks, old_inn_name_key);
         }
 
         // remove the old inn topics
         for topic in inn.topics {
             let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
-            tx.remove(&topics_ks, k);
+            batch.remove(&topics_ks, k);
         }
     }
 
@@ -292,20 +294,20 @@ pub(crate) async fn mod_inn_post(
     // set topic index for inns
     for topic in &topics {
         let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
-        tx.insert(&topics_ks, k, &[]);
+        batch.insert(&topics_ks, k, &[]);
     }
 
     // set index for user mods and user inns
     let k = [u32_to_ivec(claim.uid), iid_ivec.clone()].concat();
-    let mod_inns_ks = DB.keyspace("mod_inns", Default::default())?;
-    tx.insert(&mod_inns_ks, &k, &[]);
-    let user_inns_ks = DB.keyspace("user_inns", Default::default())?;
-    tx.insert(&user_inns_ks, &k, &[]);
+    let mod_inns_ks = DB.inner().keyspace("mod_inns", Default::default())?;
+    batch.insert(&mod_inns_ks, &k, &[]);
+    let user_inns_ks = DB.inner().keyspace("user_inns", Default::default())?;
+    batch.insert(&user_inns_ks, &k, &[]);
 
     // set index for inn users
     let k = [iid_ivec.clone(), u32_to_ivec(claim.uid)].concat();
-    let inn_users_ks = DB.keyspace("inn_users", Default::default())?;
-    tx.insert(&inn_users_ks, &k, &[10]);
+    let inn_users_ks = DB.inner().keyspace("inn_users", Default::default())?;
+    batch.insert(&inn_users_ks, &k, &[10]);
 
     let inn = Inn {
         iid,
@@ -320,8 +322,8 @@ pub(crate) async fn mod_inn_post(
     };
 
     set_one(&DB, "inns", iid, &inn)?;
-    tx.insert(&inn_names_ks, inn_name_key, iid_ivec);
-    tx.commit()?;
+    batch.insert(&inn_names_ks, inn_name_key, iid_ivec);
+    batch.commit()?;
     let target = format!("/inn/{iid}");
     Ok(Redirect::to(&target))
 }
@@ -618,37 +620,44 @@ pub(super) fn inn_add_index(
     timestamp: u32,
     inn_type: u8,
 ) -> Result<(), AppError> {
-    let tl_idx_tree = db.keyspace("post_timeline_idx", Default::default())?;
-    let tl_tree = db.keyspace("post_timeline", Default::default())?;
+    let tl_idx_tree = db
+        .inner()
+        .keyspace("post_timeline_idx", Default::default())?;
+    let tl_tree = db.inner().keyspace("post_timeline", Default::default())?;
 
-    let mut tx = db.write_tx();
+    let mut batch = db.inner().batch();
     let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
     let created_at_ivec = u32_to_ivec(timestamp);
     let mut v = timestamp.to_be_bytes().to_vec();
     v.push(inn_type);
-    tx.insert(&tl_idx_tree, &*k, v);
+    batch.insert(&tl_idx_tree, &*k, v);
 
     let k = [created_at_ivec, u32_to_ivec(iid), u32_to_ivec(pid)].concat();
-    tx.insert(&tl_tree, k, &[inn_type]);
-    tx.commit()?;
+    batch.insert(&tl_tree, k, &[inn_type]);
+    batch.commit()?;
     Ok(())
 }
 
 fn inn_rm_index(db: &TxDatabase, iid: u32, pid: u32) -> Result<u8, AppError> {
-    let tl_idx_tree = db.keyspace("post_timeline_idx", Default::default())?;
-    let tl_tree = db.keyspace("post_timeline", Default::default())?;
+    let tl_idx_tree = db
+        .inner()
+        .keyspace("post_timeline_idx", Default::default())?;
+    let tl_tree = db.inner().keyspace("post_timeline", Default::default())?;
 
-    let mut tx = db.write_tx();
+    let mut batch = db.inner().batch();
     let mut inn_type = 0;
     let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
-    if let Some(v) = tx.take(&tl_idx_tree, k)? {
+
+    if let Some(v) = tl_idx_tree.get(&k)? {
+        batch.remove(&tl_idx_tree, k);
         let k = [&v[0..4], &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
-        if let Some(v) = tx.take(&tl_tree, k)? {
+        if let Some(v) = tl_tree.get(&k)? {
             inn_type = v[0];
+            batch.remove(&tl_tree, k);
         }
     }
 
-    tx.commit()?;
+    batch.commit()?;
     Ok(inn_type)
 }
 
@@ -709,7 +718,7 @@ pub(crate) async fn edit_post_post(
     let pid_ivec = u32_to_ivec(pid);
 
     let mut tags = vec![];
-    let mut tx = DB.write_tx();
+    let mut batch = DB.inner().batch();
     if inn.is_open_access() {
         let tags_set: BTreeSet<String> = input
             .tags
@@ -722,7 +731,7 @@ pub(crate) async fn edit_post_post(
         tags = tags_set.into_iter().collect();
         tags.truncate(5);
 
-        let tags_ks = DB.keyspace("tags", Default::default())?;
+        let tags_ks = DB.inner().keyspace("tags", Default::default())?;
         if old_pid > 0 {
             let post: Post = get_one(&DB, "posts", old_pid)?;
             if post.uid != claim.uid {
@@ -740,13 +749,13 @@ pub(crate) async fn edit_post_post(
             created_at = post.created_at;
             for old_tag in &post.tags {
                 let k = [old_tag.as_bytes(), &u32_to_ivec(old_pid)].concat();
-                tx.remove(&tags_ks, k);
+                batch.remove(&tags_ks, k);
             }
         }
 
         for tag in &tags {
             let k = [tag.as_bytes(), &pid_ivec].concat();
-            tx.insert(&tags_ks, k, &[]);
+            batch.insert(&tags_ks, k, &[]);
         }
     }
 
@@ -800,14 +809,14 @@ pub(crate) async fn edit_post_post(
     let iid_ivec = u32_to_ivec(iid);
     if old_pid == 0 {
         let k = [iid_ivec, pid_ivec.clone()].concat();
-        let inn_posts_ks = DB.keyspace("inn_posts", Default::default())?;
-        tx.insert(&inn_posts_ks, &k, &[]);
+        let inn_posts_ks = DB.inner().keyspace("inn_posts", Default::default())?;
+        batch.insert(&inn_posts_ks, &k, &[]);
 
         let k = [u32_to_ivec(claim.uid), pid_ivec].concat();
         let mut v = iid.to_be_bytes().to_vec();
         v.push(inn.inn_type);
-        let user_posts_ks = DB.keyspace("user_posts", Default::default())?;
-        tx.insert(&user_posts_ks, &k, v);
+        let user_posts_ks = DB.inner().keyspace("user_posts", Default::default())?;
+        batch.insert(&user_posts_ks, &k, v);
     }
 
     if old_pid > 0 {
@@ -819,10 +828,10 @@ pub(crate) async fn edit_post_post(
     claim.update_last_write(&DB)?;
 
     if inn.is_open_access() {
-        let tan_ks = DB.keyspace("tan", Default::default())?;
-        tx.insert(&tan_ks, format!("post{pid}"), &[]);
+        let tan_ks = DB.inner().keyspace("tan", Default::default())?;
+        batch.insert(&tan_ks, format!("post{pid}"), &[]);
     }
-    tx.commit()?;
+    batch.commit()?;
 
     let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))

@@ -4,10 +4,9 @@
 // #![warn(clippy::unwrap_used)]
 
 use freedit::{
-    AppError, CONFIG, DB, VERSION, router, {Tan, clear_invalid, cron_download_audio, cron_feed},
+    AppError, CONFIG, DB, router, {Tan, clear_invalid, cron_download_audio, cron_feed},
 };
-use jiff::Timestamp;
-use std::{fs, net::SocketAddr, path::PathBuf};
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
