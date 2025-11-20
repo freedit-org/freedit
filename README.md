@@ -14,7 +14,7 @@ GitHub: <https://github.com/freedit-org/freedit>
 
 ## Features
 
-- **Single-binary deployment** – easy to run with an embedded [sled](https://github.com/spacejam/sled) database.
+- **Single-binary deployment** – easy to run with an embedded [fjall](https://docs.rs/fjall/latest/fjall/) database.
 - **Works without JavaScript** – fully functional and secure even with JavaScript disabled. ([Why avoiding JavaScript matters](https://thehackernews.com/2022/05/tails-os-users-advised-not-to-use-tor.html))
 - **End-to-end encrypted private messages** – only sender and recipient can read.
 - **Math & code highlighting** – rich formatting without JavaScript.
