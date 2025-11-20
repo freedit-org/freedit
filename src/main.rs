@@ -3,8 +3,11 @@
 #![warn(clippy::pedantic)]
 // #![warn(clippy::unwrap_used)]
 
-use freedit::{AppError, CONFIG, DB, Tan, clear_invalid, cron_download_audio, cron_feed, router};
-use std::net::SocketAddr;
+use freedit::{
+    AppError, CONFIG, DB, Tan, VERSION, clear_invalid, cron_download_audio, cron_feed, router,
+};
+use jiff::Timestamp;
+use std::{fs, net::SocketAddr, path::PathBuf};
 use tokio::net::TcpListener;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -21,8 +24,9 @@ async fn main() -> Result<(), AppError> {
         .init();
 
     // only create snapshot in release mode
-    // #[cfg(not(debug_assertions))]
-    // create_snapshot(&DB);
+    #[cfg(not(debug_assertions))]
+    create_snapshot(&DB);
+
     tokio::spawn(async move {
         loop {
             if let Err(e) = clear_invalid(&DB, "captcha").await {
@@ -64,6 +68,7 @@ async fn main() -> Result<(), AppError> {
             tan_ks.take(k).unwrap();
         }
         tan.commit().unwrap();
+        info!("tantivy indexer finished");
     });
 
     let app = router().await;
@@ -76,20 +81,37 @@ async fn main() -> Result<(), AppError> {
     Ok(())
 }
 
-// #[allow(dead_code)]
-// fn create_snapshot(db: &fjall::Keyspace) {
-//     let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
-//     let mut snapshot_path = PathBuf::from(&CONFIG.snapshots_path);
-//     if !snapshot_path.exists() {
-//         fs::create_dir_all(&snapshot_path).unwrap();
-//     }
-//     snapshot_path.push(format!("{VERSION}-{ts}-{checksum}"));
-//     let snapshot_cfg = sled::Config::default().path(&snapshot_path);
-//     let snapshot = snapshot_cfg.open().unwrap();
-//     snapshot.import(db.export());
-//     info!("create snapshot: {}", snapshot_path.display());
-//     drop(snapshot);
-// }
+#[allow(dead_code)]
+fn create_snapshot(db: &fjall::TransactionalKeyspace) {
+    let disk_space = db.disk_space();
+    info!("disk space: {} bytes", disk_space);
+    let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
+    let mut snapshot_path = PathBuf::from(&CONFIG.snapshots_path);
+    if !snapshot_path.exists() {
+        fs::create_dir_all(&snapshot_path).unwrap();
+    }
+    snapshot_path.push(format!("{VERSION}-{ts}-{disk_space}"));
+    let snapshot = fjall::Config::new(&snapshot_path)
+        .open_transactional()
+        .unwrap();
+    for tree in db.list_partitions() {
+        let src_ks = db
+            .inner()
+            .open_partition(&tree, Default::default())
+            .unwrap();
+        let dst_ks = snapshot
+            .inner()
+            .open_partition(&tree, Default::default())
+            .unwrap();
+        for item in src_ks.iter() {
+            let (k, v) = item.unwrap();
+            dst_ks.insert(k, v).unwrap();
+        }
+    }
+
+    info!("create snapshot: {}", snapshot_path.display());
+    drop(snapshot);
+}
 
 async fn sleep_seconds(seconds: u64) {
     tokio::time::sleep(std::time::Duration::from_secs(seconds)).await;
