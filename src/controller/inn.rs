@@ -2179,6 +2179,14 @@ pub(crate) async fn post_delete(
 
         // remove this post from inn timeline
         inn_rm_index(&DB, iid, pid)?;
+        // delete tags
+        let mut batch = DB.inner().batch();
+        let tags_ks = DB.inner().open_partition("tags", Default::default())?;
+        for tag in post.tags {
+            let k = [tag.as_bytes(), &u32_to_ivec(post.pid)].concat();
+            batch.remove(&tags_ks, k);
+        }
+        batch.commit()?;
     }
 
     let target = format!("/post/{iid}/{pid}");
