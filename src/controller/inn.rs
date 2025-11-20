@@ -45,7 +45,6 @@ use fjall::TransactionalKeyspace;
 use jiff::Timestamp;
 use serde::Deserialize;
 use std::collections::{BTreeSet, HashMap, HashSet};
-use std::io::Read;
 use std::time::Duration;
 use validator::Validate;
 
@@ -249,7 +248,7 @@ pub(crate) async fn mod_inn_post(
                 let (k, v) = i?;
                 let iid = u8_slice_to_u32(&v[0..4]);
                 if iid == inn.iid {
-                    let mut new_v: Vec<u8> = v.bytes().flatten().collect();
+                    let mut new_v: Vec<u8> = v.to_vec();
                     new_v[4] = inn_type as u8;
                     batch.insert(&user_posts_ks, k, &new_v);
                 }
@@ -260,7 +259,7 @@ pub(crate) async fn mod_inn_post(
                 .open_partition("post_timeline_idx", Default::default())?;
             for i in post_timeline_idx_ks.prefix(u32_to_ivec(iid)) {
                 let (k, v) = i?;
-                let mut new_v: Vec<u8> = v.bytes().flatten().collect();
+                let mut new_v: Vec<u8> = v.to_vec();
                 new_v[4] = inn_type as u8;
                 batch.insert(&post_timeline_idx_ks, k, new_v);
             }
@@ -2037,7 +2036,7 @@ pub(crate) async fn comment_delete(
     DB.open_partition("tan", Default::default())?
         .remove(format!("comt{pid}/{cid}"))?;
 
-    let target = format!("/post/{pid}/{cid}");
+    let target = format!("/post/{iid}/{pid}");
     Ok(Redirect::to(&target))
 }
 
