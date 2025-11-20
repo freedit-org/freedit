@@ -1,8 +1,10 @@
 use super::{
     Claim, SiteConfig, Solo, SoloType, User,
     db_utils::{
-        extract_element, get_count_by_prefix, get_id_by_name, get_ids_by_tag, get_range, set_one,
+        IterType, extract_element, get_count_by_prefix, get_id_by_name, get_ids_by_tag, get_range,
+        set_one,
     },
+    filters,
     fmt::{md2html, ts_to_date},
     get_ids_by_prefix, get_one, incr_id, ivec_to_u32,
     meta_handler::{PageData, ParamsPage, ValidatedForm, get_referer, into_response},
@@ -10,11 +12,7 @@ use super::{
     u8_slice_to_u32, u32_to_ivec,
     user::Role,
 };
-use crate::{
-    DB,
-    controller::{db_utils::IterType, filters},
-    error::AppError,
-};
+use crate::{DB, error::AppError};
 use askama::Template;
 use axum::{
     extract::{Path, Query},

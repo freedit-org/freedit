@@ -1,10 +1,11 @@
 use super::{
-    Claim, Comment, Inn, Post, SiteConfig, Solo, User, get_ids_by_prefix, get_one, incr_id,
+    Claim, Comment, Inn, Post, SiteConfig, Solo, User, filters, get_ids_by_prefix, get_one,
+    incr_id,
     meta_handler::{PageData, into_response},
     u8_slice_to_u32, u32_to_ivec,
     user::{InnRole, Role},
 };
-use crate::{DB, controller::filters, error::AppError};
+use crate::{DB, error::AppError};
 use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{TypedHeader, headers::Cookie};

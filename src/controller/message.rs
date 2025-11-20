@@ -8,12 +8,13 @@ use axum_extra::{TypedHeader, headers::Cookie};
 use serde::Deserialize;
 use validator::Validate;
 
-use crate::{DB, controller::fmt::clean_html, error::AppError};
+use crate::{DB, error::AppError};
 use crate::{controller::filters, set_one};
 
 use super::{
     Claim, SiteConfig, User,
     db_utils::{get_one, incr_id, u8_slice_to_u32, u32_to_ivec},
+    fmt::clean_html,
     meta_handler::{PageData, into_response},
     notification::{NtType, add_notification, mark_read},
 };
