@@ -52,7 +52,7 @@ impl Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            db: "data/freedit.db".into(),
+            db: "data/fjall.db".into(),
             addr: "127.0.0.1:3001".into(),
             rebuild_index: None,
             avatars_path: "data/imgs/avatars".into(),
