@@ -27,7 +27,11 @@ use super::{
 };
 use crate::{
     DB,
-    controller::{db_utils::ks_incr_id, filters, meta_handler::into_response_with_content_type},
+    controller::{
+        db_utils::{IterType, ks_incr_id},
+        filters,
+        meta_handler::into_response_with_content_type,
+    },
     error::AppError,
 };
 use std::io::Read;
@@ -1350,10 +1354,13 @@ fn get_pids_all(
     let tree = db.open_partition("post_timeline", Default::default())?;
     let mut count: usize = 0;
     let mut result = Vec::with_capacity(page_params.n);
-    let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
-        Box::new(tree.inner().iter().rev())
+
+    let iter = tree.inner().iter();
+
+    let iter = if page_params.is_desc {
+        IterType::Rev(iter.rev())
     } else {
-        Box::new(tree.inner().iter())
+        IterType::Fwd(iter)
     };
 
     // kvpaire: timestamp#iid#pid = inn_type

@@ -206,10 +206,10 @@ pub(super) fn get_ids_by_prefix(
     let iter = partition.inner().prefix(&prefix);
 
     if let Some(page_params) = page_params {
-        let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
-            Box::new(iter.rev())
+        let iter = if page_params.is_desc {
+            IterType::Rev(iter.rev())
         } else {
-            Box::new(iter)
+            IterType::Fwd(iter)
         };
         for (idx, i) in iter.enumerate() {
             if idx < page_params.anchor {
@@ -244,10 +244,10 @@ pub(super) fn get_ids_by_tag(
     let partition = db.open_partition(tree, Default::default())?;
     let iter = partition.inner().prefix(tag);
     if let Some(page_params) = page_params {
-        let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
-            Box::new(iter.rev())
+        let iter = if page_params.is_desc {
+            IterType::Rev(iter.rev())
         } else {
-            Box::new(iter)
+            IterType::Fwd(iter)
         };
         for (idx, i) in iter.enumerate() {
             if idx < page_params.anchor {
@@ -277,6 +277,26 @@ pub(super) fn get_ids_by_tag(
     }
 
     Ok(res)
+}
+
+pub(super) enum IterType<I1, I2> {
+    Fwd(I1),
+    Rev(I2),
+}
+
+impl<I1, I2, T> Iterator for IterType<I1, I2>
+where
+    I1: Iterator<Item = T>,
+    I2: Iterator<Item = T>,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        match self {
+            IterType::Fwd(i) => i.next(),
+            IterType::Rev(i) => i.next(),
+        }
+    }
 }
 
 /// Update the counter and return the new id. It is contiguous if every id is used.
