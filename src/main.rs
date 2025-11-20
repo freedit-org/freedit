@@ -56,22 +56,14 @@ async fn main() -> Result<(), AppError> {
         if CONFIG.rebuild_index == Some(true) {
             tan.rebuild_index(&DB).unwrap();
         }
-        // let tan_ks = DB.open_partition("tan", Default::default()).unwrap();
-
-        // let mut subscriber = DB.open_tree("tan").unwrap().watch_prefix(vec![]);
-        // while let Some(event) = (&mut subscriber).await {
-        //     let (k, op_type) = match event {
-        //         sled::Event::Insert { key, value: _ } => (key, "add"),
-        //         sled::Event::Remove { key } => (key, "delete"),
-        //     };
-        //     let id = String::from_utf8_lossy(&k);
-
-        //     if op_type == "add" {
-        //         tan.add_doc(&id, &DB).unwrap();
-        //     }
-
-        //     tan.commit().unwrap();
-        // }
+        let tan_ks = DB.open_partition("tan", Default::default()).unwrap();
+        for item in tan_ks.inner().iter() {
+            let (k, _) = item.unwrap();
+            let id = String::from_utf8_lossy(&k);
+            tan.add_doc(&id, &DB).unwrap();
+            tan_ks.take(k).unwrap();
+        }
+        tan.commit().unwrap();
     });
 
     let app = router().await;
