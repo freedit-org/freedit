@@ -242,22 +242,6 @@ impl Tan {
         self.commit()?;
         info!("All search index deleted");
 
-        for (idx, i) in db
-            .open_partition("tan", Default::default())?
-            .inner()
-            .iter()
-            .enumerate()
-        {
-            let (k, _) = i?;
-            let id = String::from_utf8_lossy(&k);
-            self.add_doc(&id, db)?;
-            if idx % 500 == 0 {
-                self.commit()?;
-            }
-        }
-        self.commit()?;
-        info!("rebuild index done");
-
         Ok(())
     }
 
