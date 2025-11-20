@@ -63,9 +63,7 @@ pub(crate) async fn admin_view(
     tree_names.sort_unstable();
 
     let mut ones = Vec::with_capacity(n);
-    let tree_name = params
-        .tree_name
-        .unwrap_or_else(|| "__sled__default".to_owned());
+    let tree_name = params.tree_name.unwrap_or_else(|| "default".to_owned());
 
     if tree_names.contains(&tree_name) {
         let tree = DB.open_partition(&tree_name, Default::default())?;
@@ -87,7 +85,7 @@ pub(crate) async fn admin_view(
 
             let (k, v) = i?;
             match tree_name.as_str() {
-                "__sled__default" => {
+                "default" => {
                     let key = String::from_utf8_lossy(&k);
                     if key == "site_config" {
                         let (site_config, _): (SiteConfig, usize) =
@@ -357,7 +355,7 @@ pub(crate) async fn admin_post(
     site_config.captcha_name = clean_html(&site_config.captcha_name);
     site_config.tos_link = clean_html(&site_config.tos_link);
 
-    set_one_with_key(&DB, "__sled__default", "site_config", &site_config)?;
+    set_one_with_key(&DB, "default", "site_config", &site_config)?;
     Ok(Redirect::to("/admin"))
 }
 

@@ -323,7 +323,6 @@ where
     Ok(ivec_to_u32(&result.unwrap()))
 }
 
-/// work for [update_and_fetch](https://docs.rs/sled/latest/sled/struct.Db.html#method.update_and_fetch):
 /// increment 1.
 fn increment(old: Option<&Slice>) -> Option<Slice> {
     let number = match old {

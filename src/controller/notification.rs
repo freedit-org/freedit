@@ -79,11 +79,7 @@ struct Notification {
     is_read: bool,
 }
 
-/// work for [set_merge_operator](https://docs.rs/sled/latest/sled/struct.Db.html#method.set_merge_operator):
 /// update notification code to read.
-// pub(super) fn mark_read(old: Option<&fjall::Slice>) -> Option<Vec<u8>> {
-//     old.map(|bytes| [&bytes[0..8], &[1u8]].concat())
-// }
 pub(super) fn mark_read<'a>(old: Option<&'a fjall::Slice>) -> Option<fjall::Slice> {
     old.map(|slice| {
         let b: Vec<u8> = slice.bytes().flatten().collect();

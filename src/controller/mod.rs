@@ -533,7 +533,7 @@ impl SiteConfig {
     /// get [SiteConfig]
     fn get(db: &TransactionalKeyspace) -> Result<SiteConfig, AppError> {
         let default_ks = db.open_partition("default", Default::default())?;
-        let site_config = default_ks.get("default").unwrap();
+        let site_config = default_ks.get("site_config").unwrap();
         if let Some(site_config) = site_config {
             let (site_config, _): (SiteConfig, usize) =
                 bincode::decode_from_slice(&site_config, standard()).unwrap_or_default();
