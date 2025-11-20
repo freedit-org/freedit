@@ -891,8 +891,6 @@ pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoRespo
             get_id_by_name(&DB, "usernames", &input.username)?.ok_or(AppError::WrongPassword)?
         }
     };
-    dbg!(&input.password);
-    dbg!(&uid);
     let user: User = get_one(&DB, "users", uid)?;
     if check_password(&input.password, &user.password_hash) {
         let site_config = SiteConfig::get(&DB)?;
