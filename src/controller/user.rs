@@ -1057,8 +1057,7 @@ pub(crate) async fn signout(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     if let Some(cookie) = cookie {
-        let session = cookie.get(COOKIE_NAME);
-        if let Some(session) = session {
+        if let Some(session) = cookie.get(COOKIE_NAME) {
             DB.open_partition("sessions", Default::default())?
                 .remove(session)?;
         }
