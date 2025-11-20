@@ -1,12 +1,7 @@
 use std::{str::FromStr, sync::LazyLock};
 
-use super::{Claim, SiteConfig, fmt::md2html};
-use crate::{
-    DB,
-    controller::{User, filters},
-    error::AppError,
-    get_one,
-};
+use super::{Claim, SiteConfig, User, filters, fmt::md2html};
+use crate::{DB, error::AppError, get_one};
 use askama::Template;
 use axum::{
     Form,

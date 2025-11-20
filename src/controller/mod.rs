@@ -126,12 +126,11 @@ pub(super) mod user;
 mod fmt;
 
 use self::db_utils::{
-    get_ids_by_prefix, get_one, incr_id, ivec_to_u32, u8_slice_to_u32, u32_to_ivec,
+    get_ids_by_prefix, get_one, incr_id, ivec_to_u32, ks_incr_id, u8_slice_to_u32, u32_to_ivec,
 };
 use self::fmt::md2html;
 use self::tantivy::{FIELDS, ToDoc};
 use self::user::Role;
-use crate::controller::db_utils::ks_incr_id;
 use crate::error::AppError;
 use ::tantivy::TantivyDocument;
 use bincode::config::standard;

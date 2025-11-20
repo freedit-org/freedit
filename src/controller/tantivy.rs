@@ -24,16 +24,12 @@ use tracing::{info, warn};
 use unicode_segmentation::UnicodeSegmentation;
 use whichlang::detect_language;
 
-use crate::{
-    DB,
-    config::CONFIG,
-    controller::{InnType, SoloType, filters},
-    error::AppError,
-};
+use crate::{DB, config::CONFIG, error::AppError};
 
 use super::{
-    Claim, Comment, Item, Post, PostStatus, SiteConfig, Solo, User,
+    Claim, Comment, InnType, Item, Post, PostStatus, SiteConfig, Solo, SoloType, User,
     db_utils::{get_one, u8_slice_to_u32, u32_to_ivec},
+    filters,
     fmt::ts_to_date,
     meta_handler::{PageData, into_response},
 };
