@@ -653,11 +653,11 @@ fn inn_rm_index(db: &TransactionalKeyspace, iid: u32, pid: u32) -> Result<u8, Ap
     let mut batch = db.inner().batch();
     let mut inn_type = 0;
     let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
-    if let Some(v) = tl_idx_tree.get(k)? {
-        let k = [&v[0..4], &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
+    if let Some(v) = tl_idx_tree.get(&k)? {
+        let k2 = [&v[0..4], &u32_to_ivec(iid), &u32_to_ivec(pid)].concat();
         batch.remove(&tl_idx_tree, &k);
-        if let Some(v) = tl_tree.get(&k)? {
-            batch.remove(&tl_tree, k);
+        if let Some(v) = tl_tree.get(&k2)? {
+            batch.remove(&tl_tree, k2);
             inn_type = v[0];
         }
     }
