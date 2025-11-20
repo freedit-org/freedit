@@ -304,7 +304,7 @@ where
 /// # Examples
 ///
 /// ```ignore
-/// let new_user_id = incr_id(&db.open_partition("users_count", Default::default())?, "key")?;
+/// let new_user_id = incr_id(&DB, "users_count")?;;
 /// ```
 pub(super) fn incr_id<K>(db: &TransactionalKeyspace, key: K) -> Result<u32, AppError>
 where
