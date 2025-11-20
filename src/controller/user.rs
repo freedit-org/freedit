@@ -13,7 +13,7 @@ use super::{
     notification::{NtType, add_notification},
     u8_slice_to_u32, u32_to_ivec,
 };
-use crate::{DB, config::CONFIG, error::AppError};
+use crate::{DB, config::CONFIG, controller::db_utils::IterType, error::AppError};
 use ::rand::{Rng, rng};
 use askama::Template;
 use axum::{
@@ -336,10 +336,10 @@ impl OutUserList {
         let mut users = Vec::with_capacity(page_params.n);
         let keyspace = db.open_partition("inn_users", Default::default())?;
         let iter = keyspace.inner().prefix(u32_to_ivec(iid));
-        let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
-            Box::new(iter.rev())
+        let iter = if page_params.is_desc {
+            IterType::Rev(iter.rev())
         } else {
-            Box::new(iter)
+            IterType::Fwd(iter)
         };
 
         for (idx, i) in iter.enumerate() {
@@ -443,11 +443,12 @@ pub(crate) async fn user_list(
         if let Some(role) = params.role {
             let keyspace = DB.open_partition("users", Default::default())?;
             let iter = keyspace.inner().iter();
-            let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
-                Box::new(iter.rev())
+            let iter = if page_params.is_desc {
+                IterType::Rev(iter.rev())
             } else {
-                Box::new(iter)
+                IterType::Fwd(iter)
             };
+
             for (idx, i) in iter.enumerate() {
                 if idx < page_params.anchor {
                     continue;

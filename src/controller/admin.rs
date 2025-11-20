@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     DB,
-    controller::{Comment, Inn, Post, Solo, User, filters},
+    controller::{Comment, Inn, Post, Solo, User, db_utils::IterType, filters},
     error::AppError,
 };
 use askama::Template;
@@ -72,10 +72,11 @@ pub(crate) async fn admin_view(
 
     if tree_names.contains(&tree_name) {
         let tree = DB.open_partition(&tree_name, Default::default())?;
-        let iter: Box<dyn Iterator<Item = _>> = if is_desc {
-            Box::new(tree.inner().iter().rev())
+        let iter = tree.inner().iter();
+        let iter = if is_desc {
+            IterType::Rev(iter.rev())
         } else {
-            Box::new(tree.inner().iter())
+            IterType::Fwd(iter)
         };
 
         for (idx, i) in iter.enumerate() {

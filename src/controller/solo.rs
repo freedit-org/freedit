@@ -10,7 +10,11 @@ use super::{
     u8_slice_to_u32, u32_to_ivec,
     user::Role,
 };
-use crate::{DB, controller::filters, error::AppError};
+use crate::{
+    DB,
+    controller::{db_utils::IterType, filters},
+    error::AppError,
+};
 use askama::Template;
 use axum::{
     extract::{Path, Query},
@@ -332,10 +336,11 @@ fn get_all_solos(
     let mut count: usize = 0;
     let mut result = Vec::with_capacity(page_params.n);
 
-    let iter: Box<dyn Iterator<Item = _>> = if page_params.is_desc {
-        Box::new(tree.inner().iter().rev())
+    let iter = tree.inner().iter();
+    let iter = if page_params.is_desc {
+        IterType::Rev(iter.rev())
     } else {
-        Box::new(tree.inner().iter())
+        IterType::Fwd(iter)
     };
 
     for i in iter {

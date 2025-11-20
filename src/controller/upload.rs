@@ -8,7 +8,12 @@ use super::{
     u32_to_ivec,
     user::{InnRole, Role},
 };
-use crate::{DB, config::CONFIG, controller::filters, error::AppError};
+use crate::{
+    DB,
+    config::CONFIG,
+    controller::{db_utils::IterType, filters},
+    error::AppError,
+};
 use askama::Template;
 use axum::{
     extract::{Multipart, Path, Query},
@@ -115,10 +120,10 @@ pub(crate) async fn gallery(
     let mut imgs = Vec::with_capacity(n);
     let ks = DB.open_partition("user_uploads", Default::default())?;
     let iter = ks.inner().prefix(u32_to_ivec(uid));
-    let iter: Box<dyn Iterator<Item = _>> = if is_desc {
-        Box::new(iter.rev())
+    let iter = if is_desc {
+        IterType::Rev(iter.rev())
     } else {
-        Box::new(iter)
+        IterType::Fwd(iter)
     };
 
     for (idx, i) in iter.enumerate() {
