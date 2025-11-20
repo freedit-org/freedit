@@ -1006,11 +1006,8 @@ pub(crate) async fn signup_post(
 
     let captcha_char = DB
         .open_partition("captcha", Default::default())?
-        .get(&input.captcha_id)?
+        .take(&input.captcha_id)?
         .ok_or(AppError::CaptchaError)?;
-    let captcha_char = String::from_utf8(captcha_char.to_vec()).unwrap();
-    DB.open_partition("captcha", Default::default())?
-        .remove(&input.captcha_id)?;
     if captcha_char != input.captcha_value {
         return Err(AppError::CaptchaError);
     }
