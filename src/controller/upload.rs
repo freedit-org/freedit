@@ -235,7 +235,10 @@ pub(crate) async fn upload_post(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let mut imgs = Vec::with_capacity(10);
-    let user_uploads = DB.open_partition("user_uploads", Default::default())?;
+    let mut batch = DB.inner().batch();
+    let user_uploads = DB
+        .inner()
+        .open_partition("user_uploads", Default::default())?;
     while let Some(field) = multipart.next_field().await.unwrap() {
         if imgs.len() > 10 {
             break;
@@ -321,10 +324,12 @@ pub(crate) async fn upload_post(
         fs::write(location, &img_data).await.unwrap();
         let img_id = incr_id(&DB, "imgs_count")?;
         let k = [u32_to_ivec(claim.uid), u32_to_ivec(img_id)].concat();
-        user_uploads.insert(k, fname.as_bytes())?;
+        batch.insert(&user_uploads, k, fname.as_bytes());
 
         imgs.push(fname);
     }
+
+    batch.commit()?;
 
     let has_unread = User::has_unread(&DB, claim.uid)?;
     let uid = claim.uid;
