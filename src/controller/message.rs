@@ -82,7 +82,7 @@ pub(crate) async fn message_post(
 
     let k = [u32_to_ivec(uid), u32_to_ivec(mid)].concat();
     DB.open_partition("user_message", Default::default())?
-        .insert(k, &[])?;
+        .insert(k, [])?;
 
     let redirect = format!("/user/{uid}");
     Ok(Redirect::to(&redirect))

@@ -470,7 +470,7 @@ pub(crate) async fn feed_read(
     if let Some(ref claim) = claim {
         let k = [u32_to_ivec(claim.uid), u32_to_ivec(item_id)].concat();
         DB.open_partition("read", Default::default())?
-            .insert(k, &[])?;
+            .insert(k, [])?;
     }
 
     let allow_img = params.allow_img.unwrap_or_default();
@@ -700,7 +700,7 @@ pub(super) async fn update(
                     };
                     item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                     set_one(db, "items", item_id, &item)?;
-                    tan_tree.insert(format!("item{item_id}"), &[])?;
+                    tan_tree.insert(format!("item{item_id}"), [])?;
                     item_ids.push((item_id, source_item.updated));
                 };
             }
@@ -731,7 +731,7 @@ pub(super) async fn update(
                         };
                         item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
                         set_one(db, "items", item_id, &item)?;
-                        tan_tree.insert(format!("item{item_id}"), &[])?;
+                        tan_tree.insert(format!("item{item_id}"), [])?;
                         item_ids.push((item_id, source_item.updated));
                     };
                 }
@@ -913,11 +913,11 @@ pub(super) fn inn_feed_to_post(
 
             let tag_k = [tag.as_bytes(), &u32_to_ivec(pid)].concat();
             db.open_partition("tags", Default::default())?
-                .insert(tag_k, &[])?;
+                .insert(tag_k, [])?;
 
             let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
             db.open_partition("inn_posts", Default::default())?
-                .insert(k, &[])?;
+                .insert(k, [])?;
 
             inn_add_index(db, iid, pid, ts as u32, inn.inn_type)?;
 
@@ -927,7 +927,7 @@ pub(super) fn inn_feed_to_post(
             db.open_partition("user_posts", Default::default())?
                 .insert(k, v)?;
 
-            inn_items_tree.insert(inn_item_k, &[])?;
+            inn_items_tree.insert(inn_item_k, [])?;
         }
     }
 
@@ -989,7 +989,7 @@ pub(crate) async fn feed_subscribe(
                 // add other's feed
                 let folder_ivec = &k[4..(k.len() - 4)];
                 let new_key = [&u32_to_ivec(claim.uid), folder_ivec, feed_id_ivec].concat();
-                user_folder_tree.insert(new_key, &[1])?;
+                user_folder_tree.insert(new_key, [1])?;
             }
             break;
         };

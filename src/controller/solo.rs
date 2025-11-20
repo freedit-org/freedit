@@ -450,7 +450,7 @@ pub(crate) async fn solo_post(
             let hashtags_tree = DB.open_partition("hashtags", Default::default())?;
             for hashtag in &hashtags {
                 let k = [hashtag.as_bytes(), &sid_ivec].concat();
-                hashtags_tree.insert(k, &[])?;
+                hashtags_tree.insert(k, [])?;
             }
         }
         for tag in &hashtags {
@@ -515,7 +515,7 @@ pub(crate) async fn solo_post(
 
     if solo_type == SoloType::Public {
         DB.open_partition("tan", Default::default())?
-            .insert(format!("solo{sid}"), &[])?;
+            .insert(format!("solo{sid}"), [])?;
     }
 
     let target = if input.reply_to > 0 {
@@ -545,8 +545,8 @@ pub(crate) async fn solo_like(
 
     match solo_users_like_tree.get(&solo_users_like_k)? {
         None => {
-            user_solos_like_tree.insert(&user_solos_like_k, &[])?;
-            solo_users_like_tree.insert(&solo_users_like_k, &[])?;
+            user_solos_like_tree.insert(&user_solos_like_k, [])?;
+            solo_users_like_tree.insert(&solo_users_like_k, [])?;
         }
         Some(_) => {
             user_solos_like_tree.remove(&user_solos_like_k)?;

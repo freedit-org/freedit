@@ -196,7 +196,7 @@ impl Tan {
                 let post: Post = get_one(db, "posts", pid)?;
                 if post.status != PostStatus::HiddenByMod && post.status != PostStatus::HiddenByUser
                 {
-                    tan_tree.insert(format!("post{}", post.pid).as_bytes(), &[])?;
+                    tan_tree.insert(format!("post{}", post.pid).as_bytes(), [])?;
                     for i in db
                         .open_partition("post_comments", Default::default())?
                         .inner()
@@ -208,7 +208,7 @@ impl Tan {
                         if !comment.is_hidden {
                             tan_tree.insert(
                                 format!("comt{}/{}", comment.pid, comment.cid).as_bytes(),
-                                &[],
+                                [],
                             )?;
                         }
                     }
@@ -224,7 +224,7 @@ impl Tan {
             let (_, v) = i?;
             let (solo, _): (Solo, usize) = bincode::decode_from_slice(&v, standard())?;
             if SoloType::from(solo.solo_type) == SoloType::Public {
-                tan_tree.insert(format!("solo{}", solo.sid).as_bytes(), &[])?;
+                tan_tree.insert(format!("solo{}", solo.sid).as_bytes(), [])?;
             }
         }
 
@@ -235,7 +235,7 @@ impl Tan {
         {
             let (k, _) = i?;
             let id = u8_slice_to_u32(&k);
-            tan_tree.insert(format!("item{id}").as_bytes(), &[])?;
+            tan_tree.insert(format!("item{id}").as_bytes(), [])?;
         }
 
         self.writer.delete_all_documents()?;
