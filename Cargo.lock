@@ -1798,7 +1798,7 @@ dependencies = [
  "guardian",
  "interval-heap",
  "log",
- "miniz_oxide",
+ "lz4_flex",
  "path-absolutize",
  "quick_cache",
  "rustc-hash",
