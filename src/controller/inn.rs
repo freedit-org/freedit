@@ -273,7 +273,7 @@ pub(crate) async fn mod_inn_post(
                 let iid = u8_slice_to_u32(&k[4..8]);
                 if iid == inn.iid {
                     let v = inn_type as u8;
-                    batch.insert(&post_timeline_ks, k, &[v]);
+                    batch.insert(&post_timeline_ks, k, [v]);
                 }
             }
         }
@@ -296,20 +296,20 @@ pub(crate) async fn mod_inn_post(
     // set topic index for inns
     for topic in &topics {
         let k = [topic.as_bytes(), &u32_to_ivec(iid)].concat();
-        batch.insert(&topics_ks, k, &[]);
+        batch.insert(&topics_ks, k, []);
     }
 
     // set index for user mods and user inns
     let k = [u32_to_ivec(claim.uid), iid_ivec.clone()].concat();
     let mod_inns_ks = DB.inner().open_partition("mod_inns", Default::default())?;
-    batch.insert(&mod_inns_ks, &k, &[]);
+    batch.insert(&mod_inns_ks, &k, []);
     let user_inns_ks = DB.inner().open_partition("user_inns", Default::default())?;
-    batch.insert(&user_inns_ks, &k, &[]);
+    batch.insert(&user_inns_ks, &k, []);
 
     // set index for inn users
     let k = [iid_ivec.clone(), u32_to_ivec(claim.uid)].concat();
     let inn_users_ks = DB.inner().open_partition("inn_users", Default::default())?;
-    batch.insert(&inn_users_ks, &k, &[10]);
+    batch.insert(&inn_users_ks, &k, [10]);
 
     let inn = Inn {
         iid,
@@ -637,7 +637,7 @@ pub(super) fn inn_add_index(
     batch.insert(&tl_idx_tree, &*k, v);
 
     let k = [created_at_ivec, u32_to_ivec(iid), u32_to_ivec(pid)].concat();
-    batch.insert(&tl_tree, k, &[inn_type]);
+    batch.insert(&tl_tree, k, [inn_type]);
     batch.commit()?;
     Ok(())
 }
@@ -761,7 +761,7 @@ pub(crate) async fn edit_post_post(
 
         for tag in &tags {
             let k = [tag.as_bytes(), &pid_ivec].concat();
-            batch.insert(&tags_ks, k, &[]);
+            batch.insert(&tags_ks, k, []);
         }
     }
 
@@ -816,7 +816,7 @@ pub(crate) async fn edit_post_post(
     if old_pid == 0 {
         let k = [iid_ivec, pid_ivec.clone()].concat();
         let inn_posts_ks = DB.inner().open_partition("inn_posts", Default::default())?;
-        batch.insert(&inn_posts_ks, &k, &[]);
+        batch.insert(&inn_posts_ks, &k, []);
 
         let k = [u32_to_ivec(claim.uid), pid_ivec].concat();
         let mut v = iid.to_be_bytes().to_vec();
@@ -837,7 +837,7 @@ pub(crate) async fn edit_post_post(
 
     if inn.is_open_access() {
         let tan_ks = DB.inner().open_partition("tan", Default::default())?;
-        batch.insert(&tan_ks, format!("post{pid}"), &[]);
+        batch.insert(&tan_ks, format!("post{pid}"), []);
     }
     batch.commit()?;
 
@@ -1485,15 +1485,15 @@ pub(crate) async fn inn_join(
                 || InnType::from(inn.inn_type) == InnType::Private
             {
                 // 1: applied, but pending
-                inn_users_tree.insert(&inn_users_k, &[1])?;
-                inn_apply_tree.insert(&inn_users_k, &[])?;
+                inn_users_tree.insert(&inn_users_k, [1])?;
+                inn_apply_tree.insert(&inn_users_k, [])?;
             } else {
-                user_inns_tree.insert(&user_inns_k, &[])?;
+                user_inns_tree.insert(&user_inns_k, [])?;
                 let count = get_count_by_prefix(&DB, "inn_users", &u32_to_ivec(iid))? as u32;
                 if inn.early_birds > 0 && count <= inn.early_birds {
-                    inn_users_tree.insert(&inn_users_k, &[5])?;
+                    inn_users_tree.insert(&inn_users_k, [5])?;
                 } else {
-                    inn_users_tree.insert(&inn_users_k, &[4])?;
+                    inn_users_tree.insert(&inn_users_k, [4])?;
                 }
             }
         }
@@ -1950,7 +1950,7 @@ pub(crate) async fn comment_post(
 
     let k = [u32_to_ivec(claim.uid), pid_ivec, u32_to_ivec(cid)].concat();
     DB.open_partition("user_comments", Default::default())?
-        .insert(k, &[])?;
+        .insert(k, [])?;
 
     // only the fellow could update the timeline by adding comment
     if inn_role >= InnRole::Fellow {
@@ -1968,7 +1968,7 @@ pub(crate) async fn comment_post(
 
     if inn.is_open_access() {
         DB.open_partition("tan", Default::default())?
-            .insert(format!("comt{pid}/{cid}"), &[])?;
+            .insert(format!("comt{pid}/{cid}"), [])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -2101,7 +2101,7 @@ pub(crate) async fn post_upvote(
     if post_upvotes_tree.contains_key(&k)? {
         post_upvotes_tree.remove(&k)?;
     } else {
-        post_upvotes_tree.insert(&k, &[])?;
+        post_upvotes_tree.insert(&k, [])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -2128,7 +2128,7 @@ pub(crate) async fn comment_upvote(
     if comment_upvotes_tree.contains_key(&k)? {
         comment_upvotes_tree.remove(&k)?;
     } else {
-        comment_upvotes_tree.insert(&k, &[])?;
+        comment_upvotes_tree.insert(&k, [])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -2154,7 +2154,7 @@ pub(crate) async fn post_downvote(
     if post_downvotes_tree.contains_key(&k)? {
         post_downvotes_tree.remove(&k)?;
     } else {
-        post_downvotes_tree.insert(&k, &[])?;
+        post_downvotes_tree.insert(&k, [])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -2213,7 +2213,7 @@ pub(crate) async fn comment_downvote(
     if comment_downvotes_tree.contains_key(&k)? {
         comment_downvotes_tree.remove(&k)?;
     } else {
-        comment_downvotes_tree.insert(&k, &[])?;
+        comment_downvotes_tree.insert(&k, [])?;
     }
 
     let target = format!("/post/{iid}/{pid}");
@@ -2323,7 +2323,7 @@ pub(crate) async fn post_pin(
     if tree.contains_key(&k)? {
         tree.remove(&k)?;
     } else {
-        tree.insert(&k, &[])?;
+        tree.insert(&k, [])?;
     }
 
     let target = format!("/post/{iid}/{pid}");

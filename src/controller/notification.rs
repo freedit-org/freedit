@@ -80,7 +80,7 @@ struct Notification {
 }
 
 /// update notification code to read.
-pub(super) fn mark_read<'a>(old: Option<&'a fjall::Slice>) -> Option<fjall::Slice> {
+pub(super) fn mark_read(old: Option<&fjall::Slice>) -> Option<fjall::Slice> {
     old.map(|slice| {
         let b: Vec<u8> = slice.bytes().flatten().collect();
         let new_v = [&b[0..8], &[1u8]].concat();
@@ -467,7 +467,7 @@ pub(super) fn add_notification(
     id1: u32,
     id2: u32,
 ) -> Result<(), AppError> {
-    let nid = incr_id(&db, "notifications_count")?;
+    let nid = incr_id(db, "notifications_count")?;
     let k = [u32_to_ivec(uid), u32_to_ivec(nid), vec![nt_type as u8]].concat();
     let v = [u32_to_ivec(id1), u32_to_ivec(id2), vec![0u8]].concat();
     db.open_partition("notifications", Default::default())?

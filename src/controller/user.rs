@@ -194,8 +194,8 @@ pub(crate) async fn user_follow(
         user_following_tree.remove(&following_k)?;
         user_followers_tree.remove(&followers_k)?;
     } else {
-        user_following_tree.insert(&following_k, &[])?;
-        user_followers_tree.insert(&followers_k, &[])?;
+        user_following_tree.insert(&following_k, [])?;
+        user_followers_tree.insert(&followers_k, [])?;
     }
 
     let target = format!("/user/{u}");
@@ -542,7 +542,7 @@ pub(crate) async fn role_post(
             let inn_role: u8 = match form.role.as_str() {
                 "Pending" => {
                     DB.open_partition("inn_apply", Default::default())?
-                        .insert(&inn_users_k, &[])?;
+                        .insert(&inn_users_k, [])?;
                     1
                 }
                 "Rejected" => 2,
@@ -562,12 +562,12 @@ pub(crate) async fn role_post(
 
             if old_inn_role != Some(inn_role.into()) {
                 DB.open_partition("inn_users", Default::default())?
-                    .insert(&inn_users_k, &[inn_role])?;
+                    .insert(&inn_users_k, [inn_role])?;
 
                 let user_inns_k = [u32_to_ivec(uid), u32_to_ivec(id)].concat();
                 if inn_role >= 3 {
                     DB.open_partition("user_inns", Default::default())?
-                        .insert(&user_inns_k, &[])?;
+                        .insert(&user_inns_k, [])?;
                 } else {
                     DB.open_partition("user_inns", Default::default())?
                         .remove(&user_inns_k)?;
@@ -575,7 +575,7 @@ pub(crate) async fn role_post(
 
                 if inn_role >= 7 {
                     DB.open_partition("mod_inns", Default::default())?
-                        .insert(&user_inns_k, &[])?;
+                        .insert(&user_inns_k, [])?;
                 } else {
                     DB.open_partition("mod_inns", Default::default())?
                         .remove(&user_inns_k)?;
@@ -1053,11 +1053,11 @@ pub(crate) async fn signup_post(
 pub(crate) async fn signout(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
-    if let Some(cookie) = cookie {
-        if let Some(session) = cookie.get(COOKIE_NAME) {
-            DB.open_partition("sessions", Default::default())?
-                .remove(session)?;
-        }
+    if let Some(cookie) = cookie
+        && let Some(session) = cookie.get(COOKIE_NAME)
+    {
+        DB.open_partition("sessions", Default::default())?
+            .remove(session)?;
     }
 
     let cookie = format!(
