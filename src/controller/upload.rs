@@ -19,6 +19,7 @@ use axum_extra::{
     headers::{Cookie, Referer},
 };
 use data_encoding::HEXLOWER;
+use fjall::KeyspaceCreateOptions;
 use image::{ImageFormat, imageops::FilterType};
 use img_parts::{DynImage, ImageEXIF};
 use mozjpeg::{ColorSpace, Compress, ScanMode};
@@ -113,7 +114,7 @@ pub(crate) async fn gallery(
     let n = 12;
 
     let mut imgs = Vec::with_capacity(n);
-    let ks = DB.open_partition("user_uploads", Default::default())?;
+    let ks = DB.keyspace("user_uploads", KeyspaceCreateOptions::default)?;
     let iter = ks.inner().prefix(u32_to_ivec(uid));
     let iter = if is_desc {
         IterType::Rev(iter.rev())
@@ -126,7 +127,7 @@ pub(crate) async fn gallery(
             continue;
         }
 
-        let (k, v) = i?;
+        let (k, v) = i.into_inner()?;
         let img_id = u8_slice_to_u32(&k[4..]);
         let img = String::from_utf8_lossy(&v).to_string();
         imgs.push((img_id, img));
@@ -164,12 +165,12 @@ pub(crate) async fn image_delete(
     }
 
     let k = [u32_to_ivec(uid), u32_to_ivec(img_id)].concat();
-    let tree = DB.open_partition("user_uploads", Default::default())?;
+    let tree = DB.keyspace("user_uploads", KeyspaceCreateOptions::default)?;
     if let Some(v1) = tree.take(&k)? {
         // When the same pictures uploaded, only one will be saved. So when deleting, we must check that.
         let mut count = 0;
         for i in tree.inner().iter() {
-            let (_, v2) = i?;
+            let (_, v2) = i.into_inner()?;
             if v1 == v2 {
                 count += 1;
                 break;
@@ -238,7 +239,7 @@ pub(crate) async fn upload_post(
     let mut batch = DB.inner().batch();
     let user_uploads = DB
         .inner()
-        .open_partition("user_uploads", Default::default())?;
+        .keyspace("user_uploads", KeyspaceCreateOptions::default)?;
     while let Some(field) = multipart.next_field().await.unwrap() {
         if imgs.len() > 10 {
             break;

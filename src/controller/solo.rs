@@ -22,7 +22,8 @@ use axum_extra::{
     TypedHeader,
     headers::{Cookie, Referer},
 };
-use fjall::TransactionalKeyspace;
+use fjall::KeyspaceCreateOptions;
+use fjall::SingleWriterTxDatabase;
 use jiff::Timestamp;
 use serde::Deserialize;
 use tracing::warn;
@@ -72,7 +73,7 @@ struct OutSolo {
 
 impl OutSolo {
     fn get(
-        db: &TransactionalKeyspace,
+        db: &SingleWriterTxDatabase,
         sid: u32,
         current_uid: Option<u32>,
     ) -> Result<Option<Self>, AppError> {
@@ -90,7 +91,7 @@ impl OutSolo {
             } else if solo_type == SoloType::Following {
                 let k = [u32_to_ivec(solo.uid), u32_to_ivec(uid)].concat();
                 if db
-                    .open_partition("user_followers", Default::default())?
+                    .keyspace("user_followers", KeyspaceCreateOptions::default)?
                     .contains_key(k)?
                 {
                     can_visit = true;
@@ -107,7 +108,7 @@ impl OutSolo {
         if let Some(uid) = current_uid {
             let k = [u32_to_ivec(sid), u32_to_ivec(uid)].concat();
             if db
-                .open_partition("solo_users_like", Default::default())?
+                .keyspace("solo_users_like", KeyspaceCreateOptions::default)?
                 .contains_key(k)?
             {
                 like = true;
@@ -183,7 +184,7 @@ pub(crate) async fn solo_list(
     if let Some(ref claim) = claim {
         let following_k = [u32_to_ivec(claim.uid), u32_to_ivec(uid)].concat();
         if DB
-            .open_partition("user_following", Default::default())?
+            .keyspace("user_following", KeyspaceCreateOptions::default)?
             .contains_key(following_k)?
         {
             is_following = true;
@@ -301,9 +302,9 @@ pub(crate) async fn solo(
         && let Some(ref claim) = claim
     {
         let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
-        let tree = DB.open_partition("notifications", Default::default())?;
+        let tree = DB.keyspace("notifications", KeyspaceCreateOptions::default)?;
         for i in tree.inner().prefix(prefix) {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             tree.update_fetch(k, mark_read)?;
         }
     }
@@ -324,13 +325,13 @@ pub(crate) async fn solo(
 }
 
 fn get_all_solos(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     timeline_tree: &str,
     followers: &[u32],
     current_uid: u32,
     page_params: &ParamsPage,
 ) -> Result<Vec<u32>, AppError> {
-    let tree = db.open_partition(timeline_tree, Default::default())?;
+    let tree = db.keyspace(timeline_tree, KeyspaceCreateOptions::default)?;
     let mut count: usize = 0;
     let mut result = Vec::with_capacity(page_params.n);
 
@@ -343,7 +344,7 @@ fn get_all_solos(
 
     for i in iter {
         // kv_pair: sid = uid#solo_type
-        let (k, v) = i?;
+        let (k, v) = i.into_inner()?;
         let solo_uid = u8_slice_to_u32(&v[0..4]);
         let solo_type = u8_slice_to_u32(&v[4..8]);
         if can_visit_solo(solo_type, followers, solo_uid, current_uid) {
@@ -362,19 +363,19 @@ fn get_all_solos(
 }
 
 fn get_solos_by_uids(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     uids: &[u32],
     followers: &[u32],
     current_uid: u32,
     page_params: &ParamsPage,
 ) -> Result<Vec<u32>, AppError> {
     let mut sids = Vec::with_capacity(page_params.n);
-    let user_solos_tree = db.open_partition("user_solos", Default::default())?;
+    let user_solos_tree = db.keyspace("user_solos", KeyspaceCreateOptions::default)?;
     for uid in uids {
         let prefix = u32_to_ivec(*uid);
         // kv_pair: uid#sid = solo_type
         for i in user_solos_tree.inner().prefix(prefix) {
-            let (k, v) = i?;
+            let (k, v) = i.into_inner()?;
             let sid = u8_slice_to_u32(&k[4..8]);
             let solo_type = u8_slice_to_u32(&v);
             if can_visit_solo(solo_type, followers, *uid, current_uid) {
@@ -447,7 +448,7 @@ pub(crate) async fn solo_post(
     if solo_type == SoloType::Public {
         hashtags = extract_element(&content, 5, '#');
         if !hashtags.is_empty() {
-            let hashtags_tree = DB.open_partition("hashtags", Default::default())?;
+            let hashtags_tree = DB.keyspace("hashtags", KeyspaceCreateOptions::default)?;
             for hashtag in &hashtags {
                 let k = [hashtag.as_bytes(), &sid_ivec].concat();
                 hashtags_tree.insert(k, [])?;
@@ -502,19 +503,19 @@ pub(crate) async fn solo_post(
 
     set_one(&DB, "solos", sid, &solo)?;
     let k = [u32_to_ivec(claim.uid), sid_ivec.clone()].concat();
-    DB.open_partition("user_solos", Default::default())?
+    DB.keyspace("user_solos", KeyspaceCreateOptions::default)?
         .insert(k, u32_to_ivec(solo_type as u32))?;
 
     // kv_pair: sid = uid#solo_type
     let v = [u32_to_ivec(claim.uid), u32_to_ivec(solo_type as u32)].concat();
-    DB.open_partition("solo_timeline", Default::default())?
+    DB.keyspace("solo_timeline", KeyspaceCreateOptions::default)?
         .insert(&sid_ivec, v)?;
 
     User::update_stats(&DB, claim.uid, "solo")?;
     claim.update_last_write(&DB)?;
 
     if solo_type == SoloType::Public {
-        DB.open_partition("tan", Default::default())?
+        DB.keyspace("tan", KeyspaceCreateOptions::default)?
             .insert(format!("solo{sid}"), [])?;
     }
 
@@ -540,8 +541,8 @@ pub(crate) async fn solo_like(
 
     let user_solos_like_k = [u32_to_ivec(claim.uid), u32_to_ivec(sid)].concat();
     let solo_users_like_k = [u32_to_ivec(sid), u32_to_ivec(claim.uid)].concat();
-    let user_solos_like_tree = DB.open_partition("user_solos_like", Default::default())?;
-    let solo_users_like_tree = DB.open_partition("solo_users_like", Default::default())?;
+    let user_solos_like_tree = DB.keyspace("user_solos_like", KeyspaceCreateOptions::default)?;
+    let solo_users_like_tree = DB.keyspace("solo_users_like", KeyspaceCreateOptions::default)?;
 
     match solo_users_like_tree.get(&solo_users_like_k)? {
         None => {
@@ -578,32 +579,32 @@ pub(crate) async fn solo_delete(
 
     let sid_ivec = u32_to_ivec(sid);
 
-    DB.open_partition("solos", Default::default())?
+    DB.keyspace("solos", KeyspaceCreateOptions::default)?
         .remove(&sid_ivec)?;
-    DB.open_partition("solo_timeline", Default::default())?
+    DB.keyspace("solo_timeline", KeyspaceCreateOptions::default)?
         .remove(&sid_ivec)?;
 
-    let solo_users_like_tree = DB.open_partition("solo_users_like", Default::default())?;
-    let user_solos_like_tree = DB.open_partition("user_solos_like", Default::default())?;
+    let solo_users_like_tree = DB.keyspace("solo_users_like", KeyspaceCreateOptions::default)?;
+    let user_solos_like_tree = DB.keyspace("user_solos_like", KeyspaceCreateOptions::default)?;
     for i in solo_users_like_tree.inner().prefix(&sid_ivec) {
-        let (k, _) = i?;
+        let (k, _) = i.into_inner()?;
         let uid = &k[4..8];
         let user_solos_like_k = [uid, &sid_ivec].concat();
         user_solos_like_tree.remove(user_solos_like_k)?;
         solo_users_like_tree.remove(k)?;
     }
 
-    let hashtags_tree = DB.open_partition("hashtags", Default::default())?;
+    let hashtags_tree = DB.keyspace("hashtags", KeyspaceCreateOptions::default)?;
     for hashtag in solo.hashtags {
         let k = [hashtag.as_bytes(), &sid_ivec].concat();
         hashtags_tree.remove(k)?;
     }
 
     let k = [u32_to_ivec(solo.uid), sid_ivec].concat();
-    DB.open_partition("user_solos", Default::default())?
+    DB.keyspace("user_solos", KeyspaceCreateOptions::default)?
         .remove(k)?;
 
-    DB.open_partition("tan", Default::default())?
+    DB.keyspace("tan", KeyspaceCreateOptions::default)?
         .remove(format!("solo{sid}"))?;
 
     if solo.uid != claim.uid {

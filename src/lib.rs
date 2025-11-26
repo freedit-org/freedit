@@ -13,7 +13,7 @@ mod controller;
 mod error;
 
 use data_encoding::HEXLOWER;
-use fjall::{Config, TransactionalKeyspace};
+use fjall::SingleWriterTxDatabase;
 use ring::digest::{Context, Digest, SHA256};
 use std::sync::LazyLock;
 use std::{
@@ -50,13 +50,13 @@ static CURRENT_SHA256: LazyLock<String> = LazyLock::new(|| {
     HEXLOWER.encode(digest.as_ref())
 });
 
-pub static DB: LazyLock<TransactionalKeyspace> = LazyLock::new(|| {
+pub static DB: LazyLock<SingleWriterTxDatabase> = LazyLock::new(|| {
     info!("sha256: {}", *CURRENT_SHA256);
     info!(VERSION);
     info!(GIT_COMMIT);
 
     let db_url = &CONFIG.db;
-    let db = Config::new(db_url).open_transactional().unwrap();
     info!(%db_url);
+    let db = SingleWriterTxDatabase::builder(db_url).open().unwrap();
     db
 });

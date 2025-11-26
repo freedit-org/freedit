@@ -10,7 +10,7 @@ use askama::Template;
 use axum::{extract::Query, response::IntoResponse};
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
-use fjall::TransactionalKeyspace;
+use fjall::{KeyspaceCreateOptions, SingleWriterTxDatabase};
 use serde::Deserialize;
 use snailquote::unescape;
 use std::io::Read;
@@ -103,7 +103,7 @@ pub(crate) async fn notification(
         .ok_or(AppError::NonLogin)?;
 
     let prefix = u32_to_ivec(claim.uid);
-    let tree = DB.open_partition("notifications", Default::default())?;
+    let tree = DB.keyspace("notifications", KeyspaceCreateOptions::default)?;
 
     let anchor = params.anchor.unwrap_or(0);
     let n = site_config.per_page;
@@ -117,7 +117,7 @@ pub(crate) async fn notification(
                     if idx >= n + anchor {
                         break;
                     }
-                    let (key, _) = i?;
+                    let (key, _) = i.into_inner()?;
                     tree.update_fetch(key, mark_read)?;
                 }
             }
@@ -129,7 +129,7 @@ pub(crate) async fn notification(
                     if idx >= n + anchor {
                         break;
                     }
-                    let (key, value) = i?;
+                    let (key, value) = i.into_inner()?;
                     // Delete notification if it is read
                     if value[8] == 1 {
                         tree.remove(key)?;
@@ -140,7 +140,7 @@ pub(crate) async fn notification(
                 if let Some(nid) = params.nid {
                     let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
                     for i in tree.inner().prefix(prefix) {
-                        let (k, _) = i?;
+                        let (k, _) = i.into_inner()?;
                         tree.update_fetch(k, mark_read)?;
                     }
                 }
@@ -149,7 +149,7 @@ pub(crate) async fn notification(
                 if let Some(nid) = params.nid {
                     let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
                     for i in tree.inner().prefix(prefix) {
-                        let (k, _) = i?;
+                        let (k, _) = i.into_inner()?;
                         tree.remove(k)?;
                     }
                 }
@@ -168,7 +168,7 @@ pub(crate) async fn notification(
         }
 
         // uid#nid#nt_type = id1#id2#is_read
-        let (key, value) = i?;
+        let (key, value) = i.into_inner()?;
         let nid = u8_slice_to_u32(&key[4..8]);
         let is_read = value[8] == 1;
 
@@ -176,7 +176,7 @@ pub(crate) async fn notification(
         match nt_type {
             NtType::PostComment => {
                 if let Some(v) = &DB
-                    .open_partition("post_comments", Default::default())?
+                    .keyspace("post_comments", KeyspaceCreateOptions::default)?
                     .get(&value[0..8])?
                 {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
@@ -220,7 +220,7 @@ pub(crate) async fn notification(
             }
             NtType::CommentMention => {
                 if let Some(v) = &DB
-                    .open_partition("post_comments", Default::default())?
+                    .keyspace("post_comments", KeyspaceCreateOptions::default)?
                     .get(&value[0..8])?
                 {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
@@ -280,7 +280,7 @@ pub(crate) async fn notification(
             }
             NtType::CommentHide => {
                 if let Some(v) = &DB
-                    .open_partition("post_comments", Default::default())?
+                    .keyspace("post_comments", KeyspaceCreateOptions::default)?
                     .get(&value[0..8])?
                 {
                     let (comment, _): (Comment, usize) = bincode::decode_from_slice(v, standard())?;
@@ -425,11 +425,11 @@ pub(crate) async fn notification(
     let mod_inns = get_ids_by_prefix(&DB, "mod_inns", prefix, None)?;
     for i in mod_inns {
         for i in DB
-            .open_partition("inn_apply", Default::default())?
+            .keyspace("inn_apply", KeyspaceCreateOptions::default)?
             .inner()
             .prefix(u32_to_ivec(i))
         {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let inn_notification = InnNotification {
                 iid: u8_slice_to_u32(&k[0..4]),
                 uid: u8_slice_to_u32(&k[4..]),
@@ -461,7 +461,7 @@ struct InnNotification {
 }
 
 pub(super) fn add_notification(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     uid: u32,
     nt_type: NtType,
     id1: u32,
@@ -470,7 +470,7 @@ pub(super) fn add_notification(
     let nid = incr_id(db, "notifications_count")?;
     let k = [u32_to_ivec(uid), u32_to_ivec(nid), vec![nt_type as u8]].concat();
     let v = [u32_to_ivec(id1), u32_to_ivec(id2), vec![0u8]].concat();
-    db.open_partition("notifications", Default::default())?
+    db.keyspace("notifications", KeyspaceCreateOptions::default)?
         .insert(k, v)?;
 
     Ok(())

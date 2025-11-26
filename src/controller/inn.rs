@@ -41,7 +41,7 @@ use axum::{
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
 use cached::proc_macro::cached;
-use fjall::TransactionalKeyspace;
+use fjall::{KeyspaceCreateOptions, SingleWriterTxDatabase};
 use jiff::Timestamp;
 use serde::Deserialize;
 use std::collections::{BTreeSet, HashMap, HashSet};
@@ -101,11 +101,11 @@ pub(crate) async fn mod_inn(
         let inn: Inn = get_one(&DB, "inns", iid)?;
         let mut inn_feeds = Vec::new();
         for i in DB
-            .open_partition("inn_feeds", Default::default())?
+            .keyspace("inn_feeds", KeyspaceCreateOptions::default)?
             .inner()
             .prefix(u32_to_ivec(iid))
         {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let feed_id = u8_slice_to_u32(&k[4..8]);
             let feed: Feed = get_one(&DB, "feeds", feed_id)?;
             inn_feeds.push(feed);
@@ -186,9 +186,13 @@ pub(crate) async fn mod_inn_post(
     let mut topics: Vec<_> = topics.into_iter().collect();
     topics.truncate(5);
 
-    let inn_names_ks = DB.inner().open_partition("inn_names", Default::default())?;
+    let inn_names_ks = DB
+        .inner()
+        .keyspace("inn_names", KeyspaceCreateOptions::default)?;
     let mut batch = DB.inner().batch();
-    let topics_ks = DB.inner().open_partition("topics", Default::default())?;
+    let topics_ks = DB
+        .inner()
+        .keyspace("topics", KeyspaceCreateOptions::default)?;
     // create new inn
     if iid == 0 {
         // check if inn name exists
@@ -243,9 +247,9 @@ pub(crate) async fn mod_inn_post(
 
             let user_posts_ks = DB
                 .inner()
-                .open_partition("user_posts", Default::default())?;
+                .keyspace("user_posts", KeyspaceCreateOptions::default)?;
             for i in user_posts_ks.iter() {
-                let (k, v) = i?;
+                let (k, v) = i.into_inner()?;
                 let iid = u8_slice_to_u32(&v[0..4]);
                 if iid == inn.iid {
                     let mut new_v: Vec<u8> = v.to_vec();
@@ -256,9 +260,9 @@ pub(crate) async fn mod_inn_post(
 
             let post_timeline_idx_ks = DB
                 .inner()
-                .open_partition("post_timeline_idx", Default::default())?;
+                .keyspace("post_timeline_idx", KeyspaceCreateOptions::default)?;
             for i in post_timeline_idx_ks.prefix(u32_to_ivec(iid)) {
-                let (k, v) = i?;
+                let (k, v) = i.into_inner()?;
                 let mut new_v: Vec<u8> = v.to_vec();
                 new_v[4] = inn_type as u8;
                 batch.insert(&post_timeline_idx_ks, k, new_v);
@@ -266,9 +270,9 @@ pub(crate) async fn mod_inn_post(
 
             let post_timeline_ks = DB
                 .inner()
-                .open_partition("post_timeline", Default::default())?;
+                .keyspace("post_timeline", KeyspaceCreateOptions::default)?;
             for i in post_timeline_ks.iter() {
-                let (k, _) = i?;
+                let (k, _) = i.into_inner()?;
                 let iid = u8_slice_to_u32(&k[4..8]);
                 if iid == inn.iid {
                     let v = inn_type as u8;
@@ -300,14 +304,20 @@ pub(crate) async fn mod_inn_post(
 
     // set index for user mods and user inns
     let k = [u32_to_ivec(claim.uid), iid_ivec.clone()].concat();
-    let mod_inns_ks = DB.inner().open_partition("mod_inns", Default::default())?;
+    let mod_inns_ks = DB
+        .inner()
+        .keyspace("mod_inns", KeyspaceCreateOptions::default)?;
     batch.insert(&mod_inns_ks, &k, []);
-    let user_inns_ks = DB.inner().open_partition("user_inns", Default::default())?;
+    let user_inns_ks = DB
+        .inner()
+        .keyspace("user_inns", KeyspaceCreateOptions::default)?;
     batch.insert(&user_inns_ks, &k, []);
 
     // set index for inn users
     let k = [iid_ivec.clone(), u32_to_ivec(claim.uid)].concat();
-    let inn_users_ks = DB.inner().open_partition("inn_users", Default::default())?;
+    let inn_users_ks = DB
+        .inner()
+        .keyspace("inn_users", KeyspaceCreateOptions::default)?;
     batch.insert(&inn_users_ks, &k, [10]);
 
     let inn = Inn {
@@ -359,7 +369,7 @@ pub(crate) async fn mod_feed_post(
 
     let (feed, _) = update(&clean_html(&input.url), &DB, 5).await?;
 
-    let feed_links_tree = DB.open_partition("feed_links", Default::default())?;
+    let feed_links_tree = DB.keyspace("feed_links", KeyspaceCreateOptions::default)?;
     let feed_id = if let Some(v) = feed_links_tree.get(&feed.link)? {
         ivec_to_u32(&v)
     } else {
@@ -371,7 +381,7 @@ pub(crate) async fn mod_feed_post(
     set_one(&DB, "feeds", feed_id, &feed)?;
 
     let k = &[u32_to_ivec(iid), u32_to_ivec(feed_id)].concat();
-    let inn_feeds_tree = DB.open_partition("inn_feeds", Default::default())?;
+    let inn_feeds_tree = DB.keyspace("inn_feeds", KeyspaceCreateOptions::default)?;
     if inn_feeds_tree.contains_key(k)? {
         inn_feeds_tree.remove(k)?;
     } else {
@@ -558,18 +568,21 @@ pub(crate) async fn edit_post(
         let mut draft = FormPost::default();
         let mut draft_titles = vec![];
         for i in DB
-            .open_partition("drafts", Default::default())?
+            .keyspace("drafts", KeyspaceCreateOptions::default)?
             .inner()
             .prefix(u32_to_ivec(claim.uid))
         {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let draft_title = String::from_utf8_lossy(&k[4..]).to_string();
             draft_titles.push(draft_title);
         }
 
         if let Some(from_draft) = params.from_draft {
             let k: Vec<u8> = [&u32_to_ivec(claim.uid), from_draft.as_bytes()].concat();
-            if let Some(v) = DB.open_partition("drafts", Default::default())?.get(k)? {
+            if let Some(v) = DB
+                .keyspace("drafts", KeyspaceCreateOptions::default)?
+                .get(k)?
+            {
                 (draft, _) = bincode::decode_from_slice(&v, standard())?;
             };
             selected_iid = draft.iid;
@@ -615,7 +628,7 @@ pub(crate) async fn edit_post(
 }
 
 pub(super) fn inn_add_index(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     iid: u32,
     pid: u32,
     timestamp: u32,
@@ -623,10 +636,10 @@ pub(super) fn inn_add_index(
 ) -> Result<(), AppError> {
     let tl_idx_tree = db
         .inner()
-        .open_partition("post_timeline_idx", Default::default())?;
+        .keyspace("post_timeline_idx", KeyspaceCreateOptions::default)?;
     let tl_tree = db
         .inner()
-        .open_partition("post_timeline", Default::default())?;
+        .keyspace("post_timeline", KeyspaceCreateOptions::default)?;
 
     let mut batch = db.inner().batch();
     let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
@@ -641,13 +654,13 @@ pub(super) fn inn_add_index(
     Ok(())
 }
 
-fn inn_rm_index(db: &TransactionalKeyspace, iid: u32, pid: u32) -> Result<u8, AppError> {
+fn inn_rm_index(db: &SingleWriterTxDatabase, iid: u32, pid: u32) -> Result<u8, AppError> {
     let tl_idx_tree = db
         .inner()
-        .open_partition("post_timeline_idx", Default::default())?;
+        .keyspace("post_timeline_idx", KeyspaceCreateOptions::default)?;
     let tl_tree = db
         .inner()
-        .open_partition("post_timeline", Default::default())?;
+        .keyspace("post_timeline", KeyspaceCreateOptions::default)?;
 
     let mut batch = db.inner().batch();
     let mut inn_type = 0;
@@ -690,7 +703,7 @@ pub(crate) async fn edit_post_post(
     }
 
     if delete_draft {
-        DB.open_partition("drafts", Default::default())?
+        DB.keyspace("drafts", KeyspaceCreateOptions::default)?
             .remove(&k)?;
         return Ok(Redirect::to("/post/edit/0"));
     }
@@ -736,7 +749,9 @@ pub(crate) async fn edit_post_post(
         tags = tags_set.into_iter().collect();
         tags.truncate(5);
 
-        let tags_ks = DB.inner().open_partition("tags", Default::default())?;
+        let tags_ks = DB
+            .inner()
+            .keyspace("tags", KeyspaceCreateOptions::default)?;
         if old_pid > 0 {
             let post: Post = get_one(&DB, "posts", old_pid)?;
             if post.uid != claim.uid {
@@ -814,7 +829,9 @@ pub(crate) async fn edit_post_post(
     let iid_ivec = u32_to_ivec(iid);
     if old_pid == 0 {
         let k = [iid_ivec, pid_ivec.clone()].concat();
-        let inn_posts_ks = DB.inner().open_partition("inn_posts", Default::default())?;
+        let inn_posts_ks = DB
+            .inner()
+            .keyspace("inn_posts", KeyspaceCreateOptions::default)?;
         batch.insert(&inn_posts_ks, &k, []);
 
         let k = [u32_to_ivec(claim.uid), pid_ivec].concat();
@@ -822,7 +839,7 @@ pub(crate) async fn edit_post_post(
         v.push(inn.inn_type);
         let user_posts_ks = DB
             .inner()
-            .open_partition("user_posts", Default::default())?;
+            .keyspace("user_posts", KeyspaceCreateOptions::default)?;
         batch.insert(&user_posts_ks, &k, v);
     }
 
@@ -835,7 +852,7 @@ pub(crate) async fn edit_post_post(
     claim.update_last_write(&DB)?;
 
     if inn.is_open_access() {
-        let tan_ks = DB.inner().open_partition("tan", Default::default())?;
+        let tan_ks = DB.inner().keyspace("tan", KeyspaceCreateOptions::default)?;
         batch.insert(&tan_ks, format!("post{pid}"), []);
     }
     batch.commit()?;
@@ -1109,11 +1126,11 @@ pub(crate) async fn inn(
 fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     let mut maps = HashMap::new();
     for i in DB
-        .open_partition("inn_posts", Default::default())?
+        .keyspace("inn_posts", KeyspaceCreateOptions::default)?
         .inner()
         .iter()
     {
-        let (k, _) = i?;
+        let (k, _) = i.into_inner()?;
         let iid = u8_slice_to_u32(&k[0..4]);
         maps.entry(iid).and_modify(|e| *e += 1).or_insert(1);
     }
@@ -1141,11 +1158,11 @@ fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
     let mut uids = HashSet::with_capacity(NUM);
     let mut users = vec![];
     for i in DB
-        .open_partition("user_posts", Default::default())?
+        .keyspace("user_posts", KeyspaceCreateOptions::default)?
         .inner()
         .iter()
     {
-        let (k, _) = i?;
+        let (k, _) = i.into_inner()?;
         let uid = u8_slice_to_u32(&k[0..4]);
         uids.insert(uid);
         if uids.len() >= NUM {
@@ -1154,27 +1171,27 @@ fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
     }
 
     for i in DB
-        .open_partition("user_comments", Default::default())?
+        .keyspace("user_comments", KeyspaceCreateOptions::default)?
         .inner()
         .iter()
     {
         if uids.len() >= NUM {
             break;
         }
-        let (k, _) = i?;
+        let (k, _) = i.into_inner()?;
         let uid = u8_slice_to_u32(&k[0..4]);
         uids.insert(uid);
     }
 
     for i in DB
-        .open_partition("user_solos", Default::default())?
+        .keyspace("user_solos", KeyspaceCreateOptions::default)?
         .inner()
         .iter()
     {
         if uids.len() >= NUM {
             break;
         }
-        let (k, _) = i?;
+        let (k, _) = i.into_inner()?;
         let uid = u8_slice_to_u32(&k[0..4]);
         uids.insert(uid);
     }
@@ -1287,7 +1304,7 @@ pub(crate) async fn inn_feed(Path(i): Path<String>) -> Result<impl IntoResponse,
 
 /// get [OutPostList] from pids
 fn get_out_post_list(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     index: &[u32],
 ) -> Result<Vec<OutPostList>, AppError> {
     let mut post_lists = Vec::with_capacity(index.len());
@@ -1301,12 +1318,12 @@ fn get_out_post_list(
                 get_count_by_prefix(db, "post_comments", &u32_to_ivec(*pid))? as u32;
 
             let last_reply = if let Some(i) = db
-                .open_partition("post_comments", Default::default())?
+                .keyspace("post_comments", KeyspaceCreateOptions::default)?
                 .inner()
                 .prefix(u32_to_ivec(*pid))
                 .last()
             {
-                let (_, v) = i?;
+                let (_, v) = i.into_inner()?;
                 let (one, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
                 let user: User = get_one(db, "users", one.uid)?;
                 Some((user.uid, user.username))
@@ -1316,7 +1333,7 @@ fn get_out_post_list(
 
             let k = [u32_to_ivec(post.iid), u32_to_ivec(post.pid)].concat();
             let is_pinned = db
-                .open_partition("post_pins", Default::default())?
+                .keyspace("post_pins", KeyspaceCreateOptions::default)?
                 .contains_key(k)?;
 
             let post_list = OutPostList {
@@ -1339,12 +1356,12 @@ fn get_out_post_list(
 
 /// get pids all, controlled by `inn_type`, sorted by timestamp
 fn get_pids_all(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     joined_inns: &[u32],
     page_params: &ParamsPage,
     is_site_admin: bool,
 ) -> Result<Vec<u32>, AppError> {
-    let tree = db.open_partition("post_timeline", Default::default())?;
+    let tree = db.keyspace("post_timeline", KeyspaceCreateOptions::default)?;
     let mut count: usize = 0;
     let mut result = Vec::with_capacity(page_params.n);
 
@@ -1358,7 +1375,7 @@ fn get_pids_all(
 
     // kvpaire: timestamp#iid#pid = inn_type
     for i in iter {
-        let (k, v) = i?;
+        let (k, v) = i.into_inner()?;
         let id = u8_slice_to_u32(&k[4..8]);
         let out_id = u8_slice_to_u32(&k[8..12]);
         let inn_type = InnType::from(v[0]);
@@ -1383,7 +1400,7 @@ fn get_pids_all(
 
 /// get pids by multi iids, sorted by timestamp
 fn get_pids_by_iids(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     iids: &[u32],
     page_params: &ParamsPage,
 ) -> Result<Vec<u32>, AppError> {
@@ -1393,11 +1410,11 @@ fn get_pids_by_iids(
         let prefix = u32_to_ivec(*iid);
         // kv_pair: iid#pid = timestamp
         for i in db
-            .open_partition("post_timeline_idx", Default::default())?
+            .keyspace("post_timeline_idx", KeyspaceCreateOptions::default)?
             .inner()
             .prefix(prefix)
         {
-            let (k, v) = i?;
+            let (k, v) = i.into_inner()?;
             let pid = u8_slice_to_u32(&k[4..8]);
             let timestamp = u8_slice_to_u32(&v[0..4]);
             let inn_type = InnType::from(v[4]);
@@ -1418,7 +1435,7 @@ fn get_pids_by_iids(
 
 /// get pids by multi uids, controlled by `inn_type`, sorted by timestamp
 fn get_pids_by_uids(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     uids: &[u32],
     joined_inns: &[u32],
     page_params: &ParamsPage,
@@ -1429,11 +1446,11 @@ fn get_pids_by_uids(
         let prefix = u32_to_ivec(*uid);
         // kv_pair: uid#pid = iid#inn_type
         for i in db
-            .open_partition("user_posts", Default::default())?
+            .keyspace("user_posts", KeyspaceCreateOptions::default)?
             .inner()
             .prefix(prefix)
         {
-            let (k, v) = i?;
+            let (k, v) = i.into_inner()?;
             let pid = u8_slice_to_u32(&k[4..8]);
             let iid = u8_slice_to_u32(&v[0..4]);
             let inn_type = InnType::from(v[4]);
@@ -1474,9 +1491,9 @@ pub(crate) async fn inn_join(
 
     let user_inns_k = [u32_to_ivec(claim.uid), u32_to_ivec(iid)].concat();
     let inn_users_k = [u32_to_ivec(iid), u32_to_ivec(claim.uid)].concat();
-    let user_inns_tree = DB.open_partition("user_inns", Default::default())?;
-    let inn_users_tree = DB.open_partition("inn_users", Default::default())?;
-    let inn_apply_tree = DB.open_partition("inn_apply", Default::default())?;
+    let user_inns_tree = DB.keyspace("user_inns", KeyspaceCreateOptions::default)?;
+    let inn_users_tree = DB.keyspace("inn_users", KeyspaceCreateOptions::default)?;
+    let inn_apply_tree = DB.keyspace("inn_apply", KeyspaceCreateOptions::default)?;
 
     match inn_users_tree.get(&inn_users_k)? {
         None => {
@@ -1589,7 +1606,7 @@ pub(crate) async fn post(
             Some(claim) => {
                 let k = [u32_to_ivec(claim.uid), u32_to_ivec(iid)].concat();
                 if !DB
-                    .open_partition("user_inns", Default::default())?
+                    .keyspace("user_inns", KeyspaceCreateOptions::default)?
                     .contains_key(k)?
                     && Role::from(claim.role) != Role::Admin
                 {
@@ -1621,13 +1638,13 @@ pub(crate) async fn post(
 
         let k = [u32_to_ivec(pid), u32_to_ivec(claim.uid)].concat();
         if DB
-            .open_partition("post_upvotes", Default::default())?
+            .keyspace("post_upvotes", KeyspaceCreateOptions::default)?
             .contains_key(&k)?
         {
             is_upvoted = true;
         }
         if DB
-            .open_partition("post_downvotes", Default::default())?
+            .keyspace("post_downvotes", KeyspaceCreateOptions::default)?
             .contains_key(&k)?
         {
             is_downvoted = true;
@@ -1647,13 +1664,13 @@ pub(crate) async fn post(
 
         let k = [u32_to_ivec(claim.uid), u32_to_ivec(iid)].concat();
         if DB
-            .open_partition("user_inns", Default::default())?
+            .keyspace("user_inns", KeyspaceCreateOptions::default)?
             .contains_key(&k)?
         {
             has_joined = true;
         }
         if DB
-            .open_partition("mod_inns", Default::default())?
+            .keyspace("mod_inns", KeyspaceCreateOptions::default)?
             .contains_key(&k)?
             || Role::from(claim.role) == Role::Admin
         {
@@ -1662,9 +1679,9 @@ pub(crate) async fn post(
 
         if let Some(nid) = params.nid {
             let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
-            let tree = DB.open_partition("notifications", Default::default())?;
+            let tree = DB.keyspace("notifications", KeyspaceCreateOptions::default)?;
             for i in tree.inner().prefix(prefix) {
-                let (k, _) = i?;
+                let (k, _) = i.into_inner()?;
                 tree.update_fetch(k, mark_read)?;
             }
         }
@@ -1706,7 +1723,7 @@ pub(crate) async fn post(
 
     let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
     let is_pinned = DB
-        .open_partition("post_pins", Default::default())?
+        .keyspace("post_pins", KeyspaceCreateOptions::default)?
         .contains_key(k)?;
 
     let out_post = OutPost {
@@ -1738,9 +1755,11 @@ pub(crate) async fn post(
     let max_id = get_count(&DB, "post_comments_count", u32_to_ivec(pid))?;
     if max_id > 0 {
         let (start, _) = get_range(max_id, &page_params);
-        let post_comments_tree = DB.open_partition("post_comments", Default::default())?;
-        let comment_upvotes_tree = DB.open_partition("comment_upvotes", Default::default())?;
-        let comment_downvotes_tree = DB.open_partition("comment_downvotes", Default::default())?;
+        let post_comments_tree = DB.keyspace("post_comments", KeyspaceCreateOptions::default)?;
+        let comment_upvotes_tree =
+            DB.keyspace("comment_upvotes", KeyspaceCreateOptions::default)?;
+        let comment_downvotes_tree =
+            DB.keyspace("comment_downvotes", KeyspaceCreateOptions::default)?;
         for i in start..=max_id {
             let k = [u32_to_ivec(pid), u32_to_ivec(i as u32)].concat();
             let v = &post_comments_tree.get(k)?;
@@ -1798,7 +1817,7 @@ pub(crate) async fn post(
     }
 
     let pageview = ks_incr_id(
-        &DB.open_partition("post_pageviews", Default::default())?,
+        &DB.keyspace("post_pageviews", KeyspaceCreateOptions::default)?,
         u32_to_ivec(pid),
     )?;
     let has_unread = if let Some(ref claim) = claim {
@@ -1862,7 +1881,7 @@ pub(crate) async fn comment_post(
     }
 
     if !DB
-        .open_partition("inns", Default::default())?
+        .keyspace("inns", KeyspaceCreateOptions::default)?
         .contains_key(u32_to_ivec(iid))?
     {
         return Err(AppError::NotFound);
@@ -1883,7 +1902,7 @@ pub(crate) async fn comment_post(
 
     let pid_ivec = u32_to_ivec(pid);
     let cid = ks_incr_id(
-        &DB.open_partition("post_comments_count", Default::default())?,
+        &DB.keyspace("post_comments_count", KeyspaceCreateOptions::default)?,
         &pid_ivec,
     )?;
 
@@ -1948,7 +1967,7 @@ pub(crate) async fn comment_post(
     set_one_with_key(&DB, "post_comments", k, &comment)?;
 
     let k = [u32_to_ivec(claim.uid), pid_ivec, u32_to_ivec(cid)].concat();
-    DB.open_partition("user_comments", Default::default())?
+    DB.keyspace("user_comments", KeyspaceCreateOptions::default)?
         .insert(k, [])?;
 
     // only the fellow could update the timeline by adding comment
@@ -1966,7 +1985,7 @@ pub(crate) async fn comment_post(
     claim.update_last_write(&DB)?;
 
     if inn.is_open_access() {
-        DB.open_partition("tan", Default::default())?
+        DB.keyspace("tan", KeyspaceCreateOptions::default)?
             .insert(format!("comt{pid}/{cid}"), [])?;
     }
 
@@ -2009,21 +2028,21 @@ pub(crate) async fn comment_delete(
 
     let k = [u32_to_ivec(claim.uid), u32_to_ivec(pid), u32_to_ivec(cid)].concat();
     if !DB
-        .open_partition("user_comments", Default::default())?
+        .keyspace("user_comments", KeyspaceCreateOptions::default)?
         .contains_key(k)?
     {
         return Err(AppError::Unauthorized);
     }
 
     let k = [u32_to_ivec(pid), u32_to_ivec(cid)].concat();
-    DB.open_partition("post_comments", Default::default())?
+    DB.keyspace("post_comments", KeyspaceCreateOptions::default)?
         .remove(k)?;
 
     let inn_type = inn_rm_index(&DB, iid, pid)?;
-    let ks = DB.open_partition("post_comments", Default::default())?;
+    let ks = DB.keyspace("post_comments", KeyspaceCreateOptions::default)?;
     let latest_id = ks.inner().prefix(u32_to_ivec(pid)).last();
 
-    let timestamp = if let Some(Ok((_, v))) = latest_id {
+    let timestamp = if let Some(Ok(v)) = latest_id.map(|g| g.value()) {
         let (comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
         comment.created_at
     } else {
@@ -2033,7 +2052,7 @@ pub(crate) async fn comment_delete(
 
     inn_add_index(&DB, iid, pid, timestamp as u32, inn_type)?;
 
-    DB.open_partition("tan", Default::default())?
+    DB.keyspace("tan", KeyspaceCreateOptions::default)?
         .remove(format!("comt{pid}/{cid}"))?;
 
     let target = format!("/post/{iid}/{pid}");
@@ -2052,7 +2071,7 @@ pub(crate) async fn comment_hide(
 
     let k = [u32_to_ivec(claim.uid), u32_to_ivec(iid)].concat();
     if !DB
-        .open_partition("mod_inns", Default::default())?
+        .keyspace("mod_inns", KeyspaceCreateOptions::default)?
         .contains_key(k)?
         && Role::from(claim.role) != Role::Admin
     {
@@ -2061,7 +2080,7 @@ pub(crate) async fn comment_hide(
 
     let k = [u32_to_ivec(pid), u32_to_ivec(cid)].concat();
     let v = DB
-        .open_partition("post_comments", Default::default())?
+        .keyspace("post_comments", KeyspaceCreateOptions::default)?
         .get(&k)?
         .ok_or(AppError::NotFound)?;
     let (mut comment, _): (Comment, usize) = bincode::decode_from_slice(&v, standard())?;
@@ -2095,7 +2114,7 @@ pub(crate) async fn post_upvote(
         return Err(AppError::LockedOrHidden);
     }
 
-    let post_upvotes_tree = DB.open_partition("post_upvotes", Default::default())?;
+    let post_upvotes_tree = DB.keyspace("post_upvotes", KeyspaceCreateOptions::default)?;
     let k = [u32_to_ivec(pid), u32_to_ivec(claim.uid)].concat();
     if post_upvotes_tree.contains_key(&k)? {
         post_upvotes_tree.remove(&k)?;
@@ -2123,7 +2142,7 @@ pub(crate) async fn comment_upvote(
         return Err(AppError::LockedOrHidden);
     }
 
-    let comment_upvotes_tree = DB.open_partition("comment_upvotes", Default::default())?;
+    let comment_upvotes_tree = DB.keyspace("comment_upvotes", KeyspaceCreateOptions::default)?;
     if comment_upvotes_tree.contains_key(&k)? {
         comment_upvotes_tree.remove(&k)?;
     } else {
@@ -2148,7 +2167,7 @@ pub(crate) async fn post_downvote(
         return Err(AppError::LockedOrHidden);
     }
 
-    let post_downvotes_tree = DB.open_partition("post_downvotes", Default::default())?;
+    let post_downvotes_tree = DB.keyspace("post_downvotes", KeyspaceCreateOptions::default)?;
     let k = [u32_to_ivec(pid), u32_to_ivec(claim.uid)].concat();
     if post_downvotes_tree.contains_key(&k)? {
         post_downvotes_tree.remove(&k)?;
@@ -2180,7 +2199,9 @@ pub(crate) async fn post_delete(
         inn_rm_index(&DB, iid, pid)?;
         // delete tags
         let mut batch = DB.inner().batch();
-        let tags_ks = DB.inner().open_partition("tags", Default::default())?;
+        let tags_ks = DB
+            .inner()
+            .keyspace("tags", KeyspaceCreateOptions::default)?;
         for tag in post.tags {
             let k = [tag.as_bytes(), &u32_to_ivec(post.pid)].concat();
             batch.remove(&tags_ks, k);
@@ -2208,7 +2229,8 @@ pub(crate) async fn comment_downvote(
         return Err(AppError::LockedOrHidden);
     }
 
-    let comment_downvotes_tree = DB.open_partition("comment_downvotes", Default::default())?;
+    let comment_downvotes_tree =
+        DB.keyspace("comment_downvotes", KeyspaceCreateOptions::default)?;
     if comment_downvotes_tree.contains_key(&k)? {
         comment_downvotes_tree.remove(&k)?;
     } else {
@@ -2292,7 +2314,7 @@ pub(crate) async fn post_hide(
     {
         let k0 = [u32_to_ivec(post.uid), u32_to_ivec(pid)].concat();
         if let Some(v) = DB
-            .open_partition("user_posts", Default::default())?
+            .keyspace("user_posts", KeyspaceCreateOptions::default)?
             .get(k0)?
         {
             inn_add_index(&DB, iid, pid, post.created_at as u32, v[4])?;
@@ -2318,7 +2340,7 @@ pub(crate) async fn post_pin(
     }
 
     let k = [u32_to_ivec(iid), u32_to_ivec(pid)].concat();
-    let tree = DB.open_partition("post_pins", Default::default())?;
+    let tree = DB.keyspace("post_pins", KeyspaceCreateOptions::default)?;
     if tree.contains_key(&k)? {
         tree.remove(&k)?;
     } else {

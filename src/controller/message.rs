@@ -5,6 +5,7 @@ use axum::{
     response::{IntoResponse, Redirect},
 };
 use axum_extra::{TypedHeader, headers::Cookie};
+use fjall::KeyspaceCreateOptions;
 use serde::Deserialize;
 use validator::Validate;
 
@@ -76,12 +77,12 @@ pub(crate) async fn message_post(
     ]
     .concat();
 
-    DB.open_partition("messages", Default::default())?
+    DB.keyspace("messages", KeyspaceCreateOptions::default)?
         .insert(u32_to_ivec(mid), v)?;
     add_notification(&DB, uid, NtType::Message, claim.uid, mid)?;
 
     let k = [u32_to_ivec(uid), u32_to_ivec(mid)].concat();
-    DB.open_partition("user_message", Default::default())?
+    DB.keyspace("user_message", KeyspaceCreateOptions::default)?
         .insert(k, [])?;
 
     let redirect = format!("/user/{uid}");
@@ -165,7 +166,7 @@ pub(crate) async fn inbox(
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
     let v = DB
-        .open_partition("messages", Default::default())?
+        .keyspace("messages", KeyspaceCreateOptions::default)?
         .get(u32_to_ivec(mid))?
         .ok_or(AppError::NotFound)?;
 
@@ -178,10 +179,10 @@ pub(crate) async fn inbox(
     let message = String::from_utf8_lossy(&v[8..]).to_string();
 
     if let Some(nid) = params.nid {
-        let tree = DB.open_partition("notifications", Default::default())?;
+        let tree = DB.keyspace("notifications", KeyspaceCreateOptions::default)?;
         let prefix = [u32_to_ivec(claim.uid), u32_to_ivec(nid)].concat();
         for i in tree.inner().prefix(prefix) {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             tree.update_fetch(k, mark_read)?;
         }
     }
