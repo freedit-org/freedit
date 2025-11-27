@@ -811,11 +811,9 @@ pub async fn cron_feed(db: &SingleWriterTxDatabase) -> Result<(), AppError> {
 
 pub async fn cron_download_audio(db: &SingleWriterTxDatabase) -> Result<(), AppError> {
     const MAX_FILE_SIZE: u64 = 300 * 1024 * 1024; // 300 MB
-    let ks = db
-        .inner()
-        .keyspace("items", KeyspaceCreateOptions::default)?;
+    let ks = db.keyspace("items", KeyspaceCreateOptions::default)?;
     let mut item_ids = vec![];
-    for i in ks.iter().rev() {
+    for i in ks.inner().iter().rev() {
         let (k, _) = i.into_inner()?;
         let item_id = u8_slice_to_u32(&k);
         item_ids.push(item_id);

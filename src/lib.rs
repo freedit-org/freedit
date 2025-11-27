@@ -56,7 +56,7 @@ pub static DB: LazyLock<SingleWriterTxDatabase> = LazyLock::new(|| {
     info!(GIT_COMMIT);
 
     let db_url = &CONFIG.db;
-    info!(%db_url);
     let db = SingleWriterTxDatabase::builder(db_url).open().unwrap();
+    info!(%db_url);
     db
 });
