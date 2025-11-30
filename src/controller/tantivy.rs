@@ -179,10 +179,7 @@ impl Tan {
 
     pub fn rebuild_index(&mut self, db: &SingleWriterTxDatabase) -> Result<(), AppError> {
         let tan_tree = db.keyspace("tan", KeyspaceCreateOptions::default)?;
-        for i in tan_tree.inner().iter() {
-            let (k, _) = i.into_inner()?;
-            tan_tree.remove(k)?;
-        }
+        tan_tree.inner().clear()?;
 
         for i in db
             .keyspace("user_posts", KeyspaceCreateOptions::default)?
