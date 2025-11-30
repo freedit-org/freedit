@@ -1,17 +1,17 @@
 use super::meta_handler::ParamsPage;
 use crate::error::AppError;
 use bincode::{Decode, Encode, config::standard};
-use fjall::{Slice, TransactionalKeyspace, TransactionalPartitionHandle};
+use fjall::{KeyspaceCreateOptions, SingleWriterTxDatabase, SingleWriterTxKeyspace, Slice};
 use jiff::Timestamp;
 use nanoid::nanoid;
 
 /// Cron job: Scan all the keys in the `Tree` regularly and remove the expired ones.
 ///
 /// The keys must be the format of `timestamp_id`.
-pub async fn clear_invalid(db: &TransactionalKeyspace, tree_name: &str) -> Result<(), AppError> {
-    let tree = db.open_partition(tree_name, Default::default())?;
+pub async fn clear_invalid(db: &SingleWriterTxDatabase, tree_name: &str) -> Result<(), AppError> {
+    let tree = db.keyspace(tree_name, KeyspaceCreateOptions::default)?;
     for item in tree.inner().iter() {
-        let (k, _) = item?;
+        let (k, _) = item.into_inner()?;
         let k_str = std::str::from_utf8(&k)?;
         let time_stamp = k_str
             .split_once('_')
@@ -33,19 +33,19 @@ pub async fn clear_invalid(db: &TransactionalKeyspace, tree_name: &str) -> Resul
 /// // get the user whose uid is 3.
 /// let user:User = get_one(&db, "users", 3)?;
 /// ```
-pub fn get_one<T>(db: &TransactionalKeyspace, tree_name: &str, id: u32) -> Result<T, AppError>
+pub fn get_one<T>(db: &SingleWriterTxDatabase, tree_name: &str, id: u32) -> Result<T, AppError>
 where
     T: Decode<()>,
 {
     get_one_by_key(db, tree_name, u32_to_ivec(id))
 }
 
-fn get_one_by_key<T, K>(db: &TransactionalKeyspace, tree_name: &str, key: K) -> Result<T, AppError>
+fn get_one_by_key<T, K>(db: &SingleWriterTxDatabase, tree_name: &str, key: K) -> Result<T, AppError>
 where
     T: Decode<()>,
     K: AsRef<[u8]>,
 {
-    let tree = db.open_partition(tree_name, Default::default())?;
+    let tree = db.keyspace(tree_name, KeyspaceCreateOptions::default)?;
     if let Some(v) = tree.get(key)? {
         let (one, _): (T, usize) = bincode::decode_from_slice(&v, standard())?;
         Ok(one)
@@ -55,7 +55,7 @@ where
 }
 
 pub fn set_one<T>(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     tree_name: &str,
     id: u32,
     one: &T,
@@ -67,7 +67,7 @@ where
 }
 
 pub(super) fn set_one_with_key<T, K>(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     tree_name: &str,
     key: K,
     one: &T,
@@ -77,7 +77,7 @@ where
     K: Into<fjall::Slice>,
 {
     let encoded = bincode::encode_to_vec(one, standard())?;
-    let tree = db.open_partition(tree_name, Default::default())?;
+    let tree = db.keyspace(tree_name, KeyspaceCreateOptions::default)?;
     tree.insert(key, encoded)?;
     Ok(())
 }
@@ -92,7 +92,7 @@ where
 /// let inns: Vec<Inn> = get_batch(&db, "default", "inns_count", "inns", &page_params)?;
 /// ```
 pub(super) fn get_batch<T, K>(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     count_tree: &str,
     key: K,
     tree: &str,
@@ -147,7 +147,7 @@ pub(super) fn get_range(count: usize, page_params: &ParamsPage) -> (usize, usize
 
 /// get the count `N`
 pub(super) fn get_count<K>(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     count_tree: &str,
     key: K,
 ) -> Result<usize, AppError>
@@ -155,10 +155,10 @@ where
     K: AsRef<[u8]>,
 {
     let count = if count_tree == "default" {
-        let tree = db.open_partition("default", Default::default())?;
+        let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
         tree.get(key)?
     } else {
-        let tree = db.open_partition(count_tree, Default::default())?;
+        let tree = db.keyspace(count_tree, KeyspaceCreateOptions::default)?;
         tree.get(key)?
     };
     let count = match count {
@@ -179,11 +179,11 @@ where
 /// let upvotes = get_count_by_prefix(&db, "comment_upvotes", &prefix).unwrap_or_default();
 /// ```
 pub(super) fn get_count_by_prefix(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     tree: &str,
     prefix: &[u8],
 ) -> Result<usize, AppError> {
-    let partition = db.open_partition(tree, Default::default())?;
+    let partition = db.keyspace(tree, KeyspaceCreateOptions::default)?;
     Ok(partition.inner().prefix(prefix).count())
 }
 
@@ -196,13 +196,13 @@ pub(super) fn get_count_by_prefix(
 /// user_iins = get_ids_by_prefix(&db, "user_inns", u32_to_ivec(claim.uid), None).unwrap();
 /// ```
 pub(super) fn get_ids_by_prefix(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     tree: &str,
     prefix: impl AsRef<[u8]>,
     page_params: Option<&ParamsPage>,
 ) -> Result<Vec<u32>, AppError> {
     let mut res = vec![];
-    let partition = db.open_partition(tree, Default::default())?;
+    let partition = db.keyspace(tree, KeyspaceCreateOptions::default)?;
     let iter = partition.inner().prefix(&prefix);
 
     if let Some(page_params) = page_params {
@@ -218,13 +218,13 @@ pub(super) fn get_ids_by_prefix(
             if idx >= page_params.anchor + page_params.n {
                 break;
             }
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u32(id));
         }
     } else {
         for i in iter {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let id = &k[prefix.as_ref().len()..];
             res.push(u8_slice_to_u32(id));
         }
@@ -235,13 +235,13 @@ pub(super) fn get_ids_by_prefix(
 
 /// get batch ids by scanning the prefix of the tag with the format of `tag#id`
 pub(super) fn get_ids_by_tag(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     tree: &str,
     tag: &str,
     page_params: Option<&ParamsPage>,
 ) -> Result<Vec<u32>, AppError> {
     let mut res = vec![];
-    let partition = db.open_partition(tree, Default::default())?;
+    let partition = db.keyspace(tree, KeyspaceCreateOptions::default)?;
     let iter = partition.inner().prefix(tag);
     if let Some(page_params) = page_params {
         let iter = if page_params.is_desc {
@@ -256,7 +256,7 @@ pub(super) fn get_ids_by_tag(
             if idx >= page_params.anchor + page_params.n {
                 break;
             }
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let len = k.len();
             let str = String::from_utf8_lossy(&k[0..len - 4]);
             if tag == str {
@@ -266,7 +266,7 @@ pub(super) fn get_ids_by_tag(
         }
     } else {
         for i in iter {
-            let (k, _) = i?;
+            let (k, _) = i.into_inner()?;
             let len = k.len();
             let str = String::from_utf8_lossy(&k[0..len - 4]);
             if tag == str {
@@ -306,16 +306,16 @@ where
 /// ```ignore
 /// let new_user_id = incr_id(&DB, "users_count")?;;
 /// ```
-pub(super) fn incr_id<K>(db: &TransactionalKeyspace, key: K) -> Result<u32, AppError>
+pub(super) fn incr_id<K>(db: &SingleWriterTxDatabase, key: K) -> Result<u32, AppError>
 where
     K: Into<fjall::Slice>,
 {
-    let tree = db.open_partition("default", Default::default())?;
+    let tree = db.keyspace("default", KeyspaceCreateOptions::default)?;
     let result = tree.update_fetch(key, increment)?;
     Ok(ivec_to_u32(&result.unwrap()))
 }
 
-pub(super) fn ks_incr_id<K>(db: &TransactionalPartitionHandle, key: K) -> Result<u32, AppError>
+pub(super) fn ks_incr_id<K>(db: &SingleWriterTxKeyspace, key: K) -> Result<u32, AppError>
 where
     K: Into<fjall::Slice>,
 {
@@ -390,11 +390,11 @@ pub(super) fn is_valid_name(name: &str) -> bool {
 
 /// get id by name
 pub(super) fn get_id_by_name(
-    db: &TransactionalKeyspace,
+    db: &SingleWriterTxDatabase,
     tree_name: &str,
     name: &str,
 ) -> Result<Option<u32>, AppError> {
-    let tree = db.open_partition(tree_name, Default::default())?;
+    let tree = db.keyspace(tree_name, KeyspaceCreateOptions::default)?;
     let v = tree.get(name.replace(' ', "_").to_lowercase())?;
     Ok(v.map(|v| ivec_to_u32(&v)))
 }

@@ -3,6 +3,7 @@
 // #![warn(clippy::pedantic)]
 // #![warn(clippy::unwrap_used)]
 
+use fjall::{KeyspaceCreateOptions, SingleWriterTxDatabase};
 use freedit::{
     AppError, CONFIG, DB, Tan, VERSION, clear_invalid, cron_download_audio, cron_feed, router,
 };
@@ -60,9 +61,9 @@ async fn main() -> Result<(), AppError> {
         if CONFIG.rebuild_index == Some(true) {
             tan.rebuild_index(&DB).unwrap();
         }
-        let tan_ks = DB.open_partition("tan", Default::default()).unwrap();
+        let tan_ks = DB.keyspace("tan", KeyspaceCreateOptions::default).unwrap();
         for item in tan_ks.inner().iter() {
-            let (k, _) = item.unwrap();
+            let k = item.key().unwrap();
             let id = String::from_utf8_lossy(&k);
             tan.add_doc(&id, &DB).unwrap();
             tan_ks.take(k).unwrap();
@@ -82,8 +83,8 @@ async fn main() -> Result<(), AppError> {
 }
 
 #[allow(dead_code)]
-fn create_snapshot(db: &fjall::TransactionalKeyspace) {
-    let disk_space = db.disk_space();
+fn create_snapshot(db: &fjall::SingleWriterTxDatabase) {
+    let disk_space = db.disk_space().unwrap();
     info!("disk space: {} bytes", disk_space);
     let ts = Timestamp::now().strftime("%Y-%m-%d-%H-%M-%S");
     let mut snapshot_path = PathBuf::from(&CONFIG.snapshots_path);
@@ -91,20 +92,20 @@ fn create_snapshot(db: &fjall::TransactionalKeyspace) {
         fs::create_dir_all(&snapshot_path).unwrap();
     }
     snapshot_path.push(format!("{VERSION}-{ts}-{disk_space}"));
-    let snapshot = fjall::Config::new(&snapshot_path)
-        .open_transactional()
+    let snapshot = SingleWriterTxDatabase::builder(&snapshot_path)
+        .open()
         .unwrap();
-    for tree in db.list_partitions() {
+    for tree in db.list_keyspaces() {
         let src_ks = db
             .inner()
-            .open_partition(&tree, Default::default())
+            .keyspace(&tree, KeyspaceCreateOptions::default)
             .unwrap();
         let dst_ks = snapshot
             .inner()
-            .open_partition(&tree, Default::default())
+            .keyspace(&tree, KeyspaceCreateOptions::default)
             .unwrap();
         for item in src_ks.iter() {
-            let (k, v) = item.unwrap();
+            let (k, v) = item.into_inner().unwrap();
             dst_ks.insert(k, v).unwrap();
         }
     }

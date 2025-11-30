@@ -15,6 +15,7 @@ use axum::{
 };
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
+use fjall::KeyspaceCreateOptions;
 use serde::Deserialize;
 use snailquote::unescape;
 
@@ -56,7 +57,7 @@ pub(crate) async fn admin_view(
     let is_desc = params.is_desc.unwrap_or(true);
 
     let mut tree_names = Vec::with_capacity(64);
-    for i in DB.list_partitions() {
+    for i in DB.list_keyspaces() {
         let name = String::from_utf8_lossy(i.as_bytes());
         tree_names.push(name.to_string());
     }
@@ -66,7 +67,7 @@ pub(crate) async fn admin_view(
     let tree_name = params.tree_name.unwrap_or_else(|| "default".to_owned());
 
     if tree_names.contains(&tree_name) {
-        let tree = DB.open_partition(&tree_name, Default::default())?;
+        let tree = DB.keyspace(&tree_name, KeyspaceCreateOptions::default)?;
         let iter = tree.inner().iter();
         let iter = if is_desc {
             IterType::Rev(iter.rev())
@@ -83,7 +84,7 @@ pub(crate) async fn admin_view(
                 break;
             }
 
-            let (k, v) = i?;
+            let (k, v) = i.into_inner()?;
             match tree_name.as_str() {
                 "default" => {
                     let key = String::from_utf8_lossy(&k);
@@ -414,9 +415,9 @@ pub(crate) async fn admin_gallery(
     let n = 12;
 
     let mut imgs = Vec::new();
-    let ks = DB.open_partition("user_uploads", Default::default())?;
+    let ks = DB.keyspace("user_uploads", KeyspaceCreateOptions::default)?;
     for i in ks.inner().iter() {
-        let (k, v) = i?;
+        let (k, v) = i.into_inner()?;
         let uid = u8_slice_to_u32(&k[0..4]);
         let img_id = u8_slice_to_u32(&k[4..8]);
         let img = String::from_utf8_lossy(&v).to_string();
