@@ -19,7 +19,7 @@ axum = { version = "0.8.7", features = [
 ], default-features = false }
 axum-extra = { version = "0.12.2", features = ["typed-header"] }
 basic-toml = "0.1"
-bincode = "2"
+bincode = "3"
 cached = { version = "0.56", default-features = false, features = [
     "proc_macro",
     "ahash",
