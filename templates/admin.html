@@ -1,4 +1,4 @@
-{% extends "layout.html" %} 
+{% extends "layout.html" %}
 
 {% block content %}
 <form  class="box" id="admin" action="/admin" method="POST">
@@ -243,6 +243,7 @@
                             <select name="lang" required>
                                 <option {% if site_config.lang == "en" %} selected {% endif %} value="en">English</option>
                                 <option {% if site_config.lang == "fr" %} selected {% endif %} value="fr">Français</option>
+                                <option {% if site_config.lang == "uk" %} selected {% endif %} value="uk">Українська</option>
                                 <option {% if site_config.lang == "ja" %} selected {% endif %} value="ja">日本語</option>
                                 <option {% if site_config.lang == "zh_cn" %} selected {% endif %} value="zh_cn">中文</option>
                             </select>

@@ -804,7 +804,7 @@ pub(crate) async fn user_setting_post(
     user.home_page = input.home_page;
 
     match input.lang.as_str() {
-        "en" | "zh_cn" | "ja" | "fr" => {
+        "en" | "zh_cn" | "ja" | "fr" | "uk" => {
             claim.update_lang(&DB, &input.lang)?;
             user.lang = Some(input.lang.clone());
         }
