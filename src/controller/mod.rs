@@ -171,7 +171,7 @@ impl std::fmt::Debug for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "uid: {}, username: {}, password_hash: ******, recovery_hash is set: {}, 
+            "uid: {}, username: {}, password_hash: ******, recovery_hash is set: {},
             created_at: {}, role: {}, url: {}, about: {},
             lang: {}, home_page: {}, pub_key: {}",
             self.uid,
@@ -583,6 +583,13 @@ mod filters {
         for (k, v) in fr.iter() {
             i18n.insert(("fr", *k), *v);
         }
+
+        let uk = include_str!("../../i18n/uk.toml");
+        let uk = basic_toml::from_str::<HashMap<&str, &str>>(uk).unwrap();
+        for (k, v) in uk.iter() {
+            i18n.insert(("uk", *k), *v);
+        }
+
         i18n
     });
 
