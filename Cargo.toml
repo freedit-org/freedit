@@ -28,7 +28,7 @@ captcha = { git = "https://github.com/freedit-dev/captcha.git", default-features
 data-encoding = "2.9"
 fast2s = "0.3"
 fjall = "2.11.2"
-http = "1.3.1"
+http = "1.4.0"
 identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
 image = { version = "0.25.8", default-features = false, features = [
     "jpeg",
