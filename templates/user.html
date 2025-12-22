@@ -93,13 +93,13 @@
     <nav class="level is-mobile">
         <div class="level-item has-text-centered">
             <div>
-                <p class="heading">Solos</p>
+                <p class="heading">{{ "solos"|l10n(page_data.lang) }}</p>
                 <p class="title"><a href="/solo/user/{{user.uid}}">{{user_solos_count}}</a></p>
             </div>
         </div>
         <div class="level-item has-text-centered">
             <div>
-                <p class="heading">Posts</p>
+                <p class="heading">{{ "posts"|l10n(page_data.lang) }}</p>
                 <p class="title">
                     <a href="/inn/0?filter={{user.uid}}">{{user_posts_count}}</a>
                 </p>
@@ -107,7 +107,7 @@
         </div>
         <div class="level-item has-text-centered">
             <div>
-                <p class="heading">Feeds</p>
+                <p class="heading">{{ "feeds"|l10n(page_data.lang) }}</p>
                 <p class="title"><a href="/feed/{{user.uid}}">{{user_feeds_count}}</a></p>
             </div>
         </div>
