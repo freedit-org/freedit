@@ -172,7 +172,7 @@
             <div>
                 <p class="heading">{{ "mod"|l10n(page_data.lang) }}</p>
                 <div class="title">
-                    <a href="/mod/{{iid}}">
+                    <a href="/mod/{{iid}}" title="{{ "settings"|l10n(page_data.lang) }}">
                         <span class="icon">
                             {% include "icons/setting.svg" %}
                         </span>
@@ -185,7 +185,7 @@
             <div>
                 <p class="heading">Rss</p>
                 <div class="title">
-                    <a href="/inn/{{iid}}/atom.xml">
+                    <a href="/inn/{{iid}}/atom.xml" title="{{ "rss"|l10n(page_data.lang) }}">
                         <span class="icon">
                             {% include "icons/rss.svg" %}
                         </span>
