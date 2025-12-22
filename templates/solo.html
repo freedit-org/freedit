@@ -42,7 +42,7 @@
             <div class="content">
                 <p>
                     {% match solo.reply_to %}{% when Some with (val) %}
-                        <small> Replying to <a href="/solo/{{val}}">{{val}}</a></small><br>
+                        <small>{{ "replying_to"|l10n(page_data.lang) }} <a href="/solo/{{val}}">{{val}}</a></small><br>
                     {% else %}{% endmatch %}
                     <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
                     <small>{{solo.created_at}}</small>

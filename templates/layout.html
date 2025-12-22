@@ -3,7 +3,7 @@
 
 <head>
     {% block csp %}
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self';
     img-src 'self'; script-src 'none'; style-src 'self'; object-src 'none';
     font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
     {% endblock %}
@@ -31,8 +31,8 @@
                     <div class="tabs is-small is-boxed">
                         <ul>
                             {% block tabs %}
-                            <li><a href="/inn/0">Inn</a></li>
-                            <li><a href="/solo/user/0">Solo</a></li>
+                            <li><a href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a></li>
+                            <li><a href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a></li>
                             {% endblock %}
                         </ul>
                     </div>
@@ -84,7 +84,7 @@
                         {% else %}
                             <div class="buttons has-addons">
                                 <a href="/signin"><button class="button is-info is-small">{{ "sign_in"|l10n(page_data.lang) }}</button></a>
-                                <a href="/signup"><button class="button is-success is-small">{{ "sign_up"|l10n(page_data.lang) }}</button></a> 
+                                <a href="/signup"><button class="button is-success is-small">{{ "sign_up"|l10n(page_data.lang) }}</button></a>
                             </div>
                         {% endmatch %}
                     {% endblock %}

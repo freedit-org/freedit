@@ -23,7 +23,7 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <input name="uid" class="input" type="text" 
+                        <input name="uid" class="input" type="text"
                         {% match uid %} {% when Some(uid) %} value="{{uid}}" {% else %}{% endmatch %}>
                     </div>
                 </div>
@@ -39,11 +39,11 @@
                     <div class="control">
                         <div class="select">
                             <select name="ctype">
-                                <option {% if ctype == "all" %} selected {% endif %} value="all">All</option>
-                                <option {% if ctype == "item" %} selected {% endif %} value="item">Feed</option>
-                                <option {% if ctype == "post" %} selected {% endif %} value="post">Post</option>
-                                <option {% if ctype == "comt" %} selected {% endif %} value="comt">Comment</option>
-                                <option {% if ctype == "solo" %} selected {% endif %} value="solo">Solo</option>
+                                <option {% if ctype == "all" %} selected {% endif %} value="all">{{ "all"|l10n(page_data.lang)}}</option>
+                                <option {% if ctype == "item" %} selected {% endif %} value="item">{{ "feeds"|l10n(page_data.lang)}}</option>
+                                <option {% if ctype == "post" %} selected {% endif %} value="post">{{ "posts"|l10n(page_data.lang)}}</option>
+                                <option {% if ctype == "comt" %} selected {% endif %} value="comt">{{ "comments"|l10n(page_data.lang)}}</option>
+                                <option {% if ctype == "solo" %} selected {% endif %} value="solo">{{ "solo"|l10n(page_data.lang)}}</option>
                             </select>
                         </div>
                     </div>
@@ -96,7 +96,7 @@
     {% if offset < 20 %}
         <a class="pagination-previous" disabled>{{ "prev"|l10n(page_data.lang) }}</a>
     {% else %}
-        {% match uid %} {% when Some(uid) %} 
+        {% match uid %} {% when Some(uid) %}
         <a class="pagination-previous" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset-20}}">{{ "prev"|l10n(page_data.lang) }}</a>
         {% else %}
         <a class="pagination-previous" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset-20}}">{{ "prev"|l10n(page_data.lang) }}</a>
@@ -106,7 +106,7 @@
     {% if outs.len() < 20 %}
         <a class="pagination-next" disabled>{{ "next"|l10n(page_data.lang) }}</a>
     {% else %}
-        {% match uid %} {% when Some(uid) %} 
+        {% match uid %} {% when Some(uid) %}
         <a class="pagination-next" href="/search?search={{search}}&uid={{uid}}&ctype={{ctype}}&offset={{offset+20}}">{{ "next"|l10n(page_data.lang) }}</a>
         {% else %}
         <a class="pagination-next" href="/search?search={{search}}&ctype={{ctype}}&offset={{offset+20}}">{{ "next"|l10n(page_data.lang) }}</a>
