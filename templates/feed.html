@@ -6,7 +6,7 @@
         <div class="tabs is-small is-toggle is-toggle-rounded">
             <ul>
                 {% match username %}{% when Some with (val) %}
-                    <li class="is-active"><a href="/feed/{{uid}}">{{val}}'s feeds</a></li>
+                    <li class="is-active"><a href="/feed/{{uid}}">{{ "feeds"|l10n(page_data.lang) }} {{val}}</a></li>
                 {% else %}
                     {% match filter.as_deref() %}{% when Some with ("star") %}
                     <li><a href="/feed/{{uid}}">{{ "all"|l10n(page_data.lang) }}</a></li>
@@ -88,7 +88,7 @@
 </nav>
 
 {% endblock %}
-        
+
 
 {% block aside %}
 
@@ -110,7 +110,7 @@
 {% match username %} {% when None %}
 <div class="box">
     <a href="/feed/update">
-        <span class="tag is-success">{{ "refresh"|l10n(page_data.lang) }} Feeds</span>
+        <span class="tag is-success">{{ "refresh"|l10n(page_data.lang) }} {{ "feeds"|l10n(page_data.lang) }}</span>
     </a>
 </div>
 {% else %}{% endmatch %}
@@ -138,7 +138,7 @@
                         <span class="tag is-danger" title="{{e}}">
                     {% else %}
                         {% if feed.feed_id == active_feed %}
-                        <span class="tag is-success">  
+                        <span class="tag is-success">
                         {% else %}
                         <span class="tag is-info">
                         {% endif %}
