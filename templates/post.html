@@ -1,14 +1,14 @@
-{% extends "layout.html" %} 
+{% extends "layout.html" %}
 
 {% block csp %}
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';
   img-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none';
-  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';"> 
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
 {% endblock %}
 
 {% block tabs %}
-    <li><a href="/inn/0">Inn</a></li>
-    <li><a href="/solo/user/0">Solo</a></li>
+    <li><a href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a></li>
+    <li><a href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a></li>
 {% endblock %}
 
 {% block og %}
@@ -21,7 +21,7 @@
     <div class="media-content">
         <div class="content">
             <p class="title">{% if post.is_pinned %} 📌 {% endif %}{{post.title}}</p>
-            <a href="/inn/{{post.iid}}">⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp; 
+            <a href="/inn/{{post.iid}}">⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp;
             <a href="/user/{{post.uid}}">👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
             {% if post.can_edit %}
                 <a href="/post/edit/{{post.pid}}">{{ "edit"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
@@ -29,13 +29,13 @@
 
             {% if is_mod %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
-                    {% match post.status.as_str() %} 
+                    {% match post.status.as_str() %}
                         {% when "LockedByMod" %} {{ "unlock"|l10n(page_data.lang) }}
                         {% else %} {{ "lock"|l10n(page_data.lang) }}
                     {% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
-                    {% match post.status.as_str() %} 
+                    {% match post.status.as_str() %}
                         {% when "HiddenByMod" %} {{ "unhide"|l10n(page_data.lang) }}
                         {% else %} {{ "hide"|l10n(page_data.lang) }}
                     {% endmatch %}
@@ -49,13 +49,13 @@
                 </a>
             {% else if is_author %}
                 <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
-                    {% match post.status.as_str() %} 
+                    {% match post.status.as_str() %}
                         {% when "LockedByUser" %} {{ "unlock"|l10n(page_data.lang) }}
                         {% when "Normal" %} {{ "lock"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
                 </a> &nbsp;&nbsp;
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
-                    {% match post.status.as_str() %} 
+                    {% match post.status.as_str() %}
                         {% when "HiddenByUser" %} {{ "unhide"|l10n(page_data.lang) }}
                         {% when "Normal" %} {{ "hide"|l10n(page_data.lang) }}
                         {% when "LockedByUser" %} {{ "hide"|l10n(page_data.lang) }}
@@ -127,7 +127,7 @@
                         {% else %}
                             <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info is-light is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
                         {% endif %}
-    
+
                         {% if comment.is_downvoted %}
                         <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
                         {% else %}
@@ -137,7 +137,7 @@
                         {% if comment.uid == post.uid %}
                             [op]
                         {% endif %}
-    
+
                         {% if is_mod %}
                         <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
                             {% if comment.is_hidden %}
@@ -147,7 +147,7 @@
                             {% endif %}
                         </a>
                         {% endif %}
-    
+
                         {% match page_data.claim %} {% when Some with (val) %}
                         {% if comment.uid == val.uid %}
                         <a href="#delete_pop_{{comment.cid}}">Delete</a>
@@ -194,9 +194,9 @@
                     <style>
                         #editor { display: none !important; }
                     </style>
-                    <textarea class="textarea" name="content" 
-                            {% if !has_joined %} disabled {% endif %} 
-                            required maxlength="10000" 
+                    <textarea class="textarea" name="content"
+                            {% if !has_joined %} disabled {% endif %}
+                            required maxlength="10000"
                             placeholder="comment, markdown supported"></textarea>
                     <p class="help">
                         JavaScript is required for rich editing; falling back to plain textarea.
