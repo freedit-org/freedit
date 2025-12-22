@@ -1,8 +1,8 @@
-{% extends "layout.html" %} 
+{% extends "layout.html" %}
 
 {% block tabs %}
-    <li class="is-active"><a href="/inn/0">Inn</a></li>
-    <li><a href="/solo/user/0">Solo</a></li>
+    <li class="is-active"><a href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a></li>
+    <li><a href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a></li>
 {% endblock %}
 
 {% block content %}
