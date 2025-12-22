@@ -43,7 +43,7 @@
                 <div class="level is-mobile">
                     {% block menu_right %}
                         {% match page_data.claim %} {% when Some with (val) %}
-                            <a href="/feed/{{val.uid}}">
+                            <a href="/feed/{{val.uid}}" title="{{ "feeds"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
                                     <span class="icon">
                                         {% include "icons/feeds.svg" %}
@@ -51,7 +51,7 @@
                                 </span>
                             </a>
                             <a href="/notification">
-                                <span class="icon is-large">
+                                <span class="icon is-large" title="{{ "notifications"|l10n(page_data.lang) }}">
                                     <span class="icon-text icon-text-info">
                                         <span class="icon">
                                             {% include "icons/notification.svg" %}
@@ -62,21 +62,21 @@
                                     </span>
                                 </span>
                             </a>
-                            <a href="/signout">
+                            <a href="/signout" title="{{ "sign_out"|l10n(page_data.lang) }}">
                                 <span class="icon is-large is-hidden-mobile">
                                     <span class="icon">
                                         {% include "icons/signout.svg" %}
                                     </span>
                                 </span>
                             </a>
-                            <a href="/user/setting">
+                            <a href="/user/setting" title="{{ "settings"|l10n(page_data.lang) }}">
                                 <span class="icon is-large is-hidden-mobile">
                                     <span class="icon">
                                         {% include "icons/setting.svg" %}
                                     </span>
                                 </span>
                             </a>
-                            <a href="/user/{{val.uid}}">
+                            <a href="/user/{{val.uid}}" title="{{ "profile"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
                                     <span class="image"><img src="/static/avatars/{{val.uid}}.png" alt="{{val.username}}"></span>
                                 </span>

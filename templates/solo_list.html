@@ -178,9 +178,9 @@
     </div>
     <div class="media-right">
         {% if solo.solo_type == 20 %}
-            {% include "icons/lock_square.svg" %}
+            <span title="{{ "only_you_can_see"|l10n(page_data.lang) }}">{% include "icons/lock_square.svg" %}</span>
         {% else if solo.solo_type == 10 %}
-            {% include "icons/lock.svg" %}
+            <span title="{{ "private"|l10n(page_data.lang) }}">{% include "icons/lock.svg" %}</span>
         {% else %}{% endif %}
     </div>
 </article>
