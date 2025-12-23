@@ -71,7 +71,7 @@
             {% if !nt.is_read %}
             <a href="/notification?nid={{nt.nid}}&op_type=mark"><span class="tag is-info" title="Mark as read">✔️</span></a>
             {% endif %}
-            <a href="/notification?nid={{nt.nid}}&op_type=delete"><span class="tag is-danger" title="Delete notification">❌</span></a>
+            <a href="/notification?nid={{nt.nid}}&op_type=delete"><span class="tag is-danger" title="{{ "delete_notification"|l10n(page_data.lang) }}">❌</span></a>
         </div>
     </div>
     {% endfor %}
