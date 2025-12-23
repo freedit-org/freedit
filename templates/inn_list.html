@@ -56,7 +56,9 @@
         </div>
         <div class="list-item-content">
             <div class="list-item-title"><a href="/inn/{{inn.iid}}">{{inn.inn_name}}</a></div>
-            <div class="list-item-description">{{inn.about}}</div>
+            {% if !inn.about.is_empty() %}
+                <div class="list-item-description">{{inn.about}}</div>
+            {% endif %}
         </div>
 
         <div class="list-item-controls">
@@ -107,9 +109,11 @@
 {% endblock %}
 
 {% block box %}
+{% if !page_data.site_description.is_empty() %}
 <div class="box">
     <div class="content">
         {{page_data.site_description}}
     </div>
 </div>
+{% endif %}
 {% endblock %}

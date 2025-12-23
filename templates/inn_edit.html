@@ -54,6 +54,7 @@
             </div>
         </div>
 
+        {% if !inn.description.is_empty() %}
         <div class="field is-horizontal">
             <div class="field-label is-normal">
                 <label class="label" for="description">{{ "description"|l10n(page_data.lang) }}</label>
@@ -66,6 +67,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">

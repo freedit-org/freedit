@@ -218,11 +218,12 @@
 {% endblock %}
 
 {% block box %}
+{% if !page_data.site_description.is_empty() %}
 <div class="box">
     <div class="content">
         {{page_data.site_description}}
     </div>
 </div>
-
+{% endif %}
 <script src="/static/js/overtype.min.js"></script>
 {% endblock %}
