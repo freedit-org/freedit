@@ -49,8 +49,8 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        <label class="radio"><input type="radio" name="read_only" value="true" {% if site_config.read_only %} checked {% endif %} autocomplete="off" /> True</label>
-                        <label class="radio"><input type="radio" name="read_only" value="false" {% if !site_config.read_only %} checked {% endif %} autocomplete="off" /> False</label>
+                        <label class="radio"><input type="radio" name="read_only" value="true" {% if site_config.read_only %} checked {% endif %} autocomplete="off" /> {{ "yes"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="read_only" value="false" {% if !site_config.read_only %} checked {% endif %} autocomplete="off" /> {{ "no"|l10n(page_data.lang) }}</label>
                     </div>
                 </div>
             </div>
