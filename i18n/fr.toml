@@ -136,6 +136,7 @@ stay_logged_in = "Rester connecté"
 submit = "Soumettre"
 subscribe = "S'abonner"
 super = "Super"
+tags_separated_by = "tags, separated by #" # @TODO
 terms = "termes et conditions"
 title = "Titre"
 title_max_length = "Longueur maximale du titre"

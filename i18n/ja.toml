@@ -136,6 +136,7 @@ stay_logged_in = "ログイン状態を維持"
 submit = "送信"
 subscribe = "購読"
 super = "スーパー"
+tags_separated_by = "tags, separated by #" # @TODO
 terms = "利用規約"
 title = "タイトル"
 title_max_length = "タイトルの最大長"
