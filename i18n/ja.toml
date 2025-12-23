@@ -22,6 +22,7 @@ created = "作成日時"
 db_view = "データベースビュー"
 delete = "削除"
 delete_draft = "ドラフトを削除"
+delete_notification = "Delete notification" # @TODO
 delete_permanently = "完全に削除"
 delete_sure = "本当に削除しますか？"
 description = "説明"
