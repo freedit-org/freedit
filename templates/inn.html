@@ -208,6 +208,7 @@
         {% endif %}
     </div>
 </div>
+{% if !description.is_empty() %}
 <div class="box">
     <details>
         <summary>{{ "description"|l10n(page_data.lang) }}</summary>
@@ -217,8 +218,9 @@
         </div>
     </details>
 </div>
+{% endif %}
 
-{% else %}
+{% else if !page_data.site_description.is_empty() %}
 <div class="box">
     <div class="content">
         {{page_data.site_description}}
