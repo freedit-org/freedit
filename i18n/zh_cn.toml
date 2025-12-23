@@ -19,6 +19,7 @@ comment_interval = "评论间隔"
 comment_max_length = "评论最大长度"
 comments = "Comments" # @TODO
 created = "创建时间"
+custom_footer_code = "Custom footer code" # @TODO
 db_view = "数据库视图"
 delete = "删除"
 delete_draft = "删除草稿"

@@ -167,6 +167,7 @@ pub(super) struct PageData<'a> {
     pub(super) claim: Option<Claim>,
     pub(super) has_unread: bool,
     pub(super) lang: String,
+    pub(super) custom_footer_code: Option<&'a str>,
 }
 
 impl<'a> PageData<'a> {
@@ -183,12 +184,16 @@ impl<'a> PageData<'a> {
             .map_or_else(|| site_config.lang.clone(), |lang| lang.to_owned());
 
         Self {
-            title,
-            site_name: &site_config.site_name,
-            site_description,
             claim,
+            custom_footer_code: site_config
+                .custom_footer_code
+                .as_deref()
+                .filter(|this| !this.is_empty()),
             has_unread,
             lang,
+            site_description,
+            site_name: &site_config.site_name,
+            title,
         }
     }
 }

@@ -380,6 +380,7 @@ impl Default for SiteConfig {
             spam_regex: None,
             lang: "en".into(),
             tos_link: "https://en.wikipedia.org/wiki/WTFPL".into(),
+            custom_footer_code: None,
         }
     }
 }

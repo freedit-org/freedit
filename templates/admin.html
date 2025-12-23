@@ -234,6 +234,23 @@
 
         <div class="field is-horizontal">
             <div class="field-label is-normal">
+                <label class="label" for="custom_footer_code">{{ "custom_footer_code"|l10n(page_data.lang) }}</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        {% if let Some(custom_footer_code) = site_config.custom_footer_code %}
+                        <textarea name="custom_footer_code" class="textarea" maxlength="2048" placeholder="{{custom_footer_code}}">{{custom_footer_code}}</textarea>
+                        {% else %}
+                        <textarea name="custom_footer_code" class="textarea" maxlength="2048"></textarea>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
                 <label class="label" for="lang">{{ "lang"|l10n(page_data.lang) }}</label>
             </div>
             <div class="field-body">
