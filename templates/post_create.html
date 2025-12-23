@@ -56,12 +56,12 @@
                         checked
                     {% else %}{% endmatch %}
                     name="is_draft" value="true"/>
-                    Save as draft
+                    {{ "save_draft"|l10n(page_data.lang) }}
                 </div>
 
                 <div class="field">
                     <input type="checkbox" name="delete_draft" value="true"/>
-                    Delete draft
+                    {{ "delete_draft"|l10n(page_data.lang) }}
                 </div>
 
                 <nav class="level is-mobile">
