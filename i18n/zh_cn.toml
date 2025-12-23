@@ -136,6 +136,7 @@ stay_logged_in = "保持登录"
 submit = "提交"
 subscribe = "订阅"
 super = "超级管理员"
+tags_separated_by = "tags, separated by #" # @TODO
 terms = "条款与条件"
 title = "标题"
 title_max_length = "标题最大长度"

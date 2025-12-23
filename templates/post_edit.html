@@ -21,7 +21,7 @@
 
                 <div class="field">
                     <div class="control">
-                        <input class="input is-small" type="text" name="tags" required maxlength="128" value='{{post.tags|join("#")}}' required placeholder="tags, separated by #" />
+                        <input class="input is-small" type="text" name="tags" required maxlength="128" value='{{post.tags|join("#")}}' required placeholder="{{ "tags_separated_by"|l10n(page_data.lang) }}" />
                     </div>
                 </div>
 
