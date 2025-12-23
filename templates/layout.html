@@ -145,7 +145,7 @@
 
     <footer class="footer p-5">
         {% if let Some(custom_footer_code) = page_data.custom_footer_code %}
-            {{custom_footer_code}}
+            {{ custom_footer_code|safe }}
         {% else %}
             <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
             <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{ crate::VERSION }}">v{{ crate::VERSION }}</a></small></p>
