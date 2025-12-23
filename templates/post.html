@@ -199,7 +199,7 @@
                             required maxlength="10000"
                             placeholder="comment, markdown supported"></textarea>
                     <p class="help">
-                        JavaScript is required for rich editing; falling back to plain textarea.
+                        {{ "javascript_is_required_for_rich_editor"|l10n(page_data.lang) }}
                     </p>
                 </noscript>
             </div>

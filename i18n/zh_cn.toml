@@ -57,6 +57,7 @@ inn_name = "小屋名称"
 inn_type = "小屋类型"
 intern = "实习生"
 is_public = "是否公开"
+javascript_is_required_for_rich_editor = "JavaScript is required for rich editing; falling back to plain textarea." # @TODO
 join = "加入"
 join_to_comment = "加入以评论"
 joined = "已加入"

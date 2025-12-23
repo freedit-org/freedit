@@ -57,6 +57,7 @@ inn_name = "イン名"
 inn_type = "インタイプ"
 intern = "インターン"
 is_public = "公開されていますか？"
+javascript_is_required_for_rich_editor = "JavaScript is required for rich editing; falling back to plain textarea." # @TODO
 join = "参加"
 join_to_comment = "コメントするには参加"
 joined = "参加済み"
