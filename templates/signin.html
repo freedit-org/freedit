@@ -1,4 +1,10 @@
-{% extends "layout.html" %} 
+{% extends "layout.html" %}
+
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';
+  img-src 'self' data:; script-src 'none'; style-src 'self'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+{% endblock %}
 
 {% block section %}
 <section class="my-5 has-background-light">
@@ -21,6 +27,18 @@
                     <span class="icon is-left">🔑</span>
                 </div>
             </div>
+
+            <div>
+                <img src="data:image/png;base64,{{captcha_image}}" alt="captcha" class="captcha" />
+            </div>
+
+            <div class="field">
+                <div class="control">
+                    <input name="captcha_value" class="input" required placeholder='{{ "captcha"|l10n(page_data.lang) }}'  >
+                </div>
+            </div>
+
+            <input type="hidden" id="captcha_id" name="captcha_id" value="{{captcha_id}}">
 
             <div class="field">
                 <label for="remember" class="label">{{ "stay_logged_in"|l10n(page_data.lang) }}</label>

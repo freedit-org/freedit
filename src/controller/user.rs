@@ -688,6 +688,8 @@ pub(crate) async fn user_setting(
 #[derive(Template)]
 #[template(path = "reset.html")]
 struct PageReset<'a> {
+    captcha_id: String,
+    captcha_image: String,
     page_data: PageData<'a>,
 }
 
@@ -705,18 +707,28 @@ pub(crate) async fn reset(
     };
 
     let page_data = PageData::new("Forgot password", &site_config, None, false);
-    let page_reset = PageReset { page_data };
+
+    let captcha_session = CaptchaSession::create(&site_config)?;
+
+    let page_reset = PageReset {
+        page_data,
+        captcha_id: captcha_session.id,
+        captcha_image: captcha_session.image,
+    };
+
     Ok(into_response(&page_reset))
 }
 
 /// Form data: `/user/setting`
 #[derive(Deserialize, Validate)]
 pub(crate) struct FormReset {
-    username: String,
-    recovery_code: String,
+    captcha_id: String,
+    captcha_value: String,
     password: String,
     #[validate(length(min = 7))]
     password2: String,
+    recovery_code: String,
+    username: String,
 }
 
 /// `POST /user/reset`
@@ -724,9 +736,18 @@ pub(crate) async fn reset_post(
     cookie: Option<TypedHeader<Cookie>>,
     Form(input): Form<FormReset>,
 ) -> Result<impl IntoResponse, AppError> {
+    let captcha_char = DB
+        .open_partition("captcha", Default::default())?
+        .take(&input.captcha_id)?
+        .ok_or(AppError::CaptchaError)?;
+    if captcha_char != input.captcha_value {
+        return Err(AppError::CaptchaError);
+    }
+
     if input.password != input.password2 {
         return Err(AppError::Custom("Passwords do not match".to_string()));
     }
+
     let site_config = SiteConfig::get(&DB)?;
 
     if let Some(cookie) = cookie {
@@ -856,15 +877,19 @@ pub(crate) const COOKIE_NAME: &str = "id";
 /// Form data: `/signin`
 #[derive(Deserialize)]
 pub(crate) struct FormSignin {
-    username: String,
+    captcha_id: String,
+    captcha_value: String,
     password: String,
     remember: String,
+    username: String,
 }
 
 /// Page data: `signin.html`
 #[derive(Template)]
 #[template(path = "signin.html")]
 struct PageSignin<'a> {
+    captcha_id: String,
+    captcha_image: String,
     page_data: PageData<'a>,
 }
 
@@ -873,19 +898,41 @@ pub(crate) async fn signin(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
+
+    if site_config.read_only {
+        return Err(AppError::ReadOnly);
+    }
+
     let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
+
     if claim.is_some() {
         let redirect = Redirect::to("/");
         return Ok(redirect.into_response());
     }
+
     let page_data = PageData::new("Sign in", &site_config, claim, false);
 
-    let page_signin = PageSignin { page_data };
+    let captcha_session = CaptchaSession::create(&site_config)?;
+
+    let page_signin = PageSignin {
+        captcha_id: captcha_session.id,
+        captcha_image: captcha_session.image,
+        page_data,
+    };
+
     Ok(into_response(&page_signin))
 }
 
 /// `POST /signin`
 pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoResponse {
+    let captcha_char = DB
+        .open_partition("captcha", Default::default())?
+        .take(&input.captcha_id)?
+        .ok_or(AppError::CaptchaError)?;
+    if captcha_char != input.captcha_value {
+        return Err(AppError::CaptchaError);
+    }
+
     let uid = match input.username.parse::<u32>() {
         Ok(uid) => uid,
         Err(_) => {
@@ -930,43 +977,28 @@ pub(crate) struct FormSignup {
 #[derive(Template)]
 #[template(path = "signup.html")]
 struct PageSignup<'a> {
-    page_data: PageData<'a>,
     captcha_id: String,
     captcha_image: String,
+    page_data: PageData<'a>,
     tos_link: &'a str,
 }
 
 /// `GET /signup`
 pub(crate) async fn signup() -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
+
     if site_config.read_only {
         return Err(AppError::ReadOnly);
     }
+
     let page_data = PageData::new("Sign up", &site_config, None, false);
 
-    let captcha_difficulty = match site_config.captcha_difficulty.as_str() {
-        "Easy" => Difficulty::Easy,
-        "Medium" => Difficulty::Medium,
-        "Hard" => Difficulty::Hard,
-        _ => return Err(AppError::NotFound),
-    };
-
-    let captcha = match site_config.captcha_name.as_str() {
-        "Amelia" => captcha::by_name(captcha_difficulty, CaptchaName::Amelia),
-        "Lucy" => captcha::by_name(captcha_difficulty, CaptchaName::Lucy),
-        "Mila" => captcha::by_name(captcha_difficulty, CaptchaName::Mila),
-        "Digits" => captcha_digits(),
-        _ => return Err(AppError::NotFound),
-    };
-
-    let captcha_id = generate_nanoid_ttl(60);
-    DB.open_partition("captcha", Default::default())?
-        .insert(&captcha_id, &*captcha.chars_as_string())?;
+    let captcha_session = CaptchaSession::create(&site_config)?;
 
     let page_signup = PageSignup {
+        captcha_id: captcha_session.id,
+        captcha_image: captcha_session.image,
         page_data,
-        captcha_id,
-        captcha_image: captcha.as_base64().unwrap(),
         tos_link: &site_config.tos_link,
     };
     Ok(into_response(&page_signup))
@@ -996,20 +1028,22 @@ fn captcha_digits() -> Captcha {
 pub(crate) async fn signup_post(
     ValidatedForm(input): ValidatedForm<FormSignup>,
 ) -> Result<impl IntoResponse, AppError> {
-    if input.password != input.password2 {
-        return Err(AppError::Custom("Passwords do not match".to_string()));
-    }
-    let username = clean_html(&input.username);
-    if !is_valid_name(&username) {
-        return Err(AppError::NameInvalid);
-    }
-
     let captcha_char = DB
         .open_partition("captcha", Default::default())?
         .take(&input.captcha_id)?
         .ok_or(AppError::CaptchaError)?;
     if captcha_char != input.captcha_value {
         return Err(AppError::CaptchaError);
+    }
+
+    if input.password != input.password2 {
+        return Err(AppError::Custom("Passwords do not match".to_string()));
+    }
+
+    let username = clean_html(&input.username);
+
+    if !is_valid_name(&username) {
+        return Err(AppError::NameInvalid);
     }
 
     let username = username.trim();
@@ -1166,6 +1200,42 @@ fn check_password(password: &str, password_hash: &str) -> bool {
         &decoded[0..64],
     )
     .is_ok()
+}
+
+/// Captcha session members
+struct CaptchaSession {
+    id: String,
+    image: String,
+}
+
+impl CaptchaSession {
+    /// Generate new captcha
+    fn create(site_config: &SiteConfig) -> Result<Self, AppError> {
+        let captcha_difficulty = match site_config.captcha_difficulty.as_str() {
+            "Easy" => Difficulty::Easy,
+            "Medium" => Difficulty::Medium,
+            "Hard" => Difficulty::Hard,
+            _ => return Err(AppError::NotFound),
+        };
+
+        let captcha = match site_config.captcha_name.as_str() {
+            "Amelia" => captcha::by_name(captcha_difficulty, CaptchaName::Amelia),
+            "Lucy" => captcha::by_name(captcha_difficulty, CaptchaName::Lucy),
+            "Mila" => captcha::by_name(captcha_difficulty, CaptchaName::Mila),
+            "Digits" => captcha_digits(),
+            _ => return Err(AppError::NotFound),
+        };
+
+        let id = generate_nanoid_ttl(60);
+
+        DB.open_partition("captcha", Default::default())?
+            .insert(&id, &*captcha.chars_as_string())?;
+
+        Ok(Self {
+            id,
+            image: captcha.as_base64().unwrap(),
+        })
+    }
 }
 
 impl Claim {

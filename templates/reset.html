@@ -1,5 +1,11 @@
 {% extends "layout.html" %}
 
+{% block csp %}
+<meta http-equiv="Content-Security-Policy" content="default-src 'self';
+  img-src 'self' data:; script-src 'none'; style-src 'self'; object-src 'none';
+  font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+{% endblock %}
+
 {% block content %}
 <section class="my-5 has-background-light">
     <form id="reset" class="box" action="/user/reset" method="post">
@@ -59,10 +65,39 @@
             <div class="field is-horizontal">
                 <div class="field-label"></div>
                 <div class="field-body">
+                    <img src="data:image/png;base64,{{captcha_image}}" alt="captcha" class="captcha" />
+                </div>
+            </div>
+
+            <div class="field is-horizontal">
+                <div class="field-label"></div>
+                <div class="field-body">
+                    <div class="field">
+                        <div class="control">
+                            <input name="captcha_value" class="input" required placeholder='{{ "captcha"|l10n(page_data.lang) }}'  >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="hidden" id="captcha_id" name="captcha_id" value="{{captcha_id}}">
+
+            <div class="field is-horizontal">
+                <div class="field-label"></div>
+                <div class="field-body">
                     <div class="field">
                         <div class="control">
                             <button type="submit" form="reset" class="button is-link">{{ "submit"|l10n(page_data.lang) }}</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field is-horizontal">
+                <div class="field-label"></div>
+                <div class="field-body">
+                    <div class="field">
+                        <a href="/signin">{{ "sign_in"|l10n(page_data.lang) }}</a>
                     </div>
                 </div>
             </div>
