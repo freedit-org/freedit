@@ -45,7 +45,7 @@
                         </style>
                         <textarea name="content" class="textarea" rows="15" required maxlength="65535" placeholder="Markdown supported">{{draft.content}}</textarea>
                         <p class="help">
-                            JavaScript is required for rich editing; falling back to plain textarea.
+                            {{ "javascript_is_required_for_rich_editor"|l10n(page_data.lang) }}
                         </p>
                     </noscript>
                 </div>

@@ -57,6 +57,7 @@ inn_name = "Nom de l'auberge"
 inn_type = "Type d'auberge"
 intern = "Stagiaire"
 is_public = "Est public"
+javascript_is_required_for_rich_editor = "JavaScript is required for rich editing; falling back to plain textarea." # @TODO
 join = "Rejoindre"
 join_to_comment = "Rejoignez pour commenter"
 joined = "Rejoint"
