@@ -144,10 +144,14 @@
     {% endblock %}
 
     <footer class="footer p-5">
-        <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
-        <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{ crate::VERSION }}">v{{ crate::VERSION }}</a></small></p>
-        <p><small>sha256: {{ crate::CURRENT_SHA256.as_str()|truncate(10) }}</small></p>
-        <p><small>commit: <a href="https://github.com/freedit-org/freedit/commit/{{ crate::GIT_COMMIT }}">{{ crate::GIT_COMMIT }}</a></small></p>
+        {% if let Some(custom_footer_code) = page_data.custom_footer_code %}
+            {{custom_footer_code}}
+        {% else %}
+            <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
+            <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{ crate::VERSION }}">v{{ crate::VERSION }}</a></small></p>
+            <p><small>sha256: {{ crate::CURRENT_SHA256.as_str()|truncate(10) }}</small></p>
+            <p><small>commit: <a href="https://github.com/freedit-org/freedit/commit/{{ crate::GIT_COMMIT }}">{{ crate::GIT_COMMIT }}</a></small></p>
+        {% endif %}
     </footer>
 </body>
 

@@ -19,6 +19,7 @@ comment_interval = "コメントの間隔"
 comment_max_length = "コメントの最大長"
 comments = "Comments" # @TODO
 created = "作成日時"
+custom_footer_code = "Custom footer code" # @TODO
 db_view = "データベースビュー"
 delete = "削除"
 delete_draft = "ドラフトを削除"

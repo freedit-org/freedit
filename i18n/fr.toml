@@ -19,6 +19,7 @@ comment_interval = "Intervalle des commentaires"
 comment_max_length = "Longueur maximale du commentaire"
 comments = "Comments" # @TODO
 created = "Créé"
+custom_footer_code = "Custom footer code" # @TODO
 db_view = "Vue de la base de données"
 delete = "Supprimer"
 delete_draft = "Supprimer le brouillon"
