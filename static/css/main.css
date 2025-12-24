@@ -173,6 +173,8 @@ audio {
     box-sizing: border-box;
 }
 
-.editor-container {
-    height: 300px;
+/* #386 */
+.textarea:not([rows]) {
+    height: auto;
+    max-height: none;
 }
