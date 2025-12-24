@@ -31,8 +31,8 @@
                 <p class="has-text-danger">You must keep Private Key yourself and upload public key.</p>
                 <p>You can generate key pair from <a href="https://github.com/galehouse5/rsa-webcrypto-tool">rsa-webcrypto-tool</a> and upload public key here.</p>
             </div>
-        </article>     
-       
+        </article>
+
         <button id="button" class="button is-link">Generate Keys</button>
         <div id="message"></div>
 
@@ -90,9 +90,9 @@
 {% endblock %}
 
 {% block extra %}
-    <script src="/static/js/encoding-helper.js"></script>
-    <script src="/static/js/encryption-helper.js"></script>
-    <script src="/static/js/key.js"></script>
+    <script src="/static/js/encoding-helper.js?v={{ crate::VERSION }}"></script>
+    <script src="/static/js/encryption-helper.js?v={{ crate::VERSION }}"></script>
+    <script src="/static/js/key.js?v={{ crate::VERSION }}"></script>
 {% endblock %}
 
 {% block aside %}

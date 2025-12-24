@@ -29,7 +29,7 @@
                 </p>
                 <p>The code is copied from: <a href="https://github.com/galehouse5/rsa-webcrypto-tool">https://github.com/galehouse5/rsa-webcrypto-tool</a></p>
             </div>
-        </article>        
+        </article>
         <div class="box">
             <fieldset>
                 <div class="field">
@@ -90,9 +90,9 @@
 {% endblock %}
 
 {% block extra %}
-    <script src="/static/js/encoding-helper.js"></script>
-    <script src="/static/js/encryption-helper.js"></script>
-    <script src="/static/js/decrypt.js"></script>
+    <script src="/static/js/encoding-helper.js?v={{ crate::VERSION }}"></script>
+    <script src="/static/js/encryption-helper.js?v={{ crate::VERSION }}"></script>
+    <script src="/static/js/decrypt.js?v={{ crate::VERSION }}"></script>
 {% endblock %}
 
 {% block aside %}
