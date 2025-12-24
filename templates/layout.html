@@ -5,7 +5,7 @@
     {% block csp %}
     <meta http-equiv="Content-Security-Policy" content="default-src 'self';
     img-src 'self'; script-src 'none'; style-src 'self'; object-src 'none';
-    font-src 'none'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
+    font-src 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none';">
     {% endblock %}
     <meta charset="utf-8">
     <meta name="referrer" content="same-origin">
@@ -93,14 +93,16 @@
                     {% block aside %}
                         <div class="box">
                             <form id="search" action="/search" method="get">
-                                <fieldset>
-                                    <div class="field has-addons">
-                                        <div class="control">
-                                            <input class="input" name="search" type="text" placeholder='{{ "search"|l10n(page_data.lang) }}'>
-                                        </div>
-                                        <div class="control">
-                                            <button type="submit" form="search" class="button">🔍</button>
-                                        </div>
+                                <fieldset class="field has-addons has-addons-right">
+                                    <div class="control">
+                                        <input class="input" name="search" type="text" placeholder='{{ "search"|l10n(page_data.lang) }}'>
+                                    </div>
+                                    <div class="control">
+                                        <button class="button" type="submit" form="search">
+                                            <span class="icon">
+                                                <i class="fas fa-search"></i>
+                                            </span>
+                                        </button>
                                     </div>
                                 </fieldset>
                             </form>
