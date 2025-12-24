@@ -91,7 +91,7 @@
                 </main>
                 <aside class="column is-one-quarter pr-0">
                     {% block aside %}
-                        <div class="panel">
+                        <div class="box">
                             <form id="search" action="/search" method="get">
                                 <fieldset>
                                     <div class="field has-addons">
@@ -107,7 +107,7 @@
                         </div>
                         {% match page_data.claim %} {% when Some with (val) %}
                             {% if val.role == 255 %}
-                                <div class="panel">
+                                <div class="box">
                                     <a href="/admin">
                                         <span class="tag is-info">{{ "site_settings"|l10n(page_data.lang) }}</span>
                                     </a>
