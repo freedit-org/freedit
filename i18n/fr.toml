@@ -71,6 +71,7 @@ limited = "Limité"
 list = "Liste"
 load_image = "Charger une image"
 lock = "Verrouiller"
+mark_as_read = "Mark as read" # @TODO
 medium = "Moyen"
 members = "Membres"
 message = "Message" # @TODO
