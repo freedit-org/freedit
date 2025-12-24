@@ -71,6 +71,7 @@ limited = "有限"
 list = "列表"
 load_image = "加载图片"
 lock = "锁定"
+mark_as_read = "Mark as read" # @TODO
 medium = "中等"
 members = "成员"
 message = "Message" # @TODO
