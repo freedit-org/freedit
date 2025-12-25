@@ -81,25 +81,37 @@
     </div>
 </div>
 
-<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+<div class="box">
     {% for post in posts %}
-    <div class="list-item">
-        <div class="list-item-image">
+    <div class="media">
+        <div class="media-left">
             <figure class="image is-48x48">
-                <p><a href="/user/{{post.uid}}" title="author: {{post.username}}"><img src="/static/avatars/{{post.uid}}.png"></a></p>
+                <a href="/user/{{post.uid}}" title="author: {{post.username}}"><img src="/static/avatars/{{post.uid}}.png"></a>
             </figure>
         </div>
-        <div class="list-item-content">
-            <div class="list-item-title"><strong>
+        <div class="media-content">
+            <div class="content">
                 <a href="/post/{{post.iid}}/{{post.pid}}">
-                {% if post.is_pinned %} 📌 {% endif %}{{post.title}}</a></strong>
+                    {% if post.is_pinned %}
+                    <i class="fa-solid fa-thumbtack"></i>
+                    {% endif %}{{post.title}}
+                </a>
             </div>
-            <div class="list-item-description">
-                <span class="tag"><a href="/inn/{{post.iid}}">{{post.inn_name}}</a></span>
-                <span class="tag">{{post.created_at}}</span>
-                {% match post.last_reply %}{% when Some(user) %}
-                <span class="tag" title="last reply"><a href="/user/{{user.0}}">{{user.1}}</a></span>
-                {% else %}{% endmatch %}
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <a class="tag" href="/inn/{{post.iid}}">
+                        {{post.inn_name}}
+                    </a>
+                    <span class="tag">
+                        {{post.created_at}}
+                    </span>
+                    {% match post.last_reply %}{% when Some(user) %}
+                    <a class="tag" href="/user/{{user.0}}">
+                        <i class="fa-solid fa-reply mr-1"></i>
+                        {{user.1}}
+                    </a>
+                    {% else %}{% endmatch %}
+                </div>
             </div>
         </div>
         <div class="list-item-controls">
