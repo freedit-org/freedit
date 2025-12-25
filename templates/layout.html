@@ -114,27 +114,29 @@
                         </div>
                         {% match page_data.claim %} {% when Some with (val) %}
                             {% if val.role == 255 %}
-                                <div class="panel">
-                                    <div class="panel-block">
-                                        <a href="/admin">
-                                            <span class="tag is-info">{{ "site_settings"|l10n(page_data.lang) }}</span>
-                                        </a>
-                                    </div>
-                                    <div class="panel-block">
-                                        <a href="/admin/view">
-                                            <span class="tag is-info">{{ "db_view"|l10n(page_data.lang) }}</span>
-                                        </a>
-                                    </div>
-                                    <div class="panel-block">
-                                        <a href="/admin/view?tree_name=user_stats">
-                                            <span class="tag is-info">{{ "stats"|l10n(page_data.lang) }}</span>
-                                        </a>
-                                    </div>
-                                    <div class="panel-block">
-                                        <a href="/admin/gallery">
-                                            <span class="tag is-info">{{ "gallery"|l10n(page_data.lang) }}</span>
-                                        </a>
-                                    </div>
+                                <div class="box menu">
+                                    <ul class="menu-list">
+                                        <li>
+                                            <a href="/admin">
+                                                {{ "site_settings"|l10n(page_data.lang) }}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="/admin/view">
+                                                {{ "db_view"|l10n(page_data.lang) }}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="/admin/view?tree_name=user_stats">
+                                                {{ "stats"|l10n(page_data.lang) }}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="/admin/gallery">
+                                                {{ "gallery"|l10n(page_data.lang) }}
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
                             {% endif %}
                         {% else %}{% endmatch %}
