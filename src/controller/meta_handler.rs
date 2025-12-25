@@ -99,11 +99,7 @@ pub(crate) async fn home(
 static CSS: LazyLock<String> = LazyLock::new(|| {
     let mut css = include_str!("../../static/css/bulma.min.css").to_string();
     css.push('\n');
-    css.push_str(include_str!("../../static/css/bulma-list.css"));
-    css.push('\n');
     css.push_str(include_str!("../../static/css/fontawesome.min.css"));
-    css.push('\n');
-    css.push_str(include_str!("../../static/css/main.css"));
     css
 });
 
