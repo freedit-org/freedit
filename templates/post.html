@@ -265,7 +265,7 @@
         <div class="field">
             <label class="label" for="content">New comment</label>
             <div class="control">
-                <div id="editor" class="editor-container textarea" hidden></div>
+                <div id="editor"></div>
                 <noscript>
                     <style>
                         #editor { display: none !important; }
@@ -274,9 +274,9 @@
                             {% if !has_joined %} disabled {% endif %}
                             required maxlength="10000"
                             placeholder="comment, markdown supported"></textarea>
-                    <p class="help">
+                    <div class="help">
                         {{ "javascript_is_required_for_rich_editor"|l10n(page_data.lang) }}
-                    </p>
+                    </div>
                 </noscript>
             </div>
         </div>
