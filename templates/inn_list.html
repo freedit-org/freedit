@@ -16,7 +16,11 @@
                     <li><a href="/inn/list?filter=mod">⚙️ {{ "mod"|l10n(page_data.lang) }}</a></li>
                     <li><a href="/inn/list?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
                     {% endif %}
-                    <li class="is-active"><a href="/inn/list?topic={{val}}">🏷️ {{val}}</a></li>
+                    <li class="is-active">
+                        <a href="/inn/list?topic={{val}}">
+                            <i class="fa-solid fa-tag mr-1"></i> {{val}}
+                        </a>
+                    </li>
                 {% else %}
                     {% match filter.as_deref() %} {% when Some with ("mod") %}
                         <li><a href="/inn/list">{{ "all"|l10n(page_data.lang) }}</a></li>

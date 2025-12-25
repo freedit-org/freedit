@@ -20,26 +20,58 @@
 <div class="media box">
     <div class="media-content">
         <div class="content">
-            <p class="title">{% if post.is_pinned %} 📌 {% endif %}{{post.title}}</p>
-            <a href="/inn/{{post.iid}}">⚓ {{post.inn_name}}</a> &nbsp;&nbsp; 📅 {{post.created_at}} &nbsp;&nbsp;
-            <a href="/user/{{post.uid}}">👤 {{post.username}}</a> &nbsp;&nbsp; 👁️ {{pageview}} &nbsp;&nbsp;
+            <div class="title">
+                {% if post.is_pinned %}
+                    <span class="icon is-small mr-1">
+                        <i class="fa-solid fa-thumbtack"></i>
+                    </span>
+                {% endif %}
+                {{post.title}}
+            </div>
+            <span class="icon is-small mr-1">
+                <i class="fa-solid fa-anchor"></i>
+            </span>
+            <a class="mr-2" href="/inn/{{post.iid}}">
+                {{post.inn_name}}
+            </a>
+            <span class="icon is-small mr-1">
+                <i class="fa-solid fa-user"></i>
+            </span>
+            <a class="mr-2" href="/user/{{post.uid}}">
+                {{post.username}}
+            </a>
+            <span class="mr-2">
+                <span class="icon is-small mr-1">
+                    <i class="fa-solid fa-calendar"></i>
+                </span>
+                {{post.created_at}}
+            </span>
+            <span class="mr-2">
+                <span class="icon is-small mr-1">
+                    <i class="fa-solid fa-eye"></i>
+                </span>
+                {{pageview}}
+            </span>
+
             {% if post.can_edit %}
-                <a href="/post/edit/{{post.pid}}">{{ "edit"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
+                <a class="mr-2" href="/post/edit/{{post.pid}}">
+                    {{ "edit"|l10n(page_data.lang) }}
+                </a>
             {% endif %}
 
             {% if is_mod %}
-                <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
+                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/lock">
                     {% match post.status.as_str() %}
                         {% when "LockedByMod" %} {{ "unlock"|l10n(page_data.lang) }}
                         {% else %} {{ "lock"|l10n(page_data.lang) }}
                     {% endmatch %}
-                </a> &nbsp;&nbsp;
-                <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
+                </a>
+                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %}
                         {% when "HiddenByMod" %} {{ "unhide"|l10n(page_data.lang) }}
                         {% else %} {{ "hide"|l10n(page_data.lang) }}
                     {% endmatch %}
-                </a> &nbsp;&nbsp;
+                </a>
                 <a href="/mod/{{post.iid}}/{{post.pid}}/pin">
                     {% if post.is_pinned %}
                         {{ "unpin"|l10n(page_data.lang) }}
@@ -48,12 +80,12 @@
                     {% endif %}
                 </a>
             {% else if is_author %}
-                <a href="/mod/{{post.iid}}/{{post.pid}}/lock">
+                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/lock">
                     {% match post.status.as_str() %}
                         {% when "LockedByUser" %} {{ "unlock"|l10n(page_data.lang) }}
                         {% when "Normal" %} {{ "lock"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
-                </a> &nbsp;&nbsp;
+                </a>
                 <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %}
                         {% when "HiddenByUser" %} {{ "unhide"|l10n(page_data.lang) }}
@@ -68,9 +100,13 @@
                 <div id="delete_post" class="overlay">
                     <div class="popup content">
                         <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                        <a class="close" href="#">&times;</a>
+                        <a class="close icon is-small" href="#">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
                         <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
-                        <a href="/post/{{post.iid}}/{{post.pid}}/delete" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a>
+                        <a href="/post/{{post.iid}}/{{post.pid}}/delete" class="button is-danger">
+                            {{ "delete"|l10n(page_data.lang) }}
+                        </a>
                     </div>
                 </div>
             {% endif %}
@@ -87,23 +123,40 @@
 <div class="box content">
     {{post.content_html}}
     {% for tag in post.tags %}
-        <a href="/inn/tag/{{tag}}"><span class="tag">🏷️ {{tag}}</span></a>
+        <a href="/inn/tag/{{tag}}">
+            <span class="tag">
+                <i class="fa-solid fa-tag mr-1"></i> {{tag}}
+            </span>
+        </a>
     {% endfor %}
 </div>
 
 <div class="level is-mobile">
     <div class="level-item" id="upvote">
-        {% if post.is_upvoted %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-success is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
-        {% else %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
-        {% endif %}
-
-        {% if post.is_downvoted %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote"><span class="tag is-success is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
-        {% else %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote"><span class="tag is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
-        {% endif %}
+        <a class="mr-2" href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote">
+            <span class="button is-rounded {% if post.is_upvoted %}is-success{% endif %}">
+                <span class="icon is-small">
+                    <i class="fa-solid fa-thumbs-up"></i>
+                </span>
+                {% if post.upvotes > 0 %}
+                <span class="ml-1">
+                    {{post.upvotes}}
+                </span>
+                {% endif %}
+            </span>
+        </a>
+        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote">
+            <span class="button is-rounded {% if post.is_downvoted %}is-danger{% endif %}">
+                <span class="icon is-small">
+                    <i class="fa-solid fa-thumbs-down"></i>
+                </span>
+                {% if post.downvotes > 0 %}
+                <span class="ml-1">
+                    {{post.downvotes}}
+                </span>
+                {% endif %}
+            </span>
+        </a>
     </div>
 </div>
 
@@ -120,23 +173,40 @@
             <div class="content">
                 <p>
                     <small>
-                        <a href="/user/{{comment.uid}}">{{comment.username}}</a> &nbsp;&nbsp;
-                        {{comment.created_at}}
-                        {% if comment.is_upvoted %}
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
-                        {% else %}
-                            <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-rounded">👍 {% if comment.upvotes >0 %} {{comment.upvotes}} {% endif %}</span></a>
-                        {% endif %}
-
-                        {% if comment.is_downvoted %}
-                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-success is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
-                        {% else %}
-                        <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-rounded">👎 {% if comment.downvotes >0 %} {{comment.downvotes}} {% endif %}</span></a>
-                        {% endif %}
-
+                        <a class="mr-2" href="/user/{{comment.uid}}">
+                            {{comment.username}}
+                        </a>
                         {% if comment.uid == post.uid %}
-                            [op]
+                            <span class="mr-2">[op]</span>
                         {% endif %}
+                        <span class="mr-2">
+                            {{comment.created_at}}
+                        </span>
+                        <a class="mr-2" href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/upvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}">
+                            <span class="tag is-rounded {% if comment.is_upvoted %}is-success{% endif %}">
+                                <span class="icon is-small">
+                                    <i class="fa-solid fa-thumbs-up"></i>
+                                </span>
+                                {% if comment.upvotes > 0 %}
+                                <span class="ml-1">
+                                    {{comment.upvotes}}
+                                </span>
+                                {% endif %}
+                            </span>
+                        </a>
+
+                        <a class="mr-2" href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/downvote?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}">
+                            <span class="tag is-rounded {% if comment.is_downvoted %}is-danger{% endif %}">
+                                <span class="icon is-small">
+                                    <i class="fa-solid fa-thumbs-down"></i>
+                                </span>
+                                {% if comment.downvotes > 0 %}
+                                <span class="ml-1">
+                                    {{comment.downvotes}}
+                                </span>
+                                {% endif %}
+                            </span>
+                        </a>
 
                         {% if is_mod %}
                         <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
@@ -154,7 +224,9 @@
                         <div id="delete_pop_{{comment.cid}}" class="overlay">
                             <div class="popup content">
                                 <h3>Delete permanently?</h3>
-                                <a class="close" href="#">&times;</a>
+                                <a class="close icon is-small" href="#">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </a>
                                 <p>Are you sure you want to delete this comment?</p>
                                 <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete" class="button is-danger">Delete</a>
                             </div>
@@ -171,7 +243,9 @@
             </div>
         </div>
         <div class="media-right">
-            <a href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}"><span class="tag is-info">{{comment.cid}}</span></a>
+            <a href="/post/{{post.iid}}/{{post.pid}}?anchor={{anchor}}&is_desc={{is_desc}}#{{comment.cid}}">
+                <span class="tag">#{{comment.cid}}</span>
+            </a>
         </div>
     </article>
     {% endfor %}
@@ -180,7 +254,9 @@
 
 {% if post.status.as_str() != "Normal" %}
 <div class="content">
-    {% include "icons/lock.svg" %}
+    <span class="icon">
+        <i class="fa-solid fa-lock"></i>
+    </span>
     {{post.status}}
 </div>
 {% else %}
