@@ -220,16 +220,20 @@
 
                         {% match page_data.claim %} {% when Some with (val) %}
                         {% if comment.uid == val.uid %}
-                        <a href="#delete_pop_{{comment.cid}}">Delete</a>
-                        <div id="delete_pop_{{comment.cid}}" class="overlay">
-                            <div class="popup content">
-                                <h3>Delete permanently?</h3>
-                                <a class="close icon is-small" href="#">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </a>
-                                <p>Are you sure you want to delete this comment?</p>
-                                <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete" class="button is-danger">Delete</a>
-                            </div>
+                        <button class="tag is-rounded" popovertarget="delete_pop_{{comment.cid}}" title="{{ "delete"|l10n(page_data.lang) }}">
+                            <span class="icon is-small">
+                                <i class="fa-solid fa-trash"></i>
+                            </span>
+                        </button>
+                        <div class="notification" id="delete_pop_{{comment.cid}}" popover>
+                            <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
+                            <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                            <button class="button" popovertarget="delete_pop_{{comment.cid}}" popovertargetaction="hide">
+                                {{ "no"|l10n(page_data.lang) }}
+                            </button>
+                            <a class="button is-danger" href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/delete">
+                                {{ "yes"|l10n(page_data.lang) }}
+                            </a>
                         </div>
                         {% endif %}
                         {% else %}{% endmatch %}
