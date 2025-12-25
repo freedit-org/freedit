@@ -15,31 +15,52 @@
                 <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
                 <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                 {% endif %}
-                <li class="is-active"><a href="/inn/tag/{{tag}}">🏷️ {{tag}}</a></li>
+                <li class="is-active">
+                    <a href="/inn/tag/{{tag}}">
+                        <i class="fa-solid fa-tag mr-1"></i>
+                        {{tag}}
+                    </a>
+                </li>
             </ul>
         </div>
     </div>
 </div>
 
-<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
+<div class="box">
     {% for post in posts %}
-    <div class="list-item">
-        <div class="list-item-image">
+    <div class="media">
+        <div class="media-left">
             <figure class="image is-48x48">
-                <p><a href="/user/{{post.uid}}" title="{{post.username}}"><img src="/static/avatars/{{post.uid}}.png"></a></p>
+                <a href="/user/{{post.uid}}" title="{{post.username}}">
+                    <img src="/static/avatars/{{post.uid}}.png">
+                </a>
             </figure>
         </div>
-        <div class="list-item-content">
-            <div class="list-item-title"><strong><a href="/post/{{post.iid}}/{{post.pid}}">{{post.title}}</a></strong></div>
-            <div class="list-item-description">
-                <span class="tag"><a href="/inn/{{post.iid}}">{{post.inn_name}}</a></span>
-                <span class="tag">{{post.created_at}}</span>
+        <div class="media-content">
+            <div class="content">
+                <p>
+                    <a href="/post/{{post.iid}}/{{post.pid}}">
+                        {{post.title}}
+                    </a>
+                </p>
+                <p>
+                    <span class="tag">
+                        <a href="/inn/{{post.iid}}">
+                            {{post.inn_name}}
+                        </a>
+                    </span>
+                    <span class="tag">
+                        {{post.created_at}}
+                    </span>
+                </p>
             </div>
-        </div>
-        <div class="list-item-controls">
-            {% if post.comment_count >0 %}
-                <a href="/post/{{post.iid}}/{{post.pid}}#{{post.comment_count}}"><span class="tag is-info">{{post.comment_count}}</span></a>
-            {% endif %}
+            <div class="level is-mobile">
+                <div class="level-left">
+                    {% if post.comment_count >0 %}
+                        <a href="/post/{{post.iid}}/{{post.pid}}#{{post.comment_count}}"><span class="tag is-info">{{post.comment_count}}</span></a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
     {% endfor %}
