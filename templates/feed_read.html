@@ -20,16 +20,37 @@
     <div class="media-content">
         <div class="content">
             <p class="title">{{item.title|truncate(100)}}</p>
-            <p>📅 {{item.updated}} &nbsp;&nbsp;
-                ⚓ {{item.feed_title}} &nbsp;&nbsp;
-                <a href="{{item.link}}">🌐 {{ "source"|l10n(page_data.lang) }}</a> &nbsp;&nbsp;
-                <a href="/feed/read/{{item.item_id}}?allow_img=true">🖼️ {{ "load_image"|l10n(page_data.lang) }}</a>
+            <p>
+                <span class="mr-2">
+                    <span class="icon is-small mr-1">
+                        <i class="fa-solid fa-calendar"></i>
+                    </span>
+                    {{item.updated}}
+                </span>
+                <span class="mr-2">
+                    <span class="icon is-small mr-1">
+                        <i class="fa-solid fa-anchor"></i>
+                    </span>
+                    {{item.feed_title}}
+                </span>
+                <span class="icon is-small mr-1">
+                    <i class="fa-solid fa-globe"></i>
+                </span>
+                <a class="mr-2" href="{{item.link}}">
+                    {{ "source"|l10n(page_data.lang) }}
+                </a>
+                <span class="icon is-small mr-1">
+                    <i class="fa-solid fa-image"></i>
+                </span>
+                <a class="mr-2" href="/feed/read/{{item.item_id}}?allow_img=true">
+                    {{ "load_image"|l10n(page_data.lang) }}
+                </a>
             </p>
         </div>
     </div>
     <div class="media-right">
-        <a href="/feed/star/{{item.item_id}}">
-            {% include "icons/star.svg" %}
+        <a class="icon" href="/feed/star/{{item.item_id}}">
+            <i class="fa-solid fa-star {% if item.is_starred %}is-warning{% endif %}"></i>
         </a>
     </div>
 </div>

@@ -22,12 +22,18 @@
                     <li><a href="/solo/user/0?filter=Following">{{ "following"|l10n(page_data.lang) }}</a></li>
                     <li><a href="/solo/user/0?filter=Like">{{ "like"|l10n(page_data.lang) }}</a></li>
                     {% endif %}
-                    <li class="is-active"><a href="/solo/user/0?hashtag={{val}}">🏷️ {{val}}</a></li>
+                    <li class="is-active">
+                        <a href="/solo/user/0?hashtag={{val}}">
+                            <i class="fa-solid fa-tag mr-1"></i> {{val}}
+                        </a>
+                    </li>
                 {% else %}
                     {% if page_data.claim.is_some() %}
                         {% match filter.as_deref() %} {% when Some with ("Following") %}
                             <li><a href="/solo/user/0">{{ "all"|l10n(page_data.lang) }}</a></li>
-                            <li class="is-active"><a href="/solo/user/{{uid}}?filter=Following">{{ "following"|l10n(page_data.lang) }}</a></li>
+                            <li class="is-active">
+                                <a href="/solo/user/{{uid}}?filter=Following">{{ "following"|l10n(page_data.lang) }}</a>
+                            </li>
                             <li><a href="/solo/user/{{uid}}?filter=Like">{{ "like"|l10n(page_data.lang) }}</a></li>
                         {% when Some with ("Like") %}
                             <li><a href="/solo/user/0">{{ "all"|l10n(page_data.lang) }}</a></li>
@@ -38,7 +44,11 @@
                                 <li><a href="/solo/user/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                                 <li><a href="/solo/user/0?filter=Following">{{ "following"|l10n(page_data.lang) }}</a></li>
                                 <li><a href="/solo/user/{{uid}}?filter=Like">{{ "like"|l10n(page_data.lang) }}</a></li>
-                                <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                                <li class="is-active">
+                                    <a href="/solo/user/{{uid}}">
+                                        <i class="fa-solid fa-user"></i> {{username}}
+                                    </a>
+                                </li>
                             {% else %}
                                 <li class="is-active"><a href="/solo/user/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                                 <li><a href="/solo/user/0?filter=Following">{{ "following"|l10n(page_data.lang) }}</a></li>
@@ -48,7 +58,11 @@
                     {% else %}
                         {% if uid > 0 %}
                             <li><a href="/solo/user/0">{{ "all"|l10n(page_data.lang) }}</a></li>
-                            <li class="is-active"><a href="/solo/user/{{uid}}">👤 {{username}}</a></li>
+                            <li class="is-active">
+                                <a href="/solo/user/{{uid}}">
+                                    <i class="fa-solid fa-user"></i> {{username}}
+                                </a>
+                            </li>
                         {% else %}
                             <li class="is-active"><a href="/solo/user/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                         {% endif %}
@@ -151,24 +165,35 @@
             <div class="level-left">
                 <a class="level-item" href="/solo/{{solo.sid}}/like">
                     <span class="icon is-small">
-                        {% if solo.like %}❤️{% else %}🤍{% endif %}
+                        {% if solo.like %}<i class="fa-solid fa-heart"></i>{% else %}<i class="fa-regular fa-heart"></i>{% endif %}
                     </span>
                     {% if solo.like_count > 0 %}
                     <span>{{solo.like_count}}</span>
                     {% endif %}
                 </a>
                 {% if solo.can_delete %}
-                <a class="level-item" href="#delete_{{solo.sid}}">🗑️</a>
+                <a class="level-item" href="#delete_{{solo.sid}}">
+                    <a class="level-item" href="#delete">
+                        <span class="icon is-small">
+                            <i class="fa-solid fa-trash"></i>
+                        </span>
+                    </a>
+                </a>
                 <div id="delete_{{solo.sid}}" class="overlay">
                     <div class="popup content">
                         <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                        <a class="close" href="#">&times;</a>
+                        <a class="close icon is-small" href="#">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
                         <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
                         <a href="/solo/{{solo.sid}}/delete" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a>
                     </div>
                 </div>
                 {% endif %}
-                <a href="/solo/{{solo.sid}}">💬
+                <a href="/solo/{{solo.sid}}">
+                    <span class="icon is-small">
+                        <i class="fa-regular fa-comment"></i>
+                    </span>
                     {% if solo.replies.len() >0 %}
                         {{solo.replies.len()}}
                     {% endif %}
@@ -178,9 +203,13 @@
     </div>
     <div class="media-right">
         {% if solo.solo_type == 20 %}
-            <span title="{{ "only_you_can_see"|l10n(page_data.lang) }}">{% include "icons/lock_square.svg" %}</span>
+            <span class="icon" title="{{ "only_you_can_see"|l10n(page_data.lang) }}">
+                <i class="fa-solid fa-user-lock"></i>
+            </span>
         {% else if solo.solo_type == 10 %}
-            <span title="{{ "private"|l10n(page_data.lang) }}">{% include "icons/lock.svg" %}</span>
+            <span class="icon" title="{{ "private"|l10n(page_data.lang) }}">
+                <i class="fa-solid fa-building-lock"></i>
+            </span>
         {% else %}{% endif %}
     </div>
 </article>

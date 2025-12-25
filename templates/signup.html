@@ -7,17 +7,18 @@
 {% endblock %}
 
 {% block section %}
-<section class="my-5 has-background-light">
-<div id="sign" class="container py-5">
+<section class="columns is-centered">
+<div id="sign" class="my-5 column is-one-third">
     <form id="signup" class="box" action="/signup" method="post">
-        <fieldset>
-            <div class="content">
-                <center><h1>{{ "sign_up"|l10n(page_data.lang) }}</h1></center>
-            </div>
+        <fieldset class="content">
+            <h1>{{ "sign_up"|l10n(page_data.lang) }}</h1>
+
             <div class="field">
                 <div class="control has-icons-left">
                     <input name="username" class="input" type="text" pattern="^\D.*" title='{{ "user_name_help"|l10n(page_data.lang) }}' required placeholder='{{ "user_name_help"|l10n(page_data.lang) }}' minlength="1" maxlength="32">
-                    <span class="icon is-left">👤</span>
+                    <span class="icon is-left">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
                 </div>
             </div>
 
@@ -55,15 +56,17 @@
                 </label>
                 </div>
             </div>
-
-            <center>
-                <div class="field">
-                    <div class="control">
-                        <button type="submit" form="signup" class="button is-link">{{ "submit"|l10n(page_data.lang) }}</button>
-                    </div>
+            <div class="field">
+                <div class="control">
+                    <button type="submit" form="signup" class="button is-link">{{ "submit"|l10n(page_data.lang) }}</button>
                 </div>
-                <p><center>{{ "already_have_account"|l10n(page_data.lang) }} <a href="/signin">{{ "sign_in"|l10n(page_data.lang) }}</a></center></p>
-            </center>
+            </div>
+            <p>
+                {{ "already_have_account"|l10n(page_data.lang) }}
+                <a href="/signin">
+                    {{ "sign_in"|l10n(page_data.lang) }}
+                </a>
+            </p>
         </fieldset>
     </form>
 </div>

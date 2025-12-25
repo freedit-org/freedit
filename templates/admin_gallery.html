@@ -7,7 +7,9 @@
         <div id="delete_{{img.2}}" class="overlay">
             <div class="popup content">
                 <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                <a class="close" href="#">&times;</a>
+                <a class="close icon is-small" href="#">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
                 <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
                 <p><a href="/image/delete/{{img.0}}/{{img.1}}" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a></p>
                 <img src="/static/upload/{{img.2}}">
