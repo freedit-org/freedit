@@ -28,14 +28,9 @@
                         <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
                         <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                         {% match username %} {% when Some with (val) %}
-                            <li class="is-active">
-                                <a href="/inn/0?filter={{uid}}">
-                                    <span class="icon is-small mr-1">
-                                        <i class="fa-solid fa-user"></i>
-                                    </span>
-                                    {{val}}
-                                </a>
-                            </li>
+                        <li class="is-active">
+                            <a href="/inn/0?filter={{uid}}">{% include "icons/user.svg" %} {{val}}</a>
+                        </li>
                         {% else %}{% endmatch %}
                     {% else %}
                         {% if iid > 0 %}
@@ -43,12 +38,7 @@
                             <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
                             <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                             <li class="is-active">
-                                <a href="/inn/{{iid}}">
-                                    <span class="icon is-small mr-1">
-                                        <i class="fa-solid fa-anchor"></i>
-                                    </span>
-                                    {{inn_name}}
-                                </a>
+                                <li class="is-active"><a href="/inn/{{iid}}">{% include "icons/community.svg" %} {{inn_name}}</a></li>
                             </li>
                         {% else %}
                             <li class="is-active"><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
@@ -60,19 +50,14 @@
                     {% match filter.as_deref() %}{% when Some with (uid) %}
                         <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                         <li class="is-active">
-                            <a href="/inn/{{iid}}?filter={{uid}}">
-                                <i class="fa-solid fa-user"></i> {{uid}}
-                            </a>
+                            <li class="is-active"><a href="/inn/{{iid}}?filter={{uid}}">{% include "icons/user.svg" %} {{uid}}</a></li>
                         </li>
                     {% else %}
                         {% if iid > 0 %}
                             <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                             <li class="is-active">
                                 <a href="/inn/{{iid}}">
-                                    <span class="icon is-small mr-1">
-                                        <i class="fa-solid fa-anchor"></i>
-                                    </span>
-                                    {{inn_name}}
+                                    {% include "icons/community.svg" %} {{inn_name}}
                                 </a>
                             </li>
                         {% else %}

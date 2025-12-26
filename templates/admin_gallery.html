@@ -16,10 +16,8 @@
                             <img class="is-rounded" src="/static/avatars/{{img.0}}.png">
                         </a>
                     </div>
-                    <button class="level-item tag is-rounded has-text-danger" popovertarget="delete_{{img.2}}" title="{{ "delete"|l10n(page_data.lang) }}">
-                        <span class="icon">
-                            <i class="fa-solid fa-trash"></i>
-                        </span>
+                    <button class="level-item is-rounded has-text-danger" popovertarget="delete_{{img.2}}" title="{{ "delete"|l10n(page_data.lang) }}">
+                        {% include "icons/xmark-circle.svg" %}
                     </button>
                     <div class="notification" id="delete_{{img.2}}" popover>
                         <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>

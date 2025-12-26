@@ -57,8 +57,8 @@
             </div>
         </div>
         <div class="list-item-controls">
-            <a class="icon" href="/feed/star/{{item.item_id}}">
-                <i class="fa-solid fa-star {% if item.is_starred %}is-warning{% endif %}"></i>
+            <a href="/feed/star/{{item.item_id}}">
+                {% include "icons/star.svg" %}
             </a>
         </div>
     </div>
@@ -145,9 +145,7 @@
                     {% endmatch %}
 
                     {% if !feed.is_public %}
-                        <span class="icon">
-                            <i class="fa-solid fa-lock"></i>
-                        </span>
+                        <span class="icon">{% include "icons/lock.svg" %}</span>&nbsp
                     {% endif %}
 
                     {{feed.title}}
