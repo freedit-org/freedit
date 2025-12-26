@@ -109,13 +109,11 @@
 <div class="box">
     {% for post in posts %}
     <div class="media">
-        <div class="media-left">
-            <figure class="image is-48x48">
-                <a href="/user/{{post.uid}}" title="@{{post.username}}">
-                    <img src="/static/avatars/{{post.uid}}.png">
-                </a>
-            </figure>
-        </div>
+        <figure class="media-left">
+            <a class="image is-48x48" class="is-rounded" href="/user/{{post.uid}}" title="@{{post.username}}">
+                <img class="is-rounded" src="/static/avatars/{{post.uid}}.png">
+            </a>
+        </figure>
         <div class="media-content">
             <div class="content">
                 <a href="/post/{{post.iid}}/{{post.pid}}">

@@ -34,20 +34,20 @@
 
     <article class="media box">
         <figure class="media-left is-hidden-mobile">
-            <p class="image is-48x48">
-                <a href="/user/{{solo.uid}}"><img src="/static/avatars/{{solo.uid}}.png"></a>
-            </p>
+            <div class="image is-48x48">
+                <a href="/user/{{solo.uid}}">
+                    <img class="is-rounded" src="/static/avatars/{{solo.uid}}.png">
+                </a>
+            </div>
         </figure>
         <div class="media-content">
             <div class="content">
-                <p>
-                    {% match solo.reply_to %}{% when Some with (val) %}
-                        <small>{{ "replying_to"|l10n(page_data.lang) }} <a href="/solo/{{val}}">{{val}}</a></small><br>
-                    {% else %}{% endmatch %}
-                    <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
-                    <small>{{solo.created_at}}</small>
-                    <br> {{solo.content}}
-                </p>
+                {% match solo.reply_to %}{% when Some with (val) %}
+                    <small>{{ "replying_to"|l10n(page_data.lang) }} <a href="/solo/{{val}}">{{val}}</a></small><br>
+                {% else %}{% endmatch %}
+                <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
+                <small>{{solo.created_at}}</small>
+                <br> {{solo.content}}
             </div>
             <nav class="level is-mobile">
                 <div class="level-left">
@@ -104,17 +104,17 @@
 {% for solo in reply_solos %}
 <article class="media box">
     <figure class="media-left is-hidden-mobile">
-        <p class="image is-48x48">
-            <a href="/user/{{solo.uid}}"><img src="/static/avatars/{{solo.uid}}.png"></a>
-        </p>
+        <div class="image is-48x48">
+            <a href="/user/{{solo.uid}}">
+                <img class="is-rounded" src="/static/avatars/{{solo.uid}}.png">
+            </a>
+        </div>
     </figure>
     <div class="media-content">
         <div class="content">
-            <p>
-                <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
-                <br> <small>{{solo.created_at}}</small>
-                <br> {{solo.content}}
-            </p>
+            <a href="/solo/user/{{solo.uid}}"> <strong>{{solo.username}}</strong> </a>
+            <br> <small>{{solo.created_at}}</small>
+            <br> {{solo.content}}
         </div>
         <nav class="level is-mobile">
             <div class="level-left">
@@ -174,11 +174,11 @@
 
 {% match page_data.claim %} {% when Some with (claim) %}
     <article class="media box">
-        <figure class="media-left is-hidden-mobile">
-            <p class="image is-48x48">
-                <img src="/static/avatars/{{claim.uid}}.png">
-            </p>
-        </figure>
+        <div class="media-left is-hidden-mobile">
+            <figure class="image is-48x48">
+                <img class="is-rounded" src="/static/avatars/{{claim.uid}}.png">
+            </figure>
+        </div>
         <div class="media-content">
             <form id="solo" action="/solo/user/0" method="post">
                 <fieldset>
