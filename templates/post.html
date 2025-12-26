@@ -223,12 +223,16 @@
                     </a>
 
                     {% if is_mod %}
-                    <a href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
-                        {% if comment.is_hidden %}
-                        Open
-                        {% else %}
-                        Hide
-                        {% endif %}
+                    <a class="mr-2" href="/post/{{post.iid}}/{{post.pid}}/{{comment.cid}}/hide">
+                        <span class="tag is-rounded {% if comment.is_downvoted %}is-danger{% endif %}">
+                            <span class="icon is-small">
+                                {% if comment.is_hidden %}
+                                <i class="fa-solid fa-eye" title="{{ "unhide"|l10n(page_data.lang) }}"></i>
+                                {% else %}
+                                <i class="fa-solid fa-eye-slash" title="{{ "hide"|l10n(page_data.lang) }}"></i>
+                                {% endif %}
+                            </span>
+                        </span>
                     </a>
                     {% endif %}
 
