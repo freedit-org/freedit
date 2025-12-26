@@ -1,4 +1,4 @@
-use std::{str::FromStr, sync::LazyLock};
+use std::str::FromStr;
 
 use super::{Claim, SiteConfig, User, filters, fmt::md2html};
 use crate::{DB, error::AppError, get_one};
@@ -96,12 +96,7 @@ pub(crate) async fn home(
     Ok(Redirect::to(redirect))
 }
 
-static CSS: LazyLock<String> = LazyLock::new(|| {
-    let mut css = include_str!("../../static/css/bulma.min.css").to_string();
-    css.push('\n');
-    css.push_str(include_str!("../../static/css/iconoir.css"));
-    css
-});
+static CSS: &str = include_str!("../../static/css/bulma.min.css");
 
 pub(crate) async fn style() -> (HeaderMap, &'static str) {
     let mut headers = HeaderMap::new();
