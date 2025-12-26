@@ -5,11 +5,9 @@
     <div class="columns is-multiline">
         {% for img in imgs %}
         <div class="column is-half">
-            <div>
-                <a href="/static/upload/{{img.2}}" target="_blank">
-                    <img src="/static/upload/{{img.2}}">
-                </a>
-            </div>
+            <a href="/static/upload/{{img.2}}" target="_blank">
+                <img src="/static/upload/{{img.2}}">
+            </a>
             <pre>/static/upload/{{img.2}}</pre>
             <nav class="level is-mobile">
                 <div class="level-left">

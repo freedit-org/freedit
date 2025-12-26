@@ -2,36 +2,35 @@
 
 {% block content %}
 <div class="box content">
-    <figure>
-        <p class="image is-32x32">
-            <a href="/gallery/{{uid}}"><img src="/static/avatars/{{uid}}.png"></a>
-        </p>
-    </figure>
+    <a class="image is-32x32 mb-4" href="/gallery/{{uid}}">
+        <img class="is-rounded" src="/static/avatars/{{uid}}.png">
+    </a>
     <div class="columns is-multiline">
         {% for img in imgs %}
-        <div class="column is-one-third">
-            <figure>
-                <a href="/static/upload/{{img.1}}" target="_blank"><img src="/static/upload/{{img.1}}"></a>
-                <button class="level-item tag is-rounded" popovertarget="delete_{{img.0}}" title="{{ "delete"|l10n(page_data.lang) }}">
-                    <span class="icon is-small">
-                        <i class="fa-solid fa-trash"></i>
-                    </span>
-                </button>
-                <div class="notification" id="delete_{{img.0}}" popover>
-                    <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                    <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
-                    <p><img src="/static/upload/{{img.1}}"></p>
-                    <button class="button" popovertarget="delete_{{img.0}}" popovertargetaction="hide">
-                        {{ "no"|l10n(page_data.lang) }}
+        <div class="column is-half">
+            <a href="/static/upload/{{img.1}}" target="_blank">
+                <img src="/static/upload/{{img.1}}">
+            </a>
+            <pre class="my-2">/static/upload/{{img.1}}</pre>
+            <nav class="level is-mobile">
+                <div class="level-left">
+                    <button class="level-item tag is-rounded has-text-danger" popovertarget="delete_{{img.0}}" title="{{ "delete"|l10n(page_data.lang) }}">
+                        <span class="icon is-small">
+                            <i class="fa-solid fa-trash"></i>
+                        </span>
                     </button>
-                    <a class="button is-danger" href="/image/delete/{{uid}}/{{img.0}}">
-                        {{ "yes"|l10n(page_data.lang) }}
-                    </a>
                 </div>
-                <figcaption>
-                    <code>![](/static/upload/{{img.1}})</code>
-                </figcaption>
-            </figure>
+            </nav>
+            <div class="notification" id="delete_{{img.0}}" popover>
+                <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
+                <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                <button class="button" popovertarget="delete_{{img.0}}" popovertargetaction="hide">
+                    {{ "no"|l10n(page_data.lang) }}
+                </button>
+                <a class="button is-danger" href="/image/delete/{{uid}}/{{img.0}}">
+                    {{ "yes"|l10n(page_data.lang) }}
+                </a>
+            </div>
         </div>
         {% endfor %}
     </div>
