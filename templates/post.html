@@ -54,39 +54,55 @@
             </span>
 
             {% if post.can_edit %}
-                <a class="mr-2" href="/post/edit/{{post.pid}}">
-                    {{ "edit"|l10n(page_data.lang) }}
+                <a class="tag is-rounded mr-2" href="/post/edit/{{post.pid}}" title="{{ "edit"|l10n(page_data.lang) }}">
+                    <span class="icon is-small">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </span>
                 </a>
             {% endif %}
 
             {% if is_mod %}
-                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/lock">
-                    {% match post.status.as_str() %}
-                        {% when "LockedByMod" %} {{ "unlock"|l10n(page_data.lang) }}
-                        {% else %} {{ "lock"|l10n(page_data.lang) }}
-                    {% endmatch %}
+                <a class="tag is-rounded mr-2" class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/lock">
+                    <span class="icon is-small">
+                        {% match post.status.as_str() %}
+                            {% when "LockedByMod" %}
+                            <i class="fa-solid fa-lock-open" title="{{ "unlock"|l10n(page_data.lang) }}"></i>
+                            {% else %}
+                            <i class="fa-solid fa-lock" title="{{ "lock"|l10n(page_data.lang) }}"></i>
+                        {% endmatch %}
+                    </span>
                 </a>
-                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/hide">
-                    {% match post.status.as_str() %}
-                        {% when "HiddenByMod" %} {{ "unhide"|l10n(page_data.lang) }}
-                        {% else %} {{ "hide"|l10n(page_data.lang) }}
-                    {% endmatch %}
+                <a class="tag is-rounded mr-2" class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/hide">
+                    <span class="icon is-small">
+                        {% match post.status.as_str() %}
+                            {% when "HiddenByMod" %}
+                            <i class="fa-solid fa-eye" title="{{ "unhide"|l10n(page_data.lang) }}"></i>
+                            {% else %}
+                            <i class="fa-solid fa-eye-slash" title="{{ "hide"|l10n(page_data.lang) }}"></i>
+                        {% endmatch %}
+                    </span>
                 </a>
-                <a href="/mod/{{post.iid}}/{{post.pid}}/pin">
-                    {% if post.is_pinned %}
-                        {{ "unpin"|l10n(page_data.lang) }}
-                    {% else %}
-                        {{ "pin"|l10n(page_data.lang) }}
-                    {% endif %}
+                <a class="tag is-rounded mr-2" href="/mod/{{post.iid}}/{{post.pid}}/pin">
+                    <span class="icon is-small">
+                        {% if post.is_pinned %}
+                        <i class="fa-solid fa-thumbtack-slash" title="{{ "unpin"|l10n(page_data.lang) }}"></i>
+                        {% else %}
+                        <i class="fa-solid fa-thumbtack" title="{{ "pin"|l10n(page_data.lang) }}"></i>
+                        {% endif %}
+                    </span>
                 </a>
             {% else if is_author %}
-                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/lock">
-                    {% match post.status.as_str() %}
-                        {% when "LockedByUser" %} {{ "unlock"|l10n(page_data.lang) }}
-                        {% when "Normal" %} {{ "lock"|l10n(page_data.lang) }}
-                    {% else %}{% endmatch %}
+                <a class="tag is-rounded mr-2" href="/mod/{{post.iid}}/{{post.pid}}/lock">
+                    <span class="icon is-small">
+                        {% match post.status.as_str() %}
+                            {% when "LockedByUser" %}
+                            <i class="fa-solid fa-lock-open" title="{{ "unlock"|l10n(page_data.lang) }}"></i>
+                            {% when "Normal" %}
+                            <i class="fa-solid fa-lock" title="{{ "lock"|l10n(page_data.lang) }}"></i>
+                        {% else %}{% endmatch %}
+                    </span>
                 </a>
-                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/hide">
+                <a class="tag is-rounded mr-2" href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %}
                         {% when "HiddenByUser" %} {{ "unhide"|l10n(page_data.lang) }}
                         {% when "Normal" %} {{ "hide"|l10n(page_data.lang) }}
