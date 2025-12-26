@@ -85,11 +85,9 @@
             </div>
         </div>
         {% else %}
-        <figure>
-            <p class="image is-48x48">
-                <a href="/user/{{info.0}}"><img src="/static/avatars/{{info.0}}.png" alt="{{info.1}}"></a>
-            </p>
-        </figure>
+        <a class="image is-48x48" href="/user/{{info.0}}">
+            <img class="is-rounded" src="/static/avatars/{{info.0}}.png" alt="{{info.1}}">
+        </a>
         {% endmatch %}
     </div>
 </div>
@@ -98,9 +96,9 @@
 {% for user in users %}
 <div class="media">
     <div class="media-left">
-        <figure class="image is-64x64">
-            <a href="/user/{{user.uid}}"><img src="/static/avatars/{{user.uid}}.png"></a>
-        </figure>
+        <a class="image is-64x64" href="/user/{{user.uid}}">
+            <img class="is-rounded" src="/static/avatars/{{user.uid}}.png">
+        </a>
     </div>
     <div class="media-content">
         <div class="content">

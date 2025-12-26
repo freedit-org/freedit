@@ -70,13 +70,11 @@
     {% for out in outs %}
     <div class="media">
         {% match out.uid %} {% when Some(uid) %}
-        <div class="media-left">
-            <figure class="image is-48x48">
-                <a href="/user/{{uid}}">
-                    <img src="/static/avatars/{{uid}}.png">
-                </a>
-            </figure>
-        </div>
+        <figure class="media-left">
+            <a class="image is-48x48" href="/user/{{uid}}">
+                <img class="is-rounded" src="/static/avatars/{{uid}}.png">
+            </a>
+        </figure>
         {% else %}{% endmatch %}
         <div class="media-content">
             <div class="content">
