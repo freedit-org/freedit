@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 
 {% block tabs %}
-<a class="navbar-item" href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a>
-<a class="navbar-item" href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a>
+    <li class="is-active"><a href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a></li>
+    <li><a href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a></li>
 {% endblock %}
 
 {% block content %}
@@ -32,7 +32,7 @@
         <div class="list-item-content">
             <div class="list-item-title"><strong><a href="/post/{{post.iid}}/{{post.pid}}">{{post.title}}</a></strong></div>
             <div class="list-item-description">
-                <span class="tag"><a href="/inn/{{post.iid}}">{{post.inn_name}}</a></span>
+                <span class="tag is-light is-link"><a href="/inn/{{post.iid}}">{{post.inn_name}}</a></span>
                 <span class="tag">{{post.created_at}}</span>
             </div>
         </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="has-background">
+<html class="has-background-grey-lighter">
 
 <head>
     {% block csp %}
@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href='/static/style.css?v={{ crate::VERSION }}'>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <title>{{ page_data.title }}</title>
+    <title> {{ page_data.title }} </title>
 
     <meta property="og:title" content="{{ page_data.title }}">
     <meta property="og:site_name" content="{{ page_data.site_name }}">
@@ -23,128 +23,135 @@
 
 <body>
     <header>
-        <nav class="navbar">
-            <div class="container">
-                <div class="navbar-brand">
-                    <a class="navbar-item" href="/">{{page_data.site_name}}</a>
-                </div>
-                <div class="navbar-menu">
+        <nav class="level is-mobile has-background-white">
+            <div class="level-left navbar-item">
+                <div class="level is-mobile">
                     {% block menu_left %}
-                    <div class="navbar-start">
-                        {% block tabs %}
-                        <a class="navbar-item" href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a>
-                        <a class="navbar-item" href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a>
-                        {% endblock %}
+                    <a class="level-item" href="/">{{page_data.site_name}}</a>
+                    <div class="tabs is-small is-boxed">
+                        <ul>
+                            {% block tabs %}
+                            <li><a href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a></li>
+                            <li><a href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a></li>
+                            {% endblock %}
+                        </ul>
                     </div>
                     {% endblock %}
-                    <div class="navbar-end">
-                        {% block menu_right %}
-                            {% match page_data.claim %} {% when Some with (val) %}
-                            <a class="navbar-item" href="/feed/{{val.uid}}" title="{{ "feeds"|l10n(page_data.lang) }}">
+                </div>
+            </div>
+            <div class="level-right navbar-item">
+                <div class="level is-mobile">
+                    {% block menu_right %}
+                        {% match page_data.claim %} {% when Some with (val) %}
+                            <a href="/feed/{{val.uid}}" title="{{ "feeds"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
-                                    {% include "icons/feeds.svg" %}
+                                    <span class="icon">
+                                        {% include "icons/feeds.svg" %}
+                                    </span>
                                 </span>
                             </a>
-                            <a class="navbar-item" href="/notification">
+                            <a href="/notification">
                                 <span class="icon is-large" title="{{ "notifications"|l10n(page_data.lang) }}">
                                     <span class="icon-text icon-text-info">
-                                        {% include "icons/notification.svg" %}
+                                        <span class="icon">
+                                            {% include "icons/notification.svg" %}
+                                        </span>
                                         {% if page_data.has_unread %}
                                         <span id="notification-indicator" class="has-background-primary"></span>
                                         {% endif %}
                                     </span>
                                 </span>
                             </a>
-                            <a class="navbar-item" href="/signout" title="{{ "sign_out"|l10n(page_data.lang) }}">
+                            <a href="/signout" title="{{ "sign_out"|l10n(page_data.lang) }}">
+                                <span class="icon is-large is-hidden-mobile">
+                                    <span class="icon">
+                                        {% include "icons/signout.svg" %}
+                                    </span>
+                                </span>
+                            </a>
+                            <a href="/user/setting" title="{{ "settings"|l10n(page_data.lang) }}">
+                                <span class="icon is-large is-hidden-mobile">
+                                    <span class="icon">
+                                        {% include "icons/setting.svg" %}
+                                    </span>
+                                </span>
+                            </a>
+                            <a href="/user/{{val.uid}}" title="{{ "profile"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
-                                    {% include "icons/signout.svg" %}
+                                    <span class="image"><img src="/static/avatars/{{val.uid}}.png" alt="{{val.username}}"></span>
                                 </span>
                             </a>
-                            <a class="navbar-item" href="/user/setting" title="{{ "settings"|l10n(page_data.lang) }}">
-                                <span class="icon is-large">
-                                    {% include "icons/setting.svg" %}
-                                </span>
-                            </a>
-                            <a class="navbar-item" href="/user/{{val.uid}}" title="{{ "profile"|l10n(page_data.lang) }}">
-                                <span class="image">
-                                    <img class="is-rounded" src="/static/avatars/{{val.uid}}.png" alt="{{val.username}}">
-                                </span>
-                            </a>
-                            {% else %}
+                        {% else %}
                             <div class="buttons has-addons">
-                                <a class="navbar-item" href="/signin"><button class="button is-info is-small">{{ "sign_in"|l10n(page_data.lang) }}</button></a>
-                                <a class="navbar-item" href="/signup"><button class="button is-success is-small">{{ "sign_up"|l10n(page_data.lang) }}</button></a>
+                                <a href="/signin"><button class="button is-info is-small">{{ "sign_in"|l10n(page_data.lang) }}</button></a>
+                                <a href="/signup"><button class="button is-success is-small">{{ "sign_up"|l10n(page_data.lang) }}</button></a>
                             </div>
-                            {% endmatch %}
-                        {% endblock %}
-                    </div>
+                        {% endmatch %}
+                    {% endblock %}
                 </div>
             </div>
         </nav>
     </header>
+
     {% block section %}
     <section class="section">
-        <div class="container">
-            <div class="columns mx-0">
-                <main class="column is-three-quarters pl-0">
-                    {% block content %}{% endblock %}
-                </main>
-                <aside class="column is-one-quarter pr-0">
-                    {% block aside %}
-                        <div class="panel">
-                            <form id="search" action="/search" method="get">
-                                <fieldset>
-                                    <div class="field has-addons">
-                                        <div class="control">
-                                            <input class="input" name="search" type="text" placeholder='{{ "search"|l10n(page_data.lang) }}'>
-                                        </div>
-                                        <div class="control">
-                                            <button type="submit" form="search" class="button">🔍</button>
-                                        </div>
+        <div class="columns mx-0">
+            <main class="column is-three-quarters pl-0">
+                {% block content %}{% endblock %}
+            </main>
+            <aside class="column is-one-quarter pr-0">
+                {% block aside %}
+                    <div class="box">
+                        <form id="search" action="/search" method="get">
+                            <fieldset>
+                                <div class="field has-addons">
+                                    <div class="control">
+                                        <input class="input" name="search" type="text" placeholder='{{ "search"|l10n(page_data.lang) }}'>
                                     </div>
-                                </fieldset>
-                            </form>
-                        </div>
-                        {% match page_data.claim %} {% when Some with (val) %}
-                            {% if val.role == 255 %}
-                                <div class="panel">
-                                    <a href="/admin">
-                                        <span class="tag is-info">{{ "site_settings"|l10n(page_data.lang) }}</span>
-                                    </a>
-                                    <a href="/admin/view">
-                                        <span class="tag is-info">{{ "db_view"|l10n(page_data.lang) }}</span>
-                                    </a>
-                                    <a href="/admin/view?tree_name=user_stats">
-                                        <span class="tag is-info">{{ "stats"|l10n(page_data.lang) }}</span>
-                                    </a>
-                                    <a href="/admin/gallery">
-                                        <span class="tag is-info">{{ "gallery"|l10n(page_data.lang) }}</span>
-                                    </a>
+                                    <div class="control">
+                                        <button type="submit" form="search" class="button">🔍</button>
+                                    </div>
                                 </div>
-                            {% endif %}
-                        {% else %}{% endmatch %}
+                            </fieldset>
+                        </form>
+                    </div>
+                    {% match page_data.claim %} {% when Some with (val) %}
+                        {% if val.role == 255 %}
+                            <div class="box">
+                                <a href="/admin">
+                                    <span class="tag is-info">{{ "site_settings"|l10n(page_data.lang) }}</span>
+                                </a>
+                                <a href="/admin/view">
+                                    <span class="tag is-info">{{ "db_view"|l10n(page_data.lang) }}</span>
+                                </a>
+                                <a href="/admin/view?tree_name=user_stats">
+                                    <span class="tag is-info">{{ "stats"|l10n(page_data.lang) }}</span>
+                                </a>
+                                <a href="/admin/gallery">
+                                    <span class="tag is-info">{{ "gallery"|l10n(page_data.lang) }}</span>
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}{% endmatch %}
 
-                        {% block box %}
-                        {% endblock %}
+                    {% block box %}
                     {% endblock %}
-                </aside>
-            </div>
+                {% endblock %}
+            </aside>
         </div>
     </section>
     <div class="divider"></div>
     {% endblock %}
 
-    <footer class="footer">
-        <div class="container">
-            {% if let Some(custom_footer_code) = page_data.custom_footer_code %}
-                {{ custom_footer_code|safe }}
-            {% else %}
-                <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
-                <p>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{ crate::VERSION }}">v{{ crate::VERSION }}</a></p>
-                <p>sha256: {{ crate::CURRENT_SHA256.as_str() }}</p>
-                <p>commit: <a href="https://github.com/freedit-org/freedit/commit/{{ crate::GIT_COMMIT }}">{{ crate::GIT_COMMIT }}</a></p>
-            {% endif %}
-        </div>
+    <footer class="footer p-5">
+        {% if let Some(custom_footer_code) = page_data.custom_footer_code %}
+            {{ custom_footer_code|safe }}
+        {% else %}
+            <p><a href="https://github.com/freedit-org/freedit">GitHub</a></p>
+            <p><small>version: <a href="https://github.com/freedit-org/freedit/releases/tag/v{{ crate::VERSION }}">v{{ crate::VERSION }}</a></small></p>
+            <p><small>sha256: {{ crate::CURRENT_SHA256.as_str()|truncate(10) }}</small></p>
+            <p><small>commit: <a href="https://github.com/freedit-org/freedit/commit/{{ crate::GIT_COMMIT }}">{{ crate::GIT_COMMIT }}</a></small></p>
+        {% endif %}
     </footer>
 </body>
 
