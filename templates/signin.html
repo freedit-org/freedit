@@ -7,24 +7,23 @@
 {% endblock %}
 
 {% block section %}
-<section class="columns is-centered">
-<div id="sign" class="my-5 column is-one-third">
+<section class="my-5 has-background-light">
+<div id="sign" class="container py-5">
     <form id="signin" class="box" action="/signin" method="post">
-        <fieldset class="content">
-            <h1>{{ "sign_in"|l10n(page_data.lang) }}</h1>
-
+        <fieldset>
+            <div class="content">
+                <center><h1>{{ "sign_in"|l10n(page_data.lang) }}</h1></center>
+            </div>
             <div class="field">
                 <div class="control has-icons-left">
-                    <input name="username" class="input" type="text" title="{{ "uname_or_id"|l10n(page_data.lang) }}" required placeholder="{{ "uname_or_id"|l10n(page_data.lang) }}" >
-                    <span class="icon is-left">
-                        <i class="fa-solid fa-user"></i>
-                    </span>
+                    <input name="username" class="input" type="text" title='{{ "uname_or_id"|l10n(page_data.lang) }}' required placeholder='{{ "uname_or_id"|l10n(page_data.lang) }}' >
+                    <span class="icon is-left">👤</span>
                 </div>
             </div>
 
             <div class="field">
                 <div class="control has-icons-left">
-                    <input name="password" class="input" type="password" required placeholder="{{ "password"|l10n(page_data.lang) }}">
+                    <input name="password" class="input" type="password" required placeholder='{{ "password"|l10n(page_data.lang) }}'>
                     <span class="icon is-left">🔑</span>
                 </div>
             </div>
@@ -35,16 +34,14 @@
 
             <div class="field">
                 <div class="control">
-                    <input name="captcha_value" class="input" required placeholder="{{ "captcha"|l10n(page_data.lang) }}" >
+                    <input name="captcha_value" class="input" required placeholder='{{ "captcha"|l10n(page_data.lang) }}'  >
                 </div>
             </div>
 
             <input type="hidden" id="captcha_id" name="captcha_id" value="{{captcha_id}}">
 
             <div class="field">
-                <label for="remember" class="label">
-                    {{ "stay_logged_in"|l10n(page_data.lang) }}
-                </label>
+                <label for="remember" class="label">{{ "stay_logged_in"|l10n(page_data.lang) }}</label>
                 <div class="control">
                     <div class="select">
                         <select name="remember" required>
@@ -65,25 +62,16 @@
                     </div>
                 </div>
             </div>
-            <div>
+
+            <center>
                 <div class="field">
                     <div class="control">
-                        <button type="submit" form="signin" class="button is-link">
-                            {{ "submit"|l10n(page_data.lang) }}
-                        </button>
+                        <button type="submit" form="signin" class="button is-link">{{ "submit"|l10n(page_data.lang) }}</button>
                     </div>
                 </div>
-                <div>
-                    <a href="/signup">
-                        {{ "sign_up"|l10n(page_data.lang) }}
-                    </a>
-                </div>
-                <div>
-                    <a href="/user/reset">
-                        {{ "password_reset"|l10n(page_data.lang) }}
-                    </a>
-                </div>
-            </div>
+                <p class="has-text-centered"><a href="/signup">{{ "sign_up"|l10n(page_data.lang) }}</a></p>
+                <p class="has-text-centered"><a href="/user/reset">{{ "password_reset"|l10n(page_data.lang) }}</a></p>
+            </center>
         </fieldset>
     </form>
 </div>

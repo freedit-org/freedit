@@ -70,15 +70,9 @@
                                 </span>
                             </a>
                             {% else %}
-                            <div class="navbar-item">
-                                <div class="buttons">
-                                    <a class="button is-info is-small" href="/signin">
-                                        {{ "sign_in"|l10n(page_data.lang) }}
-                                    </a>
-                                    <a class="button is-success is-small" href="/signup">
-                                        {{ "sign_up"|l10n(page_data.lang) }}
-                                    </a>
-                                </div>
+                            <div class="buttons has-addons">
+                                <a class="navbar-item" href="/signin"><button class="button is-info is-small">{{ "sign_in"|l10n(page_data.lang) }}</button></a>
+                                <a class="navbar-item" href="/signup"><button class="button is-success is-small">{{ "sign_up"|l10n(page_data.lang) }}</button></a>
                             </div>
                             {% endmatch %}
                         {% endblock %}

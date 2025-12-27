@@ -37,19 +37,25 @@
                 <div class="level-item">
                     <a href="/message/{{user.uid}}" title="{{ "message"|l10n(page_data.lang) }}">
                         <span class="icon is-large">
-                            <i class="fa-regular fa-envelope"></i>
+                            <span class="icon">
+                                {% include "icons/mail.svg" %}
+                            </span>
                         </span>
                     </a>
                 {% match has_followed %} {% when Some with (true) %}
                     <a href="/user/{{user.uid}}/follow" title="{{ "unfollow"|l10n(page_data.lang) }}">
                         <span class="icon is-large">
-                            <i class="fa-solid fa-user-xmark"></i>
+                            <span class="icon has-text-success">
+                                {% include "icons/user-xmark.svg" %}
+                            </span>
                         </span>
                     </a>
                 {% when Some with (false) %}
                     <a href="/user/{{user.uid}}/follow" title="{{ "follow"|l10n(page_data.lang) }}">
                         <span class="icon is-large">
-                            <i class="fa-solid fa-user-plus"></i>
+                            <span class="icon">
+                                {% include "icons/user-plus.svg" %}
+                            </span>
                         </span>
                     </a>
                 {% else %}
@@ -57,12 +63,16 @@
                     {% if val.uid == user.uid %}
                     <a href="/user/setting" title="{{ "settings"|l10n(page_data.lang) }}">
                         <span class="icon is-large">
-                            <i class="fa-solid fa-gear"></i>
+                            <span class="icon">
+                                <i class="fa-solid fa-gear"></i>
+                            </span>
                         </span>
                     </a>
                     <a href="/signout" title="{{ "sign_out"|l10n(page_data.lang) }}">
                         <span class="icon is-large">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            <span class="icon">
+                                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            </span>
                         </span>
                     </a>
                     {% endif %}
@@ -81,13 +91,13 @@
 
 <div class="box">
     <nav class="level is-mobile">
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "solo"|l10n(page_data.lang) }}</p>
                 <p class="title"><a href="/solo/user/{{user.uid}}">{{user_solos_count}}</a></p>
             </div>
         </div>
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "posts"|l10n(page_data.lang) }}</p>
                 <p class="title">
@@ -95,19 +105,19 @@
                 </p>
             </div>
         </div>
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "feeds"|l10n(page_data.lang) }}</p>
                 <p class="title"><a href="/feed/{{user.uid}}">{{user_feeds_count}}</a></p>
             </div>
         </div>
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "following"|l10n(page_data.lang) }}</p>
                 <p class="title"><a href="/user/list?filter=following&id={{user.uid}}">{{user_following_count}}</a></p>
             </div>
         </div>
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "followers"|l10n(page_data.lang) }}</p>
                 <p class="title"><a href="/user/list?filter=followers&id={{user.uid}}">{{user_followers_count}}</a></p>

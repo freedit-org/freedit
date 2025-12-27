@@ -13,14 +13,7 @@
                     <li class="is-active"><a href="/user/list?filter=following&id={{info.0}}">{{ "following"|l10n(page_data.lang) }}</a></li>
                 {% when Some with ("inn") %}
                     <li><a href="/user/list">{{ "users"|l10n(page_data.lang) }}</a></li>
-                    <li class="is-active">
-                        <a href="/user/list?filter=inn&id={{info.0}}">
-                            <span class="icon is-small mr-1">
-                                <i class="fa-solid fa-anchor"></i>
-                            </span>
-                            {{info.1}}
-                        </a>
-                    </li>
+                    <li class="is-active"><a href="/user/list?filter=inn&id={{info.0}}">⚓ {{info.1}}</a></li>
                 {% else %}
                     <li class="is-active"><a href="/user/list">{{ "users"|l10n(page_data.lang) }}</a></li>
                 {% endmatch %}

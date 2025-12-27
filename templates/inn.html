@@ -28,28 +28,14 @@
                         <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
                         <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
                         {% match username %} {% when Some with (val) %}
-                            <li class="is-active">
-                                <a href="/inn/0?filter={{uid}}">
-                                    <span class="icon is-small mr-1">
-                                        <i class="fa-solid fa-user"></i>
-                                    </span>
-                                    {{val}}
-                                </a>
-                            </li>
+                            <li class="is-active"><a href="/inn/0?filter={{uid}}">👤 {{val}}</a></li>
                         {% else %}{% endmatch %}
                     {% else %}
                         {% if iid > 0 %}
                             <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                             <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
                             <li><a href="/inn/0?filter=following">{{ "following"|l10n(page_data.lang) }}</a></li>
-                            <li class="is-active">
-                                <a href="/inn/{{iid}}">
-                                    <span class="icon is-small mr-1">
-                                        <i class="fa-solid fa-anchor"></i>
-                                    </span>
-                                    {{inn_name}}
-                                </a>
-                            </li>
+                            <li class="is-active"><a href="/inn/{{iid}}">⚓ {{inn_name}}</a></li>
                         {% else %}
                             <li class="is-active"><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                             <li><a href="/inn/0?filter=joined">{{ "joined"|l10n(page_data.lang) }}</a></li>
@@ -59,22 +45,11 @@
                 {% else %}
                     {% match filter.as_deref() %}{% when Some with (uid) %}
                         <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
-                        <li class="is-active">
-                            <a href="/inn/{{iid}}?filter={{uid}}">
-                                <i class="fa-solid fa-user"></i> {{uid}}
-                            </a>
-                        </li>
+                        <li class="is-active"><a href="/inn/{{iid}}?filter={{uid}}">👤 {{uid}}</a></li>
                     {% else %}
                         {% if iid > 0 %}
                             <li><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
-                            <li class="is-active">
-                                <a href="/inn/{{iid}}">
-                                    <span class="icon is-small mr-1">
-                                        <i class="fa-solid fa-anchor"></i>
-                                    </span>
-                                    {{inn_name}}
-                                </a>
-                            </li>
+                            <li class="is-active"><a href="/inn/{{iid}}">⚓ {{inn_name}}</a></li>
                         {% else %}
                             <li class="is-active"><a href="/inn/0">{{ "all"|l10n(page_data.lang) }}</a></li>
                         {% endif %}
@@ -111,9 +86,7 @@
     <div class="media">
         <div class="media-left">
             <figure class="image is-48x48">
-                <a href="/user/{{post.uid}}" title="@{{post.username}}">
-                    <img src="/static/avatars/{{post.uid}}.png">
-                </a>
+                <a href="/user/{{post.uid}}" title="author: {{post.username}}"><img src="/static/avatars/{{post.uid}}.png"></a>
             </figure>
         </div>
         <div class="media-content">
@@ -143,11 +116,7 @@
         </div>
         <div class="list-item-controls">
             {% if post.comment_count >0 %}
-                <a href="/post/{{post.iid}}/{{post.pid}}#{{post.comment_count}}">
-                    <span class="tag is-info">
-                        {{post.comment_count}}
-                    </span>
-                </a>
+                <a href="/post/{{post.iid}}/{{post.pid}}#{{post.comment_count}}"><span class="tag is-info">{{post.comment_count}}</span></a>
             {% endif %}
         </div>
     </div>
@@ -180,7 +149,7 @@
 {% block box %}
 {% if iid > 0 %}
 <div class="box">
-    <div class="level-item">
+    <div class="level-item has-text-centered">
         <figure class="image is-128x128">
             <a href="/inn/{{iid}}"><img class="is-rounded" src="/static/inn_icons/{{iid}}.png"></a>
         </figure>
@@ -190,7 +159,7 @@
         <p>{{about}}</p>
     </div>
     <nav class="level is-mobile">
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "members"|l10n(page_data.lang) }}</p>
                 <div class="title">
@@ -200,7 +169,7 @@
                 </div>
             </div>
         </div>
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "posts"|l10n(page_data.lang) }}</p>
                 <div class="title">
@@ -211,7 +180,7 @@
             </div>
         </div>
         {% if is_mod %}
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">{{ "mod"|l10n(page_data.lang) }}</p>
                 <div class="title">
@@ -224,13 +193,13 @@
             </div>
         </div>
         {% endif %}
-        <div class="level-item">
+        <div class="level-item has-text-centered">
             <div>
                 <p class="heading">Rss</p>
                 <div class="title">
                     <a href="/inn/{{iid}}/atom.xml" title="{{ "rss"|l10n(page_data.lang) }}">
                         <span class="icon">
-                            <i class="fa-solid fa-rss"></i>
+                            {% include "icons/rss.svg" %}
                         </span>
                     </a>
                 </div>
