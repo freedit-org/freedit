@@ -42,26 +42,27 @@
                             {% match page_data.claim %} {% when Some with (val) %}
                             <a class="navbar-item" href="/feed/{{val.uid}}" title="{{ "feeds"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
-                                    <i class="fa-brands fa-readme"></i>
+                                    {% include "icons/feeds.svg" %}
                                 </span>
                             </a>
                             <a class="navbar-item" href="/notification">
                                 <span class="icon is-large" title="{{ "notifications"|l10n(page_data.lang) }}">
-                                    {% if page_data.has_unread %}
-                                        <i class="fa-regular fa-bell"></i>
-                                    {% else %}
-                                        <i class="fa-solid fa-bell"></i>
-                                    {% endif %}
+                                    <span class="icon-text icon-text-info">
+                                        {% include "icons/notification.svg" %}
+                                        {% if page_data.has_unread %}
+                                        <span id="notification-indicator" class="has-background-primary"></span>
+                                        {% endif %}
+                                    </span>
                                 </span>
                             </a>
                             <a class="navbar-item" href="/signout" title="{{ "sign_out"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
-                                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    {% include "icons/signout.svg" %}
                                 </span>
                             </a>
                             <a class="navbar-item" href="/user/setting" title="{{ "settings"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
-                                    <i class="fa-solid fa-gear"></i>
+                                    {% include "icons/setting.svg" %}
                                 </span>
                             </a>
                             <a class="navbar-item" href="/user/{{val.uid}}" title="{{ "profile"|l10n(page_data.lang) }}">
