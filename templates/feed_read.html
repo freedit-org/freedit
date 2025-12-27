@@ -82,7 +82,7 @@
                     data-srt-url="/static/podcasts/{{ item.item_id }}.srt">
                 </audio>
             </div>
-            <script src="/static/js/transcript.js?v={{ crate::GIT_COMMIT }}"></script>
+            <script src="/static/js/transcript.js?v={{ crate::VERSION }}"></script>
         {% endif %}
     {% else %} {% endmatch %}
 {% endblock %}
