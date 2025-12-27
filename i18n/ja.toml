@@ -71,7 +71,6 @@ limited = "制限付き"
 list = "リスト"
 load_image = "画像を読み込む"
 lock = "ロック"
-mark_as_read = "Mark as read" # @TODO
 medium = "中"
 members = "メンバー"
 message = "Message" # @TODO
