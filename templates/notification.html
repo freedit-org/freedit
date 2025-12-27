@@ -4,10 +4,10 @@
 <div class="level is-mobile">
     <div class="level-left"></div>
     <div class="level-right tags">
-        <a href="/notification?&op_type=mark_batch" class="button is-small is-rounded is-info" title="{{ "batch_mark_as_read"|l10n(page_data.lang) }}">
+        <a href="/notification?&op_type=mark_batch" class="button is-info" title="{{ "batch_mark_as_read"|l10n(page_data.lang) }}">
             <i class="fa-solid fa-check"></i>
         </a>
-        <a href="/notification?&op_type=delete_batch" class="button is-small is-rounded is-danger" title="{{ "batch_delete_read"|l10n(page_data.lang) }}">
+        <a href="/notification?&op_type=delete_batch" class="button is-danger" title="{{ "batch_delete_read"|l10n(page_data.lang) }}">
             <i class="fa-solid fa-trash"></i>
         </a>
     </div>
@@ -74,13 +74,13 @@
         <div class="list-item-controls">
             {% if !nt.is_read %}
             <a href="/notification?nid={{nt.nid}}&op_type=mark">
-                <span class="button is-small is-rounded is-info" title="{{ "mark_as_read"|l10n(page_data.lang) }}Mark as read">
+                <span class="button is-info" title="{{ "mark_as_read"|l10n(page_data.lang) }}Mark as read">
                     <i class="fa-solid fa-check"></i>
                 </span>
             </a>
             {% endif %}
             <a href="/notification?nid={{nt.nid}}&op_type=delete">
-                <span class="button is-small is-rounded is-danger" title="{{ "delete_notification"|l10n(page_data.lang) }}">
+                <span class="button is-danger" title="{{ "delete_notification"|l10n(page_data.lang) }}">
                     <i class="fa-solid fa-trash"></i>
                 </span>
             </a>
