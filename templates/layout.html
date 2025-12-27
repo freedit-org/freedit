@@ -48,7 +48,7 @@
                             {% match page_data.claim %} {% when Some with (val) %}
                             <a class="navbar-item" href="/feed/{{val.uid}}" title="{{ "feeds"|l10n(page_data.lang) }}">
                                 <span class="icon is-large">
-                                    <i class="fa-brands fa-readme"></i>
+                                    {% include "icons/rss-feed.svg" %}
                                 </span>
                             </a>
                             <a class="navbar-item" href="/notification">

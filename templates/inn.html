@@ -103,7 +103,7 @@
             <div class="content">
                 <a href="/post/{{post.iid}}/{{post.pid}}">
                     {% if post.is_pinned %}
-                    <i class="fa-solid fa-thumbtack"></i>
+                    {% include "icons/pin.svg" %}
                     {% endif %}{{post.title}}
                 </a>
             </div>
@@ -117,7 +117,7 @@
                     </span>
                     {% match post.last_reply %}{% when Some(user) %}
                     <a class="tag" href="/user/{{user.0}}">
-                        <i class="fa-solid fa-reply mr-1"></i>
+                        {% include "icons/chat-bubble.svg" %}
                         {{user.1}}
                     </a>
                     {% else %}{% endmatch %}
@@ -199,9 +199,7 @@
                 <p class="heading">{{ "mod"|l10n(page_data.lang) }}</p>
                 <div class="title">
                     <a href="/mod/{{iid}}" title="{{ "settings"|l10n(page_data.lang) }}">
-                        <span class="icon">
-                            <i class="fa-solid fa-gear"></i>
-                        </span>
+                        {% include "icons/settings.svg" %}
                     </a>
                 </div>
             </div>
@@ -212,9 +210,7 @@
                 <p class="heading">Rss</p>
                 <div class="title">
                     <a href="/inn/{{iid}}/atom.xml" title="{{ "rss"|l10n(page_data.lang) }}">
-                        <span class="icon">
-                            <i class="fa-solid fa-rss"></i>
-                        </span>
+                        {% include "icons/rss-feed.svg" %}
                     </a>
                 </div>
             </div>

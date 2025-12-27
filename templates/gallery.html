@@ -15,9 +15,7 @@
             <nav class="level is-mobile">
                 <div class="level-left">
                     <button class="level-item tag is-rounded has-text-danger" popovertarget="delete_{{img.0}}" title="{{ "delete"|l10n(page_data.lang) }}">
-                        <span class="icon is-small">
-                            <i class="fa-solid fa-trash"></i>
-                        </span>
+                        {% include "icons/trash.html" %}
                     </button>
                 </div>
             </nav>
