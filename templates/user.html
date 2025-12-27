@@ -18,13 +18,11 @@
 
 <article class="media box">
     <figure class="media-left">
-        <a class="image is-64x64" href="/user/{{user.uid}}">
-            <img class="is-rounded" src="/static/avatars/{{user.uid}}.png">
-        </a>
-        <div class="my-2 is-small">
-            <div>{{user.role_desc}}</div>
-            <div>uid: {{user.uid}}</div>
-        </div>
+        <p class="image is-64x64">
+            <a href="/user/{{user.uid}}"><img class="image is-64x64" src="/static/avatars/{{user.uid}}.png"></a>
+        </p>
+        <p><small>{{user.role_desc}}</small></p>
+        <p><small>uid: {{user.uid}}</small></p>
     </figure>
     <div class="media-content">
         <div class="level">
