@@ -131,8 +131,8 @@
                                 <div class="field is-grouped">
                                     <div class="control">
                                         <div class="buttons">
+                                            <button type="submit" form="solo" class="button is-info is-small is-responsive">{{ "submit"|l10n(page_data.lang) }}</button>
                                             <button type="submit" class="button is-info is-small is-responsive" formaction="/preview" formtarget="_blank">{{ "preview"|l10n(page_data.lang) }}</button>
-                                            <button type="submit" form="solo" class="button is-link is-small is-responsive">{{ "submit"|l10n(page_data.lang) }}</button>
                                         </div>
                                      </div>
                                 </div>
@@ -165,39 +165,41 @@
         </div>
         <nav class="level is-mobile">
             <div class="level-left">
-                <a class="level-item tag is-rounded" href="/solo/{{solo.sid}}/like">
+                <a class="level-item" href="/solo/{{solo.sid}}/like">
                     <span class="icon is-small">
                         {% if solo.like %}<i class="fa-solid fa-heart"></i>{% else %}<i class="fa-regular fa-heart"></i>{% endif %}
                     </span>
                     {% if solo.like_count > 0 %}
-                    <span class="ml-1">{{solo.like_count}}</span>
-                    {% endif %}
-                </a>
-                <a class="level-item tag is-rounded" href="/solo/{{solo.sid}}">
-                    <span class="icon is-small">
-                        <i class="fa-regular fa-comment"></i>
-                    </span>
-                    {% if solo.replies.len() > 0 %}
-                        <span class="ml-1">{{solo.replies.len()}}</span>
+                    <span>{{solo.like_count}}</span>
                     {% endif %}
                 </a>
                 {% if solo.can_delete %}
-                <button class="level-item tag is-rounded" popovertarget="delete_{{solo.sid}}" title="{{ "delete"|l10n(page_data.lang) }}">
-                    <span class="icon is-small">
-                        <i class="fa-solid fa-trash"></i>
-                    </span>
-                </button>
-                <div class="notification" id="delete_{{solo.sid}}" popover>
-                    <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                    <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
-                    <button class="button" popovertarget="delete_{{solo.sid}}" popovertargetaction="hide">
-                        {{ "no"|l10n(page_data.lang) }}
-                    </button>
-                    <a class="button is-danger" href="/solo/{{solo.sid}}/delete">
-                        {{ "yes"|l10n(page_data.lang) }}
+                <a class="level-item" href="#delete_{{solo.sid}}">
+                    <a class="level-item" href="#delete">
+                        <span class="icon is-small">
+                            <i class="fa-solid fa-trash"></i>
+                        </span>
                     </a>
+                </a>
+                <div id="delete_{{solo.sid}}" class="overlay">
+                    <div class="popup content">
+                        <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
+                        <a class="close icon is-small" href="#">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+                        <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                        <a href="/solo/{{solo.sid}}/delete" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a>
+                    </div>
                 </div>
                 {% endif %}
+                <a href="/solo/{{solo.sid}}">
+                    <span class="icon is-small">
+                        <i class="fa-regular fa-comment"></i>
+                    </span>
+                    {% if solo.replies.len() >0 %}
+                        {{solo.replies.len()}}
+                    {% endif %}
+                </a>
             </div>
         </nav>
     </div>
