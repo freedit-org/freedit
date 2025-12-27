@@ -86,7 +86,7 @@
                         {% when "Normal" %} {{ "lock"|l10n(page_data.lang) }}
                     {% else %}{% endmatch %}
                 </a>
-                <a class="mr-2" href="/mod/{{post.iid}}/{{post.pid}}/hide">
+                <a href="/mod/{{post.iid}}/{{post.pid}}/hide">
                     {% match post.status.as_str() %}
                         {% when "HiddenByUser" %} {{ "unhide"|l10n(page_data.lang) }}
                         {% when "Normal" %} {{ "hide"|l10n(page_data.lang) }}
@@ -94,21 +94,20 @@
                     {% else %}{% endmatch %}
                 </a>
             {% endif %}
+            &nbsp;&nbsp;
             {% if can_delete %}
-                <button class="tag is-rounded" popovertarget="delete_post" title="{{ "delete"|l10n(page_data.lang) }}">
-                    <span class="icon is-small">
-                        <i class="fa-solid fa-trash"></i>
-                    </span>
-                </button>
-                <div class="notification" id="delete_post" popover>
-                    <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                    <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
-                    <button class="button" popovertarget="delete_post" popovertargetaction="hide">
-                        {{ "no"|l10n(page_data.lang) }}
-                    </button>
-                    <a class="button is-danger" href="/post/{{post.iid}}/{{post.pid}}/delete">
-                        {{ "yes"|l10n(page_data.lang) }}
-                    </a>
+                <a href="#delete_post">{{ "delete"|l10n(page_data.lang) }}</a>
+                <div id="delete_post" class="overlay">
+                    <div class="popup content">
+                        <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
+                        <a class="close icon is-small" href="#">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+                        <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                        <a href="/post/{{post.iid}}/{{post.pid}}/delete" class="button is-danger">
+                            {{ "delete"|l10n(page_data.lang) }}
+                        </a>
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -298,8 +297,8 @@
                             {% match page_data.claim %}
                             {% when Some with (val) %}
                                 {% if has_joined %}
-                                <button type="submit" class="button is-info is-rounded" formaction="/preview" formtarget="_blank">{{ "preview"|l10n(page_data.lang) }}</button>
                                 <button type="submit" class="button is-link is-rounded">{{ "submit"|l10n(page_data.lang) }}</button>
+                                <button type="submit" class="button is-link is-rounded" formaction="/preview" formtarget="_blank">{{ "preview"|l10n(page_data.lang) }}</button>
                                 {% else %}
                                 <a href="/inn/{{post.iid}}/join" class="button is-success is-rounded">{{ "join_to_comment"|l10n(page_data.lang) }}</a>
                                 {% endif %}
