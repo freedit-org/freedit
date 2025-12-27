@@ -46,45 +46,31 @@
     </div>
 </div>
 
-<div class="box">
+<div class="list has-visible-pointer-controls has-overflow-ellipsis box">
     {% for inn in inns %}
-    <div class="media">
-        <div class="media-left">
+    <div class="list-item">
+        <div class="list-item-image">
             <figure class="image is-64x64">
                 <a href="/inn/{{inn.iid}}"><img class="is-rounded" src="/static/inn_icons/{{inn.iid}}.png"></a>
             </figure>
         </div>
-        <div class="media-content">
-            <div class="content">
-                <a href="/inn/{{inn.iid}}">{{inn.inn_name}}</a>
-                {% if !inn.about.is_empty() %}
-                    <div>{{inn.about}}</div>
-                {% endif %}
-            </div>
+        <div class="list-item-content">
+            <div class="list-item-title"><a href="/inn/{{inn.iid}}">{{inn.inn_name}}</a></div>
+            {% if !inn.about.is_empty() %}
+                <div class="list-item-description">{{inn.about}}</div>
+            {% endif %}
         </div>
-        <div class="level is-mobile">
-            <div class="level-left">
-                {% for topic in inn.topics %}
-                    <a class="level-item" href="/inn/list?topic={{topic}}">
-                        <span class="button is-info is-small is-rounded">
-                            {{topic}}
-                        </span>
-                    </a>
-                {% endfor %}
-                {% match filter.as_deref() %} {% when Some with ("mod") %}
-                    <a class="level-item" href="/mod/{{inn.iid}}">
-                        <span class="button is-success is-small is-rounded">
-                            {{ "edit"|l10n(page_data.lang) }}
-                        </span>
-                    </a>
-                {% when Some with ("joined") %}
-                    <a class="level-item" href="/inn/{{inn.iid}}/join">
-                        <span class="button is-danger is-small is-rounded">
-                            {{ "exit"|l10n(page_data.lang) }}
-                        </span>
-                    </a>
-                {% else %}{% endmatch %}
-            </div>
+
+        <div class="list-item-controls">
+            {% for topic in inn.topics %}
+                <a href="/inn/list?topic={{topic}}"><span class="tag is-info">{{topic}}</span></a>
+            {% endfor %}
+
+            {% match filter.as_deref() %} {% when Some with ("mod") %}
+                <a href="/mod/{{inn.iid}}"><span class="tag is-success">Edit</span></a>
+            {% when Some with ("joined") %}
+                <a href="/inn/{{inn.iid}}/join"><span class="tag is-danger">{{ "exit"|l10n(page_data.lang) }}</span></a>
+            {% else %}{% endmatch %}
         </div>
     </div>
     {% endfor %}
