@@ -91,7 +91,7 @@
 
 <div class="box">
     <div class="content">
-        <div class="title is-6">{{ "draft"|l10n(page_data.lang) }}</div>
+        <div class="title">{{ "draft"|l10n(page_data.lang) }}</div>
         {% for draft_title in draft_titles %}
             <p><a href="/post/edit/0?from_draft={{draft_title}}">{{draft_title}}</a></p>
         {% endfor %}
