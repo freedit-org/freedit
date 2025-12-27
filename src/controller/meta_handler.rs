@@ -101,8 +101,6 @@ static CSS: LazyLock<String> = LazyLock::new(|| {
     css.push('\n');
     css.push_str(include_str!("../../static/css/bulma-list.css"));
     css.push('\n');
-    css.push_str(include_str!("../../static/css/fontawesome.min.css"));
-    css.push('\n');
     css.push_str(include_str!("../../static/css/main.css"));
     css
 });
@@ -147,25 +145,6 @@ pub(crate) async fn serve_embedded_js(Path(filename): Path<String>) -> impl Into
 
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type", "application/javascript".parse().unwrap());
-        headers.insert(
-            HeaderName::from_static("cache-control"),
-            HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
-        );
-
-        (headers, body).into_response()
-    } else {
-        (StatusCode::NOT_FOUND, "File not found").into_response()
-    }
-}
-
-static STATIC_WEBFONTS_DIR: Dir = include_dir!("static/webfonts");
-
-pub(crate) async fn serve_webfonts(Path(filename): Path<String>) -> impl IntoResponse {
-    if let Some(file) = STATIC_WEBFONTS_DIR.get_file(&filename) {
-        let body = file.contents();
-
-        let mut headers = HeaderMap::new();
-        headers.insert("Content-Type", "font/woff2".parse().unwrap());
         headers.insert(
             HeaderName::from_static("cache-control"),
             HeaderValue::from_static("public, max-age=1209600, s-maxage=86400"),
