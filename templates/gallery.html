@@ -9,19 +9,20 @@
     </figure>
     <div class="columns is-multiline">
         {% for img in imgs %}
-        <div id="delete_{{img.0}}" class="overlay">
-            <div class="popup content">
-                <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                <a class="close" href="#">&times;</a>
-                <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
-                <p><a href="/image/delete/{{uid}}/{{img.0}}" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a></p>
-                <img src="/static/upload/{{img.1}}">
-            </div>
-        </div>
         <div class="column is-one-third">
             <figure>
                 <a href="/static/upload/{{img.1}}" target="_blank"><img src="/static/upload/{{img.1}}"></a>
-                <a href="#delete_{{img.0}}" class="delete">{{ "delete"|l10n(page_data.lang) }}</a>
+                <button class="delete" popovertarget="delete-popover-{{img.0}}">{{ "delete"|l10n(page_data.lang) }}</button>
+                <div id="delete-popover-{{img.0}}" popover>
+                    <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
+                    <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                    <button class="button" popovertarget="delete-popover-{{img.0}}" popovertargetaction="hide">
+                    {{ "no"|l10n(page_data.lang) }}
+                    </button>
+                    <a class="button is-danger" href="/image/delete/{{uid}}/{{img.0}}">
+                        {{ "yes"|l10n(page_data.lang) }}
+                    </a>
+                </div>
                 <figcaption>
                     <code>![](/static/upload/{{img.1}})</code>
                 </figcaption>

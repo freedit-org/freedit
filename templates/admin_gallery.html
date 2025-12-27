@@ -4,22 +4,23 @@
 <div class="box content">
     <div class="columns is-multiline">
         {% for img in imgs %}
-        <div id="delete_{{img.2}}" class="overlay">
-            <div class="popup content">
-                <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
-                <a class="close" href="#">&times;</a>
-                <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
-                <p><a href="/image/delete/{{img.0}}/{{img.1}}" class="button is-danger">{{ "delete"|l10n(page_data.lang) }}</a></p>
-                <img src="/static/upload/{{img.2}}">
-            </div>
-        </div>
         <div class="column is-one-third">
             <figure>
                 <p class="image is-32x32">
                     <a href="/gallery/{{img.0}}"><img src="/static/avatars/{{img.0}}.png"></a>
                 </p>
                 <a href="/static/upload/{{img.2}}" target="_blank"><img src="/static/upload/{{img.2}}"></a>
-                <a href="#delete_{{img.2}}" class="delete">{{ "delete"|l10n(page_data.lang) }}</a>
+                <button class="delete" popovertarget="delete-popover-{{img.2}}">{{ "delete"|l10n(page_data.lang) }}</button>
+                <div id="delete-popover-{{img.2}}" popover>
+                    <h3>{{ "delete_permanently"|l10n(page_data.lang) }}</h3>
+                    <p>{{ "delete_sure"|l10n(page_data.lang) }}</p>
+                    <button class="button" popovertarget="delete-popover-{{img.2}}" popovertargetaction="hide">
+                    {{ "no"|l10n(page_data.lang) }}
+                    </button>
+                    <a class="button is-danger" href="/image/delete/{{img.0}}/{{img.1}}">
+                        {{ "yes"|l10n(page_data.lang) }}
+                    </a>
+                </div>
                 <figcaption>
                     <span class="tag">{{img.2}}</span>
                 </figcaption>
