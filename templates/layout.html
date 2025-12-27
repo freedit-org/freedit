@@ -27,12 +27,6 @@
             <div class="container">
                 <div class="navbar-brand">
                     <a class="navbar-item" href="/">{{page_data.site_name}}</a>
-                    <button class="navbar-burger" popovertarget="menu">
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                    </button>
                 </div>
                 <div class="navbar-menu">
                     {% block menu_left %}
@@ -92,52 +86,6 @@
                 </div>
             </div>
         </nav>
-        <div class="notification navbar" id="menu" popover>
-            <div class="menu mb-2">
-                <ul class="menu-list">
-                    <li><a href="/inn/0">{{ "inn"|l10n(page_data.lang) }}</a></li>
-                    <li><a href="/solo/user/0">{{ "solo"|l10n(page_data.lang) }}</a></li>
-                </ul>
-            </div>
-            <div class="buttons">
-                {% match page_data.claim %} {% when Some with (val) %}
-                    <a class="button" href="/feed/{{val.uid}}" title="{{ "feeds"|l10n(page_data.lang) }}">
-                        <span class="icon is-large">
-                            <i class="fa-brands fa-readme"></i>
-                        </span>
-                    </a>
-                    <a class="button" href="/notification">
-                        <span class="icon is-large" title="{{ "notifications"|l10n(page_data.lang) }}">
-                            {% if page_data.has_unread %}
-                                <i class="fa-regular fa-bell"></i>
-                            {% else %}
-                                <i class="fa-solid fa-bell"></i>
-                            {% endif %}
-                        </span>
-                    </a>
-                    <a class="button" href="/signout" title="{{ "sign_out"|l10n(page_data.lang) }}">
-                        <span class="icon is-large">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                        </span>
-                    </a>
-                    <a class="button" href="/user/setting" title="{{ "settings"|l10n(page_data.lang) }}">
-                        <span class="icon is-large">
-                            <i class="fa-solid fa-gear"></i>
-                        </span>
-                    </a>
-                    <a class="image is-32x32" href="/user/{{val.uid}}" title="{{ "profile"|l10n(page_data.lang) }}">
-                        <img class="is-rounded" src="/static/avatars/{{val.uid}}.png" alt="{{val.username}}">
-                    </a>
-                    {% else %}
-                    <a class="button is-info is-small" href="/signin">
-                        {{ "sign_in"|l10n(page_data.lang) }}
-                    </a>
-                    <a class="button is-success is-small" href="/signup">
-                        {{ "sign_up"|l10n(page_data.lang) }}
-                    </a>
-                {% endmatch %}
-            </div>
-        </div>
     </header>
     {% block section %}
     <section class="section">
