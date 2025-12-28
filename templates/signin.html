@@ -28,6 +28,7 @@
                 </div>
             </div>
 
+            {% if page_data.login_captcha %}
             <div>
                 <img src="data:image/png;base64,{{captcha_image}}" alt="captcha" class="captcha" />
             </div>
@@ -39,6 +40,7 @@
             </div>
 
             <input type="hidden" id="captcha_id" name="captcha_id" value="{{captcha_id}}">
+            {% endif %}
 
             <div class="field">
                 <label for="remember" class="label">{{ "stay_logged_in"|l10n(page_data.lang) }}</label>

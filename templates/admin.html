@@ -284,6 +284,26 @@
         </div>
 
         <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label" for="login_captcha">{{ "login_captcha"|l10n(page_data.lang) }}</label>
+            </div>
+            <div class="field-body">
+                <div class="field">
+                    <div class="control">
+                        {% match site_config.login_captcha %}
+                        {% when Some(true) %}
+                        <label class="radio"><input type="radio" name="login_captcha" value="true" checked autocomplete="off" /> {{ "yes"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="login_captcha" value="false" autocomplete="off" /> {{ "no"|l10n(page_data.lang) }}</label>
+                        {% else %}
+                        <label class="radio"><input type="radio" name="login_captcha" value="true" autocomplete="off" /> {{ "yes"|l10n(page_data.lang) }}</label>
+                        <label class="radio"><input type="radio" name="login_captcha" value="false" checked autocomplete="off" /> {{ "no"|l10n(page_data.lang) }}</label>
+                        {% endmatch %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-horizontal">
             <div class="field-label"></div>
             <div class="field-body">
                 <div class="field">

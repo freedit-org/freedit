@@ -877,8 +877,8 @@ pub(crate) const COOKIE_NAME: &str = "id";
 /// Form data: `/signin`
 #[derive(Deserialize)]
 pub(crate) struct FormSignin {
-    captcha_id: String,
-    captcha_value: String,
+    captcha_id: Option<String>,
+    captcha_value: Option<String>,
     password: String,
     remember: String,
     username: String,
@@ -925,12 +925,15 @@ pub(crate) async fn signin(
 
 /// `POST /signin`
 pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoResponse {
-    let captcha_char = DB
-        .open_partition("captcha", Default::default())?
-        .take(&input.captcha_id)?
-        .ok_or(AppError::CaptchaError)?;
-    if captcha_char != input.captcha_value {
-        return Err(AppError::CaptchaError);
+    let site_config = SiteConfig::get(&DB)?;
+    if site_config.login_captcha == Some(true) {
+        let captcha_char = DB
+            .open_partition("captcha", Default::default())?
+            .take(&input.captcha_id.unwrap_or_default())?
+            .ok_or(AppError::CaptchaError)?;
+        if captcha_char != input.captcha_value.unwrap_or_default() {
+            return Err(AppError::CaptchaError);
+        }
     }
 
     let uid = match input.username.parse::<u32>() {
@@ -941,7 +944,6 @@ pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoRespo
     };
     let user: User = get_one(&DB, "users", uid)?;
     if check_password(&input.password, &user.password_hash) {
-        let site_config = SiteConfig::get(&DB)?;
         if site_config.read_only && Role::from(user.role) != Role::Admin {
             return Err(AppError::ReadOnly);
         }
