@@ -929,7 +929,7 @@ pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoRespo
     if site_config.login_captcha == Some(true) {
         let captcha_char = DB
             .open_partition("captcha", Default::default())?
-            .take(&input.captcha_id.unwrap_or_default())?
+            .take(input.captcha_id.unwrap_or_default())?
             .ok_or(AppError::CaptchaError)?;
         if captcha_char != input.captcha_value.unwrap_or_default() {
             return Err(AppError::CaptchaError);
