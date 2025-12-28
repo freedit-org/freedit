@@ -529,6 +529,7 @@ pub(super) struct SiteConfig {
     tos_link: String,
     #[validate(skip)]
     custom_footer_code: Option<String>,
+    /// When enabled, requires users to complete a CAPTCHA challenge during login
     #[validate(skip)]
     login_captcha: Option<bool>,
 }
