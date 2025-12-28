@@ -72,6 +72,7 @@ list = "列表"
 load_image = "加载图片"
 lock = "锁定"
 medium = "中等"
+login_captcha = "登录验证码"
 members = "成员"
 message = "Message" # @TODO
 mod = "管理员"

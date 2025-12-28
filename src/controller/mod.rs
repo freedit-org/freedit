@@ -529,6 +529,8 @@ pub(super) struct SiteConfig {
     tos_link: String,
     #[validate(skip)]
     custom_footer_code: Option<String>,
+    #[validate(skip)]
+    login_captcha: Option<bool>,
 }
 
 impl SiteConfig {

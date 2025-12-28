@@ -71,6 +71,7 @@ limited = "Limité"
 list = "Liste"
 load_image = "Charger une image"
 lock = "Verrouiller"
+login_captcha = "Captcha de connexion"
 medium = "Moyen"
 members = "Membres"
 message = "Message" # @TODO

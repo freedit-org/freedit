@@ -168,6 +168,7 @@ pub(super) struct PageData<'a> {
     pub(super) has_unread: bool,
     pub(super) lang: String,
     pub(super) custom_footer_code: Option<&'a str>,
+    pub(super) login_captcha: bool,
 }
 
 impl<'a> PageData<'a> {
@@ -194,6 +195,7 @@ impl<'a> PageData<'a> {
             site_description,
             site_name: &site_config.site_name,
             title,
+            login_captcha: site_config.login_captcha.unwrap_or(false),
         }
     }
 }

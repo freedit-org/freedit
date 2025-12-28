@@ -381,6 +381,7 @@ impl Default for SiteConfig {
             lang: "en".into(),
             tos_link: "https://en.wikipedia.org/wiki/WTFPL".into(),
             custom_footer_code: None,
+            login_captcha: None,
         }
     }
 }
