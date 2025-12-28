@@ -927,11 +927,13 @@ pub(crate) async fn signin(
 pub(crate) async fn signin_post(Form(input): Form<FormSignin>) -> impl IntoResponse {
     let site_config = SiteConfig::get(&DB)?;
     if site_config.login_captcha == Some(true) {
+        let captcha_id = input.captcha_id.as_deref().ok_or(AppError::CaptchaError)?;
+        let captcha_value = input.captcha_value.ok_or(AppError::CaptchaError)?;
         let captcha_char = DB
             .open_partition("captcha", Default::default())?
-            .take(input.captcha_id.unwrap_or_default())?
+            .take(captcha_id)?
             .ok_or(AppError::CaptchaError)?;
-        if captcha_char != input.captcha_value.unwrap_or_default() {
+        if captcha_char != captcha_value {
             return Err(AppError::CaptchaError);
         }
     }
