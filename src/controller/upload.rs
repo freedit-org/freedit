@@ -261,10 +261,10 @@ pub(crate) async fn upload_post(
                 let mut re_encode = false;
 
                 let exifreader = exif::Reader::new();
-                if let Ok(exif) = exifreader.read_from_container(&mut Cursor::new(&data)) {
-                    if !exif.buf().is_empty() {
-                        re_encode = true;
-                    }
+                if let Ok(exif) = exifreader.read_from_container(&mut Cursor::new(&data))
+                    && !exif.buf().is_empty()
+                {
+                    re_encode = true;
                 }
 
                 let quality = Quality::get(data.len());
@@ -298,8 +298,8 @@ pub(crate) async fn upload_post(
         let sha1 = HEXLOWER.encode(digest.as_ref());
         let ext = *image_format_detected
             .extensions_str()
-            .get(0)
-            .unwrap_or_else(|| &"jpg");
+            .first()
+            .unwrap_or(&"jpg");
         let fname = format!("{}.{}", &sha1[0..20], ext);
         let location = format!("{}/{}", &CONFIG.upload_path, fname);
 
