@@ -898,11 +898,6 @@ pub(crate) async fn signin(
     cookie: Option<TypedHeader<Cookie>>,
 ) -> Result<impl IntoResponse, AppError> {
     let site_config = SiteConfig::get(&DB)?;
-
-    if site_config.read_only {
-        return Err(AppError::ReadOnly);
-    }
-
     let claim = cookie.and_then(|cookie| Claim::get(&DB, &cookie, &site_config));
 
     if claim.is_some() {
@@ -911,12 +906,17 @@ pub(crate) async fn signin(
     }
 
     let page_data = PageData::new("Sign in", &site_config, claim, false);
-
-    let captcha_session = CaptchaSession::create(&site_config)?;
+    let mut captcha_id = String::new();
+    let mut captcha_image = String::new();
+    if site_config.login_captcha {
+        let captcha_session = CaptchaSession::create(&site_config)?;
+        captcha_id = captcha_session.id;
+        captcha_image = captcha_session.image;
+    }
 
     let page_signin = PageSignin {
-        captcha_id: captcha_session.id,
-        captcha_image: captcha_session.image,
+        captcha_id,
+        captcha_image,
         page_data,
     };
 
