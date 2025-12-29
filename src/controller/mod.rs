@@ -383,7 +383,8 @@ impl PostContent {
 impl Display for PostContent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PostContent::Markdown(c) => write!(f, "{c}"),
+            // Do not trust user-generated content, always sanitize it before display
+            PostContent::Markdown(c) => write!(f, "{}", md2html(c)),
             PostContent::FeedItemId(id) => write!(f, "From item_id: {id}"),
         }
     }
