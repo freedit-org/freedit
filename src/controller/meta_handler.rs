@@ -195,7 +195,7 @@ impl<'a> PageData<'a> {
             site_description,
             site_name: &site_config.site_name,
             title,
-            login_captcha: site_config.login_captcha.unwrap_or(false),
+            login_captcha: site_config.login_captcha,
         }
     }
 }

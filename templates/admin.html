@@ -290,14 +290,13 @@
             <div class="field-body">
                 <div class="field">
                     <div class="control">
-                        {% match site_config.login_captcha %}
-                        {% when Some(true) %}
+                        {% if site_config.login_captcha %}
                         <label class="radio"><input type="radio" name="login_captcha" value="true" checked autocomplete="off" /> {{ "yes"|l10n(page_data.lang) }}</label>
                         <label class="radio"><input type="radio" name="login_captcha" value="false" autocomplete="off" /> {{ "no"|l10n(page_data.lang) }}</label>
                         {% else %}
                         <label class="radio"><input type="radio" name="login_captcha" value="true" autocomplete="off" /> {{ "yes"|l10n(page_data.lang) }}</label>
                         <label class="radio"><input type="radio" name="login_captcha" value="false" checked autocomplete="off" /> {{ "no"|l10n(page_data.lang) }}</label>
-                        {% endmatch %}
+                        {% endif %}
                     </div>
                 </div>
             </div>

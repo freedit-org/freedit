@@ -531,7 +531,7 @@ pub(super) struct SiteConfig {
     custom_footer_code: Option<String>,
     /// When enabled, requires users to complete a CAPTCHA challenge during login
     #[validate(skip)]
-    login_captcha: Option<bool>,
+    login_captcha: bool,
 }
 
 impl SiteConfig {
