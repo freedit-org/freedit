@@ -599,6 +599,7 @@ mod filters {
         i18n
     });
 
+    #[askama::filter_fn]
     pub(super) fn l10n(
         s: &str,
         _: &dyn askama::Values,
