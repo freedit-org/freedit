@@ -296,7 +296,10 @@ pub(crate) async fn upload_post(
                     }
 
                     if let Ok(comp) = comp.finish() {
-                        ext = "jpeg";
+                        ext = *image_format_detected
+                            .extensions_str()
+                            .get(0)
+                            .unwrap_or_else(|| &"jpeg");
                         comp
                     } else {
                         continue;
