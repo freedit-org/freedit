@@ -9,6 +9,12 @@ fn main() {
     let db_url = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "freedit.db".to_owned());
+
+    // check if file exists
+    if !std::path::Path::new(&db_url).exists() {
+        panic!("Database file {} does not exist", db_url);
+    }
+
     let config = sled::Config::default().path(db_url);
     let db = config.open().unwrap();
 

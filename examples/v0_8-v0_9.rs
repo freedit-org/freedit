@@ -6,6 +6,10 @@ fn main() {
     println!("Starting migration from v0.8 to v0.9...");
     println!("Reading v0.8 database from data/freedit.db");
     let db_url = "data/freedit.db";
+    // check if file exists
+    if !std::path::Path::new(db_url).exists() {
+        panic!("Database file {} does not exist", db_url);
+    }
     let config = sled::Config::default().path(db_url);
     let sled_db = config.open().unwrap();
 
