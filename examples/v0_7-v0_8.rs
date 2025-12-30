@@ -6,15 +6,14 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 fn main() {
-    let db_url = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "freedit.db".to_owned());
+    let db_url = std::env::args().nth(1).unwrap();
 
     // check if file exists
     if !std::path::Path::new(&db_url).exists() {
         panic!("Database file {} does not exist", db_url);
     }
 
+    println!("Starting migration from v0.7 to v0.8...");
     let config = sled::Config::default().path(db_url);
     let db = config.open().unwrap();
 
