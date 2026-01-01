@@ -2,3 +2,5 @@
 config.toml
 .DS_Store
 /data
+.release
+/docker

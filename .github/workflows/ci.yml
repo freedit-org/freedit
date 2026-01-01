@@ -17,12 +17,12 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: macos-latest
-            target: x86_64-apple-darwin
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-          - os: windows-latest
-            target: x86_64-pc-windows-gnu
+          # - os: macos-latest
+          #   target: x86_64-apple-darwin
+          # - os: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          # - os: windows-latest
+          #   target: x86_64-pc-windows-gnu
     permissions:
       contents: write
       security-events: write
@@ -85,25 +85,25 @@ jobs:
         with:
           path: "target/doc"
 
-  Deploy:
-    needs: cargo
-    name: Deploy to GitHub Pages
-    if: ${{ github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
+  # Deploy:
+  #   needs: cargo
+  #   name: Deploy to GitHub Pages
+  #   if: ${{ github.ref == 'refs/heads/main' }}
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   permissions:
+  #     pages: write
+  #     id-token: write
 
-    steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Download artifact
-        uses: actions/download-artifact@v7
-        with:
-          name: "github-pages"
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+  #   steps:
+  #     - name: Setup Pages
+  #       uses: actions/configure-pages@v5
+  #     - name: Download artifact
+  #       uses: actions/download-artifact@v7
+  #       with:
+  #         name: "github-pages"
+  #     - name: Deploy to GitHub Pages
+  #       id: deployment
+  #       uses: actions/deploy-pages@v4

@@ -768,6 +768,7 @@ pub(crate) async fn reset_post(
     {
         user.password_hash = generate_password_hash(&input.password);
         set_one(&DB, "users", uid, &user)?;
+        super::forgejo::update_password(&user.username, &input.password).await;
 
         return Ok(Redirect::to("/signin").into_response());
     };
@@ -865,6 +866,7 @@ pub(crate) async fn user_password_post(
         let password_hash = generate_password_hash(&input.password);
         user.password_hash = password_hash;
         set_one(&DB, "users", claim.uid, &user)?;
+        super::forgejo::update_password(&user.username, &input.password).await;
         Ok(Redirect::to("/signout"))
     } else {
         sleep(Duration::from_secs(1)).await;
@@ -1084,6 +1086,7 @@ pub(crate) async fn signup_post(
     let cookie = Claim::generate_cookie(&DB, user, "4h")?;
     let mut headers = HeaderMap::new();
     headers.insert(SET_COOKIE, cookie.parse().unwrap());
+    super::forgejo::create_user(&username.to_owned(), &input.password).await;
     Ok((headers, Redirect::to("/")))
 }
 

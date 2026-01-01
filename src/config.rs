@@ -19,6 +19,8 @@ pub struct Config {
     pub(crate) podcast_path: String,
     pub snapshots_path: String,
     pub(crate) proxy: String,
+    pub(crate) forgejo_url: Option<String>,
+    pub(crate) forgejo_token: Option<String>,
 }
 
 impl Config {
@@ -62,6 +64,8 @@ impl Default for Config {
             tantivy_path: "data/tantivy".into(),
             snapshots_path: "data/snapshots".into(),
             proxy: "".into(),
+            forgejo_url: None,
+            forgejo_token: None,
         }
     }
 }
