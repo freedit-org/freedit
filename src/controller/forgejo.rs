@@ -27,7 +27,11 @@ pub(super) async fn create_user(username: &str, password: &str) {
             format!("http://{}", url)
         };
 
-        tracing::info!("Attempting to create user {} in Forgejo at {}", username, full_url);
+        tracing::info!(
+            "Attempting to create user {} in Forgejo at {}",
+            username,
+            full_url
+        );
         let client = Client::new();
         // User requested hardcoded email domain to avoid invalid email format with protocol in site_config.domain
         let email = format!("{}@email.com", username);
@@ -54,7 +58,10 @@ pub(super) async fn create_user(username: &str, password: &str) {
                 let status = res.status();
                 if status != StatusCode::CREATED {
                     let text = res.text().await.unwrap_or_default();
-                    error!("Failed to create forgejo user. Status: {}. Body: {}", status, text);
+                    error!(
+                        "Failed to create forgejo user. Status: {}. Body: {}",
+                        status, text
+                    );
                 } else {
                     tracing::info!("Successfully created user {} in Forgejo", username);
                 }
@@ -74,11 +81,13 @@ pub(super) async fn update_password(username: &str, password: &str) {
             format!("http://{}", url)
         };
 
-        tracing::info!("Attempting to update password for user {} in Forgejo at {}", username, full_url);
+        tracing::info!(
+            "Attempting to update password for user {} in Forgejo at {}",
+            username,
+            full_url
+        );
         let client = Client::new();
-        let body = UpdatePasswordRequest {
-            password,
-        };
+        let body = UpdatePasswordRequest { password };
 
         let res: Result<reqwest::Response, reqwest::Error> = client
             .patch(format!("{}/api/v1/admin/users/{}", full_url, username))
@@ -93,9 +102,15 @@ pub(super) async fn update_password(username: &str, password: &str) {
                 let status = res.status();
                 if status != StatusCode::OK {
                     let text = res.text().await.unwrap_or_default();
-                    error!("Failed to update forgejo password. Status: {}. Body: {}", status, text);
+                    error!(
+                        "Failed to update forgejo password. Status: {}. Body: {}",
+                        status, text
+                    );
                 } else {
-                    tracing::info!("Successfully updated password for user {} in Forgejo", username);
+                    tracing::info!(
+                        "Successfully updated password for user {} in Forgejo",
+                        username
+                    );
                 }
             }
             Err(e) => error!("Failed to update forgejo password: {}", e),
