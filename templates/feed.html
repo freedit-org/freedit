@@ -57,6 +57,7 @@
             </div>
         </div>
         <div class="list-item-controls">
+            {% if item.is_podcast %}{% include "icons/headset-bolt.svg" %}{% endif %}
             <a href="/feed/star/{{item.item_id}}">
                 {% include "icons/star.svg" %}
             </a>

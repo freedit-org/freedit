@@ -194,6 +194,7 @@ struct OutItem {
     updated: String,
     is_starred: bool,
     is_read: bool,
+    is_podcast: bool,
 }
 
 /// url params: `feed.html`
@@ -350,6 +351,7 @@ pub(crate) async fn feed(
             updated: ts_to_date(item.updated),
             is_starred,
             is_read,
+            is_podcast: item.podcast.is_some_and(|p| p.audio_downloaded),
         };
         items.push(out_item);
     }
