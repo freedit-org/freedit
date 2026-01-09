@@ -35,6 +35,9 @@ async fn main() -> Result<(), AppError> {
             if let Err(e) = clear_invalid(&DB, "sessions").await {
                 error!(%e);
             }
+            if let Err(e) = cron_download_audio(&DB).await {
+                error!(%e);
+            }
             sleep_seconds(300).await;
         }
     });
@@ -46,9 +49,6 @@ async fn main() -> Result<(), AppError> {
                 error!(%e);
             }
             if let Err(e) = clear_invalid(&DB, "user_stats").await {
-                error!(%e);
-            }
-            if let Err(e) = cron_download_audio(&DB).await {
                 error!(%e);
             }
             sleep_seconds(3600 * 4).await;

@@ -12,18 +12,19 @@ if (typeof audioUrl !== "undefined" && audioUrl) {
 }
 
 if (typeof srtUrl !== "undefined" && srtUrl) {
-  fetch(srtUrl)
-    .then((response) => response.text())
-    .then((srtText) => {
-      parseSRT(srtText);
-      renderTranscript();
-    })
-    .catch((err) => {
-      transcriptDiv.innerHTML = "Failed to load transcript.";
-      console.error("SRT load error:", err);
-    });
-} else {
-  transcriptDiv.innerHTML = "No SRT URL provided.";
+  document.addEventListener("DOMContentLoaded", () => {
+    fetch(srtUrl)
+      .then((response) => response.text())
+      .then((srtText) => {
+        if (srtText) {
+          parseSRT(srtText);
+          renderTranscript();
+        }
+      })
+      .catch((err) => {
+        console.error("SRT load error:", err);
+      });
+  });
 }
 
 function parseTime(s) {
