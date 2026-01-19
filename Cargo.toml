@@ -69,7 +69,7 @@ syntect = { version = "5", features = [
 tantivy = "0.25"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tower = { version = "0.5.2", features = ["timeout"] }
+tower = { version = "0.5.3", features = ["timeout"] }
 tower-http = { version = "0.6.7", features = [
     "fs",
     "compression-zstd",
