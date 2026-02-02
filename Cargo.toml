@@ -7,7 +7,7 @@ rust-version = "1.91.0"
 
 [dependencies]
 ammonia = "4.1.2"
-askama = "0.15.1"
+askama = "0.15.4"
 atom_syndication = { version = "0.12", default-features = false }
 axum = { version = "0.8.7", features = [
     "http1",
