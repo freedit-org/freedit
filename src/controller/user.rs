@@ -14,7 +14,7 @@ use super::{
     u8_slice_to_u32, u32_to_ivec,
 };
 use crate::{DB, config::CONFIG, error::AppError};
-use ::rand::{Rng, rng};
+use ::rand::{RngExt, rng};
 use askama::Template;
 use axum::{
     extract::{Form, Path, Query},
