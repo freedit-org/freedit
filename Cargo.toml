@@ -20,7 +20,7 @@ axum = { version = "0.8.7", features = [
 axum-extra = { version = "0.12.2", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
-cached = { version = "0.58.0", default-features = false, features = [
+cached = { version = "0.59.0", default-features = false, features = [
     "proc_macro",
     "ahash",
 ] }
@@ -39,16 +39,16 @@ image = { version = "0.25.9", default-features = false, features = [
 include_dir = "0.7.4"
 indexmap = "2"
 infer = "0.19.0"
-jieba-rs = "0.8.1"
+jieba-rs = "0.9.0"
 jiff = { version = "0.2.15", default-features = false, features = ["std"] }
 kamadak-exif = "0.6.1"
 latex2mathml = "0.2.3"
-nanoid = "0.4.0"
+nanoid = "0.5.0"
 pulldown-cmark = { version = "0.13.0", features = [
     "simd",
     "html",
 ], default-features = false }
-rand = "0.10.0"
+rand = "0.10.1"
 regex = "1"
 reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls",
@@ -66,7 +66,7 @@ syntect = { version = "5", features = [
     "default-themes",
     "html",
 ], default-features = false }
-tantivy = "0.25"
+tantivy = "0.26.1"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tower = { version = "0.5.2", features = ["timeout"] }

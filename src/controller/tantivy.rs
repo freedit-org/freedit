@@ -95,7 +95,10 @@ pub(crate) async fn search(
 
         let searcher = SEARCHER.reader.searcher();
         let top_docs: Vec<(_, _)> = searcher
-            .search(&query, &TopDocs::with_limit(20).and_offset(offset))
+            .search(
+                &query,
+                &TopDocs::with_limit(20).and_offset(offset).order_by_score(),
+            )
             .unwrap_or_default();
 
         for (_score, doc_address) in top_docs {
