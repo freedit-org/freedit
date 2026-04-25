@@ -425,7 +425,7 @@ pub(crate) async fn admin_gallery(
         imgs.push((uid, img_id, img));
     }
 
-    imgs.sort_unstable_by(|a, b| a.1.cmp(&b.1));
+    imgs.sort_unstable_by_key(|a| a.1);
 
     let page_params = ParamsPage { anchor, n, is_desc };
     let count = imgs.len();

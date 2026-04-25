@@ -1118,7 +1118,7 @@ fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     }
 
     let mut maps = maps.into_iter().collect::<Vec<_>>();
-    maps.sort_by(|a, b| b.1.cmp(&a.1));
+    maps.sort_by_key(|b| std::cmp::Reverse(b.1));
 
     let mut recommend_inns = Vec::new();
     for (iid, _) in maps.into_iter() {
