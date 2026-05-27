@@ -92,17 +92,17 @@
 </div>
 
 <div class="level is-mobile">
-    <div class="level-item" id="upvote">
+    <div class="level-item" id="vote">
         {% if post.is_upvoted %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-success is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
+        <a href="/post/{{post.iid}}/{{post.pid}}/upvote#vote"><span class="tag is-success is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
         {% else %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/upvote#upvote"><span class="tag is-info is-light is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
+        <a href="/post/{{post.iid}}/{{post.pid}}/upvote#vote"><span class="tag is-info is-light is-rounded">👍 󠁮󠁮󠁮󠁮{% if post.upvotes >0 %} {{post.upvotes}} {% endif %}</span></a>
         {% endif %}
 
         {% if post.is_downvoted %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote"><span class="tag is-success is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
+        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#vote"><span class="tag is-success is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
         {% else %}
-        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#downvote"><span class="tag is-info is-light is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
+        <a href="/post/{{post.iid}}/{{post.pid}}/downvote#vote"><span class="tag is-info is-light is-rounded">👎 󠁮󠁮󠁮󠁮{% if post.downvotes >0 %} {{post.downvotes}} {% endif %}</span></a>
         {% endif %}
     </div>
 </div>
