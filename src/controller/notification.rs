@@ -110,7 +110,7 @@ pub(crate) async fn notification(
     if let Some(op_type) = params.op_type {
         match op_type.as_str() {
             "mark_batch" => {
-                for (idx, i) in tree.inner().prefix(&prefix).enumerate() {
+                for (idx, i) in tree.inner().prefix(&prefix).rev().enumerate() {
                     if idx < anchor {
                         continue;
                     }
@@ -122,7 +122,7 @@ pub(crate) async fn notification(
                 }
             }
             "delete_batch" => {
-                for (idx, i) in tree.inner().prefix(&prefix).enumerate() {
+                for (idx, i) in tree.inner().prefix(&prefix).rev().enumerate() {
                     if idx < anchor {
                         continue;
                     }
