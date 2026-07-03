@@ -21,7 +21,7 @@ use axum_extra::{
     TypedHeader,
     headers::{Cookie, Referer},
 };
-use cached::proc_macro::cached;
+use cached::cached;
 use fjall::TransactionalKeyspace;
 use infer::is_audio;
 use jiff::{Timestamp, fmt::rfc2822};
@@ -379,7 +379,7 @@ pub(crate) async fn feed(
     Ok(into_response(&page_feed))
 }
 
-#[cached(result = true)]
+#[cached]
 fn get_feed_id(item_id: u32) -> Result<u32, AppError> {
     for i in DB
         .open_partition("feed_items", Default::default())?
