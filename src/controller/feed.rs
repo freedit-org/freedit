@@ -546,6 +546,9 @@ pub(crate) struct FormFeedAdd {
 static APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 
 static CLIENT: LazyLock<Client> = LazyLock::new(|| {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
     let mut client = reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
         .timeout(Duration::from_secs(60));
