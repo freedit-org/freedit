@@ -107,8 +107,7 @@ backward.addEventListener("click", () => {
 });
 
 forward.addEventListener("click", () => {
-  audio.currentTime = Math.min(
-    audio.duration,
-    audio.currentTime + 30
-  );
+  audio.currentTime = Number.isFinite(audio.duration)
+    ? Math.min(audio.duration, audio.currentTime + 30)
+    : audio.currentTime + 30;
 });
