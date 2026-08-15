@@ -86,7 +86,7 @@ tracing-subscriber = { version = "0.3", features = [
     "fmt",
 ], default-features = false }
 unicode-segmentation = "1"
-validator = { version = "0.20.0", features = ["derive"] }
+validator = { version = "0.21.0", features = ["derive"] }
 whichlang = "0.1.1"
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
