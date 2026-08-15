@@ -58,6 +58,10 @@
                     data-audio-url="/static/podcasts/{{ val.enclosure_url }}"
                     data-srt-url="/static/podcasts/{{ item.item_id }}.srt">
                 </audio>
+                <div class="controls">
+                    <button id="backward" class="button is-small">⏪ 15s</button>
+                    <button id="forward"  class="button is-small">30s ⏩</button>
+                </div>
             </div>
             <script src="/static/js/transcript.js?v={{ crate::VERSION }}"></script>
         {% endif %}
