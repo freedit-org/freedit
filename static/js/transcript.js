@@ -103,11 +103,11 @@ const backward = document.getElementById("backward");
 const forward = document.getElementById("forward");
 
 backward.addEventListener("click", () => {
-  audio.currentTime = Math.max(0, audio.currentTime - 15);
+  audio.currentTime = Math.max(0, audio.currentTime - 10);
 });
 
 forward.addEventListener("click", () => {
   audio.currentTime = Number.isFinite(audio.duration)
-    ? Math.min(audio.duration, audio.currentTime + 30)
-    : audio.currentTime + 30;
+    ? Math.min(audio.duration, audio.currentTime + 15)
+    : audio.currentTime + 15;
 });
