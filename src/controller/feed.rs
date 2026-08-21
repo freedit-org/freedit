@@ -689,7 +689,8 @@ pub(super) async fn update(
             for item in rss.items.into_iter().take(n) {
                 let source_item: SourceItem = item.try_into()?;
                 let item_id;
-                if let Some(v) = item_links_tree.get(&source_item.link)? {
+                let item_key = format!("{}{}", url, source_item.link);
+                if let Some(v) = item_links_tree.get(&item_key)? {
                     item_id = ivec_to_u32(&v);
                     let item: Item = get_one(db, "items", item_id)?;
                     item_ids.push((item_id, item.updated));
@@ -703,7 +704,7 @@ pub(super) async fn update(
                         content: clean_html(&source_item.content),
                         podcast: source_item.podcast,
                     };
-                    item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
+                    item_links_tree.insert(&item_key, u32_to_ivec(item_id))?;
                     set_one(db, "items", item_id, &item)?;
                     tan_tree.insert(format!("item{item_id}"), [])?;
                     item_ids.push((item_id, source_item.updated));
@@ -720,7 +721,8 @@ pub(super) async fn update(
                 for entry in atom.entries.into_iter().take(n) {
                     let source_item: SourceItem = entry.into();
                     let item_id;
-                    if let Some(v) = item_links_tree.get(&source_item.link)? {
+                    let item_key = format!("{}{}", url, source_item.link);
+                    if let Some(v) = item_links_tree.get(&item_key)? {
                         item_id = ivec_to_u32(&v);
                         let item: Item = get_one(db, "items", item_id)?;
                         item_ids.push((item_id, item.updated));
@@ -734,7 +736,7 @@ pub(super) async fn update(
                             content: clean_html(&source_item.content),
                             podcast: source_item.podcast,
                         };
-                        item_links_tree.insert(&item.link, u32_to_ivec(item_id))?;
+                        item_links_tree.insert(&item_key, u32_to_ivec(item_id))?;
                         set_one(db, "items", item_id, &item)?;
                         tan_tree.insert(format!("item{item_id}"), [])?;
                         item_ids.push((item_id, source_item.updated));
