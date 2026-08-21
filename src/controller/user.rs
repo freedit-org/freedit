@@ -1060,7 +1060,7 @@ pub(crate) async fn signup_post(
     let password_hash = generate_password_hash(&input.password);
     let uid = incr_id(&DB, "users_count")?;
 
-    let avatar = format!("{}/{}.png", &CONFIG.avatars_path, uid);
+    let avatar = format!("{}/{}.png", CONFIG.avatars_path, uid);
     Identicon::new(&generate_salt()).image().save(avatar)?;
 
     let created_at = Timestamp::now().as_second();

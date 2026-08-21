@@ -51,14 +51,14 @@ pub(crate) async fn upload_pic_post(
                     return Err(AppError::Unauthorized);
                 }
                 target = format!("/mod/{iid}");
-                format!("{}/{}.png", &CONFIG.inn_icons_path, iid)
+                format!("{}/{}.png", CONFIG.inn_icons_path, iid)
             } else {
                 return Err(AppError::NotFound);
             }
         }
         "user" => {
             target = "/user/setting".to_string();
-            format!("{}/{}.png", &CONFIG.avatars_path, claim.uid)
+            format!("{}/{}.png", CONFIG.avatars_path, claim.uid)
         }
         _ => return Err(AppError::NotFound),
     };
@@ -300,7 +300,7 @@ pub(crate) async fn upload_post(
             .first()
             .unwrap_or(&"jpg");
         let fname = format!("{}.{}", &sha1[0..20], ext);
-        let location = format!("{}/{}", &CONFIG.upload_path, fname);
+        let location = format!("{}/{}", CONFIG.upload_path, fname);
 
         fs::write(location, &img_data).await.unwrap();
         let img_id = incr_id(&DB, "imgs_count")?;
