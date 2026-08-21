@@ -333,7 +333,7 @@ pub(crate) async fn feed(
         }
 
         let is_starred = star_ids_set.contains(&i);
-        let feed_id = get_feed_id(i, &feed_ids)?;
+        let feed_id = get_feed_id(i, &feed_ids).unwrap_or_default();
         let folder = if let Some(r) = feed_id_folder.get(&feed_id) {
             r.to_owned()
         } else {
