@@ -308,7 +308,7 @@ pub(crate) async fn notification(
                     let user: User = get_one(&DB, "users", solo.uid)?;
                     let content1 = format!(
                         "{} commented your <a href='/solo/{}?nid={}'>Solo</a>",
-                        &user.username, sid1, nid
+                        user.username, sid1, nid
                     );
                     let notification = Notification {
                         nid,
@@ -328,7 +328,7 @@ pub(crate) async fn notification(
                     let user: User = get_one(&DB, "users", solo.uid)?;
                     let content1 = format!(
                         "{} mentioned you on <a href='/solo/{}?nid={}'>Solo</a>",
-                        &user.username, sid1, nid
+                        user.username, sid1, nid
                     );
                     let notification = Notification {
                         nid,
@@ -408,7 +408,7 @@ pub(crate) async fn notification(
                 let uid = u8_slice_to_u32(&value[0..4]);
                 let user: User = get_one(&DB, "users", uid)?;
                 let img_id = u8_slice_to_u32(&value[4..8]);
-                let content2 = format!("{} has deleted your image(id={})", &user.username, img_id);
+                let content2 = format!("{} has deleted your image(id={})", user.username, img_id);
                 let notification = Notification {
                     nid,
                     uid: user.uid,

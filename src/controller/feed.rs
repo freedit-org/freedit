@@ -21,7 +21,6 @@ use axum_extra::{
     TypedHeader,
     headers::{Cookie, Referer},
 };
-use cached::cached;
 use fjall::TransactionalKeyspace;
 use infer::is_audio;
 use jiff::{Timestamp, fmt::rfc2822};
@@ -284,8 +283,8 @@ pub(crate) async fn feed(
     }
 
     let mut item_ids = vec![];
-    for id in feed_ids {
-        let mut ids = get_item_ids_and_ts(&DB, "feed_items", id)?;
+    for id in feed_ids.iter() {
+        let mut ids = get_item_ids_and_ts(&DB, "feed_items", *id)?;
         item_ids.append(&mut ids);
     }
 
@@ -334,7 +333,7 @@ pub(crate) async fn feed(
         }
 
         let is_starred = star_ids_set.contains(&i);
-        let feed_id = get_feed_id(i)?;
+        let feed_id = get_feed_id(i, &feed_ids)?;
         let folder = if let Some(r) = feed_id_folder.get(&feed_id) {
             r.to_owned()
         } else {
@@ -379,8 +378,7 @@ pub(crate) async fn feed(
     Ok(into_response(&page_feed))
 }
 
-#[cached]
-fn get_feed_id(item_id: u32) -> Result<u32, AppError> {
+fn get_feed_id(item_id: u32, feed_ids: &[u32]) -> Result<u32, AppError> {
     for i in DB
         .open_partition("feed_items", Default::default())?
         .inner()
@@ -390,7 +388,9 @@ fn get_feed_id(item_id: u32) -> Result<u32, AppError> {
         let item_id2 = u8_slice_to_u32(&k[4..8]);
         if item_id == item_id2 {
             let feed_id = u8_slice_to_u32(&k[0..4]);
-            return Ok(feed_id);
+            if feed_ids.contains(&feed_id) {
+                return Ok(feed_id);
+            }
         }
     }
     Err(AppError::NotFound)
