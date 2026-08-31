@@ -20,7 +20,7 @@ axum = { version = "0.8.7", features = [
 axum-extra = { version = "0.12.2", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
-cached =  "2"
+cached =  "3"
 captcha = { git = "https://github.com/freedit-dev/captcha.git", default-features = false }
 data-encoding = "2.9"
 fast2s = "0.3"
