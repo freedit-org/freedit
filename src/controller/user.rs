@@ -515,8 +515,7 @@ pub(crate) async fn role_post(
     let site_config = SiteConfig::get(&DB)?;
     let claim = Claim::get(&DB, &cookie, &site_config).ok_or(AppError::NonLogin)?;
 
-    let target;
-    match id.cmp(&0) {
+    let target = match id.cmp(&0) {
         Ordering::Greater => {
             let inn_role = InnRole::get(&DB, id, claim.uid)?.ok_or(AppError::Unauthorized)?;
             if inn_role < InnRole::Mod {
@@ -584,7 +583,7 @@ pub(crate) async fn role_post(
                 add_notification(&DB, uid, NtType::InnNotification, inn_role as u32, id)?;
             }
 
-            target = format!("/user/list?filter=inn&id={id}");
+            format!("/user/list?filter=inn&id={id}")
         }
         Ordering::Equal => {
             if Role::from(claim.role) != Role::Admin {
@@ -607,10 +606,10 @@ pub(crate) async fn role_post(
 
                 add_notification(&DB, uid, NtType::SiteNotification, role as u32, 0)?;
             }
-            target = "/user/list".to_string();
+            "/user/list".to_string()
         }
         Ordering::Less => unreachable!(),
-    }
+    };
 
     Ok(Redirect::to(&target))
 }

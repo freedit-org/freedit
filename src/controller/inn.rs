@@ -1058,11 +1058,7 @@ pub(crate) async fn inn(
 
     let page_data = PageData::new("inn", &site_config, claim, has_unread);
 
-    let inn_name;
-    let about;
-    let description;
-
-    if iid > 0 {
+    let (inn_name, about, description) = if iid > 0 {
         let inn: Inn = get_one(&DB, "inns", iid)?;
         let icon = match InnType::from(inn.inn_type) {
             InnType::Public => "",
@@ -1070,13 +1066,13 @@ pub(crate) async fn inn(
             InnType::Apply => "🙋 ",
             InnType::Hidden | InnType::PrivateHidden => "💀 ",
         };
-        inn_name = format!("{} {}", icon, inn.inn_name);
-        about = inn.about;
-        description = md2html(&inn.description);
+        (
+            format!("{} {}", icon, inn.inn_name),
+            inn.about,
+            md2html(&inn.description),
+        )
     } else {
-        inn_name = "No post".into();
-        about = "".into();
-        description = "".into();
+        ("No post".into(), "".into(), "".into())
     };
 
     let recommend_users = recommend_users()?;

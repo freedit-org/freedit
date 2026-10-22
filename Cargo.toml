@@ -6,10 +6,10 @@ license = "MIT License"
 rust-version = "1.97.1"
 
 [dependencies]
-ammonia = "4.1.2"
+ammonia = "4.2"
 askama = "0.16"
 atom_syndication = { version = "0.12", default-features = false }
-axum = { version = "0.8.7", features = [
+axum = { version = "0.8.9", features = [
     "http1",
     "http2",
     "form",
@@ -17,31 +17,31 @@ axum = { version = "0.8.7", features = [
     "multipart",
     "tokio",
 ], default-features = false }
-axum-extra = { version = "0.12.2", features = ["typed-header"] }
+axum-extra = { version = "0.12", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
-cached =  "2"
-captcha = { git = "https://github.com/freedit-dev/captcha.git", default-features = false }
-data-encoding = "2.9"
+cached = "4"
+captcha = { version = "*", default-features = false }
+data-encoding = "2"
 fast2s = "0.3"
 fjall = "2.11.2"
-http = "1.4.0"
-identicon = { git = "https://github.com/freedit-dev/identicon.git", default-features = false }
-image = { version = "0.25.9", default-features = false, features = [
+http = "1"
+identicon = { version = "*", default-features = false }
+image = { version = "0.25", default-features = false, features = [
     "jpeg",
     "png",
     "gif",
-    "webp"
+    "webp",
 ] }
 include_dir = "0.7.4"
 indexmap = "2"
 infer = "0.22.0"
-jieba-rs = "0.10"
-jiff = { version = "0.2.15", default-features = false, features = ["std"] }
+jieba-rs = "0.11"
+jiff = { version = "0.2", default-features = false, features = ["std"] }
 kamadak-exif = "0.6.1"
 latex2mathml = "0.2.3"
 nanoid = "0.5.0"
-pulldown-cmark = { version = "0.13.0", features = [
+pulldown-cmark = { version = "0.13", features = [
     "simd",
     "html",
 ], default-features = false }
@@ -52,7 +52,7 @@ reqwest = { version = "0.13", default-features = false, features = [
     "socks",
 ] }
 ring = { version = "0.17", default-features = false }
-rss = { version = "2.0", default-features = false }
+rss = { version = "2", default-features = false }
 rust-stemmers = "1.2.0"
 rustls = { version = "0.23", default-features = false, features = [
     "std",
@@ -61,22 +61,18 @@ rustls = { version = "0.23", default-features = false, features = [
 ] }
 serde = { version = "1.0", features = ["derive"] }
 snailquote = "0.3.1"
-stop-words = "0.10.0"
+stop-words = "0.10"
 syntect = { version = "5", features = [
     "regex-fancy",
     "default-syntaxes",
     "default-themes",
     "html",
 ], default-features = false }
-tantivy = "0.26.1"
+tantivy = "0.27"
 thiserror = "2"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-tower = { version = "0.5.2", features = ["timeout"] }
-tower-http = { version = "0.7.0", features = [
-    "fs",
-    "compression-zstd",
-    "trace",
-] }
+tower = { version = "0.5", features = ["timeout"] }
+tower-http = { version = "0.7", features = ["fs", "compression-zstd", "trace"] }
 tracing = { version = "0.1", features = [
     "release_max_level_info",
     "max_level_info",
