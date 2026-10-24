@@ -20,7 +20,6 @@ axum = { version = "0.8.9", features = [
 axum-extra = { version = "0.12", features = ["typed-header"] }
 basic-toml = "0.1"
 bincode = "2"
-cached = "4"
 captcha = { version = "*", default-features = false }
 data-encoding = "2"
 fast2s = "0.3"

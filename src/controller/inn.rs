@@ -40,7 +40,6 @@ use axum::{
 };
 use axum_extra::{TypedHeader, headers::Cookie};
 use bincode::config::standard;
-use cached::cached;
 use fjall::TransactionalKeyspace;
 use jiff::Timestamp;
 use serde::Deserialize;
@@ -1100,7 +1099,6 @@ pub(crate) async fn inn(
     Ok(into_response(&page_inn))
 }
 
-#[cached(ttl = 120)]
 fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     let mut maps = HashMap::new();
     for i in DB
@@ -1130,7 +1128,6 @@ fn recommend_inns() -> Result<Vec<(u32, String)>, AppError> {
     Ok(recommend_inns)
 }
 
-#[cached(ttl = 120)]
 fn recommend_users() -> Result<Vec<(u32, String)>, AppError> {
     const NUM: usize = 15;
     let mut uids = HashSet::with_capacity(NUM);

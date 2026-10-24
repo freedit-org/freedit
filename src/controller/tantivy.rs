@@ -503,14 +503,14 @@ fn pre_tokenize_text(text: &str) -> Vec<Token> {
 }
 
 static STOP_WORDS_ENG: LazyLock<HashSet<String>> = LazyLock::new(|| {
-    stop_words::get(stop_words::LANGUAGE::English)
+    stop_words::get(stop_words::Language::English)
         .iter()
         .map(|s| s.to_string())
         .collect()
 });
 
 static STOP_WORDS_CMN: LazyLock<HashSet<String>> = LazyLock::new(|| {
-    let mut set: HashSet<_> = stop_words::get(stop_words::LANGUAGE::Chinese)
+    let mut set: HashSet<_> = stop_words::get(stop_words::Language::Chinese)
         .iter()
         .map(|s| s.to_string())
         .collect();

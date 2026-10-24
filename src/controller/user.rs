@@ -1060,7 +1060,10 @@ pub(crate) async fn signup_post(
     let uid = incr_id(&DB, "users_count")?;
 
     let avatar = format!("{}/{}.png", CONFIG.avatars_path, uid);
-    Identicon::new(&generate_salt()).image().save(avatar)?;
+    Identicon::new(&generate_salt())
+        .image()
+        .save(avatar)
+        .unwrap();
 
     let created_at = Timestamp::now().as_second();
     let role = if uid == 1 {
