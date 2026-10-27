@@ -993,7 +993,7 @@ dependencies = [
 
 [[package]]
 name = "freedit"
-version = "0.9.6"
+version = "0.9.7"
 dependencies = [
  "ammonia",
  "askama",
