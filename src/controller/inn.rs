@@ -511,6 +511,7 @@ struct PagePostCreate<'a> {
 struct PagePostEdit<'a> {
     page_data: PageData<'a>,
     post: Post,
+    markdown: String,
 }
 
 /// url params: `post_create.html`
@@ -585,6 +586,12 @@ pub(crate) async fn edit_post(
         Ok(into_response(&page_post_create))
     } else {
         let mut post: Post = get_one(&DB, "posts", pid)?;
+        let markdown = match post.content {
+            PostContent::Markdown(ref md) => md.to_string(),
+            PostContent::FeedItemId(_) => {
+                return Err(AppError::Custom("You can not edit Feed Post".into()));
+            }
+        };
         let inn: Inn = get_one(&DB, "inns", post.iid)?;
 
         if (post.created_at + (inn.limit_edit_seconds as i64) < Timestamp::now().as_second())
@@ -606,7 +613,11 @@ pub(crate) async fn edit_post(
         }
 
         let page_data = PageData::new("edit post", &site_config, Some(claim), has_unread);
-        let page_post_edit = PagePostEdit { page_data, post };
+        let page_post_edit = PagePostEdit {
+            page_data,
+            markdown,
+            post,
+        };
 
         Ok(into_response(&page_post_edit))
     }
