@@ -19,7 +19,10 @@ use axum_extra::{
     headers::{Cookie, Referer},
 };
 use data_encoding::HEXLOWER;
-use image::{ImageEncoder, ImageFormat, ImageReader, codecs::jpeg::JpegEncoder};
+use image::{
+    ImageDecoder, ImageEncoder, ImageFormat, ImageReader, codecs::jpeg::JpegEncoder,
+    metadata::Orientation,
+};
 use ring::digest::{Context, SHA1_FOR_LEGACY_USE_ONLY};
 use serde::Deserialize;
 use std::io::Cursor;
@@ -223,6 +226,15 @@ pub(crate) async fn upload(
     Ok(into_response(&page_upload))
 }
 
+fn read_exif_info<D>(mut decoder: D) -> Result<(bool, Option<Orientation>), image::ImageError>
+where
+    D: ImageDecoder,
+{
+    let has_exif = decoder.exif_metadata()?.is_some();
+    let orientation = decoder.orientation().ok();
+    Ok((has_exif, orientation))
+}
+
 /// `POST /upload`
 pub(crate) async fn upload_post(
     cookie: Option<TypedHeader<Cookie>>,
@@ -258,11 +270,20 @@ pub(crate) async fn upload_post(
             ImageFormat::Jpeg | ImageFormat::WebP | ImageFormat::Png => {
                 // Re-encode JPEG/WEBP/PNG if it contains EXIF metadata or size is large
                 let mut re_encode = false;
+                let (has_exif, orientation) = match image_format_detected {
+                    ImageFormat::Jpeg => {
+                        read_exif_info(image::codecs::jpeg::JpegDecoder::new(Cursor::new(&data))?)?
+                    }
+                    ImageFormat::WebP => {
+                        read_exif_info(image::codecs::webp::WebPDecoder::new(Cursor::new(&data))?)?
+                    }
+                    ImageFormat::Png => {
+                        read_exif_info(image::codecs::png::PngDecoder::new(Cursor::new(&data))?)?
+                    }
+                    _ => unreachable!(),
+                };
 
-                let exifreader = exif::Reader::new();
-                if let Ok(exif) = exifreader.read_from_container(&mut Cursor::new(&data))
-                    && !exif.buf().is_empty()
-                {
+                if has_exif {
                     re_encode = true;
                 }
 
@@ -272,9 +293,14 @@ pub(crate) async fn upload_post(
                 }
 
                 if re_encode {
-                    let dyn_img = ImageReader::new(std::io::Cursor::new(&data))
+                    let mut dyn_img = ImageReader::new(std::io::Cursor::new(&data))
                         .with_guessed_format()?
                         .decode()?;
+                    if let Some(ori) = orientation {
+                        if ori != Orientation::NoTransforms {
+                            dyn_img.apply_orientation(ori)
+                        }
+                    }
                     let mut writer = Vec::new();
                     let mut encoder = JpegEncoder::new_with_quality(&mut writer, quality);
                     encoder.set_exif_metadata(vec![]).unwrap();
