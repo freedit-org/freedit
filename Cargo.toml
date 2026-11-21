@@ -23,7 +23,7 @@ bincode = "2"
 captcha = { version = "*", default-features = false }
 data-encoding = "2"
 fast2s = "0.3"
-fjall = "2.11.2"
+fjall = "3.1.13"
 http = "1"
 identicon = { version = "*", default-features = false }
 image = { version = "0.25", default-features = false, features = [
