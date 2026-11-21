@@ -2071,6 +2071,10 @@ pub(crate) async fn comment_hide(
     let claim = cookie
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
+    let post: Post = get_one(&DB, "posts", pid)?;
+    if post.iid != iid {
+        return Err(AppError::NotFound);
+    }
 
     let k = [u32_to_ivec(claim.uid), u32_to_ivec(iid)].concat();
     if !DB
@@ -2252,6 +2256,9 @@ pub(crate) async fn post_lock(
         .ok_or(AppError::NonLogin)?;
 
     let mut post: Post = get_one(&DB, "posts", pid)?;
+    if post.iid != iid {
+        return Err(AppError::NotFound);
+    }
 
     if User::is_mod(&DB, claim.uid, iid)? || Role::from(claim.role) == Role::Admin {
         if post.status != PostStatus::LockedByMod {
@@ -2285,6 +2292,9 @@ pub(crate) async fn post_hide(
         .ok_or(AppError::NonLogin)?;
 
     let mut post: Post = get_one(&DB, "posts", pid)?;
+    if post.iid != iid {
+        return Err(AppError::NotFound);
+    }
     let old_status = post.status.clone();
 
     if User::is_mod(&DB, claim.uid, iid)? || Role::from(claim.role) == Role::Admin {
@@ -2335,6 +2345,10 @@ pub(crate) async fn post_pin(
         .and_then(|cookie| Claim::get(&DB, &cookie, &site_config))
         .ok_or(AppError::NonLogin)?;
 
+    let post: Post = get_one(&DB, "posts", pid)?;
+    if post.iid != iid {
+        return Err(AppError::NotFound);
+    }
     if !User::is_mod(&DB, claim.uid, iid)? && Role::from(claim.role) != Role::Admin {
         return Err(AppError::Unauthorized);
     }
