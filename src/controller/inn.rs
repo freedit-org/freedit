@@ -724,6 +724,25 @@ pub(crate) async fn edit_post_post(
         return Err(AppError::LockedOrHidden);
     }
 
+    let mut existing_post: Option<Post> = None;
+    if old_pid > 0 {
+        let post: Post = get_one(&DB, "posts", old_pid)?;
+        if post.uid != claim.uid {
+            return Err(AppError::Unauthorized);
+        }
+
+        if post.status != PostStatus::Normal {
+            return Err(AppError::LockedOrHidden);
+        }
+
+        if post.iid != iid {
+            return Err(AppError::NotFound);
+        }
+
+        created_at = post.created_at;
+        existing_post = Some(post);
+    }
+
     let pid = if old_pid == 0 {
         incr_id(&DB, "posts_count")?
     } else {
@@ -746,21 +765,21 @@ pub(crate) async fn edit_post_post(
         tags.truncate(5);
 
         let tags_ks = DB.inner().open_partition("tags", Default::default())?;
-        if old_pid > 0 {
-            let post: Post = get_one(&DB, "posts", old_pid)?;
-            if post.uid != claim.uid {
-                return Err(AppError::Unauthorized);
-            }
+        let post: Post = get_one(&DB, "posts", old_pid)?;
+        if post.uid != claim.uid {
+            return Err(AppError::Unauthorized);
+        }
 
-            if post.status != PostStatus::Normal {
-                return Err(AppError::LockedOrHidden);
-            }
+        if post.status != PostStatus::Normal {
+            return Err(AppError::LockedOrHidden);
+        }
 
-            if post.iid != iid {
-                return Err(AppError::NotFound);
-            }
+        if post.iid != iid {
+            return Err(AppError::NotFound);
+        }
 
-            created_at = post.created_at;
+        created_at = post.created_at;
+        if let Some(post) = &existing_post {
             for old_tag in &post.tags {
                 let k = [old_tag.as_bytes(), &u32_to_ivec(old_pid)].concat();
                 batch.remove(&tags_ks, k);
